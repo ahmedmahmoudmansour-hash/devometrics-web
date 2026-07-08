@@ -52,11 +52,20 @@ export default function AssessmentForm({
     const avg = ordered.reduce((a, b) => a + b, 0) / ordered.length;
     const score = Math.round(((avg - 1) / 4) * 100);
     setLikertScore(score);
-    setStep(caseStudies.length > 0 ? "case-studies" : "result");
-    if (caseStudies.length === 0) finalize(score, [], null);
+    if (caseStudies.length > 0) {
+      setStep("case-studies");
+    } else {
+      finalize(score, [], null);
+    }
   }
 
+  // Only advances to the result screen once the save actually succeeds —
+  // previously this set step="result" unconditionally, so a free account
+  // that had hit its assessment cap still saw a full result screen even
+  // though nothing was persisted (saveAssessmentResult's error was silently
+  // discarded), making the cap invisible/unenforced from the user's side.
   function finalize(score: number, caseStudyAnswers: CaseStudyAnswer[], insight: string | null) {
+    setSubmitError(null);
     const ordered = assessment.questions.map((_, i) => answers[i]);
     const responses: CaseStudyResponse[] = caseStudyAnswers.map((a) => ({
       caseStudyId: a.caseStudyId,
@@ -67,10 +76,14 @@ export default function AssessmentForm({
       aiScore: a.aiScore,
     }));
     startTransition(async () => {
-      await saveAssessmentResult(assessment.slug, score, ordered, responses, insight);
+      const outcome = await saveAssessmentResult(assessment.slug, score, ordered, responses, insight);
+      if (outcome?.error) {
+        setSubmitError(outcome.error);
+        return;
+      }
+      setResult({ score, insight });
+      setStep("result");
     });
-    setResult({ score, insight });
-    setStep("result");
   }
 
   async function submitCaseStudies() {
@@ -318,6 +331,8 @@ export default function AssessmentForm({
           </div>
         ))}
       </div>
+
+      {submitError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 16 }}>{submitError}</p>}
 
       <button
         type="button"

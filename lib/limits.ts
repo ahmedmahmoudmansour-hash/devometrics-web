@@ -34,6 +34,12 @@ export const MAX_CASE_STUDY_RESPONSE_LENGTH = 2000;
 export const CASE_STUDY_RATE_LIMIT_WINDOW_MINUTES = 60;
 export const CASE_STUDY_RATE_LIMIT_MAX_RUNS = 20;
 
+// Free-tier pricing limit for the standard (non-case-study) assessments —
+// a lifetime cap on how many *distinct* assessments a free account can ever
+// complete, not a monthly one; retaking an already-completed assessment
+// doesn't count against it.
+export const FREE_ASSESSMENT_LIMIT = 2;
+
 export const MAX_SPEECH_TEXT_LENGTH = 2000;
 
 export const MAX_ROLEPLAY_MESSAGE_LENGTH = 2000;
