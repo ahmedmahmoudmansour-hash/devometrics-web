@@ -1,0 +1,285 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export async function createPlan(title: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("development_plans").insert({ user_id: user.id, title });
+  revalidatePath("/dashboard");
+}
+
+export async function createMilestone(planId: string, title: string, position: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("milestones").insert({ plan_id: planId, title, position });
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+}
+
+export async function toggleMilestone(id: string, completed: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("milestones")
+    .update({ completed, completed_at: completed ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+}
+
+// Lets someone reword, reschedule, or add detail to an AI-generated
+// milestone instead of treating it as fixed output — the plan should feel
+// like theirs to shape, not a read-only report.
+export async function updateMilestone(
+  id: string,
+  fields: { title: string; description: string | null; target_date: string | null; user_notes?: string | null }
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (!fields.title.trim()) return { error: "Title can't be empty" };
+
+  const { error } = await supabase
+    .from("milestones")
+    .update({
+      title: fields.title.trim(),
+      description: fields.description?.trim() || null,
+      target_date: fields.target_date || null,
+      ...(fields.user_notes !== undefined ? { user_notes: fields.user_notes?.trim() || null } : {}),
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+}
+
+export async function deleteMilestone(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("milestones").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+}
+
+export async function updatePlanTitle(planId: string, title: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (!title.trim()) return { error: "Title can't be empty" };
+
+  const { error } = await supabase
+    .from("development_plans")
+    .update({ title: title.trim() })
+    .eq("id", planId)
+    .eq("user_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+}
+
+// Cascades to milestones via the existing on-delete-cascade FK — one
+// delete, not a manual cleanup of the child rows first.
+export async function deletePlan(planId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("development_plans").delete().eq("id", planId).eq("user_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+}
+
+export async function updateProfile(
+  location: string,
+  learningPreferences: string[],
+  careerStage: string,
+  accommodation: string,
+  resourceTier: string
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("profiles")
+    .update({
+      location,
+      learning_preferences: learningPreferences,
+      career_stage: careerStage,
+      accommodation,
+      resource_tier: resourceTier,
+    })
+    .eq("id", user.id);
+  revalidatePath("/dashboard");
+}
+
+export async function updateAvatarUrl(avatarUrl: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// Lighter than updateProfile — used by the inline "how do you want to
+// learn?" step during plan creation, which shouldn't need to also touch
+// location/career stage/accommodation/budget just to save this one field.
+// Saving it here (not just using it for this one plan) means the choice
+// sticks for next time too, instead of asking again on every plan.
+export async function updateLearningPreferences(learningPreferences: string[]) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ learning_preferences: learningPreferences })
+    .eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+const VALID_COACH_VOICES = new Set(["off", "sarah", "theo", "megan", "jack"]);
+
+// Persists which of the 4 Speechmatics voices (or "off") the Coach should
+// narrate replies in, so the choice sticks across visits instead of
+// resetting every session.
+export async function updateCoachVoice(voice: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  if (!VALID_COACH_VOICES.has(voice)) return { error: "Invalid voice" };
+
+  const { error } = await supabase.from("profiles").update({ coach_voice: voice }).eq("id", user.id);
+  if (error) return { error: "Could not save voice preference" };
+
+  revalidatePath("/dashboard/coach");
+  return { success: true };
+}
+
+// Lets someone opt out of the achievements/badges display entirely — some
+// people find gamification patronizing rather than motivating, so this
+// stays a persisted per-account choice, not just a session dismiss.
+export async function updateBadgesEnabled(enabled: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ badges_enabled: enabled }).eq("id", user.id);
+  if (error) return { error: "Could not save — try again." };
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// Persists the theme choice for logged-in users so it syncs across devices.
+// No-op if not authenticated — localStorage + the data-theme attribute
+// still handle the logged-out/public-page case on their own.
+export async function updateTheme(theme: "dark" | "light") {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("profiles").update({ theme }).eq("id", user.id);
+}
+
+// Deletes all app data for the current user (plans, milestones via cascade,
+// coach history, assessment results, gap analyses, resume/discovery/Big
+// Five profiles, coach GROW memory, achievements, momentum snapshots,
+// personal tasks, survey participation) and clears personal profile fields.
+// Kept in sync with /api/account/export, which promises to surface the same
+// set of tables — if you add a new user-data table, add it to both places.
+// Does not delete the login itself — that requires a service_role key we
+// deliberately don't hold; contact support for full account deletion.
+export async function deleteMyData() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await Promise.all([
+    supabase.from("development_plans").delete().eq("user_id", user.id),
+    supabase.from("coach_messages").delete().eq("user_id", user.id),
+    supabase.from("assessment_results").delete().eq("user_id", user.id),
+    supabase.from("gap_analyses").delete().eq("user_id", user.id),
+    supabase.from("resume_analyses").delete().eq("user_id", user.id),
+    supabase.from("discovery_profiles").delete().eq("user_id", user.id),
+    supabase.from("big_five_profiles").delete().eq("user_id", user.id),
+    supabase.from("coach_grow_memory").delete().eq("user_id", user.id),
+    supabase.from("user_achievements").delete().eq("user_id", user.id),
+    supabase.from("career_health_snapshots").delete().eq("user_id", user.id),
+    supabase.from("personal_tasks").delete().eq("user_id", user.id),
+    supabase.from("survey_responses").delete().eq("user_id", user.id),
+    supabase.from("survey_assignments").delete().eq("employee_user_id", user.id),
+    supabase.from("student_verification_codes").delete().eq("user_id", user.id),
+  ]);
+
+  await supabase
+    .from("profiles")
+    .update({
+      full_name: null,
+      location: null,
+      learning_preferences: [],
+      career_stage: null,
+      accommodation: null,
+      job_history: [],
+      skills: [],
+      qualifications: [],
+      career_aspirations: null,
+      student_school_email: null,
+      student_verified_at: null,
+      resource_tier: null,
+    })
+    .eq("id", user.id);
+
+  revalidatePath("/dashboard");
+}
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}

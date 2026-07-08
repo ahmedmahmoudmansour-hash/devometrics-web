@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+:root {
+  --navy: #0A0F1E;
+  --navy-mid: #111827;
+  --navy-light: #1a2236;
+  --teal: #00C9A7;
+  --teal-dim: #00a589;
+  --teal-glow: rgba(0, 201, 167, 0.15);
+  --slate: #8892a4;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e8edf5;
+  --text-muted: #8892a4;
+  --phase2: #7dd3fc;
+  --phase3: #c084fc;
+  --amber: #fbbf24;
+  --danger: #f87171;
+  --nav-scrolled-bg: rgba(10, 15, 30, 0.92);
+  --nav-mobile-menu-bg: rgba(10, 15, 30, 0.98);
+}
+
+/* Light theme — self-disclosed elective preference, not a claim that light
+   is "better" for anyone. Every pairing here is contrast-verified (WCAG AA,
+   4.5:1+ for normal text), not just visually eyeballed. */
+html[data-theme="light"] {
+  --navy: #ffffff;
+  --navy-mid: #f6f7f9;
+  --navy-light: #eef0f3;
+  --teal: #097066;
+  --teal-dim: #075a52;
+  --teal-glow: rgba(9, 112, 102, 0.12);
+  --slate: #4b5768;
+  --border: rgba(10, 15, 30, 0.1);
+  --text: #0a1220;
+  --text-muted: #4b5768;
+  --phase2: #0e5fa8;
+  --phase3: #7c3aed;
+  --amber: #b45309;
+  --danger: #b91c1c;
+  --nav-scrolled-bg: rgba(255, 255, 255, 0.92);
+  --nav-mobile-menu-bg: rgba(255, 255, 255, 0.98);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--navy);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--navy); }
+::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--teal-dim); }
+
+::selection { background: var(--teal-glow); color: var(--teal); }
+
+/* Native <select> dropdown popups ignore the inherited light text color
+   and render options black-on-white by default — on a dark theme that's
+   near-illegible (the closed box looks fine since it's custom-styled, but
+   the open option list is the browser's own light-mode rendering). This
+   tells the browser which native widget palette to use for the popup
+   itself, app-wide, without touching every <select> element individually. */
+select { color-scheme: dark; }
+html[data-theme="light"] select { color-scheme: light; }
+
+/* Several form inputs set outline:none inline (higher specificity than any
+   normal CSS rule) with no replacement focus indicator — this restores one
+   app-wide via !important, needed for WCAG 2.4.7 Focus Visible (AA). */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--teal) !important;
+  outline-offset: 2px !important;
+}
+
+/* Print stylesheet for /dashboard/plans/[id] — used for the "Download PDF"
+   button (window.print → Save as PDF). Forces light, ink-friendly colors
+   regardless of the active theme, since a dark navy background printed on
+   paper wastes ink and reads poorly. */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #ffffff !important; }
+  .print-plan,
+  .print-plan * {
+    background: #ffffff !important;
+    color: #0a1220 !important;
+    box-shadow: none !important;
+  }
+  .print-plan { border: none !important; }
+  .print-plan .print-rule { border-bottom: 1px solid #d8dce3 !important; }
+  .print-plan .print-accent { color: #097066 !important; }
+}
+
+/* Dashboard header stacks vertically on narrow viewports instead of
+   squeezing a title and 7+ nav pills onto one justified row. */
+@media (max-width: 640px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+  .dashboard-nav {
+    width: 100%;
+  }
+}
+
+/* Sidebar collapses to an icon-only rail below tablet width — labels hide,
+   width shrinks, but every link stays reachable (no hamburger/drawer state
+   to wire up, so this degrades safely with zero JS). */
+@media (max-width: 900px) {
+  .dashboard-sidebar {
+    width: 60px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .dashboard-sidebar-label {
+    display: none;
+  }
+  .dashboard-sidebar-logo {
+    padding: 0 !important;
+    text-align: center;
+    font-size: 0;
+  }
+  .dashboard-sidebar-logo::before {
+    content: "D";
+    font-size: 18px;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #00C9A7 0%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+/* The dark-theme gradient (#00C9A7 to #7dd3fc) is unreadable on a light
+   background — #7dd3fc is a pale blue that fails contrast on white
+   entirely. Both colors here are contrast-verified against white. */
+html[data-theme="light"] .gradient-text {
+  background: linear-gradient(135deg, #097066 0%, #0e5fa8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.card-hover {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card-hover:hover {
+  border-color: rgba(0, 201, 167, 0.3) !important;
+  box-shadow: 0 8px 40px rgba(0, 201, 167, 0.08);
+  transform: translateY(-2px);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.float { animation: float 5s ease-in-out infinite; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.7s ease forwards; }
+.fade-up-1 { animation-delay: 0.1s; opacity: 0; }
+.fade-up-2 { animation-delay: 0.2s; opacity: 0; }
+.fade-up-3 { animation-delay: 0.3s; opacity: 0; }
+.fade-up-4 { animation-delay: 0.4s; opacity: 0; }
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer-line {
+  background: linear-gradient(90deg, var(--navy-light) 25%, rgba(0,201,167,0.15) 50%, var(--navy-light) 75%);
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+}
+
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.teal-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+}
+
+/* Respect the OS-level "reduce motion" setting (vestibular sensitivity,
+   migraines, and attention-related sensitivities are the documented reasons
+   this exists) — the fade-up entrance animations, float, shimmer, and
+   smooth scroll all get effectively disabled. fade-up content still needs
+   to end up visible (its default state is opacity:0), so this collapses
+   the animation to near-instant rather than removing it outright. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card-hover:hover {
+    transform: none;
+  }
+}

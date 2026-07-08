@@ -1,0 +1,222 @@
+export type BigFiveProfile = {
+  id: string;
+  user_id: string;
+  answers: Record<string, number>;
+  scores: Record<import("../personality/bigFive").BigFiveTrait, number>;
+  created_at: string;
+};
+
+export type Profile = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  location: string | null;
+  learning_preferences: string[];
+  career_stage: string | null;
+  accommodation: string | null;
+  resource_tier: string | null;
+  theme: string | null;
+  is_admin: boolean;
+  account_type: "individual" | "company";
+  coach_voice: "off" | "sarah" | "theo" | "megan" | "jack";
+  subscription_tier: "free" | "premium" | "enterprise";
+  premium_trial_expires_at: string | null;
+  student_verified_at: string | null;
+  student_school_email: string | null;
+  badges_enabled: boolean;
+  current_streak_days: number;
+  longest_streak_days: number;
+  last_active_date: string | null;
+  job_history: import("@/lib/profile/extractCareerProfile").JobHistoryEntry[];
+  skills: string[];
+  qualifications: import("@/lib/profile/extractCareerProfile").QualificationEntry[];
+  career_aspirations: string | null;
+  created_at: string;
+};
+
+export type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  website: string | null;
+  employee_count: string | null;
+  industry: string | null;
+  logo_url: string | null;
+  brand_color: string | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type OrganizationCompetency = {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  mapped_dimension: import("../gap-analysis/dimensions").CompetencyDimension | null;
+  created_at: string;
+};
+
+export type OrganizationMember = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: "admin" | "member";
+  title: string | null;
+  department: string | null;
+  country: string | null;
+  created_at: string;
+};
+
+export type OrganizationInvite = {
+  id: string;
+  organization_id: string;
+  email: string;
+  title: string | null;
+  department: string | null;
+  country: string | null;
+  invited_by: string;
+  accepted_at: string | null;
+  created_at: string;
+};
+
+export type CaseStudyResponse = {
+  caseStudyId: string;
+  type: "mcq" | "open";
+  selectedOptionId?: string;
+  optionScore?: number;
+  openText?: string;
+  aiScore?: number;
+};
+
+export type CaseStudyExerciseAttempt = {
+  id: string;
+  user_id: string;
+  exercise_slug: string;
+  response_text: string | null;
+  started_at: string;
+  submitted_at: string | null;
+  score: number | null;
+  report: import("../assessments/scoreCaseStudyExercise").ExerciseReport | null;
+  created_at: string;
+};
+
+export type AssessmentResult = {
+  id: string;
+  user_id: string;
+  assessment_slug: string;
+  score: number;
+  answers: number[];
+  case_study_responses: CaseStudyResponse[];
+  case_study_insight: string | null;
+  completed_at: string;
+};
+
+export type GapAnalysis = {
+  id: string;
+  user_id: string;
+  target_role: string;
+  job_description: string;
+  cv_text: string;
+  performance_data: string | null;
+  competencies: import("@/lib/gap-analysis/dimensions").CompetencyScore[];
+  career_health_score: number;
+  experience_summary: string | null;
+  role_context_inferred: boolean;
+  estimated_timeline_months: number | null;
+  timeline_rationale: string | null;
+  created_at: string;
+};
+
+export type ResumeAnalysis = {
+  id: string;
+  user_id: string;
+  target_role: string | null;
+  resume_text: string;
+  ats_score: number;
+  achievement_score: number;
+  overall_score: number;
+  matched_keywords: string[];
+  missing_keywords: string[];
+  ats_issues: string[];
+  weak_bullets: import("@/lib/resume/types").WeakBullet[];
+  visibility_recommendations: string[];
+  created_at: string;
+};
+
+export type DiscoveryProfile = {
+  id: string;
+  user_id: string;
+  answers: import("@/lib/discovery/questions").DiscoveryAnswer[];
+  summary: string;
+  created_at: string;
+};
+
+export type CoachMessage = {
+  id: string;
+  user_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+export type CoachGrowMemory = {
+  user_id: string;
+  goal: string | null;
+  reality: string | null;
+  options: string | null;
+  will: string | null;
+  updated_at: string;
+};
+
+export type DevelopmentPlan = {
+  id: string;
+  user_id: string;
+  title: string;
+  horizon: string | null;
+  created_at: string;
+};
+
+export type Milestone = {
+  id: string;
+  plan_id: string;
+  title: string;
+  description: string | null;
+  target_date: string | null;
+  position: number;
+  completed: boolean;
+  completed_at: string | null;
+  weekly_hours: number | null;
+  hours_period: string | null;
+  budget_note: string | null;
+  success_indicator: string | null;
+  user_notes: string | null;
+  assigned_by: string | null;
+  created_at: string;
+};
+
+export type RoleplayMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type RoleplaySession = {
+  id: string;
+  user_id: string;
+  scenario_slug: string;
+  messages: RoleplayMessage[];
+  feedback: string | null;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CustomScenario = {
+  id: string;
+  user_id: string;
+  title: string;
+  setup: string;
+  your_role: string;
+  opening_message: string;
+  created_at: string;
+};
