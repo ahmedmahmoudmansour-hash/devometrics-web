@@ -101,6 +101,61 @@ export const ROLEPLAY_SCENARIOS: RoleplayScenario[] = [
     openingMessage:
       "*Casey looks determined.* \"I wanted to ask you directly — I think I'm ready for the senior role. Can we talk about what it would take to make that happen this cycle?\"",
   },
+  {
+    slug: "job-interview",
+    title: "The Job Interview",
+    level: "Foundational",
+    competencyFocus: ["Career Readiness", "Communication"],
+    setup:
+      "You've landed an interview for a role you genuinely want. The interviewer is friendly but thorough — expect behavioral questions, follow-ups on your answers, and at least one question you'd rather not be asked.",
+    yourRole: "You are the candidate. The interview is starting now.",
+    openingMessage:
+      "*The interviewer smiles and opens a notebook.* \"Thanks for coming in — I've read your CV, but I'd rather hear it from you. Walk me through your background and what brought you to apply for this role.\"",
+  },
+  {
+    slug: "salary-negotiation",
+    title: "The Salary Negotiation",
+    level: "Foundational",
+    competencyFocus: ["Communication", "Career Readiness"],
+    setup:
+      "You've received an offer for a role you want, but the salary is about 15% below what you believe the role is worth and below your research on market range. The recruiter has called to close the deal today.",
+    yourRole: "You are the candidate, negotiating your own offer on this call.",
+    openingMessage:
+      "*The recruiter sounds upbeat.* \"Great news — the team loved you and we're ready to move! You've seen the offer in your inbox. We'd love to get your signature today so we can lock in your start date. How are you feeling about it?\"",
+  },
+  {
+    slug: "impossible-deadline",
+    title: "The Impossible Deadline",
+    level: "Professional",
+    competencyFocus: ["Communication", "Strategic Thinking"],
+    setup:
+      "Your manager has just committed your team to a deadline you know is unrealistic without cutting corners that will cost more later. You've asked for ten minutes to discuss it before the commitment goes out to the client.",
+    yourRole: "You are the team member pushing back on your own manager — without torching the relationship.",
+    openingMessage:
+      "*Your manager looks impatient.* \"I know it's tight, but I already told leadership we could do it. I need you on board here, not raising problems. What did you want to discuss?\"",
+  },
+  {
+    slug: "cross-functional-deadlock",
+    title: "The Cross-Functional Deadlock",
+    level: "Professional",
+    competencyFocus: ["Communication", "Strategic Thinking", "Emotional Intelligence"],
+    setup:
+      "Your project needs a deliverable from another department whose lead, Riley, keeps deprioritizing it. Riley doesn't report to you, owes you nothing formally, and has their own targets. Your project slips another week every time this stalls.",
+    yourRole: "You've asked Riley for 15 minutes to break the deadlock. You have no authority over them — only influence.",
+    openingMessage:
+      "*Riley joins the call, camera off at first, then on.* \"Look, before you start — I know your project's waiting on us. Everyone's project is waiting on us. Tell me why yours should jump the queue.\"",
+  },
+  {
+    slug: "budget-defense",
+    title: "The Budget Defense",
+    level: "Executive",
+    competencyFocus: ["Executive Readiness", "Strategic Thinking"],
+    setup:
+      "Cost cuts are coming and every function must justify its budget. The CFO believes your area is overfunded relative to its measurable impact and has proposed a 30% reduction. You have one meeting to change the outcome.",
+    yourRole: "You are the function head, defending your budget to a skeptical CFO.",
+    openingMessage:
+      "*The CFO slides a one-pager across the table.* \"I'll be direct — the numbers say we can take thirty percent out of your area without the business feeling it. Convince me the numbers are wrong.\"",
+  },
 ];
 
 export function getRoleplayScenario(slug: string): RoleplayScenario | null {

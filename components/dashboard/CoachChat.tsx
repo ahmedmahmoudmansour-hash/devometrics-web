@@ -31,6 +31,30 @@ function modeButtonStyle(active: boolean): React.CSSProperties {
   };
 }
 
+// Groups the stored history into per-day "sessions": today's messages stay
+// in the live thread, older days collapse into an expandable archive above
+// it. Gives "each session stored individually / easy access to previous
+// sessions" without a schema change — a calendar day is the session
+// boundary, which matches how the coach is actually used (a sit-down
+// conversation, not a running group chat).
+function partitionByDay(all: CoachMessage[]) {
+  const todayKey = new Date().toDateString();
+  const today: { role: "user" | "assistant"; content: string }[] = [];
+  const past = new Map<string, { role: "user" | "assistant"; content: string }[]>();
+  for (const m of all) {
+    const key = new Date(m.created_at).toDateString();
+    const entry = { role: m.role, content: m.content };
+    if (key === todayKey) {
+      today.push(entry);
+    } else {
+      const list = past.get(key) ?? [];
+      list.push(entry);
+      past.set(key, list);
+    }
+  }
+  return { today, past: [...past.entries()] };
+}
+
 export default function CoachChat({
   initialMessages,
   userName,
@@ -42,9 +66,10 @@ export default function CoachChat({
   userAvatarUrl?: string | null;
   initialVoice: string;
 }) {
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(
-    initialMessages.map((m) => ({ role: m.role, content: m.content }))
-  );
+  // Computed once from the server-provided history — new messages only ever
+  // append to the live thread, so this never needs recomputing.
+  const [{ today: initialToday, past: pastSessions }] = useState(() => partitionByDay(initialMessages));
+  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(initialToday);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +267,43 @@ export default function CoachChat({
       </div>
 
       <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+        {pastSessions.length > 0 && (
+          <details style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 12, padding: "10px 14px" }}>
+            <summary style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer", listStyle: "none" }}>
+              🗂 Previous sessions ({pastSessions.length})
+            </summary>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+              {pastSessions.map(([day, msgs]) => (
+                <details key={day} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px" }}>
+                  <summary style={{ fontSize: 12, color: "var(--text)", cursor: "pointer" }}>
+                    {new Date(day).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric" })}
+                    <span style={{ color: "var(--text-muted)" }}> · {msgs.length} messages</span>
+                  </summary>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                    {msgs.map((m, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                          maxWidth: "85%",
+                          background: m.role === "user" ? "rgba(0,201,167,0.15)" : "rgba(255,255,255,0.05)",
+                          color: "var(--text)",
+                          borderRadius: 10,
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {renderInlineMarkdown(m.content)}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </details>
+        )}
         {messages.length === 0 && (
           <div style={{ textAlign: "center", padding: "24px 0" }}>
             <Mascot size={64} />
