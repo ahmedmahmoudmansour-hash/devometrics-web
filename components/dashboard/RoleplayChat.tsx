@@ -66,6 +66,12 @@ export default function RoleplayChat({
   }
 
   const { play, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
+  // Same fix as CoachChat: with the mic in continuous mode, the recognizer
+  // hears the scenario character's own reply coming out of the speakers and
+  // auto-sends it back — heard as the AI "interrupting" or talking to
+  // itself. Ref (not state) so the stable mic callback sees the live value.
+  const speakingRef = useRef(false);
+  speakingRef.current = speaking || voiceLoading;
   // Only messages where autoplay actually failed get a manual fallback
   // button — otherwise showing it on every reply makes it look like
   // clicking is always required, even when autoplay already worked.
@@ -79,6 +85,7 @@ export default function RoleplayChat({
     start: startListening,
     stop: stopListening,
   } = useSpeechInput((transcript) => {
+    if (speakingRef.current) return; // that's the character's voice, not the user
     if (transcript.trim()) send(transcript, false);
   });
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import type { CoachMessage } from "@/lib/supabase/types";
 import CoachAvatar from "@/components/CoachAvatar";
 import Avatar from "@/components/Avatar";
@@ -54,7 +55,14 @@ export default function CoachChat({
   const [lastNamedVoice, setLastNamedVoice] = useState(initialVoice !== "off" ? initialVoice : "sarah");
   const [, startTransition] = useTransition();
   const listRef = useRef<HTMLDivElement>(null);
-  const { play, playing, loading: voiceLoading, error: voiceError } = useVoicePlayback();
+  const { play, stop: stopSpeaking, playing, loading: voiceLoading, error: voiceError } = useVoicePlayback();
+  // The mic stays open in continuous mode, so while the coach's reply is
+  // playing out loud the recognizer picks the coach's own voice up off the
+  // speakers and auto-sends it back as if the user said it — the "AI
+  // interrupts me / talks to itself" bug. Track playing in a ref so the
+  // mic callback (a stable closure) can drop anything heard mid-playback.
+  const playingRef = useRef(false);
+  playingRef.current = playing || voiceLoading;
   // Only messages where autoplay actually failed get a manual fallback
   // button — otherwise it shows on every reply regardless of whether
   // autoplay worked, which makes it look like clicking is always required.
@@ -69,8 +77,18 @@ export default function CoachChat({
     start: startListening,
     stop: stopListening,
   } = useSpeechInput((transcript) => {
+    if (playingRef.current) return; // coach is talking — this is its own voice, not the user
     if (transcript.trim()) send(transcript);
   });
+
+  // Keep the newest message in view whenever one is added (user send AND
+  // coach reply) — previously this only fired once per send() in the
+  // finally block, which missed the user's own message appearing and made
+  // scrolling feel inconsistent.
+  const messageCount = messages.length;
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  }, [messageCount, loading]);
 
   function toggleMic() {
     if (listening) stopListening();
@@ -130,9 +148,6 @@ export default function CoachChat({
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
-      requestAnimationFrame(() => {
-        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-      });
     }
   }
 
@@ -152,7 +167,46 @@ export default function CoachChat({
         height: "70vh",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "12px 16px", borderBottom: "1px solid var(--border)", flexWrap: "wrap" }}>
+        <Link
+          href="/dashboard"
+          onClick={() => {
+            stopSpeaking();
+            stopListening();
+          }}
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: "6px 12px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ✕ End session
+        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {(playing || voiceLoading) && (
+          <button
+            type="button"
+            onClick={stopSpeaking}
+            style={{
+              background: "rgba(248,113,113,0.12)",
+              border: "1px solid rgba(248,113,113,0.35)",
+              borderRadius: 8,
+              padding: "6px 12px",
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#f87171",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            ■ Stop speaking
+          </button>
+        )}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3 }}>
           <button type="button" onClick={() => handleModeChange("text")} style={modeButtonStyle(!isSpeechMode)}>
             💬 Text
@@ -184,6 +238,7 @@ export default function CoachChat({
             ))}
           </select>
         )}
+        </div>
       </div>
 
       <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>

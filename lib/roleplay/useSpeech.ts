@@ -181,7 +181,11 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
         transcription_config: {
           language: "en",
           max_delay: 2,
-          conversation_config: { end_of_utterance_silence_trigger: 1 },
+          // 1s fired on natural mid-sentence thinking pauses, sending the
+          // half-finished thought and making the coach "interrupt" the user.
+          // 2.2s tolerates a normal pause; the trade-off is a slightly
+          // longer wait after genuinely finishing before the reply starts.
+          conversation_config: { end_of_utterance_silence_trigger: 2.2 },
         },
         audio_format: { type: "raw", encoding: "pcm_f32le", sample_rate: audioContext.sampleRate },
       });
