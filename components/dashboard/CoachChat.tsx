@@ -10,6 +10,8 @@ import { updateCoachVoice } from "@/app/dashboard/actions";
 import { useVoicePlayback } from "@/lib/speech/useVoicePlayback";
 import { useSpeechInput } from "@/lib/roleplay/useSpeech";
 import { renderInlineMarkdown } from "@/lib/format/renderInlineMarkdown";
+import { generateSessionSummary, emailSessionSummary, type SessionSummary } from "@/lib/coach/sessionSummary";
+import { createTask } from "@/lib/tasks/actions";
 
 const NAMED_VOICES = [
   { value: "sarah", label: "Sarah" },
@@ -29,6 +31,124 @@ function modeButtonStyle(active: boolean): React.CSSProperties {
     fontWeight: 700,
     cursor: "pointer",
   };
+}
+
+function SummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: () => void }) {
+  const [emailState, setEmailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
+  const [, startTransition] = useTransition();
+
+  function sendIt() {
+    setEmailState("sending");
+    setEmailError(null);
+    startTransition(async () => {
+      const result = await emailSessionSummary(summary);
+      if (result.error) {
+        setEmailState("error");
+        setEmailError(result.error);
+      } else {
+        setEmailState("sent");
+      }
+    });
+  }
+
+  function addAsTask(item: string, index: number) {
+    startTransition(async () => {
+      const result = await createTask({ title: item, recurring: "none" });
+      if (!result?.error) setAddedItems((prev) => new Set(prev).add(index));
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(3,8,16,0.75)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          background: "var(--navy-mid)",
+          border: "1px solid rgba(0,201,167,0.3)",
+          borderRadius: 20,
+          padding: 28,
+          maxWidth: 560,
+          width: "100%",
+          maxHeight: "80vh",
+          overflowY: "auto",
+          boxShadow: "0 20px 80px rgba(0,0,0,0.5)",
+        }}
+      >
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>Session summary</h2>
+
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginTop: 16, marginBottom: 6 }}>
+          Meeting notes
+        </p>
+        <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7 }}>{summary.meetingNotes}</p>
+
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginTop: 16, marginBottom: 6 }}>
+          Action plan
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {summary.actionPlan.map((item, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.6 }}>— {item}</span>
+              {addedItems.has(i) ? (
+                <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, whiteSpace: "nowrap" }}>✓ Added</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => addAsTask(item, i)}
+                  style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer", whiteSpace: "nowrap" }}
+                >
+                  + Add as task
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 24, flexWrap: "wrap", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={sendIt}
+            disabled={emailState === "sending" || emailState === "sent"}
+            style={{
+              background: "var(--teal)",
+              color: "#0A0F1E",
+              border: "none",
+              borderRadius: 8,
+              padding: "10px 18px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              opacity: emailState === "sending" ? 0.6 : 1,
+            }}
+          >
+            {emailState === "sent" ? "✓ Emailed" : emailState === "sending" ? "Sending…" : "✉️ Email me this"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
+          >
+            Close
+          </button>
+        </div>
+        {emailError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{emailError}</p>}
+      </div>
+    </div>
+  );
 }
 
 // Groups the stored history into per-day "sessions": today's messages stay
@@ -92,7 +212,20 @@ export default function CoachChat({
   // button — otherwise it shows on every reply regardless of whether
   // autoplay worked, which makes it look like clicking is always required.
   const [autoplayFailedFor, setAutoplayFailedFor] = useState<Set<number>>(new Set());
+  const [summary, setSummary] = useState<SessionSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const isSpeechMode = voice !== "off";
+
+  function getSummary() {
+    setSummaryLoading(true);
+    setError(null);
+    startTransition(async () => {
+      const result = await generateSessionSummary();
+      setSummaryLoading(false);
+      if (result.error) setError(result.error);
+      else if (result.summary) setSummary(result.summary);
+    });
+  }
   // Mic input auto-sends the recognized phrase instead of just dropping it
   // in the text box — matches how someone actually wants voice mode to
   // work (speak, done), rather than speak-then-still-have-to-click-Send.
@@ -213,6 +346,27 @@ export default function CoachChat({
           ✕ End session
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {messages.length >= 4 && (
+          <button
+            type="button"
+            onClick={getSummary}
+            disabled={summaryLoading}
+            style={{
+              background: "rgba(0,201,167,0.1)",
+              border: "1px solid rgba(0,201,167,0.3)",
+              borderRadius: 8,
+              padding: "6px 12px",
+              fontSize: 12,
+              fontWeight: 700,
+              color: "var(--teal)",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              opacity: summaryLoading ? 0.6 : 1,
+            }}
+          >
+            {summaryLoading ? "Summarizing…" : "📋 Get summary"}
+          </button>
+        )}
         {(playing || voiceLoading) && (
           <button
             type="button"
@@ -449,6 +603,7 @@ export default function CoachChat({
           Send
         </button>
       </form>
+      {summary && <SummaryModal summary={summary} onClose={() => setSummary(null)} />}
     </div>
   );
 }

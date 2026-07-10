@@ -370,3 +370,69 @@ export async function deleteOrganization(organizationId: string) {
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }
+
+// HR record editing — authorization is enforced by RLS (the
+// "Org admins can update member records" policy from migration 0049), so a
+// non-admin's update simply matches zero rows. The explicit zero-row check
+// below turns that silent no-op into a visible error.
+export async function updateMemberDetails(
+  memberId: string,
+  fields: {
+    title?: string;
+    department?: string;
+    country?: string;
+    manager_name?: string;
+    business_unit?: string;
+    location?: string;
+  }
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const clean = Object.fromEntries(
+    Object.entries(fields).map(([k, v]) => [k, typeof v === "string" ? v.trim() || null : v])
+  );
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .update(clean)
+    .eq("id", memberId)
+    .select("id");
+  if (error) {
+    console.error("updateMemberDetails failed:", error);
+    return { error: "Could not update — the database may need migration 0049 run first." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to edit this employee." };
+  }
+
+  revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}
+
+export async function setMemberArchived(memberId: string, archived: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .update({ archived })
+    .eq("id", memberId)
+    .select("id");
+  if (error) {
+    console.error("setMemberArchived failed:", error);
+    return { error: "Could not update — the database may need migration 0049 run first." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to archive this employee." };
+  }
+
+  revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}

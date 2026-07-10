@@ -14,7 +14,10 @@ export async function GET() {
     Name: r.name,
     Title: r.title ?? "",
     Department: r.department ?? "",
+    "Business Unit": r.businessUnit ?? "",
+    Manager: r.managerName ?? "",
     Country: r.country ?? "",
+    Location: r.location ?? "",
     Email: r.email,
     "Career Health Score": r.careerHealthScore ?? "",
     "Assessments Completed": r.assessmentsCompleted,
@@ -25,7 +28,7 @@ export async function GET() {
 
   const worksheet = XLSX.utils.json_to_sheet(sheetRows);
   worksheet["!cols"] = [
-    { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 18 }, { wch: 16 }, { wch: 8 }, { wch: 16 }, { wch: 16 },
+    { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 28 }, { wch: 18 }, { wch: 16 }, { wch: 8 }, { wch: 16 }, { wch: 16 },
   ];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Workforce");

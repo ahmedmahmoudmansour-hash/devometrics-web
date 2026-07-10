@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   LogOut,
   Lock,
+  NotebookPen,
+  Route,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { signOut } from "@/app/dashboard/actions";
@@ -33,12 +35,14 @@ type NavItem = {
 const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Progress", icon: LayoutDashboard },
   { href: "/dashboard/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
   { href: "/dashboard/discovery", label: "Discovery", icon: Compass },
   { href: "/dashboard/gap-analysis", label: "Gap Analysis", icon: Target },
   { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
   { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
   { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
   { href: "/dashboard/journey", label: "Journey", icon: History },
+  { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
   { href: "/dashboard/roleplay", label: "Scenarios", icon: Drama, premium: true },
 ];
 

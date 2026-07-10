@@ -11,11 +11,15 @@ import type {
 
 export type WorkforceRow = {
   userId: string;
+  memberId: string | null;
   name: string;
   email: string;
   title: string | null;
   department: string | null;
   country: string | null;
+  managerName: string | null;
+  businessUnit: string | null;
+  location: string | null;
   avatarUrl: string | null;
   careerHealthScore: number | null;
   dimensionLevels: Partial<Record<CompetencyDimension, number>>;
@@ -119,9 +123,9 @@ export async function buildCompanyData(): Promise<CompanyData> {
   const [{ data: members }, { data: invites }, { data: competencies }] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("user_id, title")
+      .select("id, user_id, title")
       .eq("organization_id", membership.organization_id)
-      .returns<{ user_id: string; title: string | null }[]>(),
+      .returns<{ id: string; user_id: string; title: string | null }[]>(),
     supabase
       .from("organization_invites")
       .select("id, email, title")
@@ -159,14 +163,28 @@ export async function buildCompanyData(): Promise<CompanyData> {
   const locationByMemberUser = new Map((memberLocations ?? []).map((m) => [m.user_id, m]));
   const locationByInviteId = new Map((inviteLocations ?? []).map((i) => [i.id, i]));
 
+  // manager/business unit/location/archived (migration 0049) — same
+  // isolated-query pattern again: before that migration runs, this yields
+  // nothing and every member simply shows as active with blank HR fields.
+  const { data: memberHrFields } = await supabase
+    .from("organization_members")
+    .select("id, user_id, manager_name, business_unit, location, archived")
+    .eq("organization_id", membership.organization_id)
+    .returns<{ id: string; user_id: string; manager_name: string | null; business_unit: string | null; location: string | null; archived: boolean }[]>();
+  const hrByMemberUser = new Map((memberHrFields ?? []).map((m) => [m.user_id, m]));
+
   const pendingInvites = (invites ?? []).map((invite) => ({
     ...invite,
     department: locationByInviteId.get(invite.id)?.department ?? null,
     country: locationByInviteId.get(invite.id)?.country ?? null,
   }));
   const organizationCompetencies = competencies ?? [];
-  const memberIds = (members ?? []).map((m) => m.user_id);
-  const titleByUser = new Map((members ?? []).map((m) => [m.user_id, m.title]));
+  // Archived members stay in the database for history but drop out of the
+  // workforce view and every aggregate below.
+  const activeMembers = (members ?? []).filter((m) => hrByMemberUser.get(m.user_id)?.archived !== true);
+  const memberIds = activeMembers.map((m) => m.user_id);
+  const titleByUser = new Map(activeMembers.map((m) => [m.user_id, m.title]));
+  const memberIdByUser = new Map(activeMembers.map((m) => [m.user_id, m.id]));
   const orgIdentity = {
     organizationId: membership.organization_id,
     organizationName: membership.organizations.name,
@@ -246,11 +264,15 @@ export async function buildCompanyData(): Promise<CompanyData> {
     const stats = milestoneStatsByUser.get(p.id) ?? { done: 0, total: 0 };
     return {
       userId: p.id,
+      memberId: memberIdByUser.get(p.id) ?? null,
       name: p.full_name ?? "—",
       email: p.email ?? "—",
       title: titleByUser.get(p.id) ?? null,
       department: locationByMemberUser.get(p.id)?.department ?? null,
       country: locationByMemberUser.get(p.id)?.country ?? null,
+      managerName: hrByMemberUser.get(p.id)?.manager_name ?? null,
+      businessUnit: hrByMemberUser.get(p.id)?.business_unit ?? null,
+      location: hrByMemberUser.get(p.id)?.location ?? null,
       avatarUrl: p.avatar_url ?? null,
       careerHealthScore: analysis?.career_health_score ?? null,
       dimensionLevels,

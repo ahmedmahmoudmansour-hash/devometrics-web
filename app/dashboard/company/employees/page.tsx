@@ -5,6 +5,7 @@ import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
+import EditEmployeeButton from "@/components/dashboard/EditEmployeeButton";
 import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
@@ -108,6 +109,7 @@ export default async function CompanyEmployeesPage() {
                         <th style={{ ...headStyle, textAlign: "right" }}>Assessments</th>
                         <th style={{ ...headStyle, textAlign: "right" }}>Plans</th>
                         <th style={{ ...headStyle, textAlign: "right" }}>Milestones</th>
+                        <th style={{ ...headStyle, textAlign: "right" }} aria-label="Actions" />
                       </tr>
                     </thead>
                     <tbody>
@@ -139,6 +141,20 @@ export default async function CompanyEmployeesPage() {
                           <td style={{ ...cellStyle, textAlign: "right" }}>{r.plans}</td>
                           <td style={{ ...cellStyle, textAlign: "right" }}>
                             {r.milestonesDone}/{r.milestonesTotal}
+                          </td>
+                          <td style={{ ...cellStyle, textAlign: "right" }}>
+                            <EditEmployeeButton
+                              memberId={r.memberId}
+                              name={r.name}
+                              initial={{
+                                title: r.title,
+                                department: r.department,
+                                country: r.country,
+                                managerName: r.managerName,
+                                businessUnit: r.businessUnit,
+                                location: r.location,
+                              }}
+                            />
                           </td>
                         </tr>
                       ))}

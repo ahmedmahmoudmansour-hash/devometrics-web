@@ -65,6 +65,12 @@ export type OrganizationMember = {
   title: string | null;
   department: string | null;
   country: string | null;
+  // Added in migration 0049 — may be absent until it's run; readers use
+  // isolated defensive queries rather than assuming these exist.
+  manager_name?: string | null;
+  business_unit?: string | null;
+  location?: string | null;
+  archived?: boolean;
   created_at: string;
 };
 
@@ -167,6 +173,45 @@ export type CoachGrowMemory = {
   options: string | null;
   will: string | null;
   updated_at: string;
+};
+
+export type NoteInsight = {
+  summary: string;
+  actionItems: string[];
+};
+
+export type PersonalNote = {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  ai_insight: NoteInsight | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CareerPathNode = {
+  role: string;
+  readinessPercent: number;
+  requiredSkills: string[];
+  gaps: string[];
+  estimatedTime: string;
+  whyThisPath: string;
+};
+
+export type CareerPathBranch = {
+  name: string;
+  description: string;
+  nodes: CareerPathNode[];
+};
+
+export type CareerPaths = {
+  user_id: string;
+  paths: {
+    currentRole: string;
+    branches: CareerPathBranch[];
+  };
+  generated_at: string;
 };
 
 export type DevelopmentPlan = {
