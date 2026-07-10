@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CalendarView from "@/components/dashboard/CalendarView";
+import CalendarSyncCard from "@/components/dashboard/CalendarSyncCard";
 import MilestoneBreakdownList from "@/components/dashboard/MilestoneBreakdownList";
 import TaskList from "@/components/dashboard/TaskList";
 import type { PersonalTask } from "@/lib/tasks/types";
@@ -27,6 +28,8 @@ export default function TasksPageClient({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <CalendarView tasks={calendarTasks} deadlines={calendarDeadlines} onDayClick={setSelectedDate} />
+
+      <CalendarSyncCard />
 
       {milestones.length > 0 && <MilestoneBreakdownList milestones={milestones} />}
 

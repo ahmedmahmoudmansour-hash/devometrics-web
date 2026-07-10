@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toggleTask } from "@/lib/tasks/actions";
+import { toggleTask, createTask } from "@/lib/tasks/actions";
 import type { PersonalTask } from "@/lib/tasks/types";
 import type { WeekDeadline } from "@/lib/tasks/actions";
 
@@ -74,6 +74,129 @@ const navButtonStyle: React.CSSProperties = {
   fontSize: 13,
 };
 
+// Outlook-style inline quick-add: appears right where the user clicked
+// instead of pre-filling a form somewhere further down the page (which
+// looked like the click did nothing unless you happened to scroll).
+function QuickAdd({
+  day,
+  onClose,
+  onMoreOptions,
+}: {
+  day: string;
+  onClose: () => void;
+  onMoreOptions?: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [time, setTime] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function save() {
+    if (!title.trim()) {
+      setError("Give it a title");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await createTask({ title, recurring: "none", date: day, time: time || null });
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+      onClose();
+    });
+  }
+
+  const fieldStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 6,
+    padding: "7px 10px",
+    fontSize: 12,
+    color: "var(--text)",
+    outline: "none",
+  };
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        marginTop: 8,
+        background: "var(--navy-mid)",
+        border: "1px solid rgba(0,201,167,0.35)",
+        borderRadius: 10,
+        padding: 10,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
+      }}
+    >
+      <input
+        type="text"
+        autoFocus
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+          if (e.key === "Escape") onClose();
+        }}
+        placeholder="Task title…"
+        aria-label={`New task on ${day}`}
+        style={fieldStyle}
+      />
+      <input
+        type="time"
+        lang="en-US"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        aria-label="Time (optional)"
+        style={{ ...fieldStyle, colorScheme: "dark" }}
+      />
+      {error && <p style={{ color: "#f87171", fontSize: 11 }}>{error}</p>}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={save}
+          disabled={isPending}
+          style={{
+            background: "var(--teal)",
+            color: "#0A0F1E",
+            border: "none",
+            borderRadius: 6,
+            padding: "6px 14px",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            opacity: isPending ? 0.6 : 1,
+          }}
+        >
+          {isPending ? "Adding…" : "Add"}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
+        >
+          Cancel
+        </button>
+        {onMoreOptions && (
+          <button
+            type="button"
+            onClick={onMoreOptions}
+            style={{ background: "none", border: "none", fontSize: 11, color: "var(--teal)", cursor: "pointer", padding: 0 }}
+          >
+            More options ↓
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // One data fetch (a wide date range from the parent server component) sliced
 // three ways client-side — switching Week/Month/Year or navigating prev/next
 // is instant, no server round trip, as long as you stay inside the fetched
@@ -89,10 +212,19 @@ export default function CalendarView({
 }) {
   const [mode, setMode] = useState<Mode>("week");
   const [offset, setOffset] = useState(0);
+  const [quickAddDay, setQuickAddDay] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const today = useMemo(() => new Date(), []);
   const todayStr = toDateStr(today);
+
+  // Clicking a day opens the inline quick-add right there (Outlook-style);
+  // "More options" inside it falls through to the full form below via
+  // onDayClick for anything the quick-add doesn't cover (priority,
+  // recurrence, milestone link).
+  function handleDayClick(day: string) {
+    setQuickAddDay((current) => (current === day ? null : day));
+  }
 
   function handleToggle(taskId: string, completed: boolean) {
     startTransition(async () => {
@@ -180,16 +312,16 @@ export default function CalendarView({
             return (
               <div
                 key={day}
-                onClick={() => onDayClick?.(day)}
-                role={onDayClick ? "button" : undefined}
-                tabIndex={onDayClick ? 0 : undefined}
+                onClick={() => handleDayClick(day)}
+                role="button"
+                tabIndex={0}
                 style={{
                   border: isToday ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
                   background: isToday ? "rgba(0,201,167,0.05)" : "rgba(255,255,255,0.02)",
                   borderRadius: 10,
                   padding: 10,
                   minHeight: 90,
-                  cursor: onDayClick ? "pointer" : "default",
+                  cursor: "pointer",
                 }}
               >
                 <p style={{ fontSize: 11, fontWeight: 700, color: isToday ? "var(--teal)" : "var(--text-muted)", marginBottom: 6 }}>
@@ -217,6 +349,20 @@ export default function CalendarView({
                     </label>
                   ))}
                 </div>
+                {quickAddDay === day && (
+                  <QuickAdd
+                    day={day}
+                    onClose={() => setQuickAddDay(null)}
+                    onMoreOptions={
+                      onDayClick
+                        ? () => {
+                            onDayClick(day);
+                            setQuickAddDay(null);
+                          }
+                        : undefined
+                    }
+                  />
+                )}
               </div>
             );
           })}
@@ -242,17 +388,22 @@ export default function CalendarView({
               return (
                 <div
                   key={day}
-                  onClick={() => onDayClick?.(day)}
-                  role={onDayClick ? "button" : undefined}
-                  tabIndex={onDayClick ? 0 : undefined}
+                  onClick={() => handleDayClick(day)}
+                  role="button"
+                  tabIndex={0}
                   title={[...dayDeadlines.map((d) => `🏁 ${d.title}`), ...dayTasks.map((t) => t.title)].join("\n") || undefined}
                   style={{
-                    border: isToday ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
+                    border:
+                      quickAddDay === day
+                        ? "1px solid var(--teal)"
+                        : isToday
+                          ? "1px solid rgba(0,201,167,0.4)"
+                          : "1px solid var(--border)",
                     background: isToday ? "rgba(0,201,167,0.05)" : "rgba(255,255,255,0.02)",
                     borderRadius: 8,
                     padding: 6,
                     minHeight: 56,
-                    cursor: onDayClick ? "pointer" : "default",
+                    cursor: "pointer",
                   }}
                 >
                   <p style={{ fontSize: 10.5, color: isToday ? "var(--teal)" : "var(--text-muted)", fontWeight: 700 }}>{day.slice(8, 10)}</p>
@@ -266,6 +417,27 @@ export default function CalendarView({
               );
             })}
           </div>
+          {/* Month cells are too small to host the form — it renders below
+              the grid, labeled with the picked date. */}
+          {quickAddDay && month.cells.includes(quickAddDay) && (
+            <div style={{ maxWidth: 340 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "var(--teal)", marginTop: 10 }}>
+                New task — {quickAddDay}
+              </p>
+              <QuickAdd
+                day={quickAddDay}
+                onClose={() => setQuickAddDay(null)}
+                onMoreOptions={
+                  onDayClick
+                    ? () => {
+                        onDayClick(quickAddDay);
+                        setQuickAddDay(null);
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          )}
         </div>
       )}
 

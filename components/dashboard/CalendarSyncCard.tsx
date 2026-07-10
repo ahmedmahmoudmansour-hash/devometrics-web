@@ -1,0 +1,131 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { getCalendarFeedToken } from "@/lib/tasks/calendarFeed";
+
+export default function CalendarSyncCard() {
+  const [feedUrl, setFeedUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function enable() {
+    setError(null);
+    startTransition(async () => {
+      const result = await getCalendarFeedToken();
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setFeedUrl(`${window.location.origin}/api/calendar/feed?t=${result.token}`);
+    });
+  }
+
+  async function copy() {
+    if (!feedUrl) return;
+    try {
+      await navigator.clipboard.writeText(feedUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard blocked — the URL is visible and selectable as fallback.
+    }
+  }
+
+  return (
+    <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px 20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
+            🔄 Sync with Outlook / Google Calendar
+          </h2>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5, maxWidth: 520 }}>
+            Subscribe once and your Devometrics tasks and milestone deadlines appear in your own
+            calendar automatically — and stay updated as you add more.
+          </p>
+        </div>
+        {!feedUrl && (
+          <button
+            type="button"
+            onClick={enable}
+            disabled={isPending}
+            style={{
+              background: "var(--teal)",
+              color: "#0A0F1E",
+              border: "none",
+              borderRadius: 8,
+              padding: "9px 16px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              opacity: isPending ? 0.6 : 1,
+            }}
+          >
+            {isPending ? "Setting up…" : "Get my calendar link"}
+          </button>
+        )}
+      </div>
+
+      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{error}</p>}
+
+      {feedUrl && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <code
+              style={{
+                flex: "1 1 260px",
+                fontSize: 11,
+                color: "var(--teal)",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                overflowX: "auto",
+                whiteSpace: "nowrap",
+                display: "block",
+              }}
+            >
+              {feedUrl}
+            </code>
+            <button
+              type="button"
+              onClick={copy}
+              style={{
+                background: "rgba(0,201,167,0.1)",
+                border: "1px solid rgba(0,201,167,0.3)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--teal)",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {copied ? "✓ Copied" : "Copy link"}
+            </button>
+          </div>
+          <ul style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8, marginTop: 10, paddingLeft: 18 }}>
+            <li>
+              <strong style={{ color: "var(--text)" }}>Outlook:</strong> Calendar → Add calendar →
+              Subscribe from web → paste the link
+            </li>
+            <li>
+              <strong style={{ color: "var(--text)" }}>Google Calendar:</strong> Other calendars → + →
+              From URL → paste the link
+            </li>
+            <li>
+              <strong style={{ color: "var(--text)" }}>Apple Calendar:</strong> File → New Calendar
+              Subscription → paste the link
+            </li>
+          </ul>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
+            Treat this link like a password — anyone with it can see your task titles. Calendar apps
+            refresh subscribed feeds on their own schedule (typically every few hours).
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
