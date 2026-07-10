@@ -50,19 +50,28 @@ export default function RoleplayChat({
   const isSpeechMode = voice !== "off";
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Switching into Speech mode immediately speaks the character's latest
+  // message — the click IS the user gesture browsers require for audio, and
+  // "I picked Speech and it still didn't talk" was the exact complaint.
   function handleModeChange(mode: "text" | "speech") {
-    setVoice(mode === "text" ? "off" : lastNamedVoice);
+    if (mode === "text") {
+      setVoice("off");
+      return;
+    }
+    setVoice(lastNamedVoice);
+    const latest = [...messages].reverse().find((m) => m.role === "assistant");
+    if (latest) play(stripStageDirections(latest.content), lastNamedVoice);
   }
 
-  // Plays an instant, short confirmation in the newly-picked voice — without
-  // this, picking a different name gives no audible feedback until the next
-  // reply arrives, which reads as "the voice didn't change" even though it
-  // did.
+  // Picking a different voice replays the character's latest line in that
+  // voice — real audible feedback in real content, instead of a canned
+  // greeting that tells you nothing about how the scenario will sound.
   function handleVoiceNameChange(name: string) {
     setLastNamedVoice(name);
     setVoice(name);
+    const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(`Hi, this is ${label}.`, name);
+    play(latest ? stripStageDirections(latest.content) : `Hi, this is ${label}.`, name);
   }
 
   const { play, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
@@ -84,6 +93,7 @@ export default function RoleplayChat({
     supported: sttSupported,
     start: startListening,
     stop: stopListening,
+    error: micError,
   } = useSpeechInput((transcript) => {
     if (speakingRef.current) return; // that's the character's voice, not the user
     if (transcript.trim()) send(transcript, false);
@@ -244,6 +254,9 @@ export default function RoleplayChat({
         {error && <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{error}</div>}
         {voiceError && (
           <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>Voice: {voiceError}</div>
+        )}
+        {micError && (
+          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>Mic: {micError}</div>
         )}
       </div>
 

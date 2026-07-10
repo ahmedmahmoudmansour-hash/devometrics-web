@@ -234,6 +234,7 @@ export default function CoachChat({
     supported: sttSupported,
     start: startListening,
     stop: stopListening,
+    error: micError,
   } = useSpeechInput((transcript) => {
     if (playingRef.current) return; // coach is talking — this is its own voice, not the user
     if (transcript.trim()) send(transcript);
@@ -260,19 +261,27 @@ export default function CoachChat({
     });
   }
 
+  // Switching into Speech mode immediately speaks the coach's latest
+  // message — the click is the user gesture browsers need for audio, and
+  // silence after picking Speech read as "it doesn't work."
   function handleModeChange(mode: "text" | "speech") {
-    handleVoiceChange(mode === "text" ? "off" : lastNamedVoice);
+    if (mode === "text") {
+      handleVoiceChange("off");
+      return;
+    }
+    handleVoiceChange(lastNamedVoice);
+    const latest = [...messages].reverse().find((m) => m.role === "assistant");
+    if (latest) play(latest.content, lastNamedVoice);
   }
 
-  // Plays an instant, short confirmation in the newly-picked voice — without
-  // this, picking a different name gives no audible feedback until the next
-  // reply arrives, which reads as "the voice didn't change" even though it
-  // did.
+  // Picking a different voice replays the coach's latest line in that voice —
+  // audible feedback in real content rather than a canned greeting.
   function handleVoiceNameChange(name: string) {
     setLastNamedVoice(name);
     handleVoiceChange(name);
+    const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(`Hi, this is ${label}.`, name);
+    play(latest ? latest.content : `Hi, this is ${label}.`, name);
   }
 
   async function send(rawText: string) {
@@ -541,6 +550,11 @@ export default function CoachChat({
         {voiceError && (
           <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>
             Voice: {voiceError}
+          </div>
+        )}
+        {micError && (
+          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>
+            Mic: {micError}
           </div>
         )}
       </div>

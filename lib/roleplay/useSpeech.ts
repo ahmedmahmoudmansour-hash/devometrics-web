@@ -59,6 +59,10 @@ function getServerSnapshot() {
 
 export function useSpeechInput(onResult: (transcript: string) => void) {
   const [listening, setListening] = useState(false);
+  // Surfaced to the UI — a mic that silently does nothing is
+  // indistinguishable from a mic that's broken, which testers report as
+  // "not working" with no way to tell us why.
+  const [error, setError] = useState<string | null>(null);
 
   // Browser SpeechRecognition fallback
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -101,6 +105,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
     const RecognitionCtor = getSpeechRecognition();
     if (!RecognitionCtor) {
       setListening(false);
+      setError("Voice input isn't available in this browser — Chrome works best, or type instead.");
       return;
     }
     const recognition = new RecognitionCtor();
@@ -120,7 +125,10 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       const transcript = event.results[event.results.length - 1][0].transcript;
       onResult(transcript);
     };
-    recognition.onerror = () => setListening(false);
+    recognition.onerror = () => {
+      setListening(false);
+      setError("The microphone stopped — check mic permission for this site and try again.");
+    };
     recognition.onend = () => setListening(false);
     recognitionRef.current = recognition;
     recognition.start();
@@ -128,6 +136,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   }, [onResult]);
 
   const start = useCallback(async () => {
+    setError(null);
     if (!supportsSpeechmatics()) {
       startBrowserFallback();
       return;
@@ -194,6 +203,14 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
     } catch (err) {
       console.error("Speechmatics STT unavailable, falling back to browser recognition:", err);
       stopSpeechmatics();
+      // Mic permission denial is the one failure the fallback can't fix —
+      // the browser engine needs the same permission. Name it instead of
+      // silently trying a second engine that will also fail.
+      if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
+        setError("Microphone access is blocked — allow the mic for this site in your browser, then try again.");
+        setListening(false);
+        return;
+      }
       startBrowserFallback();
     }
   }, [onResult, startBrowserFallback, stopSpeechmatics]);
@@ -214,7 +231,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
     };
   }, [stopSpeechmatics]);
 
-  return { listening, supported, start, stop };
+  return { listening, supported, start, stop, error };
 }
 
 // Strips characters that read out literally as words on several common
