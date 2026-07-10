@@ -167,7 +167,7 @@ export default function SidebarNav({
               </p>
             )}
             {section.items.map((item) => (
-              <Link key={item.href} href={item.href} style={itemStyle(isActive(item.href))}>
+              <Link key={item.href} href={item.href} title={item.label} style={itemStyle(isActive(item.href))}>
                 <item.icon size={16} />
                 <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{item.label}</span>
                 {item.premium && isFreeTier && (
