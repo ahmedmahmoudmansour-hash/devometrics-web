@@ -32,18 +32,41 @@ type NavItem = {
   premium?: boolean;
 };
 
-const PRIMARY_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Progress", icon: LayoutDashboard },
-  { href: "/dashboard/tasks", label: "Tasks", icon: ListChecks },
-  { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
-  { href: "/dashboard/discovery", label: "Discovery", icon: Compass },
-  { href: "/dashboard/gap-analysis", label: "Gap Analysis", icon: Target },
-  { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
-  { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
-  { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
-  { href: "/dashboard/journey", label: "Journey", icon: History },
-  { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
-  { href: "/dashboard/roleplay", label: "Scenarios", icon: Drama, premium: true },
+// Grouped by what the user is trying to DO, not by when features shipped —
+// a 13-item flat list made even the flagship AI Coach hard to find. Section
+// labels hide with the rest of the text when the sidebar collapses to
+// icons-only on narrow screens.
+const SECTIONS: { label: string | null; items: NavItem[] }[] = [
+  {
+    label: null,
+    items: [{ href: "/dashboard", label: "Progress", icon: LayoutDashboard }],
+  },
+  {
+    label: "Understand",
+    items: [
+      { href: "/dashboard/discovery", label: "Discovery", icon: Compass },
+      { href: "/dashboard/gap-analysis", label: "Gap Analysis", icon: Target },
+      { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
+      { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
+      { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
+    ],
+  },
+  {
+    label: "Grow",
+    items: [
+      { href: "/dashboard/coach", label: "AI Coach", icon: Sparkles },
+      { href: "/dashboard/roleplay", label: "Practice Scenarios", icon: Drama, premium: true },
+      { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
+      { href: "/dashboard/journey", label: "My Journey", icon: History },
+    ],
+  },
+  {
+    label: "Organize",
+    items: [
+      { href: "/dashboard/tasks", label: "Tasks & Calendar", icon: ListChecks },
+      { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
+    ],
+  },
 ];
 
 export default function SidebarNav({
@@ -125,33 +148,60 @@ export default function SidebarNav({
       </Link>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-        {PRIMARY_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href} style={itemStyle(isActive(item.href))}>
-            <item.icon size={16} />
-            <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{item.label}</span>
-            {item.premium && isFreeTier && (
-              <Lock size={12} className="dashboard-sidebar-label" style={{ color: "var(--amber)", flexShrink: 0 }} />
+        {SECTIONS.map((section, i) => (
+          <div key={section.label ?? `section-${i}`} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {section.label && (
+              <p
+                className="dashboard-sidebar-label"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                  opacity: 0.75,
+                  padding: "10px 14px 2px",
+                }}
+              >
+                {section.label}
+              </p>
             )}
-          </Link>
+            {section.items.map((item) => (
+              <Link key={item.href} href={item.href} style={itemStyle(isActive(item.href))}>
+                <item.icon size={16} />
+                <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{item.label}</span>
+                {item.premium && isFreeTier && (
+                  <Lock size={12} className="dashboard-sidebar-label" style={{ color: "var(--amber)", flexShrink: 0 }} />
+                )}
+              </Link>
+            ))}
+          </div>
         ))}
 
+        <p
+          className="dashboard-sidebar-label"
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--text-muted)",
+            opacity: 0.75,
+            padding: "10px 14px 2px",
+          }}
+        >
+          Account
+        </p>
+        <Link href="/dashboard/profile" style={itemStyle(isActive("/dashboard/profile"))}>
+          <UserCircle size={16} />
+          <span className="dashboard-sidebar-label">Profile</span>
+        </Link>
         {isCompanyAdmin && (
           <Link href="/dashboard/company" style={itemStyle(isActive("/dashboard/company"), "amber")}>
             <Building2 size={16} />
             <span className="dashboard-sidebar-label">Company</span>
           </Link>
         )}
-
-        <Link href="/dashboard/coach" style={itemStyle(isActive("/dashboard/coach"))}>
-          <Sparkles size={16} />
-          <span className="dashboard-sidebar-label">AI Coach</span>
-        </Link>
-
-        <Link href="/dashboard/profile" style={itemStyle(isActive("/dashboard/profile"))}>
-          <UserCircle size={16} />
-          <span className="dashboard-sidebar-label">Profile</span>
-        </Link>
-
         {isPlatformAdmin && (
           <Link href="/dashboard/admin" style={itemStyle(isActive("/dashboard/admin"), "amber")}>
             <ShieldCheck size={16} />
