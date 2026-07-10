@@ -181,53 +181,80 @@ export async function POST(request: Request) {
     { role: "user" as const, content: message },
   ];
 
-  let reply: string;
-  try {
-    const completion = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: conversation,
-    });
-    reply = completion.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("\n");
-  } catch {
-    return NextResponse.json(
-      { error: "The coach is temporarily unavailable — please try again." },
-      { status: 502 }
-    );
-  }
-
-  await supabase.from("coach_messages").insert({
-    user_id: user.id,
-    role: "assistant",
-    content: reply,
+  // Streamed, ChatGPT-style: text deltas are piped to the client the moment
+  // Claude produces them, so the first words appear in ~1-2s instead of the
+  // user staring at "Thinking…" for the full generation. Persistence and
+  // GROW-memory updates happen server-side after the stream completes.
+  const stream = anthropic.messages.stream({
+    model: "claude-sonnet-5",
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: conversation,
   });
 
-  // Best-effort — a failure here shouldn't fail the whole reply the user is
-  // waiting on, it just means the running GROW summary doesn't advance this
-  // turn (it'll catch up next message).
-  try {
-    const updated = await updateGrowMemory(
-      growMemory
-        ? { goal: growMemory.goal ?? "", reality: growMemory.reality ?? "", options: growMemory.options ?? "", will: growMemory.will ?? "" }
-        : null,
-      message,
-      reply
-    );
-    await supabase.from("coach_grow_memory").upsert({
-      user_id: user.id,
-      goal: updated.goal || null,
-      reality: updated.reality || null,
-      options: updated.options || null,
-      will: updated.will || null,
-      updated_at: new Date().toISOString(),
-    });
-  } catch {
-    // Non-fatal — see comment above.
-  }
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let reply = "";
+      try {
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            reply += event.delta.text;
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+      } catch (err) {
+        console.error("coach stream failed:", err);
+        if (!reply) {
+          // Nothing reached the client yet — send a readable failure the UI
+          // can show as the message body.
+          controller.enqueue(
+            encoder.encode("The coach is temporarily unavailable — please try again.")
+          );
+        }
+        controller.close();
+        return;
+      }
 
-  return NextResponse.json({ reply });
+      controller.close();
+
+      if (!reply) return;
+      await supabase.from("coach_messages").insert({
+        user_id: user.id,
+        role: "assistant",
+        content: reply,
+      });
+
+      // Best-effort — a failure here shouldn't fail the reply the user
+      // already received, it just means the running GROW summary doesn't
+      // advance this turn (it'll catch up next message).
+      try {
+        const updated = await updateGrowMemory(
+          growMemory
+            ? { goal: growMemory.goal ?? "", reality: growMemory.reality ?? "", options: growMemory.options ?? "", will: growMemory.will ?? "" }
+            : null,
+          message,
+          reply
+        );
+        await supabase.from("coach_grow_memory").upsert({
+          user_id: user.id,
+          goal: updated.goal || null,
+          reality: updated.reality || null,
+          options: updated.options || null,
+          will: updated.will || null,
+          updated_at: new Date().toISOString(),
+        });
+      } catch {
+        // Non-fatal — see comment above.
+      }
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

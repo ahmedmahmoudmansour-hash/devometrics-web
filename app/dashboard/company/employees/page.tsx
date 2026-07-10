@@ -151,6 +151,7 @@ export default async function CompanyEmployeesPage() {
                                 department: r.department,
                                 country: r.country,
                                 managerName: r.managerName,
+                                managerEmail: r.managerEmail,
                                 businessUnit: r.businessUnit,
                                 location: r.location,
                               }}

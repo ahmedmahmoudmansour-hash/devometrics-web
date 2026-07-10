@@ -286,7 +286,7 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
                   </span>
                   {(annual ? plan.originalPrice.annual : plan.originalPrice.monthly) !== null && (
                     <p style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, marginTop: 4 }}>
-                      {Math.round(PROMO_DISCOUNT * 100)}% off through {PROMO_END_LABEL}
+                      {Math.round(PROMO_DISCOUNT * 100)}% off until {PROMO_END_LABEL}
                     </p>
                   )}
                 </>

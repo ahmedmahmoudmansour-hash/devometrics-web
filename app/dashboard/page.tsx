@@ -21,7 +21,7 @@ import { syncAchievements } from "@/lib/achievements/evaluate";
 import { computeCompositeScore } from "@/lib/dashboard/compositeScore";
 import { recordAndComputeMomentum } from "@/lib/momentum/momentum";
 import { listMySurveys } from "@/lib/surveys/actions";
-import { listTodayTasks } from "@/lib/tasks/actions";
+import { listTodayTasks, listOverdueTasks } from "@/lib/tasks/actions";
 import TodayTasksCard from "@/components/dashboard/TodayTasksCard";
 import UpcomingDeadlinesCard from "@/components/dashboard/UpcomingDeadlinesCard";
 import type {
@@ -117,6 +117,7 @@ export default async function DashboardPage() {
 
   const streakResult = await recordDailyActivity();
   const todayTasks = await listTodayTasks();
+  const overdueTasks = await listOverdueTasks();
   const { data: completedTaskCheck } = await supabase
     .from("personal_tasks")
     .select("id")
@@ -189,7 +190,7 @@ export default async function DashboardPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <OnboardingChecklist steps={onboardingSteps} />
           <UpcomingDeadlinesCard milestones={milestones ?? []} />
-          <TodayTasksCard tasks={todayTasks} />
+          <TodayTasksCard tasks={todayTasks} overdue={overdueTasks} />
           <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
           <PendingSurveysCard surveys={mySurveys} />
           <CareerHealthOverview

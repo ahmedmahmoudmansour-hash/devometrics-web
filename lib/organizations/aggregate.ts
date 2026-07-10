@@ -18,6 +18,7 @@ export type WorkforceRow = {
   department: string | null;
   country: string | null;
   managerName: string | null;
+  managerEmail: string | null;
   businessUnit: string | null;
   location: string | null;
   avatarUrl: string | null;
@@ -168,9 +169,9 @@ export async function buildCompanyData(): Promise<CompanyData> {
   // nothing and every member simply shows as active with blank HR fields.
   const { data: memberHrFields } = await supabase
     .from("organization_members")
-    .select("id, user_id, manager_name, business_unit, location, archived")
+    .select("id, user_id, manager_name, manager_email, business_unit, location, archived")
     .eq("organization_id", membership.organization_id)
-    .returns<{ id: string; user_id: string; manager_name: string | null; business_unit: string | null; location: string | null; archived: boolean }[]>();
+    .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; archived: boolean }[]>();
   const hrByMemberUser = new Map((memberHrFields ?? []).map((m) => [m.user_id, m]));
 
   const pendingInvites = (invites ?? []).map((invite) => ({
@@ -271,6 +272,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
       department: locationByMemberUser.get(p.id)?.department ?? null,
       country: locationByMemberUser.get(p.id)?.country ?? null,
       managerName: hrByMemberUser.get(p.id)?.manager_name ?? null,
+      managerEmail: hrByMemberUser.get(p.id)?.manager_email ?? null,
       businessUnit: hrByMemberUser.get(p.id)?.business_unit ?? null,
       location: hrByMemberUser.get(p.id)?.location ?? null,
       avatarUrl: p.avatar_url ?? null,

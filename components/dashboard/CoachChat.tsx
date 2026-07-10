@@ -245,9 +245,12 @@ export default function CoachChat({
   // finally block, which missed the user's own message appearing and made
   // scrolling feel inconsistent.
   const messageCount = messages.length;
+  // Also keyed on the last message's length so the view keeps following a
+  // reply as it streams in, not just when a whole message is added.
+  const lastMessageLength = messages[messages.length - 1]?.content.length ?? 0;
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [messageCount, loading]);
+  }, [messageCount, lastMessageLength, loading]);
 
   function toggleMic() {
     if (listening) stopListening();
@@ -303,10 +306,33 @@ export default function CoachChat({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Something went wrong");
       }
-      const { reply } = await res.json();
+      if (!res.body) throw new Error("Something went wrong");
+
+      // Streamed reply: an empty assistant bubble appears immediately and
+      // fills word-by-word as chunks arrive — same experience as ChatGPT/
+      // Claude, instead of a long "Thinking…" then a wall of text.
       const assistantIndex = messages.length + 1;
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      if (voice !== "off") {
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      setLoading(false);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let reply = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        reply += decoder.decode(value, { stream: true });
+        const current = reply;
+        setMessages((prev) => {
+          const next = [...prev];
+          next[assistantIndex] = { role: "assistant", content: current };
+          return next;
+        });
+      }
+
+      // Voice starts once the text is complete — the chunked TTS pipeline
+      // then speaks the first sentence while synthesizing the rest.
+      if (voice !== "off" && reply) {
         play(reply, voice).then((ok) => {
           if (!ok) setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex));
         });

@@ -22,7 +22,7 @@ const features: { title: string; description: string; tag?: string; tagColor?: s
   {
     title: "AI Career Coach",
     description:
-      "Conversational Q&A that remembers your full profile. Ask anything from \"Am I ready for promotion?\" to \"How do I transition into consulting?\" and get grounded, specific answers.",
+      "Conversational coaching — voice or text — that remembers your full profile and past sessions. Ask anything from \"Am I ready for promotion?\" to \"How do I transition into consulting?\", then get meeting notes and a concrete action plan from every session, with one-click follow-through into your task list.",
   },
   {
     title: "Assessment Center",
@@ -40,19 +40,28 @@ const features: { title: string; description: string; tag?: string; tagColor?: s
       "Live role-play through real workplace situations — difficult feedback, delegation, conflict, restructuring conversations — organized by career level. The AI plays the other person realistically, then gives direct feedback grounded in what you actually said. Text or free browser voice.",
   },
   {
+    title: "Career Paths Map",
+    description:
+      "An AI-generated map of where you can realistically go from here — leadership, deep-expertise, and cross-functional branches, each role with your readiness percentage today, the skills it requires, your specific gaps, and an honest time-to-readiness. Grounded in your own gap analysis, not generic career ladders.",
+    tag: "New",
+    tagColor: "var(--teal)",
+  },
+  {
     title: "Career Profile & Momentum",
     description:
       "A LinkedIn-style profile — job history, skills, qualifications, career aspirations — auto-filled from the CV you already uploaded. Your Career Health trend, streaks, and achievements track your progress automatically as you use the platform.",
   },
   {
-    title: "Daily Tasks",
+    title: "Tasks, Calendar & Workspace",
     description:
-      "Turn any milestone into today's concrete steps with one click of AI. Fully private — never visible to your manager or organization, by design, not just by default.",
+      "Turn any milestone into today's concrete steps with one click of AI, plan your week on a built-in calendar, and subscribe once to see it all inside your own Outlook, Google, or Apple calendar. A private AI Workspace turns your rough notes into summaries and action items. Fully private — never visible to your manager or organization, by design, not just by default.",
+    tag: "New",
+    tagColor: "var(--teal)",
   },
   {
     title: "Corporate Platform",
     description:
-      "Company workspace with its own admin, workforce skill inventory, a talent heatmap across your team, a leadership-readiness signal, and a custom competency framework mapped onto the scoring engine (with AI-assisted suggestions). Anonymous culture and pulse surveys with AI-drafted questions round out the picture — built on the same competency graph your people already use individually. Each company's data stays fully isolated from every other company.",
+      "Company workspace with its own admin, full employee records (title, department, business unit, manager, location — editable, archivable, exportable to Excel), a workforce skill inventory, a talent heatmap across your team, a leadership-readiness signal, and a custom competency framework mapped onto the scoring engine (with AI-assisted suggestions). Anonymous culture and pulse surveys with AI-drafted questions round out the picture — built on the same competency graph your people already use individually. Each company's data stays fully isolated from every other company.",
     href: "/enterprise",
   },
 ];

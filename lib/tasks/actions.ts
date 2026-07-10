@@ -94,6 +94,30 @@ export async function listTodayTasks(): Promise<PersonalTask[]> {
   return data ?? [];
 }
 
+// One-off tasks left incomplete on a past date — surfaced on the home
+// dashboard so they don't silently vanish from view. Recurring tasks are
+// deliberately excluded: yesterday's un-ticked "daily review" instance is
+// noise (today's instance exists), not a real overdue commitment.
+export async function listOverdueTasks(): Promise<PersonalTask[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("personal_tasks")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("completed", false)
+    .eq("recurring", "none")
+    .lt("date", todayStr())
+    .order("date", { ascending: false })
+    .limit(10)
+    .returns<PersonalTask[]>();
+  return data ?? [];
+}
+
 export type WeekDeadline = { milestoneId: string; title: string; date: string };
 
 // Generic date-range fetch backing all three calendar granularities (week,

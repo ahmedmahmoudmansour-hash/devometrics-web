@@ -21,7 +21,7 @@ interface SpeechRecognitionLike extends EventTarget {
   start: () => void;
   stop: () => void;
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
   onend: (() => void) | null;
 }
 
@@ -63,6 +63,12 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   // indistinguishable from a mic that's broken, which testers report as
   // "not working" with no way to tell us why.
   const [error, setError] = useState<string | null>(null);
+  // Whether the USER still wants the mic on — distinct from whether the
+  // browser engine happens to be running. Chrome/Edge recognition kills
+  // itself after ~8s of silence ("no-speech") or randomly ("network"/
+  // "aborted"); as long as this is true, onend just restarts it instead of
+  // reporting "the microphone stopped" for what was really just silence.
+  const wantListeningRef = useRef(false);
 
   // Browser SpeechRecognition fallback
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -125,11 +131,36 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       const transcript = event.results[event.results.length - 1][0].transcript;
       onResult(transcript);
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      const code = event?.error ?? "";
+      // no-speech = the user just hadn't said anything yet; aborted = we (or
+      // the browser) restarted it. Neither is a real failure — onend's
+      // restart handles them. Everything else is worth telling the user.
+      if (code === "no-speech" || code === "aborted") return;
+      wantListeningRef.current = false;
       setListening(false);
-      setError("The microphone stopped — check mic permission for this site and try again.");
+      if (code === "not-allowed" || code === "service-not-allowed") {
+        setError("Microphone access is blocked — allow the mic for this site in your browser, then try again.");
+      } else if (code === "network") {
+        setError("The browser's speech service couldn't be reached — Chrome is the most reliable, or type instead.");
+      } else {
+        setError("The microphone stopped — check mic permission for this site and try again.");
+      }
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      // The engine self-terminates constantly in continuous mode (silence
+      // timeouts, service hiccups). If the user never clicked stop, bring it
+      // straight back instead of quietly going deaf.
+      if (wantListeningRef.current) {
+        try {
+          recognition.start();
+          return;
+        } catch {
+          // fall through to reporting stopped
+        }
+      }
+      setListening(false);
+    };
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
@@ -137,6 +168,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
 
   const start = useCallback(async () => {
     setError(null);
+    wantListeningRef.current = true;
     if (!supportsSpeechmatics()) {
       startBrowserFallback();
       return;
@@ -207,6 +239,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       // the browser engine needs the same permission. Name it instead of
       // silently trying a second engine that will also fail.
       if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
+        wantListeningRef.current = false;
         setError("Microphone access is blocked — allow the mic for this site in your browser, then try again.");
         setListening(false);
         return;
@@ -216,6 +249,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   }, [onResult, startBrowserFallback, stopSpeechmatics]);
 
   const stop = useCallback(() => {
+    wantListeningRef.current = false;
     stopSpeechmatics();
     recognitionRef.current?.stop();
     setListening(false);
@@ -226,6 +260,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   // background.
   useEffect(() => {
     return () => {
+      wantListeningRef.current = false;
       stopSpeechmatics();
       recognitionRef.current?.stop();
     };

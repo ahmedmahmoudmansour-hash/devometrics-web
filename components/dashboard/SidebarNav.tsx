@@ -192,13 +192,12 @@ export default function SidebarNav({
               <p
                 className="dashboard-sidebar-label"
                 style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.09em",
                   textTransform: "uppercase",
-                  color: "var(--text-muted)",
-                  opacity: 0.75,
-                  padding: "10px 14px 2px",
+                  color: "var(--text)",
+                  padding: "12px 14px 2px",
                 }}
               >
                 {section.label}
@@ -219,13 +218,12 @@ export default function SidebarNav({
         <p
           className="dashboard-sidebar-label"
           style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.09em",
             textTransform: "uppercase",
-            color: "var(--text-muted)",
-            opacity: 0.75,
-            padding: "10px 14px 2px",
+            color: "var(--text)",
+            padding: "12px 14px 2px",
           }}
         >
           Account

@@ -27,6 +27,7 @@ export default function EditEmployeeButton({
     department: string | null;
     country: string | null;
     managerName: string | null;
+    managerEmail: string | null;
     businessUnit: string | null;
     location: string | null;
   };
@@ -36,6 +37,7 @@ export default function EditEmployeeButton({
   const [department, setDepartment] = useState(initial.department ?? "");
   const [country, setCountry] = useState(initial.country ?? "");
   const [managerName, setManagerName] = useState(initial.managerName ?? "");
+  const [managerEmail, setManagerEmail] = useState(initial.managerEmail ?? "");
   const [businessUnit, setBusinessUnit] = useState(initial.businessUnit ?? "");
   const [location, setLocation] = useState(initial.location ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function EditEmployeeButton({
         department,
         country,
         manager_name: managerName,
+        manager_email: managerEmail,
         business_unit: businessUnit,
         location,
       });
@@ -148,6 +151,10 @@ export default function EditEmployeeButton({
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
                 Manager
                 <input type="text" value={managerName} onChange={(e) => setManagerName(e.target.value)} style={fieldStyle} />
+              </label>
+              <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
+                Manager email
+                <input type="email" value={managerEmail} onChange={(e) => setManagerEmail(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
                 Country

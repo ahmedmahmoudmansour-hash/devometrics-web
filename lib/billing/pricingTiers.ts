@@ -23,7 +23,8 @@ export function studentPrice(region: PricingRegion, cadence: "monthly" | "annual
 // use a Lemon Squeezy discount code -- what's charged at checkout must match
 // what's shown here.
 export const PROMO_DISCOUNT = 0.25;
-export const PROMO_END_DATE = new Date("2026-10-01T00:00:00Z");
+// Discount runs through Oct 31 — full price starts Nov 1, 2026.
+export const PROMO_END_DATE = new Date("2026-11-01T00:00:00Z");
 
 export function isPromoActive(now: Date = new Date()): boolean {
   return now < PROMO_END_DATE;

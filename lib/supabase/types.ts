@@ -68,6 +68,7 @@ export type OrganizationMember = {
   // Added in migration 0049 — may be absent until it's run; readers use
   // isolated defensive queries rather than assuming these exist.
   manager_name?: string | null;
+  manager_email?: string | null;
   business_unit?: string | null;
   location?: string | null;
   archived?: boolean;

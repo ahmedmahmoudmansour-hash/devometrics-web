@@ -382,6 +382,7 @@ export async function updateMemberDetails(
     department?: string;
     country?: string;
     manager_name?: string;
+    manager_email?: string;
     business_unit?: string;
     location?: string;
   }

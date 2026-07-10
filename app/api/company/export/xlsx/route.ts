@@ -16,6 +16,7 @@ export async function GET() {
     Department: r.department ?? "",
     "Business Unit": r.businessUnit ?? "",
     Manager: r.managerName ?? "",
+    "Manager Email": r.managerEmail ?? "",
     Country: r.country ?? "",
     Location: r.location ?? "",
     Email: r.email,
