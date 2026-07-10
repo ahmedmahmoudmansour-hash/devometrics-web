@@ -179,7 +179,7 @@ export default async function DashboardPage() {
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <WelcomeModal
         name={profile?.full_name?.trim().split(/\s+/)[0] ?? null}
-        accountType={profile?.account_type ?? "individual"}
+        role={membership?.role === "admin" ? "admin" : membership ? "member" : null}
       />
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 32 }}>
