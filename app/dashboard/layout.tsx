@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/dashboard/SidebarNav";
+import CommandPalette from "@/components/dashboard/CommandPalette";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 
 // Single place where an enterprise workspace's accent color reaches every
@@ -62,6 +63,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         />
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
       </div>
+      <CommandPalette
+        isCompanyAdmin={membership?.role === "admin"}
+        isPlatformAdmin={!!profile?.is_admin}
+      />
     </div>
   );
 }

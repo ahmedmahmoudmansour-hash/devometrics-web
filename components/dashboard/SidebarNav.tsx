@@ -20,9 +20,11 @@ import {
   Lock,
   NotebookPen,
   Route,
+  Search,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { signOut } from "@/app/dashboard/actions";
+import { OPEN_PALETTE_EVENT } from "@/components/dashboard/CommandPalette";
 
 type NavItem = {
   href: string;
@@ -146,6 +148,42 @@ export default function SidebarNav({
       >
         Devometrics
       </Link>
+
+      <button
+        type="button"
+        title="Search (Ctrl+K)"
+        onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          margin: "0 0 14px",
+          padding: "8px 14px",
+          borderRadius: 8,
+          fontSize: 13,
+          color: "var(--text-muted)",
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid var(--border)",
+          cursor: "pointer",
+          width: "100%",
+        }}
+      >
+        <Search size={15} />
+        <span className="dashboard-sidebar-label" style={{ flex: 1, textAlign: "left" }}>Search</span>
+        <kbd
+          className="dashboard-sidebar-label"
+          style={{
+            fontSize: 10,
+            fontFamily: "inherit",
+            color: "var(--text-muted)",
+            border: "1px solid var(--border)",
+            borderRadius: 4,
+            padding: "1px 5px",
+          }}
+        >
+          Ctrl K
+        </kbd>
+      </button>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
         {SECTIONS.map((section, i) => (
