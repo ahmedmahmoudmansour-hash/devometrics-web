@@ -6,6 +6,7 @@ import { TrendingUp } from "lucide-react";
 export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null }) {
   const [title, setTitle] = useState(jobTitle ?? "");
   const [summary, setSummary] = useState<string | null>(null);
+  const [wasCached, setWasCached] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,8 +25,9 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Could not fetch trends");
       }
-      const { summary: text } = await res.json();
+      const { summary: text, cached } = await res.json();
       setSummary(text);
+      setWasCached(!!cached);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not fetch trends");
     } finally {
@@ -97,6 +99,11 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
           }}
         >
           {summary}
+          {wasCached && (
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12 }}>
+              ⚡ Served from cache — refreshed weekly, not re-searched on every visit.
+            </p>
+          )}
         </div>
       )}
     </div>

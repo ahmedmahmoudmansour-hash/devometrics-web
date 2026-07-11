@@ -6,6 +6,17 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_JOB_TITLE_LENGTH = 120;
 
+// Trends don't meaningfully change hour to hour — a cache hit is
+// near-instant vs. the multi-search agent loop below, which is what
+// actually made this feel slow (not the LLM call itself). Shared across ALL
+// users, not per-account: job-market trends for "Product Manager" are the
+// same regardless of who asked.
+const CACHE_TTL_HOURS = 24 * 7;
+
+function normalizeJobTitle(title: string): string {
+  return title.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 const SEARCH_ERROR_MESSAGES: Record<Anthropic.WebSearchToolResultErrorCode, string> = {
   too_many_requests: "Trend search is rate-limited right now — please try again in a few minutes.",
   max_uses_exceeded: "Reached the search limit for this request — please try again.",
@@ -36,11 +47,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Job title is too long" }, { status: 400 });
   }
 
+  const jobTitleKey = normalizeJobTitle(jobTitle);
+
+  // Cache check — a query error here (e.g. migration 0053 not run yet)
+  // falls straight through to the live search path below, same graceful
+  // degrade used everywhere else in this app for newer tables.
+  const { data: cached } = await supabase
+    .from("key_trends_cache")
+    .select("summary, generated_at")
+    .eq("job_title_key", jobTitleKey)
+    .maybeSingle<{ summary: string; generated_at: string }>();
+  if (cached) {
+    const ageHours = (Date.now() - new Date(cached.generated_at).getTime()) / 3_600_000;
+    if (ageHours < CACHE_TTL_HOURS) {
+      return NextResponse.json({ summary: cached.summary, cached: true });
+    }
+  }
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1024,
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 10 }],
+      // Was 10 — the prompt already asks for "2-4 searches," this just
+      // makes that a hard ceiling instead of a suggestion, bounding
+      // worst-case first-time latency instead of trusting the model to
+      // stop on its own.
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 4 }],
       messages: [
         {
           role: "user",
@@ -77,7 +109,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not generate trends right now" }, { status: 502 });
     }
 
-    return NextResponse.json({ summary });
+    // Best-effort — a cache write failure shouldn't fail the response the
+    // user is already looking at.
+    await supabase
+      .from("key_trends_cache")
+      .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary, generated_at: new Date().toISOString() })
+      .then(
+        () => {},
+        () => {}
+      );
+
+    return NextResponse.json({ summary, cached: false });
   } catch (err) {
     console.error("Trends generation failed:", err);
     return NextResponse.json({ error: "Could not fetch trends right now" }, { status: 502 });
