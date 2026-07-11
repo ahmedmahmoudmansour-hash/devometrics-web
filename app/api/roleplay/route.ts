@@ -140,37 +140,66 @@ export async function POST(request: Request) {
     relevantAssessments: Array.from(latestBySlug.values()),
   });
 
-  let reply: string;
-  try {
-    const completion = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages:
-        conversation.length === 1
-          ? [{ role: "user", content: `${scenario.openingMessage}\n\n${userMessage}` }]
-          : conversation,
-    });
-    reply = completion.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("\n");
-  } catch {
-    return NextResponse.json({ error: "The scenario is temporarily unavailable — please try again." }, { status: 502 });
-  }
+  // Streamed like the Coach route: text deltas reach the client as Claude
+  // produces them instead of waiting for the full in-character reply (which
+  // for a roleplay scenario can run long) before anything happens. This was
+  // the single biggest latency gap between Roleplay and Coach — Coach was
+  // streamed, this route wasn't.
+  const stream = anthropic.messages.stream({
+    model: "claude-sonnet-5",
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages:
+      conversation.length === 1
+        ? [{ role: "user", content: `${scenario.openingMessage}\n\n${userMessage}` }]
+        : conversation,
+  });
 
-  const finalMessages: RoleplayMessage[] = [...conversation, { role: "assistant", content: reply }];
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let reply = "";
+      try {
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            reply += event.delta.text;
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+      } catch (err) {
+        console.error("roleplay stream failed:", err);
+        if (!reply) {
+          controller.enqueue(
+            encoder.encode("The scenario is temporarily unavailable — please try again.")
+          );
+        }
+        controller.close();
+        return;
+      }
 
-  const { data: updated } = await supabase
-    .from("roleplay_sessions")
-    .update({
-      messages: finalMessages,
-      updated_at: new Date().toISOString(),
-      ...(endScenario ? { completed: true, feedback: reply } : {}),
-    })
-    .eq("id", session.id)
-    .select()
-    .single<RoleplaySession>();
+      controller.close();
+      if (!reply) return;
 
-  return NextResponse.json({ session: updated, reply });
+      const finalMessages: RoleplayMessage[] = [...conversation, { role: "assistant", content: reply }];
+      await supabase
+        .from("roleplay_sessions")
+        .update({
+          messages: finalMessages,
+          updated_at: new Date().toISOString(),
+          ...(endScenario ? { completed: true, feedback: reply } : {}),
+        })
+        .eq("id", session.id);
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+      // Client needs the session id (a new scenario's first turn creates
+      // it) before the stream finishes, to persist it for the next turn.
+      "X-Session-Id": session.id,
+    },
+  });
 }

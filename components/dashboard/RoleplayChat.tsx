@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { RoleplayScenario } from "@/lib/roleplay/scenarios";
 import type { RoleplaySession } from "@/lib/supabase/types";
@@ -49,6 +49,13 @@ export default function RoleplayChat({
   const [lastNamedVoice, setLastNamedVoice] = useState("sarah");
   const isSpeechMode = voice !== "off";
   const listRef = useRef<HTMLDivElement>(null);
+  // Follows a streaming reply as it grows, not just when a whole message is
+  // added.
+  const messageCount = messages.length;
+  const lastMessageLength = messages[messages.length - 1]?.content.length ?? 0;
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  }, [messageCount, lastMessageLength, loading]);
 
   // Switching into Speech mode immediately speaks the character's latest
   // message — the click IS the user gesture browsers require for audio, and
@@ -116,19 +123,39 @@ export default function RoleplayChat({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Something went wrong");
       }
-      const { reply, session } = await res.json();
+      if (!res.body) throw new Error("Something went wrong");
+
+      const newSessionId = res.headers.get("X-Session-Id");
+      if (newSessionId) setSessionId(newSessionId);
+
+      // Streamed reply — an empty bubble appears immediately and fills as
+      // Claude generates it, instead of waiting for the whole in-character
+      // reply (which used to be the single biggest source of "delay" here).
       const assistantIndex = messages.length + 1;
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      if (session?.id) setSessionId(session.id);
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      setLoading(false);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let reply = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        reply += decoder.decode(value, { stream: true });
+        const current = reply;
+        setMessages((prev) => {
+          const next = [...prev];
+          next[assistantIndex] = { role: "assistant", content: current };
+          return next;
+        });
+      }
+
       if (endScenario) setEnded(true);
-      if (voice !== "off") {
+      if (voice !== "off" && reply) {
         play(stripStageDirections(reply), voice).then((ok) => {
           if (!ok) setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex));
         });
       }
-      requestAnimationFrame(() => {
-        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

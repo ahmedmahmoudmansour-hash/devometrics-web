@@ -84,6 +84,21 @@ export function useVoicePlayback() {
       setError(null);
       setLoading(true);
 
+      // Claims the browser's "this play() is user-gesture-initiated" credit
+      // RIGHT NOW, synchronously, before the code below awaits a ~1-2s
+      // network round trip to synthesize the first chunk. Without this, a
+      // manual "Play" click can go through Chrome/Edge's autoplay policy at
+      // click-time but get silently rejected once .play() actually runs
+      // after that delay — the exact "I click it and nothing happens" bug,
+      // since a rejected promise here still gets caught below and reported,
+      // but a user who doesn't scroll to see the small red error text just
+      // experiences silence. Reusing THIS SAME <audio> element for the real
+      // playback (not creating a fresh one later) is what makes the
+      // unlock stick — some engines unlock per-element, not per-page.
+      const primed = new Audio();
+      primed.muted = true;
+      primed.play().catch(() => {});
+
       const chunks = splitForStreaming(text);
       // All chunks synthesize in parallel — chunk 2 is usually ready by the
       // time chunk 1 finishes playing. Pre-attach a no-op catch so an early
@@ -95,11 +110,13 @@ export function useVoicePlayback() {
         return p;
       });
 
-      const startChunk = async (index: number): Promise<HTMLAudioElement> => {
+      const startChunk = async (index: number, reuse?: HTMLAudioElement): Promise<HTMLAudioElement> => {
         const blob = await blobPromises[index];
         const url = URL.createObjectURL(blob);
         objectUrlsRef.current.push(url);
-        const audio = new Audio(url);
+        const audio = reuse ?? new Audio();
+        audio.muted = false;
+        audio.src = url;
         audioRef.current = audio;
         await audio.play();
         return audio;
@@ -112,7 +129,7 @@ export function useVoicePlayback() {
         });
 
       try {
-        const first = await startChunk(0);
+        const first = await startChunk(0, primed);
         if (isStale()) return false;
         setLoading(false);
         setPlaying(true);
@@ -139,6 +156,9 @@ export function useVoicePlayback() {
         return true;
       } catch (err) {
         if (isStale()) return false;
+        // Logged, not just surfaced in the UI — a small red error line below
+        // the fold is easy to miss; the console isn't.
+        console.error("Voice playback failed:", err);
         setError(err instanceof Error ? err.message : "Could not play audio");
         setLoading(false);
         setPlaying(false);
