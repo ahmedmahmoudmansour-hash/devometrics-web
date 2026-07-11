@@ -200,7 +200,7 @@ export default function CoachChat({
   const [lastNamedVoice, setLastNamedVoice] = useState(initialVoice !== "off" ? initialVoice : "sarah");
   const [, startTransition] = useTransition();
   const listRef = useRef<HTMLDivElement>(null);
-  const { play, stop: stopSpeaking, playing, loading: voiceLoading, error: voiceError } = useVoicePlayback();
+  const { play, startStream, stop: stopSpeaking, playing, loading: voiceLoading, error: voiceError } = useVoicePlayback();
   // The mic stays open in continuous mode, so while the coach's reply is
   // playing out loud the recognizer picks the coach's own voice up off the
   // speakers and auto-sends it back as if the user said it — the "AI
@@ -315,13 +315,26 @@ export default function CoachChat({
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       setLoading(false);
 
+      // Voice starts on the first SENTENCE the LLM finishes, not after the
+      // whole reply — Time To First Audio is the thing that actually reads
+      // as "fast," not total generation time. Each raw text delta is fed
+      // straight in as it arrives from the same fetch stream.
+      const voiceStream =
+        voice !== "off"
+          ? startStream(voice, {
+              onFirstChunkFailed: () => setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex)),
+            })
+          : null;
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let reply = "";
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        reply += decoder.decode(value, { stream: true });
+        const delta = decoder.decode(value, { stream: true });
+        reply += delta;
+        voiceStream?.push(delta);
         const current = reply;
         setMessages((prev) => {
           const next = [...prev];
@@ -329,14 +342,7 @@ export default function CoachChat({
           return next;
         });
       }
-
-      // Voice starts once the text is complete — the chunked TTS pipeline
-      // then speaks the first sentence while synthesizing the rest.
-      if (voice !== "off" && reply) {
-        play(reply, voice).then((ok) => {
-          if (!ok) setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex));
-        });
-      }
+      voiceStream?.end();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

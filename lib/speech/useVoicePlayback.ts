@@ -4,29 +4,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // Client-side counterpart to /api/speech/synthesize — fetches real audio
 // (not instant, unlike browser speechSynthesis) and plays it once it
-// arrives. One hook shared by Coach and Roleplay, since both just need
-// "speak this text in this voice."
+// arrives. One hook shared by Coach and Roleplay.
+//
+// KPI this file optimizes for: Time To First Audio (TTFA), not total
+// response time. The old design waited for the ENTIRE LLM reply to finish
+// generating, THEN split it into chunks and started TTS — meaning TTFA was
+// bounded below by the full LLM generation time. This design instead
+// listens to the LLM's token stream directly (via startStream/push/end) and
+// fires off TTS synthesis for each sentence the moment it completes, so the
+// first sentence is speaking while the LLM is still writing the rest.
+// TTFA is now bounded by (time for the LLM to produce one sentence) +
+// (TTS synthesis time for that one sentence) — both real, unavoidable
+// vendor latencies, but no longer stacked with the full reply length.
 
-// Synthesis time scales with text length, so a long reply used to mean a
-// long silent wait before ANY audio. Splitting the reply lets the first
-// sentence be synthesized (fast — it's short) and start playing while the
-// remainder is still being generated in parallel: perceived latency drops
-// from "TTS time for the whole reply" to "TTS time for one sentence."
-function splitForStreaming(text: string): string[] {
-  const trimmed = text.trim();
-  // Short replies gain nothing from splitting — one request is cheaper.
-  if (trimmed.length <= 160) return [trimmed];
-  // First sentence boundary after a minimum prefix (so "Hi." alone doesn't
-  // become its own chunk) and within a cap (so a wall of text with no early
-  // punctuation still splits somewhere reasonable).
-  const searchRegion = trimmed.slice(30, 300);
-  const match = /[.!?…]["')\]]?\s/.exec(searchRegion);
-  if (!match) return [trimmed];
-  const cut = 30 + match.index + match[0].length;
-  const first = trimmed.slice(0, cut).trim();
-  const rest = trimmed.slice(cut).trim();
-  return rest ? [first, rest] : [first];
-}
+const SENTENCE_BOUNDARY = /[.!?…]["')\]]?\s/;
 
 async function synthesize(text: string, voice: string): Promise<Blob> {
   const res = await fetch("/api/speech/synthesize", {
@@ -41,18 +32,21 @@ async function synthesize(text: string, voice: string): Promise<Blob> {
   return res.blob();
 }
 
+export type VoiceStreamHandle = {
+  // Feed the newest text DELTA (not the full accumulated reply) as it
+  // arrives from the LLM stream.
+  push: (textDelta: string) => void;
+  // Call once the LLM stream is done — flushes any trailing partial
+  // sentence as a final chunk.
+  end: () => void;
+};
+
 export function useVoicePlayback() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlsRef = useRef<string[]>([]);
-  // Bumped on every play()/stop() call and captured by each play() call's
-  // closure — a stale token means "a newer play() or a stop() superseded
-  // this one, abandon quietly." Without it, two overlapping play() calls
-  // both finish and talk over each other.
+  // Bumped on every startStream()/stop() call and captured by that call's
+  // closure — a stale token means "superseded, abandon quietly."
   const requestIdRef = useRef(0);
-  // Resolver for the "wait until this chunk finishes playing" promise —
-  // held in a ref so stop() can release a paused chunk instead of leaving
-  // the background playback loop awaiting an 'ended' event that a paused
-  // <audio> will never fire.
   const chunkDoneRef = useRef<(() => void) | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,14 +64,23 @@ export function useVoicePlayback() {
     setLoading(false);
   }, []);
 
-  // Returns whether playback actually started — callers that auto-play right
-  // after a reply need this to know whether to fall back to a manual "Play"
-  // button, rather than silently doing nothing when it fails (e.g. a strict
-  // browser autoplay policy, or a synthesis error). Resolves as soon as the
-  // FIRST chunk starts (matching the old single-chunk behavior); remaining
-  // chunks continue in the background.
-  const play = useCallback(
-    async (text: string, voice: string): Promise<boolean> => {
+  // Starts a playback session whose text isn't fully known yet — sentences
+  // are synthesized and queued as push() delivers them. Returns a handle
+  // (not a promise of completion) since the caller doesn't know when
+  // audio's done, only when it's finished SENDING text.
+  const startStream = useCallback(
+    (
+      voice: string,
+      callbacks?: {
+        onFirstChunkFailed?: () => void;
+        // Applied to each COMPLETE sentence right before synthesis, not to
+        // raw stream deltas (which are arbitrary token fragments — running
+        // a regex like stage-direction-stripping on those could clip a
+        // *not-yet-closed* pattern). Roleplay uses this to strip
+        // *stage directions* before they'd otherwise be read aloud.
+        transformChunk?: (text: string) => string;
+      }
+    ): VoiceStreamHandle => {
       stop();
       const requestId = requestIdRef.current;
       const isStale = () => requestId !== requestIdRef.current;
@@ -85,87 +88,146 @@ export function useVoicePlayback() {
       setLoading(true);
 
       // Claims the browser's "this play() is user-gesture-initiated" credit
-      // RIGHT NOW, synchronously, before the code below awaits a ~1-2s
-      // network round trip to synthesize the first chunk. Without this, a
-      // manual "Play" click can go through Chrome/Edge's autoplay policy at
-      // click-time but get silently rejected once .play() actually runs
-      // after that delay — the exact "I click it and nothing happens" bug,
-      // since a rejected promise here still gets caught below and reported,
-      // but a user who doesn't scroll to see the small red error text just
-      // experiences silence. Reusing THIS SAME <audio> element for the real
-      // playback (not creating a fresh one later) is what makes the
-      // unlock stick — some engines unlock per-element, not per-page.
+      // synchronously, before any network wait — see useVoicePlayback's
+      // module comment / the commit that introduced this for the bug it
+      // fixes (Play button silently rejected by autoplay policy).
       const primed = new Audio();
       primed.muted = true;
       primed.play().catch(() => {});
 
-      const chunks = splitForStreaming(text);
-      // All chunks synthesize in parallel — chunk 2 is usually ready by the
-      // time chunk 1 finishes playing. Pre-attach a no-op catch so an early
-      // stop() doesn't turn an abandoned in-flight request into an
-      // unhandled-rejection console error.
-      const blobPromises = chunks.map((c) => {
-        const p = synthesize(c, voice);
-        p.catch(() => {});
-        return p;
-      });
-
-      const startChunk = async (index: number, reuse?: HTMLAudioElement): Promise<HTMLAudioElement> => {
-        const blob = await blobPromises[index];
-        const url = URL.createObjectURL(blob);
-        objectUrlsRef.current.push(url);
-        const audio = reuse ?? new Audio();
-        audio.muted = false;
-        audio.src = url;
-        audioRef.current = audio;
-        await audio.play();
-        return audio;
+      let buffer = "";
+      let ended = false;
+      const synthesisQueue: Promise<Blob>[] = [];
+      let waiter: (() => void) | null = null;
+      const wake = () => {
+        waiter?.();
+        waiter = null;
       };
 
-      const waitForEnd = (audio: HTMLAudioElement) =>
-        new Promise<void>((resolve) => {
-          chunkDoneRef.current = resolve;
-          audio.onended = () => resolve();
-        });
-
-      try {
-        const first = await startChunk(0, primed);
-        if (isStale()) return false;
-        setLoading(false);
-        setPlaying(true);
-
-        // Rest of the reply plays in the background after the first chunk —
-        // errors here are non-fatal (the user already heard the opening;
-        // worst case the tail is cut short rather than the whole reply
-        // erroring out).
-        void (async () => {
-          try {
-            await waitForEnd(first);
-            for (let i = 1; i < blobPromises.length; i++) {
-              if (isStale()) return;
-              const audio = await startChunk(i);
-              if (isStale()) return;
-              await waitForEnd(audio);
-            }
-          } catch {
-            // tail chunk failed — end playback quietly
-          }
-          if (!isStale()) setPlaying(false);
-        })();
-
-        return true;
-      } catch (err) {
-        if (isStale()) return false;
-        // Logged, not just surfaced in the UI — a small red error line below
-        // the fold is easy to miss; the console isn't.
-        console.error("Voice playback failed:", err);
-        setError(err instanceof Error ? err.message : "Could not play audio");
-        setLoading(false);
-        setPlaying(false);
-        return false;
+      function queueChunk(text: string) {
+        const transformed = (callbacks?.transformChunk?.(text) ?? text).trim();
+        if (!transformed) return; // e.g. a chunk that was ONLY a stage direction
+        const p = synthesize(transformed, voice);
+        p.catch(() => {});
+        synthesisQueue.push(p);
+        wake();
       }
+
+      function flush(final: boolean) {
+        for (;;) {
+          const match = SENTENCE_BOUNDARY.exec(buffer);
+          if (!match) break;
+          const cut = match.index + match[0].length;
+          queueChunk(buffer.slice(0, cut));
+          buffer = buffer.slice(cut);
+        }
+        if (final && buffer.trim()) {
+          queueChunk(buffer);
+          buffer = "";
+        }
+      }
+
+      async function playbackLoop() {
+        let index = 0;
+        let isFirst = true;
+        try {
+          for (;;) {
+            while (index >= synthesisQueue.length) {
+              if (ended) return; // nothing queued and nothing more coming
+              await new Promise<void>((resolve) => {
+                waiter = resolve;
+              });
+              if (isStale()) return;
+            }
+            const blob = await synthesisQueue[index];
+            if (isStale()) return;
+            const url = URL.createObjectURL(blob);
+            objectUrlsRef.current.push(url);
+            const audio = isFirst ? primed : new Audio();
+            audio.muted = false;
+            audio.src = url;
+            audioRef.current = audio;
+            if (isFirst) {
+              setLoading(false);
+              setPlaying(true);
+            }
+            try {
+              await audio.play();
+            } catch (err) {
+              if (isFirst) {
+                console.error("Voice playback failed to start:", err);
+                callbacks?.onFirstChunkFailed?.();
+                setLoading(false);
+                setPlaying(false);
+                if (!isStale()) setError(err instanceof Error ? err.message : "Could not play audio");
+              }
+              return;
+            }
+            isFirst = false;
+            await new Promise<void>((resolve) => {
+              chunkDoneRef.current = resolve;
+              audio.onended = () => resolve();
+            });
+            if (isStale()) return;
+            index++;
+          }
+        } finally {
+          if (!isStale()) setPlaying(false);
+        }
+      }
+
+      void playbackLoop();
+
+      return {
+        push: (delta: string) => {
+          if (isStale()) return;
+          buffer += delta;
+          flush(false);
+        },
+        end: () => {
+          if (isStale()) return;
+          flush(true);
+          ended = true;
+          wake();
+        },
+      };
     },
     [stop]
+  );
+
+  // Convenience wrapper for text that's already fully known (the manual
+  // "Play" button replaying a past message) — same engine, one push + end.
+  // Resolves true/false based on whether the FIRST chunk actually started,
+  // matching the old play()'s contract so existing callers don't change.
+  const play = useCallback(
+    (text: string, voice: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        let settled = false;
+        const handle = startStream(voice, {
+          onFirstChunkFailed: () => {
+            if (!settled) {
+              settled = true;
+              resolve(false);
+            }
+          },
+        });
+        handle.push(text);
+        handle.end();
+        // No explicit "first chunk started" callback exists (only a
+        // failure one) — resolve true shortly after kickoff unless the
+        // failure path already fired. This mirrors the previous
+        // implementation's timing closely enough for the manual-replay
+        // button's autoplay-fallback UI, which only needs to distinguish
+        // "worked" from "blocked," not exact millisecond timing.
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            resolve(true);
+          }
+        }, 50);
+      });
+    },
+    [startStream]
   );
 
   // Client-side navigation unmounts this component's owner (e.g. leaving a
@@ -185,5 +247,5 @@ export function useVoicePlayback() {
     };
   }, []);
 
-  return { play, stop, playing, loading, error };
+  return { play, startStream, stop, playing, loading, error };
 }

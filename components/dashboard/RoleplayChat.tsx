@@ -81,7 +81,7 @@ export default function RoleplayChat({
     play(latest ? stripStageDirections(latest.content) : `Hi, this is ${label}.`, name);
   }
 
-  const { play, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
+  const { play, startStream, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
   // Same fix as CoachChat: with the mic in continuous mode, the recognizer
   // hears the scenario character's own reply coming out of the speakers and
   // auto-sends it back — heard as the AI "interrupting" or talking to
@@ -135,13 +135,27 @@ export default function RoleplayChat({
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       setLoading(false);
 
+      // Voice starts on the first SENTENCE, not after the whole reply —
+      // Time To First Audio is what actually reads as "fast." Stage
+      // directions (*nods*) are stripped per-sentence right before TTS,
+      // not from raw deltas, since a delta can be an unclosed *fragment*.
+      const voiceStream =
+        voice !== "off"
+          ? startStream(voice, {
+              onFirstChunkFailed: () => setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex)),
+              transformChunk: stripStageDirections,
+            })
+          : null;
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let reply = "";
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        reply += decoder.decode(value, { stream: true });
+        const delta = decoder.decode(value, { stream: true });
+        reply += delta;
+        voiceStream?.push(delta);
         const current = reply;
         setMessages((prev) => {
           const next = [...prev];
@@ -149,13 +163,9 @@ export default function RoleplayChat({
           return next;
         });
       }
+      voiceStream?.end();
 
       if (endScenario) setEnded(true);
-      if (voice !== "off" && reply) {
-        play(stripStageDirections(reply), voice).then((ok) => {
-          if (!ok) setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex));
-        });
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
