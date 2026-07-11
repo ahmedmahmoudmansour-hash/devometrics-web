@@ -241,6 +241,35 @@ export type Milestone = {
   created_at: string;
 };
 
+export type SuccessionCandidate = {
+  userId: string;
+  name: string;
+  fitScore: number;
+  readiness: string;
+  strengths: string[];
+  gaps: string[];
+  developmentFocus: string;
+  whyRanked: string;
+};
+
+export type SuccessionReport = {
+  generatedAt: string;
+  candidates: SuccessionCandidate[];
+  riskNote: string;
+  hasStrongSuccessor: boolean;
+};
+
+export type SuccessionRole = {
+  id: string;
+  organization_id: string;
+  title: string;
+  description: string;
+  report: SuccessionReport | null;
+  generated_at: string | null;
+  created_by: string;
+  created_at: string;
+};
+
 export type RoleplayMessage = {
   role: "user" | "assistant";
   content: string;

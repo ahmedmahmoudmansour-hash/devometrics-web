@@ -1,14 +1,18 @@
 import Link from "next/link";
 
-export default function CompanyNavTabs({ active }: { active: "profile" | "employees" | "surveys" }) {
-  const tabs: { key: "profile" | "employees" | "surveys"; label: string; href: string }[] = [
+type TabKey = "profile" | "employees" | "analytics" | "succession" | "surveys";
+
+export default function CompanyNavTabs({ active }: { active: TabKey }) {
+  const tabs: { key: TabKey; label: string; href: string }[] = [
     { key: "profile", label: "Profile", href: "/dashboard/company" },
     { key: "employees", label: "Employees", href: "/dashboard/company/employees" },
+    { key: "analytics", label: "Analytics", href: "/dashboard/company/analytics" },
+    { key: "succession", label: "Succession", href: "/dashboard/company/succession" },
     { key: "surveys", label: "Surveys", href: "/dashboard/company/surveys" },
   ];
 
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: "1px solid var(--border)" }}>
+    <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: "1px solid var(--border)", flexWrap: "wrap" }}>
       {tabs.map((tab) => (
         <Link
           key={tab.key}
