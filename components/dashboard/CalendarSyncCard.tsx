@@ -1,13 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { getCalendarFeedToken } from "@/lib/tasks/calendarFeed";
+import { importCalendarICS } from "@/lib/tasks/icsImportAction";
 
 export default function CalendarSyncCard() {
+  const router = useRouter();
   const [feedUrl, setFeedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<{ imported?: number; error?: string } | null>(null);
+  const [isImporting, startImportTransition] = useTransition();
 
   function enable() {
     setError(null);
@@ -19,6 +26,24 @@ export default function CalendarSyncCard() {
       }
       setFeedUrl(`${window.location.origin}/api/calendar/feed?t=${result.token}`);
     });
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImportStatus(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      startImportTransition(async () => {
+        const result = await importCalendarICS(text);
+        setImportStatus(result);
+        if (result.imported) router.refresh();
+      });
+    };
+    reader.onerror = () => setImportStatus({ error: "Could not read that file." });
+    reader.readAsText(file);
   }
 
   async function copy() {
@@ -126,6 +151,51 @@ export default function CalendarSyncCard() {
           </p>
         </div>
       )}
+
+      <div style={{ borderTop: "1px solid var(--border)", marginTop: 16, paddingTop: 14 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>⬆ Import from Outlook / Google / Apple</h3>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, marginBottom: 10, lineHeight: 1.5, maxWidth: 520 }}>
+          Already have events somewhere else? Export a calendar as an .ics file and bring it in as
+          tasks — a one-time import, not a live sync.
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".ics,text/calendar"
+          onChange={handleImportFile}
+          style={{ display: "none" }}
+          id="ics-import-input"
+        />
+        <label
+          htmlFor="ics-import-input"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: "8px 14px",
+            fontSize: 12,
+            fontWeight: 700,
+            color: "var(--text)",
+            cursor: isImporting ? "default" : "pointer",
+            opacity: isImporting ? 0.6 : 1,
+          }}
+        >
+          {isImporting ? "Importing…" : "Choose .ics file"}
+        </label>
+        {importStatus?.imported !== undefined && (
+          <p style={{ fontSize: 12, color: "var(--teal)", marginTop: 8 }}>
+            ✓ Imported {importStatus.imported} event{importStatus.imported === 1 ? "" : "s"} as tasks.
+          </p>
+        )}
+        {importStatus?.error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 8 }}>{importStatus.error}</p>}
+        <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
+          In Outlook: File → Save Calendar → export as .ics. In Google Calendar: Settings → Import &
+          export → Export. In Apple Calendar: File → Export.
+        </p>
+      </div>
     </div>
   );
 }
