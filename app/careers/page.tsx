@@ -28,9 +28,9 @@ export default function CareersPage() {
               hiring for. When that changes, we&apos;ll post the role here.
             </p>
             <p>
-              In the meantime, you&apos;re welcome to reach out any time through our{" "}
-              <a href="mailto:support@devometrics.com" style={{ color: "var(--teal)" }}>
-                support address
+              In the meantime, you&apos;re welcome to reach out any time at{" "}
+              <a href="mailto:careers@devometrics.com" style={{ color: "var(--teal)" }}>
+                careers@devometrics.com
               </a>{" "}
               — we do read those.
             </p>
