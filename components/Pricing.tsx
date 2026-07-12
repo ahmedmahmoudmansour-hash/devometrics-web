@@ -299,7 +299,7 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
 
             {plan.cta === "Contact sales" ? (
               <Link
-                href="/enterprise"
+                href="/contact?type=sales"
                 style={{
                   width: "100%",
                   padding: "13px",

@@ -427,8 +427,8 @@ export default function EnterprisePage() {
             >
               Set up your company workspace →
             </Link>
-            <a
-              href="mailto:sales@devometrics.com?subject=Devometrics%20for%20Enterprise"
+            <Link
+              href="/contact?type=sales"
               style={{
                 color: "var(--text)",
                 textDecoration: "none",
@@ -440,7 +440,7 @@ export default function EnterprisePage() {
               }}
             >
               Talk to sales
-            </a>
+            </Link>
           </div>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 20 }}>
             Prefer email? Sales:{" "}

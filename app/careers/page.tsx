@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -35,6 +36,23 @@ export default function CareersPage() {
               — we do read those.
             </p>
           </div>
+
+          <Link
+            href="/contact?type=careers"
+            style={{
+              display: "inline-block",
+              marginTop: 28,
+              background: "var(--teal)",
+              color: "#0A0F1E",
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 700,
+              padding: "12px 22px",
+              borderRadius: 10,
+            }}
+          >
+            Send us a message →
+          </Link>
         </div>
       </main>
       <Footer />
