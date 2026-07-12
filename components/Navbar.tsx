@@ -144,7 +144,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile theme toggle + hamburger */}
-        <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="flex md:hidden" style={{ alignItems: "center", gap: 8 }}>
         <ThemeToggle />
         <button
           onClick={() => setMenuOpen(!menuOpen)}
