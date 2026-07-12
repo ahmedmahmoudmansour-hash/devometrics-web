@@ -8,6 +8,8 @@ import {
   STUDENT_DISCOUNT,
   PROMO_DISCOUNT,
   PROMO_END_DATE,
+  ENTERPRISE_PRICING,
+  ENTERPRISE_MIN_SEATS,
   isPromoActive,
   promoPrice,
   type PricingRegion,
@@ -36,6 +38,7 @@ function buildPlans(region: PricingRegion) {
       name: "Free",
       price: { monthly: 0, annual: 0 },
       originalPrice: { monthly: null as number | null, annual: null as number | null },
+      perSeat: false,
       description: "Start mapping your career today.",
       features: [
         "Basic competency profile",
@@ -52,6 +55,7 @@ function buildPlans(region: PricingRegion) {
       name: "Premium",
       price: { monthly: premiumMonthly, annual: premiumAnnual },
       originalPrice: { monthly: originalMonthly, annual: originalAnnual },
+      perSeat: false,
       description: "The full gap analysis and development engine.",
       features: [
         "Everything in Free",
@@ -71,8 +75,9 @@ function buildPlans(region: PricingRegion) {
     },
     {
       name: "Enterprise",
-      price: { monthly: null, annual: null },
+      price: { monthly: ENTERPRISE_PRICING[region], annual: null },
       originalPrice: { monthly: null as number | null, annual: null as number | null },
+      perSeat: true,
       description: "Workforce intelligence for teams and organizations.",
       features: [
         "Everything in Premium",
@@ -85,8 +90,8 @@ function buildPlans(region: PricingRegion) {
         "Bulk employee import + Excel export",
         "Fully isolated company data",
       ],
-      cta: "Contact sales",
-      ctaStyle: "ghost",
+      cta: "Set up your company workspace",
+      ctaStyle: "filled",
       popular: false,
     },
   ];
@@ -266,7 +271,17 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             </div>
 
             <div style={{ marginBottom: 8 }}>
-              {plan.price.monthly === null ? (
+              {plan.perSeat ? (
+                <>
+                  <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>
+                    ${plan.price.monthly}
+                    <span style={{ fontSize: 16, fontWeight: 400, color: "var(--text-muted)" }}>/employee/mo</span>
+                  </span>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                    Billed annually · {ENTERPRISE_MIN_SEATS}-employee minimum
+                  </p>
+                </>
+              ) : plan.price.monthly === null ? (
                 <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>Custom</span>
               ) : plan.price.monthly === 0 ? (
                 <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>Free</span>
@@ -341,6 +356,16 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
               >
                 {plan.cta}
               </Link>
+            )}
+
+            {plan.perSeat && (
+              <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", marginTop: -18, marginBottom: 26 }}>
+                50+ employees?{" "}
+                <Link href="/contact?type=sales" style={{ color: "var(--teal)", textDecoration: "none" }}>
+                  Talk to sales
+                </Link>{" "}
+                about custom terms.
+              </p>
             )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

@@ -10,6 +10,20 @@ export const PRICING: Record<PricingRegion, { monthly: number; annual: number }>
   developing: { monthly: 6.99, annual: 55.99 },
 };
 
+// Enterprise starting price — was previously shown as "Custom" with no
+// number at all, which contradicts the product's own "self-serve, no sales
+// call required" positioning everywhere else and is real friction for the
+// small/medium teams that positioning targets (a price-less "Contact
+// sales" wall reads as "built for big companies with procurement," not
+// "sign up in a minute"). Same region split as the individual tiers.
+// PLACEHOLDER NUMBERS — adjust freely, this is a starting proposal, not a
+// number I have authority to finalize.
+export const ENTERPRISE_PRICING: Record<PricingRegion, number> = {
+  premium: 12,
+  developing: 6,
+};
+export const ENTERPRISE_MIN_SEATS = 5;
+
 export const STUDENT_DISCOUNT = 0.6;
 
 export function studentPrice(region: PricingRegion, cadence: "monthly" | "annual"): number {
