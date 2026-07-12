@@ -121,5 +121,16 @@ Ground every score in specific evidence from the background material provided. D
   if (!Array.isArray(competencies) || competencies.length === 0) {
     throw new Error("Model returned no competency scores");
   }
-  return sanitizeCompetencyScores(competencies);
+  const sanitized = sanitizeCompetencyScores(competencies);
+  // sanitizeCompetencyScores drops any entry whose dimension name doesn't
+  // exactly match one of the fixed COMPETENCY_DIMENSIONS labels — the check
+  // above only guards the raw (pre-filter) array, so a response where every
+  // entry had a mismatched dimension label would previously sail through as
+  // an empty array here. careerHealthScore([]) returns exactly 0, which
+  // then got saved and shown as if it were a real (catastrophic) score
+  // instead of failing loudly.
+  if (sanitized.length === 0) {
+    throw new Error("Model returned competency scores with no recognized dimensions");
+  }
+  return sanitized;
 }
