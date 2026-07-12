@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -49,6 +50,23 @@ export default function AboutPage() {
               to hear about it.
             </p>
           </div>
+
+          <Link
+            href="/contact"
+            style={{
+              display: "inline-block",
+              marginTop: 28,
+              background: "var(--teal)",
+              color: "#0A0F1E",
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 700,
+              padding: "12px 22px",
+              borderRadius: 10,
+            }}
+          >
+            Tell us what you&apos;d like to see →
+          </Link>
         </div>
       </main>
       <Footer />

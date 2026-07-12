@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { PLATFORM_CHAT_SYSTEM_PROMPT } from "@/lib/platformChat/systemPrompt";
+import { buildPlatformChatSystemPrompt } from "@/lib/platformChat/systemPrompt";
 import { isRateLimited } from "@/lib/platformChat/rateLimiter";
 import { MAX_PLATFORM_CHAT_MESSAGE_LENGTH, MAX_PLATFORM_CHAT_HISTORY } from "@/lib/limits";
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const completion = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 512,
-      system: PLATFORM_CHAT_SYSTEM_PROMPT,
+      system: buildPlatformChatSystemPrompt(),
       messages: [...trimmedHistory, { role: "user" as const, content: message }],
     });
     reply = completion.content
