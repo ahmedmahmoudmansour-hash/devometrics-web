@@ -8,11 +8,13 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
   const [summary, setSummary] = useState<string | null>(null);
   const [wasCached, setWasCached] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function fetchTrends() {
     if (!title.trim() || loading) return;
     setLoading(true);
+    setSearching(true);
     setError(null);
     setSummary(null);
     try {
@@ -25,13 +27,29 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Could not fetch trends");
       }
-      const { summary: text, cached } = await res.json();
-      setSummary(text);
-      setWasCached(!!cached);
+      if (!res.body) throw new Error("Could not fetch trends");
+
+      setWasCached(res.headers.get("X-Trends-Cached") === "true");
+
+      // Streamed: for an uncached job title, Claude has to run 2-4 real web
+      // searches before writing anything, so the first chunk can take a
+      // few seconds to arrive — but once it starts, the summary appears
+      // sentence by sentence instead of everything landing at once.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (text === "") setSearching(false);
+        text += decoder.decode(value, { stream: true });
+        setSummary(text);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not fetch trends");
     } finally {
       setLoading(false);
+      setSearching(false);
     }
   }
 
@@ -45,7 +63,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
         Real, web-searched trends for a role you enter below — not a guess from training data.
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: summary || error ? 16 : 0 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: summary || error || loading ? 16 : 0 }}>
         <input
           type="text"
           value={title}
@@ -83,6 +101,12 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
           {loading ? "Searching…" : "Get trends"}
         </button>
       </div>
+
+      {searching && !summary && (
+        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          Running a few real web searches — first time for this role can take up to ~15s, instant after that.
+        </p>
+      )}
 
       {error && <p style={{ fontSize: 13, color: "#f87171" }}>{error}</p>}
       {summary && (

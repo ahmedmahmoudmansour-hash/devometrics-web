@@ -32,6 +32,14 @@ const SEARCH_ERROR_MESSAGES: Record<Anthropic.WebSearchToolResultErrorCode, stri
 // evidence). Sources are asked for inline in the prose rather than parsed
 // out of the response's citation metadata, so this doesn't depend on the
 // exact shape of that (less-documented) field.
+//
+// Streamed (same architecture as Coach/Roleplay): a fresh, uncached search
+// still has to run 2-4 real web searches before Claude can write anything,
+// so there's an unavoidable stretch of silence no matter what — but once
+// Claude starts writing the summary, streaming means the user sees it
+// appear sentence by sentence instead of staring at "Searching…" for the
+// entire remaining duration. Cache hits skip all of this and write the full
+// cached summary in one shot.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -48,6 +56,7 @@ export async function POST(request: Request) {
   }
 
   const jobTitleKey = normalizeJobTitle(jobTitle);
+  const encoder = new TextEncoder();
 
   // Cache check — a query error here (e.g. migration 0053 not run yet)
   // falls straight through to the live search path below, same graceful
@@ -60,68 +69,99 @@ export async function POST(request: Request) {
   if (cached) {
     const ageHours = (Date.now() - new Date(cached.generated_at).getTime()) / 3_600_000;
     if (ageHours < CACHE_TTL_HOURS) {
-      return NextResponse.json({ summary: cached.summary, cached: true });
+      return new Response(encoder.encode(cached.summary), {
+        headers: { "Content-Type": "text/plain; charset=utf-8", "X-Trends-Cached": "true" },
+      });
     }
   }
 
-  try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1024,
-      // Was 10 — the prompt already asks for "2-4 searches," this just
-      // makes that a hard ceiling instead of a suggestion, bounding
-      // worst-case first-time latency instead of trusting the model to
-      // stop on its own.
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 4 }],
-      messages: [
-        {
-          role: "user",
-          content: `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.`,
-        },
-      ],
-    });
+  const readable = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let reply = "";
+      let searchError: Anthropic.WebSearchToolResultErrorCode | null = null;
 
-    // Web search errors don't throw — they come back as a normal 200 with a
-    // web_search_tool_result block whose content is an error object instead
-    // of a result list. Left unchecked, Claude still produces a text reply
-    // explaining it couldn't search, and that explanation would otherwise be
-    // shown to the user as if it were a real trends result.
-    const searchError = response.content.find(
-      (block): block is Anthropic.WebSearchToolResultBlock =>
-        block.type === "web_search_tool_result" && !Array.isArray(block.content)
-    );
-    if (searchError) {
-      const errorCode = (searchError.content as Anthropic.WebSearchToolResultError).error_code;
-      console.error("Web search tool error:", errorCode);
-      return NextResponse.json(
-        { error: SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for trends right now" },
-        { status: 502 }
-      );
-    }
+      try {
+        const stream = anthropic.messages.stream({
+          model: "claude-sonnet-5",
+          max_tokens: 1024,
+          // Was 10 — the prompt already asks for "2-4 searches," this just
+          // makes that a hard ceiling instead of a suggestion, bounding
+          // worst-case first-time latency instead of trusting the model to
+          // stop on its own.
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 4 }],
+          messages: [
+            {
+              role: "user",
+              content: `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.`,
+            },
+          ],
+        });
 
-    const summary = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("\n\n")
-      .trim();
+        // Web search errors don't throw — they arrive as a web_search_tool_result
+        // content block whose content is an error object instead of a result
+        // list. That block always lands (fully formed, not delta-streamed)
+        // before any final-answer text block, so catching it here — before
+        // forwarding any text — prevents Claude's own "I couldn't search"
+        // explanation from leaking to the client as if it were a real result.
+        for await (const event of stream) {
+          if (
+            event.type === "content_block_start" &&
+            event.content_block.type === "web_search_tool_result" &&
+            !Array.isArray(event.content_block.content)
+          ) {
+            searchError = (event.content_block.content as Anthropic.WebSearchToolResultError).error_code;
+            console.error("Web search tool error:", searchError);
+            continue;
+          }
+          if (searchError) continue;
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            reply += event.delta.text;
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+      } catch (err) {
+        console.error("Trends generation failed:", err);
+        if (!reply && !searchError) {
+          controller.enqueue(encoder.encode("Could not fetch trends right now — please try again."));
+        }
+        controller.close();
+        return;
+      }
 
-    if (!summary) {
-      return NextResponse.json({ error: "Could not generate trends right now" }, { status: 502 });
-    }
+      if (searchError) {
+        controller.enqueue(
+          encoder.encode(SEARCH_ERROR_MESSAGES[searchError] ?? "Could not search for trends right now.")
+        );
+        controller.close();
+        return;
+      }
 
-    // Best-effort — a cache write failure shouldn't fail the response the
-    // user is already looking at.
-    await supabase
-      .from("key_trends_cache")
-      .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary, generated_at: new Date().toISOString() })
-      .then(
-        () => {},
-        () => {}
-      );
+      if (!reply.trim()) {
+        controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
+        controller.close();
+        return;
+      }
 
-    return NextResponse.json({ summary, cached: false });
-  } catch (err) {
-    console.error("Trends generation failed:", err);
-    return NextResponse.json({ error: "Could not fetch trends right now" }, { status: 502 });
-  }
+      controller.close();
+
+      // Best-effort — a cache write failure shouldn't fail the response the
+      // user is already looking at.
+      await supabase
+        .from("key_trends_cache")
+        .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary: reply, generated_at: new Date().toISOString() })
+        .then(
+          () => {},
+          () => {}
+        );
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+      "X-Trends-Cached": "false",
+    },
+  });
 }
