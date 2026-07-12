@@ -3,6 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
+import { renderEmail } from "@/lib/email/template";
 import type { CoachMessage } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -102,19 +103,19 @@ export async function emailSessionSummary(summary: SessionSummary): Promise<{ er
   if (!user?.email) return { error: "Not authenticated" };
 
   const dateLabel = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-  const html = `
-    <div style="font-family: -apple-system, Segoe UI, sans-serif; max-width: 560px; margin: 0 auto; color: #1a2236;">
-      <h2 style="color: #0A0F1E;">Your coaching session — ${dateLabel}</h2>
-      <h3 style="color: #097066; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Meeting notes</h3>
-      <p style="line-height: 1.7; font-size: 15px;">${escapeHtml(summary.meetingNotes)}</p>
-      <h3 style="color: #097066; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Action plan</h3>
-      <ul style="line-height: 1.9; font-size: 15px; padding-left: 20px;">
+  const html = renderEmail({
+    preheader: `Your coaching session summary from ${dateLabel}`,
+    footerNote: "Sent from your AI Career Coach on Devometrics — an AI-generated summary of your own session.",
+    bodyHtml: `
+      <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 20px;">Your coaching session — ${dateLabel}</h2>
+      <h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Meeting notes</h3>
+      <p style="line-height:1.7;font-size:15px;margin:0 0 24px;">${escapeHtml(summary.meetingNotes)}</p>
+      <h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Action plan</h3>
+      <ul style="line-height:1.9;font-size:15px;padding-left:20px;margin:0;">
         ${summary.actionPlan.map((a) => `<li>${escapeHtml(a)}</li>`).join("")}
       </ul>
-      <p style="font-size: 12px; color: #8892a4; margin-top: 28px;">
-        Sent from your AI Career Coach on Devometrics. AI-generated summary of your own session.
-      </p>
-    </div>`;
+    `,
+  });
 
   try {
     await sendEmail(user.email, `Coaching session summary — ${dateLabel}`, html);

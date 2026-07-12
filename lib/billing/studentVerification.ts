@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
+import { renderEmail } from "@/lib/email/template";
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 
@@ -72,7 +73,21 @@ export async function requestStudentVerification(schoolEmail: string) {
     await sendEmail(
       email,
       "Your Devometrics student verification code",
-      `<p>Your verification code is <strong>${code}</strong>. It expires in 15 minutes.</p>`
+      renderEmail({
+        preheader: `Your verification code is ${code}`,
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 12px;">Verify your student status</h2>
+          <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Enter this code in Devometrics to confirm your student discount:
+          </p>
+          <div style="background:#f4f6f8;border-radius:10px;padding:16px 24px;text-align:center;margin-bottom:20px;">
+            <span style="font-size:28px;font-weight:800;letter-spacing:0.1em;color:#0A0F1E;">${code}</span>
+          </div>
+          <p style="font-size:13px;color:#8892a4;margin:0;">
+            This code expires in 15 minutes. If you didn't request this, you can safely ignore this email.
+          </p>
+        `,
+      })
     );
   } catch {
     return { error: "Student verification isn't available yet — email sending isn't configured. Check back soon." };
