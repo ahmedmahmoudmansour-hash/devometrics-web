@@ -34,6 +34,8 @@ export default function TodayTasksCard({
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {tasks.length > 0
               ? `${done} of ${tasks.length} done today`
+              : overdue.length > 0
+              ? `Nothing new today, but ${overdue.length} overdue`
               : "Nothing scheduled today"}
             {" — private to you, never visible to anyone else"}
           </p>
