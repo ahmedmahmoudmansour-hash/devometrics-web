@@ -43,21 +43,38 @@ export default async function AdminPage() {
               {avgScore !== null ? ` · avg Career Health Score ${avgScore}` : ""}
             </p>
           </div>
-          <a
-            href="/api/admin/export/xlsx"
-            style={{
-              background: "var(--teal)",
-              color: "#0A0F1E",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 20px",
-              fontSize: 13,
-              fontWeight: 700,
-              textDecoration: "none",
-            }}
-          >
-            Export to Excel
-          </a>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Link
+              href="/dashboard/admin/inquiries"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "10px 20px",
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--text)",
+                textDecoration: "none",
+              }}
+            >
+              Contact inquiries
+            </Link>
+            <a
+              href="/api/admin/export/xlsx"
+              style={{
+                background: "var(--teal)",
+                color: "#0A0F1E",
+                border: "none",
+                borderRadius: 8,
+                padding: "10px 20px",
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Export to Excel
+            </a>
+          </div>
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>

@@ -38,7 +38,10 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean): Entry[
     );
   }
   if (isPlatformAdmin) {
-    entries.push({ label: "Admin", href: "/dashboard/admin", keywords: "platform pilot tracking" });
+    entries.push(
+      { label: "Admin", href: "/dashboard/admin", keywords: "platform pilot tracking" },
+      { label: "Contact inquiries", href: "/dashboard/admin/inquiries", hint: "Sales/support/careers messages", keywords: "contact form messages sales support careers inbox" }
+    );
   }
   return entries;
 }

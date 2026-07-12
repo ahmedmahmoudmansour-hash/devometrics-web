@@ -104,3 +104,38 @@ export async function submitContactInquiry(fields: {
 
   return { success: true };
 }
+
+export type ContactInquiry = {
+  id: string;
+  type: InquiryType;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+};
+
+// RLS (0056) restricts SELECT to public.is_admin(), so a non-admin calling
+// this just gets an empty result rather than an error — the isAdmin flag
+// lets the page distinguish "no inquiries yet" from "you can't see these."
+export async function listContactInquiries(): Promise<{ isAdmin: boolean; inquiries: ContactInquiry[] }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { isAdmin: false, inquiries: [] };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single<{ is_admin: boolean }>();
+  if (!profile?.is_admin) return { isAdmin: false, inquiries: [] };
+
+  const { data } = await supabase
+    .from("contact_inquiries")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .returns<ContactInquiry[]>();
+
+  return { isAdmin: true, inquiries: data ?? [] };
+}
