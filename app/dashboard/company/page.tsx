@@ -8,6 +8,7 @@ import OrganizationContactsForm from "@/components/dashboard/OrganizationContact
 import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandingForm";
 import OrganizationCompetencyBuilder from "@/components/dashboard/OrganizationCompetencyBuilder";
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
+import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
 
 export default async function CompanyProfilePage() {
   const data = await buildCompanyData();
@@ -33,12 +34,7 @@ export default async function CompanyProfilePage() {
               {data.organizationName}
             </h1>
           </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-            Invite code:{" "}
-            <code style={{ color: "var(--teal)", background: "rgba(0,201,167,0.08)", padding: "2px 6px", borderRadius: 4 }}>
-              {data.organizationSlug}
-            </code>
-          </p>
+          {data.organizationSlug && <InviteCodeDisplay slug={data.organizationSlug} />}
         </div>
 
         <CompanyNavTabs active="profile" />
