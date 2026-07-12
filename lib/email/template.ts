@@ -1,6 +1,10 @@
 const BRAND_TEAL = "#00C9A7";
 const BRAND_NAVY = "#0A0F1E";
 
+export function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 // Shared branded shell for every transactional email this app sends — a
 // dark-navy header (matching the app's own brand), a white content card,
 // and a consistent footer. Before this, each caller hand-rolled its own

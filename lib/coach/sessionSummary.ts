@@ -3,7 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail } from "@/lib/email/template";
+import { renderEmail, escapeHtml } from "@/lib/email/template";
 import type { CoachMessage } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -89,10 +89,6 @@ export async function generateSessionSummary(): Promise<{ summary?: SessionSumma
     console.error("generateSessionSummary failed:", err);
     return { error: "Couldn't generate the summary right now — try again in a moment." };
   }
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export async function emailSessionSummary(summary: SessionSummary): Promise<{ error?: string; success?: boolean }> {
