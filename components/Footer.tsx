@@ -3,11 +3,13 @@
 import Logo from "./Logo";
 
 const links = {
+  // Prefixed with "/" so these resolve from any page, not just the
+  // homepage — plain "#pricing" etc. only works when already on "/".
   Product: [
-    { label: "How it works", href: "#how-it-works" },
-    { label: "Features", href: "#features" },
-    { label: "Methodology", href: "#methodology" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "How it works", href: "/#how-it-works" },
+    { label: "Features", href: "/#features" },
+    { label: "Methodology", href: "/#methodology" },
+    { label: "Pricing", href: "/#pricing" },
     { label: "For Enterprise", href: "/enterprise" },
   ],
   Company: [

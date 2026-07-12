@@ -73,7 +73,7 @@ export default function ContactForm() {
       >
         <p style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Message sent ✓</p>
         <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
-          Thanks — we read every {type} message and get back to real ones.
+          Thanks for reaching out — our {type} team will get back to you shortly.
         </p>
       </div>
     );

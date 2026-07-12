@@ -5,12 +5,16 @@ import Link from "next/link";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
+// Hash links are prefixed with "/" so they resolve correctly from any page,
+// not just the homepage — plain "#how-it-works" only works when already on
+// "/", since that's the only page with a matching element id to scroll to.
+// From /enterprise, /contact, etc. it silently did nothing.
 const navLinks = [
-  { label: "How it works", href: "#how-it-works", isPage: false },
-  { label: "Features", href: "#features", isPage: false },
-  { label: "Methodology", href: "#methodology", isPage: false },
-  { label: "Pricing", href: "#pricing", isPage: false },
-  { label: "For Enterprise", href: "/enterprise", isPage: true },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Features", href: "/#features" },
+  { label: "Methodology", href: "/#methodology" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "For Enterprise", href: "/enterprise" },
 ];
 
 export default function Navbar() {
@@ -57,43 +61,24 @@ export default function Navbar() {
           className="hidden md:flex"
           style={{ gap: 36, alignItems: "center" }}
         >
-          {navLinks.map((l) =>
-            l.isPage ? (
-              <Link
-                key={l.label}
-                href={l.href}
-                style={{
-                  color: "var(--text-muted)",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  letterSpacing: "0.01em",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-              >
-                {l.label}
-              </Link>
-            ) : (
-              <a
-                key={l.label}
-                href={l.href}
-                style={{
-                  color: "var(--text-muted)",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  letterSpacing: "0.01em",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-              >
-                {l.label}
-              </a>
-            )
-          )}
+          {navLinks.map((l) => (
+            <Link
+              key={l.label}
+              href={l.href}
+              style={{
+                color: "var(--text-muted)",
+                textDecoration: "none",
+                fontSize: 14,
+                fontWeight: 500,
+                letterSpacing: "0.01em",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+            >
+              {l.label}
+            </Link>
+          ))}
         </div>
 
         {/* CTA */}
@@ -179,43 +164,24 @@ export default function Navbar() {
             gap: 4,
           }}
         >
-          {navLinks.map((l) =>
-            l.isPage ? (
-              <Link
-                key={l.label}
-                href={l.href}
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  color: "var(--text-muted)",
-                  textDecoration: "none",
-                  fontSize: 16,
-                  fontWeight: 500,
-                  padding: "12px 0",
-                  borderBottom: "1px solid var(--border)",
-                  transition: "color 0.2s",
-                }}
-              >
-                {l.label}
-              </Link>
-            ) : (
-              <a
-                key={l.label}
-                href={l.href}
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  color: "var(--text-muted)",
-                  textDecoration: "none",
-                  fontSize: 16,
-                  fontWeight: 500,
-                  padding: "12px 0",
-                  borderBottom: "1px solid var(--border)",
-                  transition: "color 0.2s",
-                }}
-              >
-                {l.label}
-              </a>
-            )
-          )}
+          {navLinks.map((l) => (
+            <Link
+              key={l.label}
+              href={l.href}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                color: "var(--text-muted)",
+                textDecoration: "none",
+                fontSize: 16,
+                fontWeight: 500,
+                padding: "12px 0",
+                borderBottom: "1px solid var(--border)",
+                transition: "color 0.2s",
+              }}
+            >
+              {l.label}
+            </Link>
+          ))}
           <Link
             href="/signup"
             onClick={() => setMenuOpen(false)}
