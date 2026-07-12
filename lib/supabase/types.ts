@@ -82,6 +82,12 @@ export type OrganizationInvite = {
   title: string | null;
   department: string | null;
   country: string | null;
+  // Added in migrations 0049/0051 — may be absent until those have run;
+  // readers use isolated defensive queries rather than assuming these exist.
+  manager_name?: string | null;
+  manager_email?: string | null;
+  business_unit?: string | null;
+  location?: string | null;
   invited_by: string;
   accepted_at: string | null;
   created_at: string;

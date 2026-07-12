@@ -3,7 +3,41 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/resend";
+import { renderEmail, escapeHtml } from "@/lib/email/template";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
+
+// Best-effort — a failed invite email shouldn't fail the invite itself
+// (the row in organization_invites is still the source of truth; the
+// person is auto-attached the moment they sign up with that email either
+// way, per checkAndConsumeInvite below).
+async function sendInviteEmail(email: string, orgName: string): Promise<void> {
+  try {
+    await sendEmail(
+      email,
+      `You've been invited to join ${orgName} on Devometrics`,
+      renderEmail({
+        preheader: `${orgName} invited you to Devometrics`,
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">You're invited</h2>
+          <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
+            <strong>${escapeHtml(orgName)}</strong> has invited you to join their workspace on
+            Devometrics — track your career growth alongside the rest of your team.
+          </p>
+          <p style="margin:0;">
+            <a href="https://devometrics.com/signup?email=${encodeURIComponent(email)}" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your account →</a>
+          </p>
+          <p style="font-size:13px;color:#8892a4;margin:24px 0 0;">
+            Sign up with this email address (${escapeHtml(email)}) and you'll be attached to
+            ${escapeHtml(orgName)} automatically — no separate invite code needed.
+          </p>
+        `,
+      })
+    );
+  } catch (err) {
+    console.error(`Invite email failed for ${email}:`, err);
+  }
+}
 
 function slugify(name: string): string {
   const base = name
@@ -211,7 +245,11 @@ export async function inviteEmployee(
   email: string,
   title?: string,
   department?: string,
-  country?: string
+  country?: string,
+  managerName?: string,
+  managerEmail?: string,
+  businessUnit?: string,
+  location?: string
 ) {
   const supabase = await createClient();
   const {
@@ -229,11 +267,114 @@ export async function inviteEmployee(
     title: title?.trim() || null,
     department: department?.trim() || null,
     country: country?.trim() || null,
+    manager_name: managerName?.trim() || null,
+    manager_email: managerEmail?.trim() || null,
+    business_unit: businessUnit?.trim() || null,
+    location: location?.trim() || null,
   });
   if (error) return { error: "Could not send invite — they may already be invited" };
 
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", organizationId)
+    .maybeSingle<{ name: string }>();
+  if (org?.name) await sendInviteEmail(trimmed, org.name);
+
   revalidatePath("/dashboard/company");
   return { success: true };
+}
+
+export type BulkInviteRow = {
+  email: string;
+  title?: string;
+  department?: string;
+  country?: string;
+  managerName?: string;
+  managerEmail?: string;
+  businessUnit?: string;
+  location?: string;
+};
+
+export type BulkInviteResult = { email: string; status: "invited" | "duplicate" | "invalid" };
+
+// Cap kept small enough that the sequential-fallback path below (needed
+// when the batch insert hits a duplicate) and the concurrent email sends
+// both stay comfortably inside a serverless function's execution window —
+// generous for a single company's real headcount, not meant for
+// cross-company data loads.
+const MAX_BULK_IMPORT_ROWS = 200;
+
+export async function bulkInviteEmployees(
+  organizationId: string,
+  rows: BulkInviteRow[]
+): Promise<{ error?: string; results?: BulkInviteResult[] }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  if (!Array.isArray(rows) || rows.length === 0) return { error: "No rows to import" };
+  if (rows.length > MAX_BULK_IMPORT_ROWS) {
+    return { error: `Import is limited to ${MAX_BULK_IMPORT_ROWS} rows at a time — split into smaller files.` };
+  }
+
+  const results: BulkInviteResult[] = [];
+  const validRows: { row: BulkInviteRow; email: string }[] = [];
+  for (const row of rows) {
+    const email = row.email?.trim().toLowerCase() ?? "";
+    if (!email || !email.includes("@")) {
+      results.push({ email: row.email?.trim() || "(blank)", status: "invalid" });
+      continue;
+    }
+    validRows.push({ row, email });
+  }
+  if (validRows.length === 0) return { results };
+
+  const toInsert = (row: BulkInviteRow, email: string) => ({
+    organization_id: organizationId,
+    email,
+    invited_by: user.id,
+    title: row.title?.trim() || null,
+    department: row.department?.trim() || null,
+    country: row.country?.trim() || null,
+    manager_name: row.managerName?.trim() || null,
+    manager_email: row.managerEmail?.trim() || null,
+    business_unit: row.businessUnit?.trim() || null,
+    location: row.location?.trim() || null,
+  });
+
+  const { error: batchError } = await supabase
+    .from("organization_invites")
+    .insert(validRows.map(({ row, email }) => toInsert(row, email)));
+
+  if (batchError) {
+    // A single bulk insert either fully succeeds or fully fails (e.g. one
+    // row re-inviting an already-invited email violates the unique
+    // constraint and aborts the whole batch) — fall back to inserting one
+    // row at a time so a handful of duplicates don't block everyone else
+    // in the file.
+    for (const { row, email } of validRows) {
+      const { error } = await supabase.from("organization_invites").insert(toInsert(row, email));
+      results.push({ email, status: error ? "duplicate" : "invited" });
+    }
+  } else {
+    for (const { email } of validRows) results.push({ email, status: "invited" });
+  }
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", organizationId)
+    .maybeSingle<{ name: string }>();
+  if (org?.name) {
+    const invited = results.filter((r) => r.status === "invited");
+    await Promise.allSettled(invited.map((r) => sendInviteEmail(r.email, org.name)));
+  }
+
+  revalidatePath("/dashboard/company");
+  return { results };
 }
 
 export async function revokeInvite(inviteId: string) {
@@ -274,6 +415,10 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
     title: invite.title ?? null,
     department: invite.department ?? null,
     country: invite.country ?? null,
+    manager_name: invite.manager_name ?? null,
+    manager_email: invite.manager_email ?? null,
+    business_unit: invite.business_unit ?? null,
+    location: invite.location ?? null,
   });
   if (memberError) return false;
 
