@@ -336,7 +336,11 @@ export default async function EmployeeDetailPage({
           >
             Manage this employee
           </p>
-          <GenerateAssessmentSummaryButton employeeUserId={userId} hasSummary={!!assessmentSummary} />
+          <GenerateAssessmentSummaryButton
+            employeeUserId={userId}
+            hasSummary={!!assessmentSummary}
+            pendingAssignments={assignedAssessments.filter((a) => !a.completed).map((a) => a.name)}
+          />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
         </div>

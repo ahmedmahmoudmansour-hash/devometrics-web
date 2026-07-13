@@ -595,6 +595,18 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
     return { error: "No measured data yet — this person hasn't run a Gap Analysis, taken an assessment, or analyzed a resume." };
   }
 
+  // If you specifically assigned assessments for this person, the summary
+  // should wait for those — generating it against a partial picture (some
+  // assigned assessments still outstanding) would read as complete when
+  // it isn't. Doesn't block people with no assignments at all, since not
+  // every employee goes through a formal assignment.
+  const pending = detail.assignedAssessments.filter((a) => !a.completed);
+  if (pending.length > 0) {
+    return {
+      error: `${pending.length} assigned assessment${pending.length === 1 ? "" : "s"} still pending (${pending.map((a) => a.name).join(", ")}) — wait until these are complete for an accurate summary.`,
+    };
+  }
+
   const dimensionLines = (detail.gapAnalysis?.competencies ?? [])
     .map((c) => {
       const avg = detail.orgDimensionAverages[c.dimension];
