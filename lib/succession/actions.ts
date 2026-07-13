@@ -52,6 +52,52 @@ export async function deleteSuccessionRole(roleId: string) {
   return { success: true };
 }
 
+// Lets an admin guarantee a specific employee gets scored for this role
+// even if the AI's own judgment wouldn't have surfaced them — a human
+// call the ranking alone can't make. Only accepts current members of this
+// admin's own org (defense in depth on top of RLS, which only checks
+// admin-of-the-role's-org, not employee-of-that-same-org).
+export async function nominateForRole(roleId: string, employeeUserId: string, note: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const data = await buildCompanyData();
+  if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
+  if (!data.rows.some((r) => r.userId === employeeUserId)) {
+    return { error: "That person isn't a member of your organization" };
+  }
+
+  const { error } = await supabase.from("succession_nominations").insert({
+    role_id: roleId,
+    employee_user_id: employeeUserId,
+    nominated_by: user.id,
+    note: note.trim().slice(0, 500),
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "Already nominated for this role." };
+    return { error: "Could not save the nomination — the database may need migration 0061 run first." };
+  }
+  revalidatePath("/dashboard/company/succession");
+  return { success: true };
+}
+
+export async function removeNomination(nominationId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  // RLS restricts this to admins of the nomination's own org — a
+  // non-admin's delete simply matches zero rows.
+  await supabase.from("succession_nominations").delete().eq("id", nominationId);
+  revalidatePath("/dashboard/company/succession");
+  return { success: true };
+}
+
 const RANKING_TOOL = {
   name: "record_succession_ranking",
   description: "Rank internal candidates for a critical role based on their real competency data.",
@@ -62,7 +108,7 @@ const RANKING_TOOL = {
         type: "array",
         maxItems: 8,
         description:
-          "Employees ranked best-fit first. Include ONLY people with a plausible path to this role — ranking everyone dilutes the signal. Can be empty if no one fits.",
+          "Employees ranked best-fit first. Include ONLY people with a plausible path to this role — ranking everyone dilutes the signal. Can be empty if no one fits. EXCEPTION: anyone listed under MANUALLY NOMINATED BY THE ADMIN must always appear here, scored honestly, even if their fit is weak.",
         items: {
           type: "object",
           properties: {
@@ -139,6 +185,14 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
     return { error: "No employees to evaluate yet — invite your team first." };
   }
 
+  const { data: nominations } = await supabase
+    .from("succession_nominations")
+    .select("employee_user_id, note")
+    .eq("role_id", roleId)
+    .returns<{ employee_user_id: string; note: string }[]>();
+  const nomineeIds = new Set((nominations ?? []).map((n) => n.employee_user_id));
+  const nomineeNotes = new Map((nominations ?? []).map((n) => [n.employee_user_id, n.note]));
+
   const workforce = data.rows
     .map((r) => {
       const dims = Object.entries(r.dimensionLevels)
@@ -158,6 +212,17 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
     })
     .join("\n");
 
+  const nomineeBlock =
+    nomineeIds.size > 0
+      ? `\n\nMANUALLY NOMINATED BY THE ADMIN (must appear in your candidates array — score them honestly even if fit is weak, but do not omit them):\n${[...nomineeIds]
+          .map((id) => {
+            const row = data.rows.find((r) => r.userId === id);
+            const note = nomineeNotes.get(id);
+            return `userId: ${id}${row ? ` (${row.name})` : ""}${note ? ` — admin's note: ${note}` : ""}`;
+          })
+          .join("\n")}`
+      : "";
+
   let report: SuccessionReport;
   try {
     const response = await anthropic.messages.create({
@@ -170,7 +235,7 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
       messages: [
         {
           role: "user",
-          content: `CRITICAL ROLE: ${role.title}\n\nROLE REQUIREMENTS (as described by the admin):\n${role.description || "(no description provided — infer sensible requirements from the title)"}\n\nWORKFORCE DATA:\n${workforce}`,
+          content: `CRITICAL ROLE: ${role.title}\n\nROLE REQUIREMENTS (as described by the admin):\n${role.description || "(no description provided — infer sensible requirements from the title)"}\n\nWORKFORCE DATA:\n${workforce}${nomineeBlock}`,
         },
       ],
     });
@@ -182,7 +247,11 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
       generatedAt: new Date().toISOString(),
       candidates: (raw.candidates ?? [])
         .filter((c): c is SuccessionCandidate => !!c && validIds.has(c.userId))
-        .map((c) => ({ ...c, fitScore: Math.max(0, Math.min(100, Math.round(c.fitScore))) })),
+        .map((c) => ({
+          ...c,
+          fitScore: Math.max(0, Math.min(100, Math.round(c.fitScore))),
+          nominated: nomineeIds.has(c.userId),
+        })),
       riskNote: raw.riskNote ?? "",
       hasStrongSuccessor: !!raw.hasStrongSuccessor,
     };

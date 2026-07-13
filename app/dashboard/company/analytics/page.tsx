@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
-import { DonutChart, HBarChart, NineBoxGrid } from "@/components/dashboard/charts";
+import { DonutChart, HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
 
 export const metadata = { title: "Workforce Analytics — Devometrics" };
 
@@ -204,6 +204,7 @@ export default async function CompanyAnalyticsPage() {
                   xLabel="Measured capability"
                   yLabel="Leadership growth signal"
                 />
+                <NineBoxLegend />
               </div>
             )}
 

@@ -262,6 +262,19 @@ export type SuccessionCandidate = {
   gaps: string[];
   developmentFocus: string;
   whyRanked: string;
+  // True when an admin manually nominated this person (see
+  // succession_nominations, migration 0061) — set deterministically in
+  // code after the AI response comes back, never trusted from model output.
+  nominated?: boolean;
+};
+
+export type SuccessionNomination = {
+  id: string;
+  role_id: string;
+  employee_user_id: string;
+  nominated_by: string;
+  note: string;
+  created_at: string;
 };
 
 export type SuccessionReport = {

@@ -2,9 +2,165 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createSuccessionRole, deleteSuccessionRole, generateSuccessionReport } from "@/lib/succession/actions";
-import { ScoreBar, NineBoxGrid } from "@/components/dashboard/charts";
-import type { SuccessionRole } from "@/lib/supabase/types";
+import {
+  createSuccessionRole,
+  deleteSuccessionRole,
+  generateSuccessionReport,
+  nominateForRole,
+  removeNomination,
+} from "@/lib/succession/actions";
+import { ScoreBar, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
+import type { SuccessionRole, SuccessionNomination } from "@/lib/supabase/types";
+import type { ReadinessForecast } from "@/lib/succession/forecast";
+
+function forecastText(forecast: ReadinessForecast | undefined): string | null {
+  if (!forecast) return null;
+  if (forecast.status === "insufficient_data") {
+    return "Not enough Career Health history yet for a trend forecast.";
+  }
+  if (forecast.status === "declining") {
+    return "Trending down over time — not currently on pace toward readiness.";
+  }
+  if (forecast.readyNow) return null; // "Ready now" already says this
+  if (forecast.monthsToReady > 36) {
+    return `At the current trend (+${forecast.trendPerMonth} pts/mo), over 3 years out.`;
+  }
+  return `At the current trend (+${forecast.trendPerMonth} pts/mo), projected ready in ~${forecast.monthsToReady} month${forecast.monthsToReady === 1 ? "" : "s"}.`;
+}
+
+function NominationPanel({
+  roleId,
+  employees,
+  nominations,
+  excludeUserIds,
+}: {
+  roleId: string;
+  employees: { userId: string; name: string }[];
+  nominations: SuccessionNomination[];
+  excludeUserIds: Set<string>;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [employeeId, setEmployeeId] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const available = employees.filter((e) => !excludeUserIds.has(e.userId));
+
+  function add() {
+    if (!employeeId) return setError("Pick someone to nominate");
+    setError(null);
+    startTransition(async () => {
+      const result = await nominateForRole(roleId, employeeId, note);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      setEmployeeId("");
+      setNote("");
+      setAdding(false);
+      router.refresh();
+    });
+  }
+
+  function remove(nominationId: string) {
+    startTransition(async () => {
+      await removeNomination(nominationId);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 12, padding: 14, marginBottom: 14 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
+        Manually nominated
+      </p>
+      {nominations.length === 0 && !adding && (
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
+          No one nominated yet — the AI ranking above is fully automatic. Nominate someone to
+          guarantee they&apos;re scored for this role even if the AI wouldn&apos;t have surfaced them.
+        </p>
+      )}
+      {nominations.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+          {nominations.map((n) => {
+            const person = employees.find((e) => e.userId === n.employee_user_id);
+            return (
+              <div key={n.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, fontSize: 12.5 }}>
+                <div>
+                  <span style={{ color: "var(--text)", fontWeight: 700 }}>{person?.name ?? "Former member"}</span>
+                  {n.note && <span style={{ color: "var(--text-muted)" }}> — {n.note}</span>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => remove(n.id)}
+                  disabled={isPending}
+                  style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {adding ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <select
+            value={employeeId}
+            onChange={(e) => setEmployeeId(e.target.value)}
+            aria-label="Employee to nominate"
+            style={{ ...fieldStyle, padding: "8px 12px", fontSize: 13 }}
+          >
+            <option value="">Choose an employee…</option>
+            {available.map((e) => (
+              <option key={e.userId} value={e.userId}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Why? (optional — shown to the AI when it scores them)"
+            aria-label="Nomination note"
+            style={{ ...fieldStyle, padding: "8px 12px", fontSize: 13 }}
+          />
+          {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={add}
+              disabled={isPending}
+              style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+            >
+              {isPending ? "Nominating…" : "Nominate"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdding(false)}
+              style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          disabled={available.length === 0}
+          style={{ background: "none", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: available.length === 0 ? "not-allowed" : "pointer", opacity: available.length === 0 ? 0.5 : 1 }}
+        >
+          + Nominate someone
+        </button>
+      )}
+    </div>
+  );
+}
 
 // Same 3-bucket boundaries readinessColor() already uses for the pipeline
 // counts and dot colors — reused here as a Y-axis position so the grid
@@ -39,7 +195,19 @@ function readinessColor(readiness: string): string {
   return "var(--phase2)";
 }
 
-function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount: number }) {
+function RoleCard({
+  role,
+  employeeCount,
+  employees,
+  nominations,
+  forecastsByUserId,
+}: {
+  role: SuccessionRole;
+  employeeCount: number;
+  employees: { userId: string; name: string }[];
+  nominations: SuccessionNomination[];
+  forecastsByUserId: Record<string, ReadinessForecast>;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -108,6 +276,15 @@ function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount
 
       {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
 
+      <div style={{ marginTop: 14 }}>
+        <NominationPanel
+          roleId={role.id}
+          employees={employees}
+          nominations={nominations}
+          excludeUserIds={new Set(nominations.map((n) => n.employee_user_id))}
+        />
+      </div>
+
       {!report && !error && (
         <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 12 }}>
           No analysis yet — run it to rank your {employeeCount} team member{employeeCount === 1 ? "" : "s"} against this role.
@@ -151,6 +328,9 @@ function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount
                 yLabel="Readiness"
                 size={300}
               />
+              <div style={{ alignSelf: "flex-start", width: "100%" }}>
+                <NineBoxLegend />
+              </div>
             </div>
           )}
 
@@ -163,8 +343,13 @@ function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount
             {report.candidates.map((c, i) => (
               <div key={c.userId} style={{ background: "rgba(255,255,255,0.03)", border: i === 0 ? "1px solid rgba(0,201,167,0.3)" : "1px solid var(--border)", borderRadius: 12, padding: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
                     {i + 1}. {c.name}
+                    {c.nominated && (
+                      <span style={{ fontSize: 9.5, fontWeight: 800, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "3px 9px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        ★ Nominated by you
+                      </span>
+                    )}
                   </p>
                   <span style={{ fontSize: 11.5, fontWeight: 700, color: readinessColor(c.readiness), whiteSpace: "nowrap" }}>
                     {c.readiness}
@@ -174,6 +359,11 @@ function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount
                   <ScoreBar value={c.fitScore} color={readinessColor(c.readiness)} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: readinessColor(c.readiness) }}>{c.fitScore}</span>
                 </div>
+                {forecastText(forecastsByUserId[c.userId]) && (
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 6 }}>
+                    ↗ {forecastText(forecastsByUserId[c.userId])}
+                  </p>
+                )}
                 <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6, marginTop: 8 }}>{c.whyRanked}</p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
                   {c.strengths.length > 0 && (
@@ -208,7 +398,19 @@ function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount
   );
 }
 
-export default function SuccessionBoard({ roles, employeeCount }: { roles: SuccessionRole[]; employeeCount: number }) {
+export default function SuccessionBoard({
+  roles,
+  employeeCount,
+  employees,
+  nominationsByRole,
+  forecastsByUserId,
+}: {
+  roles: SuccessionRole[];
+  employeeCount: number;
+  employees: { userId: string; name: string }[];
+  nominationsByRole: Record<string, SuccessionNomination[]>;
+  forecastsByUserId: Record<string, ReadinessForecast>;
+}) {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -317,7 +519,14 @@ export default function SuccessionBoard({ roles, employeeCount }: { roles: Succe
       )}
 
       {roles.map((role) => (
-        <RoleCard key={role.id} role={role} employeeCount={employeeCount} />
+        <RoleCard
+          key={role.id}
+          role={role}
+          employeeCount={employeeCount}
+          employees={employees}
+          nominations={nominationsByRole[role.id] ?? []}
+          forecastsByUserId={forecastsByUserId}
+        />
       ))}
 
       <details style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px" }}>
