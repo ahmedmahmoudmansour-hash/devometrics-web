@@ -73,7 +73,7 @@ export default async function CompanyProfilePage() {
 
         {data.organizationId && (
           <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
-            <DeleteCompanyButton organizationId={data.organizationId} />
+            <DeleteCompanyButton organizationId={data.organizationId} organizationName={data.organizationName ?? "this workspace"} />
           </div>
         )}
       </div>
