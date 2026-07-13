@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PlanSummaryCard from "@/components/dashboard/PlanSummaryCard";
 import NewPlanForm from "@/components/dashboard/NewPlanForm";
-import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import DataPrivacy from "@/components/dashboard/DataPrivacy";
 import CareerHealthOverview from "@/components/dashboard/CareerHealthOverview";
 import CompanyMembershipCard from "@/components/dashboard/CompanyMembershipCard";
@@ -255,7 +255,22 @@ export default async function DashboardPage() {
           )}
 
           <DashboardSection label="Account">
-            <ProfileSettings profile={profile} />
+            <Link
+              href="/dashboard/profile"
+              style={{
+                display: "block",
+                background: "var(--navy-mid)",
+                border: "1px solid var(--border)",
+                borderRadius: 16,
+                padding: "16px 20px",
+                textDecoration: "none",
+              }}
+            >
+              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your profile</p>
+              <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4 }}>
+                Career history, capability pyramid, Big Five, and learning preferences →
+              </p>
+            </Link>
             <DataPrivacy />
           </DashboardSection>
         </div>

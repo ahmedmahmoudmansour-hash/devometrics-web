@@ -6,7 +6,6 @@ import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import OrganizationProfileForm from "@/components/dashboard/OrganizationProfileForm";
 import OrganizationContactsForm from "@/components/dashboard/OrganizationContactsForm";
 import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandingForm";
-import OrganizationCompetencyBuilder from "@/components/dashboard/OrganizationCompetencyBuilder";
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
 
@@ -68,11 +67,6 @@ export default async function CompanyProfilePage() {
             <OrganizationBrandingForm
               organizationId={data.organizationId}
               initial={{ logoUrl: data.organizationLogoUrl, brandColor: data.organizationBrandColor }}
-            />
-            <OrganizationCompetencyBuilder
-              organizationId={data.organizationId}
-              competencies={data.organizationCompetencies}
-              dimensionAverages={data.dimensionAverages}
             />
           </div>
         )}

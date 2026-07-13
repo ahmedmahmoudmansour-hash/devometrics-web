@@ -8,6 +8,8 @@ import type {
   OrganizationCompetency,
   Profile,
 } from "@/lib/supabase/types";
+import { ASSESSMENTS } from "@/lib/assessments/catalog";
+import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
 
 export type WorkforceRow = {
   userId: string;
@@ -326,6 +328,9 @@ export type EmployeeDetail = {
   isAuthorized: boolean;
   profile: { id: string; name: string; email: string; avatarUrl: string | null; title: string | null } | null;
   plans: (DevelopmentPlan & { milestones: Milestone[] })[];
+  gapAnalysis: { competencies: CompetencyScore[]; careerHealthScore: number; targetRole: string; generatedAt: string } | null;
+  assessmentResults: { slug: string; name: string; score: number; completedAt: string }[];
+  resumeScore: number | null;
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -334,7 +339,14 @@ export type EmployeeDetail = {
 // admin's own org membership row), so an admin from Org A can never load an
 // Org B employee's page by guessing their user id.
 export async function buildEmployeeDetail(employeeUserId: string): Promise<EmployeeDetail> {
-  const empty: EmployeeDetail = { isAuthorized: false, profile: null, plans: [] };
+  const empty: EmployeeDetail = {
+    isAuthorized: false,
+    profile: null,
+    plans: [],
+    gapAnalysis: null,
+    assessmentResults: [],
+    resumeScore: null,
+  };
 
   const supabase = await createClient();
   const {
@@ -357,15 +369,46 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     .maybeSingle<{ user_id: string; title: string | null }>();
   if (!targetMembership) return empty;
 
-  const [{ data: profile }, { data: plans }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
-    supabase
-      .from("development_plans")
-      .select("*")
-      .eq("user_id", employeeUserId)
-      .order("created_at", { ascending: false })
-      .returns<DevelopmentPlan[]>(),
-  ]);
+  const [{ data: profile }, { data: plans }, { data: latestAnalysis }, { data: assessmentRows }, { data: latestResume }] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
+      supabase
+        .from("development_plans")
+        .select("*")
+        .eq("user_id", employeeUserId)
+        .order("created_at", { ascending: false })
+        .returns<DevelopmentPlan[]>(),
+      supabase
+        .from("gap_analyses")
+        .select("*")
+        .eq("user_id", employeeUserId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<GapAnalysis>(),
+      supabase
+        .from("assessment_results")
+        .select("assessment_slug, score, completed_at")
+        .eq("user_id", employeeUserId)
+        .order("completed_at", { ascending: false })
+        .returns<Pick<AssessmentResult, "assessment_slug" | "score" | "completed_at">[]>(),
+      supabase
+        .from("resume_analyses")
+        .select("overall_score")
+        .eq("user_id", employeeUserId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ overall_score: number }>(),
+    ]);
+
+  // Keep only the latest attempt per assessment — same "latest wins"
+  // dedup the individual's own Assessment Center and the workforce
+  // aggregate already use, so a retaken assessment doesn't show twice.
+  const latestAssessmentBySlug = new Map<string, { slug: string; score: number; completedAt: string }>();
+  for (const r of assessmentRows ?? []) {
+    if (!latestAssessmentBySlug.has(r.assessment_slug)) {
+      latestAssessmentBySlug.set(r.assessment_slug, { slug: r.assessment_slug, score: r.score, completedAt: r.completed_at });
+    }
+  }
 
   const planIds = (plans ?? []).map((p) => p.id);
   const { data: milestones } = planIds.length
@@ -396,5 +439,17 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
         }
       : null,
     plans: (plans ?? []).map((p) => ({ ...p, milestones: milestonesByPlan.get(p.id) ?? [] })),
+    gapAnalysis: latestAnalysis
+      ? {
+          competencies: latestAnalysis.competencies,
+          careerHealthScore: latestAnalysis.career_health_score,
+          targetRole: latestAnalysis.target_role,
+          generatedAt: latestAnalysis.created_at,
+        }
+      : null,
+    assessmentResults: Array.from(latestAssessmentBySlug.values())
+      .map((r) => ({ ...r, name: ASSESSMENTS.find((a) => a.slug === r.slug)?.name ?? r.slug }))
+      .sort((a, b) => b.score - a.score),
+    resumeScore: latestResume?.overall_score ?? null,
   };
 }
