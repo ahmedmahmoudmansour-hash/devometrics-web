@@ -3,8 +3,22 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createSuccessionRole, deleteSuccessionRole, generateSuccessionReport } from "@/lib/succession/actions";
-import { ScoreBar } from "@/components/dashboard/charts";
+import { ScoreBar, NineBoxGrid } from "@/components/dashboard/charts";
 import type { SuccessionRole } from "@/lib/supabase/types";
+
+// Same 3-bucket boundaries readinessColor() already uses for the pipeline
+// counts and dot colors — reused here as a Y-axis position so the grid
+// can't disagree with the badges sitting right next to it. Oriented so
+// "ready now" plots highest: this is the honest way to show "who has more
+// runway toward this role" from data we actually have (fit + a readiness
+// bucket), without inventing a separate "potential" score the AI never
+// produced.
+function readinessToY(readiness: string): number {
+  const r = readiness.toLowerCase();
+  if (r.includes("ready now")) return 95;
+  if (r.includes("month")) return 58;
+  return 25;
+}
 
 const fieldStyle: React.CSSProperties = {
   width: "100%",
@@ -126,6 +140,20 @@ function RoleCard({ role, employeeCount }: { role: SuccessionRole; employeeCount
             </p>
           )}
 
+          {report.candidates.length > 0 && (
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, marginBottom: 14, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", alignSelf: "flex-start", marginBottom: 8 }}>
+                Fit vs. readiness
+              </p>
+              <NineBoxGrid
+                points={report.candidates.map((c) => ({ name: c.name, x: c.fitScore, y: readinessToY(c.readiness) }))}
+                xLabel="Fit for this role"
+                yLabel="Readiness"
+                size={300}
+              />
+            </div>
+          )}
+
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {report.candidates.length === 0 && (
               <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>
@@ -203,8 +231,33 @@ export default function SuccessionBoard({ roles, employeeCount }: { roles: Succe
     });
   }
 
+  const analyzed = roles.filter((r) => r.report);
+  const needsAttention = analyzed.filter((r) => r.report && !r.report.hasStrongSuccessor);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, maxWidth: 640 }}>
+        Define the roles whose sudden vacancy would hurt most, then run AI analysis on each — it ranks
+        your current team against that specific role using their real measured competency data, so the
+        conversation starts from evidence instead of guesswork.
+      </p>
+
+      {roles.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: 999, padding: "5px 14px" }}>
+            {roles.length} critical role{roles.length === 1 ? "" : "s"} defined
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: 999, padding: "5px 14px" }}>
+            {analyzed.length} analyzed
+          </span>
+          {needsAttention.length > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 999, padding: "5px 14px" }}>
+              ⚠ {needsAttention.length} need{needsAttention.length === 1 ? "s" : ""} attention — no strong successor
+            </span>
+          )}
+        </div>
+      )}
+
       {creating ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <input
