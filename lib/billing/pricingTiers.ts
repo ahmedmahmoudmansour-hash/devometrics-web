@@ -1,13 +1,13 @@
 export type PricingRegion = "premium" | "developing";
 
-// Annual discount is deliberately steeper in the developing tier (~33% vs
+// Annual discount is deliberately steeper in the developing tier (~30% vs
 // ~17%) — not an oversight, a real business tradeoff: card-decline and
 // payment-friction rates are meaningfully higher in these markets, so
 // converting someone to a single annual commitment is worth more than the
 // same conversion in a market where recurring billing "just works."
 export const PRICING: Record<PricingRegion, { monthly: number; annual: number }> = {
   premium: { monthly: 14.99, annual: 149.99 },
-  developing: { monthly: 6.99, annual: 55.99 },
+  developing: { monthly: 7.99, annual: 66.99 },
 };
 
 // Enterprise starting price — was previously shown as "Custom" with no
