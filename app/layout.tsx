@@ -7,14 +7,25 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
+  // Without metadataBase, Next can't resolve relative Open Graph / canonical
+  // URLs and warns on every build — set it once here so share previews and
+  // canonicals point at the real origin.
+  metadataBase: new URL("https://www.devometrics.com"),
   title: "Devometrics — The Science of Career Growth",
   description:
     "AI-powered talent intelligence and development platform. Upload your CV, a job description, and your ambitions — get a prioritized, time-bound plan to close the gap.",
   keywords: ["career development", "AI career coach", "skill gap analysis", "talent intelligence"],
   openGraph: {
-    title: "Devometrics",
-    description: "The science of career growth.",
+    title: "Devometrics — The Science of Career Growth",
+    description: "Upload your CV, a job description, and your ambitions — get a precise competency gap map and a time-bound plan to close it.",
     siteName: "Devometrics",
+    type: "website",
+    url: "https://www.devometrics.com",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Devometrics — The Science of Career Growth",
+    description: "A precise competency gap map and a time-bound plan to close it.",
   },
 };
 
