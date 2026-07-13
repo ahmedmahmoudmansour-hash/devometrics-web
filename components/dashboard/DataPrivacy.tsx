@@ -72,7 +72,8 @@ export default function DataPrivacy({
               Scheduled for deletion on {formatDate(scheduledFor)}
             </p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-              Your data still works normally until then — cancel any time before that date.
+              Your data still works normally until then — cancel any time before that date. Once
+              this date passes, everything is permanently removed and cannot be recovered.
             </p>
             <button
               type="button"
@@ -103,8 +104,10 @@ export default function DataPrivacy({
           <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
             <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
               This schedules your plans, coach history, assessment results, gap analyses, resume
-              analysis, and tasks for deletion in 7 days — everything keeps working normally until
-              then, and you can cancel any time before. Type{" "}
+              analysis, and tasks for deletion in 30 days — everything keeps working normally until
+              then, and you can cancel any time before. After 30 days the deletion is permanent and
+              we can no longer retrieve anything — this window exists purely to recover from a
+              mistaken click, not as a general trash bin. Type{" "}
               <strong style={{ color: "var(--text)" }}>{CONFIRM_WORD}</strong> to confirm.
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -147,7 +150,7 @@ export default function DataPrivacy({
                   opacity: isPending || confirmText !== CONFIRM_WORD ? 0.5 : 1,
                 }}
               >
-                {isPending ? "Scheduling…" : "Schedule deletion (7-day grace period)"}
+                {isPending ? "Scheduling…" : "Schedule deletion (30-day grace period)"}
               </button>
               <button
                 type="button"

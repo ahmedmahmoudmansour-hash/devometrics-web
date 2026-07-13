@@ -254,7 +254,7 @@ export async function updateTheme(theme: "dark" | "light") {
 // migration 0059's purge_scheduled_data_deletions, called daily by
 // /api/cron/purge-deletions). Same window as organization deletion
 // (lib/organizations/actions.ts DELETION_GRACE_DAYS).
-const DATA_DELETION_GRACE_DAYS = 7;
+const DATA_DELETION_GRACE_DAYS = 30;
 
 // No longer deletes immediately — schedules it. Every plan, coach
 // message, assessment result, etc. stays completely intact and the

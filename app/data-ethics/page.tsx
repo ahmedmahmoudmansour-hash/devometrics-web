@@ -63,7 +63,9 @@ export default function DataEthicsPage() {
       <LegalSection title="You can see and remove what we hold">
         <p>
           Full data export and deletion are built into the product itself (dashboard → Data &amp;
-          privacy), not locked behind a support request.
+          privacy), not locked behind a support request. Deletion has a 30-day grace period so a
+          mistaken click can be undone — after that window closes, it&apos;s permanent and we can no
+          longer retrieve it.
         </p>
       </LegalSection>
 

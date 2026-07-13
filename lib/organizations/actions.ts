@@ -546,7 +546,7 @@ export async function removeAssignedAssessment(employeeUserId: string, assessmen
 // 0059's purge_scheduled_organization_deletions, called daily by
 // /api/cron/purge-deletions) — long enough to notice and undo a mistaken
 // click, short enough that "delete" still means something.
-const DELETION_GRACE_DAYS = 7;
+const DELETION_GRACE_DAYS = 30;
 
 // No longer deletes immediately — schedules it. The workspace keeps
 // working completely normally for everyone until the grace period lapses;

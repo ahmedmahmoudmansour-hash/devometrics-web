@@ -33,7 +33,9 @@ export default function DeleteCompanyButton({
           Scheduled for deletion on {formatDate(scheduledFor)}
         </p>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-          Everything still works normally until then — cancel any time before that date.
+          Everything still works normally until then — cancel any time before that date. Once this
+          date passes, the workspace and every membership in it are permanently removed and cannot
+          be recovered.
         </p>
         <button
           type="button"
@@ -87,10 +89,12 @@ export default function DeleteCompanyButton({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-start" }}>
       <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-        This schedules the workspace and every membership in it for deletion in 7 days — everything
+        This schedules the workspace and every membership in it for deletion in 30 days — everything
         keeps working normally until then, and you can cancel any time before. Employees keep their
         own individual accounts and data regardless; they just stop being part of this company once
-        it&apos;s actually removed. Type <strong style={{ color: "var(--text)" }}>{organizationName}</strong>{" "}
+        it&apos;s actually removed. After 30 days the deletion is permanent and we can no longer
+        retrieve anything — this window exists purely to recover from a mistaken click, not as a
+        general trash bin. Type <strong style={{ color: "var(--text)" }}>{organizationName}</strong>{" "}
         to confirm.
       </p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -133,7 +137,7 @@ export default function DeleteCompanyButton({
             opacity: isPending || !matches ? 0.5 : 1,
           }}
         >
-          {isPending ? "Scheduling…" : "Schedule deletion (7-day grace period)"}
+          {isPending ? "Scheduling…" : "Schedule deletion (30-day grace period)"}
         </button>
         <button
           type="button"

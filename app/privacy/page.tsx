@@ -59,8 +59,14 @@ export default function PrivacyPage() {
 
       <LegalSection title="6. Retention">
         <p>
-          We retain your data for as long as your account is active, or until you delete it. If you
-          delete your account, we remove your personal data within a reasonable period, except
+          We retain your data for as long as your account is active, or until you delete it.
+        </p>
+        <p>
+          Deleting your app data or your company workspace does not remove it immediately. It
+          schedules removal after a <strong>30-day grace period</strong>, during which everything
+          keeps working normally and the deletion can be cancelled — this window exists solely to
+          recover from an accidental deletion. Once the 30 days pass, the data is permanently and
+          irreversibly deleted, and we are no longer able to retrieve it for any reason, except
           where we&apos;re required to retain records for legal reasons.
         </p>
       </LegalSection>
