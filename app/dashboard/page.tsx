@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import PlanCard from "@/components/dashboard/PlanCard";
+import PlanSummaryCard from "@/components/dashboard/PlanSummaryCard";
 import NewPlanForm from "@/components/dashboard/NewPlanForm";
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import DataPrivacy from "@/components/dashboard/DataPrivacy";
@@ -222,7 +222,7 @@ export default async function DashboardPage() {
 
           <DashboardSection label="Development">
             {(plans ?? []).map((plan) => (
-              <PlanCard
+              <PlanSummaryCard
                 key={plan.id}
                 plan={plan}
                 milestones={(milestones ?? []).filter((m) => m.plan_id === plan.id)}

@@ -10,9 +10,15 @@ import type { DevelopmentPlan, Milestone } from "@/lib/supabase/types";
 export default function PlanCard({
   plan,
   milestones,
+  showDetailLink = true,
 }: {
   plan: DevelopmentPlan;
   milestones: Milestone[];
+  // The detail page (/dashboard/plans/[id]) now embeds this same component
+  // for interactive editing — a "View & export" link back to the page
+  // you're already on is redundant there, so it's suppressed by the
+  // detail page passing false.
+  showDetailLink?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [editingTitle, setEditingTitle] = useState(false);
@@ -114,12 +120,14 @@ export default function PlanCard({
           <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>
             {done}/{total} complete
           </span>
-          <Link
-            href={`/dashboard/plans/${plan.id}`}
-            style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "underline" }}
-          >
-            View & export
-          </Link>
+          {showDetailLink && (
+            <Link
+              href={`/dashboard/plans/${plan.id}`}
+              style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "underline" }}
+            >
+              View & export
+            </Link>
+          )}
         </div>
       </div>
 
