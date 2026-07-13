@@ -26,6 +26,7 @@ import TodayTasksCard from "@/components/dashboard/TodayTasksCard";
 import UpcomingDeadlinesCard from "@/components/dashboard/UpcomingDeadlinesCard";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import DismissibleUpgradePrompt from "@/components/dashboard/DismissibleUpgradePrompt";
+import StatRail from "@/components/dashboard/StatRail";
 import type {
   AssessmentResult,
   DevelopmentPlan,
@@ -145,6 +146,16 @@ export default async function DashboardPage() {
   const momentum = await recordAndComputeMomentum(compositeScore);
   const mySurveys = await listMySurveys();
 
+  // Glanceable rail stats — all derived from data already fetched above,
+  // no extra queries. "Next deadline" deliberately isn't limited to
+  // UpcomingDeadlinesCard's 7-day window: that card only shows anything
+  // when a deadline is imminent, but the rail should always have a real
+  // answer if one exists further out.
+  const pendingTasksToday = todayTasks.filter((t) => !t.completed).length;
+  const nextDeadline = (milestones ?? [])
+    .filter((m) => !m.completed && m.target_date)
+    .sort((a, b) => (a.target_date as string).localeCompare(b.target_date as string))[0] ?? null;
+
   const onboardingSteps = [
     {
       label: "Tell us about yourself",
@@ -178,18 +189,19 @@ export default async function DashboardPage() {
     },
   ];
 
+  const careerHealthColor =
+    compositeScore === null ? "var(--text-muted)" : compositeScore >= 70 ? "var(--teal)" : compositeScore >= 40 ? "var(--amber)" : "var(--danger)";
+
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <WelcomeModal
         name={profile?.full_name?.trim().split(/\s+/)[0] ?? null}
         role={membership?.role === "admin" ? "admin" : membership ? "member" : null}
       />
-      <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <div style={{ marginBottom: 32 }}>
+      <div className="dashboard-content-grid">
+        <div className="dashboard-main" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Your progress</h1>
-        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <DashboardSection label="Today">
             <OnboardingChecklist steps={onboardingSteps} />
             <UpcomingDeadlinesCard milestones={milestones ?? []} />
@@ -247,6 +259,34 @@ export default async function DashboardPage() {
             <DataPrivacy />
           </DashboardSection>
         </div>
+
+        <StatRail
+          stats={[
+            {
+              label: "Career health",
+              value: compositeScore !== null ? `${compositeScore}` : "—",
+              href: "/dashboard/gap-analysis",
+              color: careerHealthColor,
+            },
+            {
+              label: "Current streak",
+              value: `${streakResult?.currentStreak ?? 0}d`,
+            },
+            {
+              label: "Tasks today",
+              value: `${pendingTasksToday}`,
+              href: "/dashboard/tasks",
+              color: pendingTasksToday > 0 ? "var(--amber)" : undefined,
+            },
+            {
+              label: "Next deadline",
+              value: nextDeadline?.target_date
+                ? new Date(nextDeadline.target_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : "None set",
+              href: "/dashboard/tasks",
+            },
+          ]}
+        />
       </div>
     </div>
   );

@@ -114,6 +114,34 @@ a:focus-visible {
   .print-plan .print-accent { color: #097066 !important; }
 }
 
+/* Home dashboard content grid — was a single 640px column centered inside
+   the already-flexible content area, leaving two large dead margins on any
+   screen wider than ~1100px (sidebar 224px + a 640px column rarely fills a
+   modern laptop width). Below the breakpoint, the stat rail stacks above
+   the main sections (a glanceable summary first); above it, the rail sits
+   beside main content instead of under an empty margin. grid-template-areas
+   (not just column order) is what lets the rail's DOM position stay after
+   main content for a logical tab order while still rendering above it
+   visually on narrow screens. */
+.dashboard-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 760px);
+  grid-template-areas: "rail" "main";
+  gap: 24px;
+  justify-content: center;
+}
+.dashboard-content-grid > .dashboard-rail { grid-area: rail; }
+.dashboard-content-grid > .dashboard-main { grid-area: main; min-width: 0; }
+
+@media (min-width: 1300px) {
+  .dashboard-content-grid {
+    grid-template-columns: 760px 260px;
+    grid-template-areas: "main rail";
+    gap: 32px;
+    align-items: start;
+  }
+}
+
 /* Dashboard header stacks vertically on narrow viewports instead of
    squeezing a title and 7+ nav pills onto one justified row. */
 @media (max-width: 640px) {
