@@ -3,6 +3,7 @@ import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analy
 import type {
   AssessmentResult,
   DevelopmentPlan,
+  EmployeeAssessmentSummary,
   GapAnalysis,
   Milestone,
   OrganizationCompetency,
@@ -336,6 +337,12 @@ export type EmployeeDetail = {
   assessmentResults: { slug: string; name: string; score: number; completedAt: string }[];
   resumeScore: number | null;
   assignedAssessments: { slug: string; name: string; assignedAt: string; completed: boolean }[];
+  // Team-wide benchmarks so the report can show where this person stands
+  // relative to peers, not just their own numbers in isolation.
+  orgDimensionAverages: Partial<Record<CompetencyDimension, number>>;
+  orgCareerHealthScore: number | null;
+  assessmentSummary: EmployeeAssessmentSummary["summary"] | null;
+  assessmentSummaryGeneratedAt: string | null;
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -352,6 +359,10 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     assessmentResults: [],
     resumeScore: null,
     assignedAssessments: [],
+    orgDimensionAverages: {},
+    orgCareerHealthScore: null,
+    assessmentSummary: null,
+    assessmentSummaryGeneratedAt: null,
   };
 
   const supabase = await createClient();
@@ -375,6 +386,12 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     .maybeSingle<{ user_id: string; title: string | null }>();
   if (!targetMembership) return empty;
 
+  // Reuses the same org-wide aggregation buildCompanyData already computes
+  // (rather than re-deriving dimension averages here) so the two never
+  // drift out of sync — this page and the Employees roster show the exact
+  // same team benchmark.
+  const companyData = await buildCompanyData();
+
   const [
     { data: profile },
     { data: plans },
@@ -382,6 +399,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     { data: assessmentRows },
     { data: latestResume },
     { data: assignedRows },
+    { data: summaryRow },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
     supabase
@@ -418,6 +436,13 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
       .select("assessment_slug, created_at")
       .eq("employee_user_id", employeeUserId)
       .returns<{ assessment_slug: string; created_at: string }[]>(),
+    // New table (migration 0062) — same isolated-query graceful degrade:
+    // a query error before the migration has run just yields null here.
+    supabase
+      .from("employee_assessment_summaries")
+      .select("summary, generated_at")
+      .eq("employee_user_id", employeeUserId)
+      .maybeSingle<{ summary: EmployeeAssessmentSummary["summary"]; generated_at: string }>(),
   ]);
 
   // Keep only the latest attempt per assessment — same "latest wins"
@@ -480,5 +505,9 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
       completed: latestAssessmentBySlug.has(r.assessment_slug),
     })),
     resumeScore: latestResume?.overall_score ?? null,
+    orgDimensionAverages: companyData.dimensionAverages,
+    orgCareerHealthScore: companyData.companyCareerHealthScore,
+    assessmentSummary: summaryRow?.summary ?? null,
+    assessmentSummaryGeneratedAt: summaryRow?.generated_at ?? null,
   };
 }

@@ -5,10 +5,13 @@ import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
 import AssignAssessmentForm from "@/components/dashboard/AssignAssessmentForm";
 import EmployeeReportExportBar from "@/components/dashboard/EmployeeReportExportBar";
+import GenerateAssessmentSummaryButton from "@/components/dashboard/GenerateAssessmentSummaryButton";
 import Avatar from "@/components/Avatar";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
-import { HBarChart } from "@/components/dashboard/charts";
+import { HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
 import { levelText } from "@/lib/ui/levelColor";
+
+const LEADERSHIP_DIMS = ["Leadership", "Strategic Thinking", "People Management"] as const;
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -26,10 +29,37 @@ export default async function EmployeeDetailPage({
   const data = await buildEmployeeDetail(userId);
   if (!data.isAuthorized || !data.profile) redirect("/dashboard/company");
 
-  const { profile, plans, gapAnalysis, assessmentResults, resumeScore, assignedAssessments } = data;
+  const {
+    profile,
+    plans,
+    gapAnalysis,
+    assessmentResults,
+    resumeScore,
+    assignedAssessments,
+    orgDimensionAverages,
+    orgCareerHealthScore,
+    assessmentSummary,
+    assessmentSummaryGeneratedAt,
+  } = data;
   const dimensionLevels = gapAnalysis
     ? Object.fromEntries(gapAnalysis.competencies.map((c) => [c.dimension, c.currentLevel]))
     : {};
+
+  // Same axes as the org-wide Analytics 9-box, computed for this one
+  // person — lets the report show where they sit in the exact grid an
+  // admin already understands, not a report-specific metric.
+  const dimensionValues = Object.values(dimensionLevels) as number[];
+  const leadershipValues = LEADERSHIP_DIMS.map((d) => dimensionLevels[d]).filter(
+    (v): v is number => v !== undefined
+  );
+  const nineBoxPoint =
+    dimensionValues.length > 0 && leadershipValues.length > 0
+      ? {
+          name: profile.name,
+          x: dimensionValues.reduce((a, b) => a + b, 0) / dimensionValues.length,
+          y: leadershipValues.reduce((a, b) => a + b, 0) / leadershipValues.length,
+        }
+      : null;
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -76,9 +106,63 @@ export default async function EmployeeDetailPage({
                 {gapAnalysis.careerHealthScore}
               </span>
               <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Career Health Score</p>
+              {orgCareerHealthScore !== null && (
+                <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
+                  {gapAnalysis.careerHealthScore > orgCareerHealthScore
+                    ? `+${gapAnalysis.careerHealthScore - orgCareerHealthScore} vs team avg (${orgCareerHealthScore})`
+                    : gapAnalysis.careerHealthScore < orgCareerHealthScore
+                      ? `${gapAnalysis.careerHealthScore - orgCareerHealthScore} vs team avg (${orgCareerHealthScore})`
+                      : `= team avg (${orgCareerHealthScore})`}
+                </p>
+              )}
             </div>
           )}
         </div>
+
+        {assessmentSummary && (
+          <div style={{ ...card, marginBottom: 20, borderLeft: "3px solid var(--teal)" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
+              Assessment Summary
+            </p>
+            <p style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.7 }}>{assessmentSummary.overallSummary}</p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 16 }}>
+              {assessmentSummary.keyStrengths.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 4 }}>
+                    Key strengths
+                  </p>
+                  {assessmentSummary.keyStrengths.map((s) => (
+                    <p key={s} style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>+ {s}</p>
+                  ))}
+                </div>
+              )}
+              {assessmentSummary.developmentPriorities.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 4 }}>
+                    Development priorities
+                  </p>
+                  {assessmentSummary.developmentPriorities.map((s) => (
+                    <p key={s} style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>− {s}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {assessmentSummary.standingNote && (
+              <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6, marginTop: 14, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                <strong style={{ color: "var(--text)" }}>Where they stand: </strong>
+                {assessmentSummary.standingNote}
+              </p>
+            )}
+
+            {assessmentSummaryGeneratedAt && (
+              <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 10 }}>
+                Written {new Date(assessmentSummaryGeneratedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+            )}
+          </div>
+        )}
 
         {!gapAnalysis && assessmentResults.length === 0 && resumeScore === null ? (
           <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
@@ -102,11 +186,30 @@ export default async function EmployeeDetailPage({
                     label: d,
                     value: dimensionLevels[d] as number,
                     color: levelText(dimensionLevels[d] as number),
+                    benchmark: orgDimensionAverages[d],
                   }))}
                   maxValue={100}
+                  benchmarkLabel="marks the team average for that competency"
                 />
                 <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
                   <CapabilityPyramid dimensionLevels={dimensionLevels} compact />
+                </div>
+              </div>
+            )}
+
+            {nineBoxPoint && (
+              <div style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", alignSelf: "flex-start", marginBottom: 4 }}>
+                  Talent grid position
+                </h2>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6, alignSelf: "flex-start" }}>
+                  Where {profile.name.split(" ")[0]} sits on the same capability-vs-growth grid used
+                  org-wide — horizontal is overall measured capability, vertical is leadership growth
+                  signal (Leadership, Strategic Thinking, People Management).
+                </p>
+                <NineBoxGrid points={[nineBoxPoint]} xLabel="Measured capability" yLabel="Leadership growth signal" size={300} />
+                <div style={{ alignSelf: "flex-start", width: "100%" }}>
+                  <NineBoxLegend forceOpen />
                 </div>
               </div>
             )}
@@ -233,6 +336,7 @@ export default async function EmployeeDetailPage({
           >
             Manage this employee
           </p>
+          <GenerateAssessmentSummaryButton employeeUserId={userId} hasSummary={!!assessmentSummary} />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
         </div>

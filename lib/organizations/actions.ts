@@ -2,10 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // Best-effort — a failed invite email shouldn't fail the invite itself
 // (the row in organization_invites is still the source of truth; the
@@ -534,6 +538,112 @@ export async function removeAssignedAssessment(employeeUserId: string, assessmen
     .delete()
     .eq("employee_user_id", employeeUserId)
     .eq("assessment_slug", assessmentSlug);
+
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true };
+}
+
+const ASSESSMENT_SUMMARY_TOOL = {
+  name: "record_assessment_summary",
+  description: "Write a professional assessment-report narrative for one employee, grounded strictly in their measured data.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      overallSummary: {
+        type: "string",
+        description:
+          "2-4 sentence executive summary in a professional assessment-report tone — an analyst's read of where this person stands overall, citing their actual scores. No generic praise; every claim traces to the data provided.",
+      },
+      keyStrengths: {
+        type: "array",
+        items: { type: "string" },
+        maxItems: 4,
+        description: "Their strongest measured evidence, each citing a specific score or result.",
+      },
+      developmentPriorities: {
+        type: "array",
+        items: { type: "string" },
+        maxItems: 4,
+        description: "Specific, actionable development priorities grounded in their actual gaps — not generic advice.",
+      },
+      standingNote: {
+        type: "string",
+        description:
+          "1-2 sentences on how they compare to their team's measured averages — where they're above, at, or below. If team benchmark data is too thin, say so instead of guessing.",
+      },
+    },
+    required: ["overallSummary", "keyStrengths", "developmentPriorities", "standingNote"],
+  },
+};
+
+// Generates the narrative that turns the employee report from a chart dump
+// into something that reads like a real assessment-center writeup. Cached
+// in employee_assessment_summaries (migration 0062) and regenerated only
+// on request — this is a real Claude call, not something to run on every
+// page view or PDF export.
+export async function generateEmployeeAssessmentSummary(employeeUserId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const detail = await buildEmployeeDetail(employeeUserId);
+  if (!detail.isAuthorized || !detail.profile) return { error: "Not authorized" };
+
+  if (!detail.gapAnalysis && detail.assessmentResults.length === 0 && detail.resumeScore === null) {
+    return { error: "No measured data yet — this person hasn't run a Gap Analysis, taken an assessment, or analyzed a resume." };
+  }
+
+  const dimensionLines = (detail.gapAnalysis?.competencies ?? [])
+    .map((c) => {
+      const avg = detail.orgDimensionAverages[c.dimension];
+      return `${c.dimension}: ${c.currentLevel}/100${avg !== undefined ? ` (team average: ${avg})` : ""}`;
+    })
+    .join("\n");
+
+  const assessmentLines = detail.assessmentResults.map((a) => `${a.name}: ${a.score}/100`).join("\n") || "(none completed)";
+
+  const prompt = [
+    `EMPLOYEE: ${detail.profile.name}${detail.profile.title ? `, ${detail.profile.title}` : ""}`,
+    detail.gapAnalysis
+      ? `\nCAREER HEALTH SCORE: ${detail.gapAnalysis.careerHealthScore}/100${detail.orgCareerHealthScore !== null ? ` (team average: ${detail.orgCareerHealthScore})` : ""}, scored against target role "${detail.gapAnalysis.targetRole}"`
+      : "\nCAREER HEALTH SCORE: not available — no Gap Analysis run yet",
+    dimensionLines ? `\nMEASURED COMPETENCIES:\n${dimensionLines}` : "",
+    `\nRESUME INTELLIGENCE SCORE: ${detail.resumeScore ?? "not available"}`,
+    `\nASSESSMENTS COMPLETED:\n${assessmentLines}`,
+    `\nDEVELOPMENT PLAN PROGRESS: ${detail.plans.reduce((a, p) => a + p.milestones.filter((m) => m.completed).length, 0)}/${detail.plans.reduce((a, p) => a + p.milestones.length, 0)} milestones complete across ${detail.plans.length} plan(s)`,
+  ].join("\n");
+
+  let summary: { overallSummary: string; keyStrengths: string[]; developmentPriorities: string[]; standingNote: string };
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 1500,
+      system:
+        "You write professional assessment-report narratives for Devometrics' enterprise talent platform, read by HR and people managers. This is decision support, not a verdict — ground every claim strictly in the measured data provided, never invent scores, tenure, or performance history that isn't given. Where data is thin (few or no assessments run), say so plainly rather than filling the gap with generic praise. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided. Write like a careful analyst, not a marketing brochure.",
+      tools: [ASSESSMENT_SUMMARY_TOOL],
+      tool_choice: { type: "tool", name: "record_assessment_summary" },
+      messages: [{ role: "user", content: prompt }],
+    });
+    const toolUse = response.content.find((block) => block.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
+    summary = toolUse.input as typeof summary;
+  } catch (err) {
+    console.error("generateEmployeeAssessmentSummary failed:", err);
+    return { error: "Couldn't generate the summary right now — try again in a moment." };
+  }
+
+  const { error } = await supabase.from("employee_assessment_summaries").upsert(
+    {
+      employee_user_id: employeeUserId,
+      summary,
+      generated_by: user.id,
+      generated_at: new Date().toISOString(),
+    },
+    { onConflict: "employee_user_id" }
+  );
+  if (error) return { error: "Could not save the summary — the database may need migration 0062 run first." };
 
   revalidatePath(`/dashboard/company/${employeeUserId}`);
   return { success: true };

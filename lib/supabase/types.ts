@@ -268,6 +268,20 @@ export type SuccessionCandidate = {
   nominated?: boolean;
 };
 
+export type EmployeeAssessmentSummary = {
+  id: string;
+  employee_user_id: string;
+  summary: {
+    overallSummary: string;
+    keyStrengths: string[];
+    developmentPriorities: string[];
+    standingNote: string;
+  };
+  generated_by: string | null;
+  generated_at: string;
+  created_at: string;
+};
+
 export type SuccessionNomination = {
   id: string;
   role_id: string;

@@ -13,13 +13,19 @@ export function HBarChart({
   maxValue,
   unit = "",
   height = 26,
+  benchmarkLabel,
 }: {
-  data: { label: string; value: number; color?: string }[];
+  data: { label: string; value: number; color?: string; benchmark?: number }[];
   maxValue?: number;
   unit?: string;
   height?: number;
+  // Shown once beneath the chart, only if at least one row has a benchmark
+  // — e.g. "— marks the team average". Keeps the marker meaningful without
+  // repeating the caption on every row.
+  benchmarkLabel?: string;
 }) {
   const max = maxValue ?? Math.max(1, ...data.map((d) => d.value));
+  const hasBenchmark = data.some((d) => d.benchmark !== undefined);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {data.map((d) => (
@@ -27,7 +33,7 @@ export function HBarChart({
           <span style={{ fontSize: 12, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={d.label}>
             {d.label}
           </span>
-          <svg width="100%" height={height} role="img" aria-label={`${d.label}: ${d.value}${unit}`}>
+          <svg width="100%" height={height} role="img" aria-label={`${d.label}: ${d.value}${unit}${d.benchmark !== undefined ? `, team average ${d.benchmark}${unit}` : ""}`}>
             <rect x="0" y={height / 2 - 6} width="100%" height="12" rx="6" fill={GRID} />
             <rect
               x="0"
@@ -37,6 +43,19 @@ export function HBarChart({
               rx="6"
               fill={d.color ?? TEAL}
             />
+            {d.benchmark !== undefined && (
+              <g>
+                <line
+                  x1={`${Math.min(100, (d.benchmark / max) * 100)}%`}
+                  x2={`${Math.min(100, (d.benchmark / max) * 100)}%`}
+                  y1={height / 2 - 9}
+                  y2={height / 2 + 9}
+                  stroke="var(--text)"
+                  strokeWidth="2"
+                />
+                <title>{`Team average: ${d.benchmark}${unit}`}</title>
+              </g>
+            )}
           </svg>
           <span style={{ fontSize: 12, fontWeight: 700, color: d.color ?? TEAL, textAlign: "right" }}>
             {d.value}
@@ -44,6 +63,12 @@ export function HBarChart({
           </span>
         </div>
       ))}
+      {hasBenchmark && benchmarkLabel && (
+        <p style={{ fontSize: 10.5, color: MUTED, marginTop: 2 }}>
+          <span style={{ display: "inline-block", width: 2, height: 10, background: "var(--text)", verticalAlign: "middle", marginRight: 6 }} />
+          {benchmarkLabel}
+        </p>
+      )}
     </div>
   );
 }
@@ -148,22 +173,41 @@ const ZONE_TONE_FILL: Record<string, string> = {
 // calls for — collapsed by default (matches the "Methodology" details
 // pattern already used on the Analytics and Succession pages) so it's
 // available without permanently taking up space next to every grid.
-export function NineBoxLegend() {
+//
+// forceOpen renders the same content as a plain div instead of
+// <details>/<summary>: a closed <details> hides its children under print
+// in most browsers regardless of the `open` attribute, so anything
+// rendered inside a .print-plan export (see globals.css) must use this,
+// or the zone guide would be silently missing from the exported PDF.
+export function NineBoxLegend({ forceOpen = false }: { forceOpen?: boolean } = {}) {
+  const items = (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 10 }}>
+      {[...NINE_BOX_ZONES]
+        .sort((a, b) => b.row - a.row || a.col - b.col)
+        .map((z) => (
+          <div key={z.label} style={{ borderLeft: `2px solid ${ZONE_TONE_COLOR[z.tone]}`, paddingLeft: 10 }}>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: ZONE_TONE_COLOR[z.tone] }}>{z.label}</p>
+            <p style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>{z.needs}</p>
+          </div>
+        ))}
+    </div>
+  );
+
+  if (forceOpen) {
+    return (
+      <div style={{ marginTop: 12 }}>
+        <p style={{ fontSize: 11.5, fontWeight: 700, color: MUTED }}>9-box zone guide — what each zone needs</p>
+        {items}
+      </div>
+    );
+  }
+
   return (
     <details style={{ marginTop: 12 }}>
       <summary style={{ fontSize: 11.5, fontWeight: 700, color: MUTED, cursor: "pointer" }}>
         9-box zone guide — what each zone needs
       </summary>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 10 }}>
-        {[...NINE_BOX_ZONES]
-          .sort((a, b) => b.row - a.row || a.col - b.col)
-          .map((z) => (
-            <div key={z.label} style={{ borderLeft: `2px solid ${ZONE_TONE_COLOR[z.tone]}`, paddingLeft: 10 }}>
-              <p style={{ fontSize: 11.5, fontWeight: 700, color: ZONE_TONE_COLOR[z.tone] }}>{z.label}</p>
-              <p style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>{z.needs}</p>
-            </div>
-          ))}
-      </div>
+      {items}
     </details>
   );
 }
