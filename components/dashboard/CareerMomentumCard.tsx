@@ -21,7 +21,7 @@ export default function CareerMomentumCard({ momentum }: { momentum: MomentumRes
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>Career Momentum</h2>
-      <p style={{ fontSize: 28, fontWeight: 800, color }}>
+      <p className="mono" style={{ fontSize: 26, fontWeight: 700, color }}>
         {arrow} {Math.abs(deltaPoints)} pt{Math.abs(deltaPoints) === 1 ? "" : "s"}
         <span style={{ fontSize: 15, fontWeight: 600, marginLeft: 8 }}>
           ({deltaPercent >= 0 ? "+" : ""}

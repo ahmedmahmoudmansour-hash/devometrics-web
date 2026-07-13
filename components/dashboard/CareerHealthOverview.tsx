@@ -28,7 +28,7 @@ function ScoreCard({ entry }: { entry: ScoreEntry }) {
       {entry.score === null ? (
         <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>{entry.cta} →</p>
       ) : (
-        <p style={{ fontSize: 28, fontWeight: 800, color }}>{entry.score}</p>
+        <p className="mono" style={{ fontSize: 28, fontWeight: 700, color }}>{entry.score}</p>
       )}
     </Link>
   );
@@ -51,7 +51,7 @@ export default function CareerHealthOverview({
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Career Health Overview</h2>
         {composite !== null && (
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+          <span className="mono" style={{ fontSize: 13, color: "var(--text-muted)" }}>
             Composite: <strong style={{ color: "var(--teal)", fontSize: 16 }}>{composite}</strong>/100
           </span>
         )}
