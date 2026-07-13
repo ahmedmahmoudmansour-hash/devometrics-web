@@ -542,6 +542,17 @@ export async function removeAssignedAssessment(employeeUserId: string, assessmen
 // Admin-only, deletes the whole workspace. Cascades to organization_members
 // and organization_invites via the on-delete-cascade FKs in 0016/0017 — one
 // delete, not a manual cleanup of each child table.
+// Grace period before a scheduled deletion actually runs (see migration
+// 0059's purge_scheduled_organization_deletions, called daily by
+// /api/cron/purge-deletions) — long enough to notice and undo a mistaken
+// click, short enough that "delete" still means something.
+const DELETION_GRACE_DAYS = 7;
+
+// No longer deletes immediately — schedules it. The workspace keeps
+// working completely normally for everyone until the grace period lapses;
+// only the actual purge (in the cron-triggered SQL function) permanently
+// removes anything. RLS ("Org admins can update their own organization",
+// 0033) already scopes this update to the org's own admin.
 export async function deleteOrganization(organizationId: string) {
   const supabase = await createClient();
   const {
@@ -549,11 +560,32 @@ export async function deleteOrganization(organizationId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase.from("organizations").delete().eq("id", organizationId);
-  if (error) return { error: "Could not delete the company workspace — try again" };
+  const deletionAt = new Date(Date.now() + DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ pending_deletion_at: deletionAt })
+    .eq("id", organizationId);
+  if (error) return { error: "Could not schedule deletion — try again" };
 
-  revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath("/dashboard/company");
+  return { success: true, deletionAt };
+}
+
+export async function cancelOrganizationDeletion(organizationId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({ pending_deletion_at: null })
+    .eq("id", organizationId);
+  if (error) return { error: "Could not cancel — try again" };
+
+  revalidatePath("/dashboard/company");
+  return { success: true };
 }
 
 // HR record editing — authorization is enforced by RLS (the

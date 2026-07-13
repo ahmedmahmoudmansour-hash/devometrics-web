@@ -271,7 +271,7 @@ export default async function DashboardPage() {
                 Career history, capability pyramid, Big Five, and learning preferences →
               </p>
             </Link>
-            <DataPrivacy />
+            <DataPrivacy pendingDataDeletionAt={profile?.pending_data_deletion_at ?? null} />
           </DashboardSection>
         </div>
 

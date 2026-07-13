@@ -250,51 +250,49 @@ export async function updateTheme(theme: "dark" | "light") {
 // personal tasks, survey participation) and clears personal profile fields.
 // Kept in sync with /api/account/export, which promises to surface the same
 // set of tables — if you add a new user-data table, add it to both places.
-// Does not delete the login itself — that requires a service_role key we
-// deliberately don't hold; contact support for full account deletion.
+// Grace period before a scheduled data deletion actually runs (see
+// migration 0059's purge_scheduled_data_deletions, called daily by
+// /api/cron/purge-deletions). Same window as organization deletion
+// (lib/organizations/actions.ts DELETION_GRACE_DAYS).
+const DATA_DELETION_GRACE_DAYS = 7;
+
+// No longer deletes immediately — schedules it. Every plan, coach
+// message, assessment result, etc. stays completely intact and the
+// account keeps working normally until the grace period lapses; only the
+// actual purge (in the cron-triggered SQL function) permanently removes
+// anything. Does not delete the login itself — that requires a
+// service_role key we deliberately don't hold; contact support for full
+// account deletion.
 export async function deleteMyData() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: "Not authenticated" };
 
-  await Promise.all([
-    supabase.from("development_plans").delete().eq("user_id", user.id),
-    supabase.from("coach_messages").delete().eq("user_id", user.id),
-    supabase.from("assessment_results").delete().eq("user_id", user.id),
-    supabase.from("gap_analyses").delete().eq("user_id", user.id),
-    supabase.from("resume_analyses").delete().eq("user_id", user.id),
-    supabase.from("discovery_profiles").delete().eq("user_id", user.id),
-    supabase.from("big_five_profiles").delete().eq("user_id", user.id),
-    supabase.from("coach_grow_memory").delete().eq("user_id", user.id),
-    supabase.from("user_achievements").delete().eq("user_id", user.id),
-    supabase.from("career_health_snapshots").delete().eq("user_id", user.id),
-    supabase.from("personal_tasks").delete().eq("user_id", user.id),
-    supabase.from("survey_responses").delete().eq("user_id", user.id),
-    supabase.from("survey_assignments").delete().eq("employee_user_id", user.id),
-    supabase.from("student_verification_codes").delete().eq("user_id", user.id),
-  ]);
-
-  await supabase
+  const deletionAt = new Date(Date.now() + DATA_DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
     .from("profiles")
-    .update({
-      full_name: null,
-      location: null,
-      learning_preferences: [],
-      career_stage: null,
-      accommodation: null,
-      job_history: [],
-      skills: [],
-      qualifications: [],
-      career_aspirations: null,
-      student_school_email: null,
-      student_verified_at: null,
-      resource_tier: null,
-    })
+    .update({ pending_data_deletion_at: deletionAt })
     .eq("id", user.id);
+  if (error) return { error: "Could not schedule deletion — try again" };
 
   revalidatePath("/dashboard");
+  return { success: true, deletionAt };
+}
+
+export async function cancelMyDataDeletion() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ pending_data_deletion_at: null }).eq("id", user.id);
+  if (error) return { error: "Could not cancel — try again" };
+
+  revalidatePath("/dashboard");
+  return { success: true };
 }
 
 export async function signOut() {

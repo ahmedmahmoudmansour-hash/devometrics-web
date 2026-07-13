@@ -28,6 +28,9 @@ export type Profile = {
   // Added in migration 0057 — optional/defensive like the other
   // recently-added flags, may be absent until that migration has run.
   upgrade_prompt_dismissed?: boolean;
+  // Added in migration 0059 — optional/defensive like the other recently-added
+  // flags, may be absent until that migration has run.
+  pending_data_deletion_at?: string | null;
   current_streak_days: number;
   longest_streak_days: number;
   last_active_date: string | null;

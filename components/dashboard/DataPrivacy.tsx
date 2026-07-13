@@ -1,15 +1,24 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { deleteMyData } from "@/app/dashboard/actions";
+import { deleteMyData, cancelMyDataDeletion } from "@/app/dashboard/actions";
 
 const CONFIRM_WORD = "DELETE";
 
-export default function DataPrivacy() {
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+export default function DataPrivacy({
+  pendingDataDeletionAt,
+}: {
+  pendingDataDeletionAt: string | null;
+}) {
   const [confirming, setConfirming] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [done, setDone] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState(pendingDataDeletionAt);
 
   return (
     <div
@@ -49,15 +58,53 @@ export default function DataPrivacy() {
           Export my data
         </a>
 
-        {done ? (
-          <span style={{ fontSize: 13, color: "var(--teal)", alignSelf: "center" }}>
-            Data deleted ✓
-          </span>
+        {scheduledFor ? (
+          <div
+            style={{
+              background: "rgba(248,113,113,0.06)",
+              border: "1px solid rgba(248,113,113,0.3)",
+              borderRadius: 12,
+              padding: 16,
+              width: "100%",
+            }}
+          >
+            <p style={{ fontSize: 13, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
+              Scheduled for deletion on {formatDate(scheduledFor)}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
+              Your data still works normally until then — cancel any time before that date.
+            </p>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await cancelMyDataDeletion();
+                  if (result?.error) setError(result.error);
+                  else setScheduledFor(null);
+                })
+              }
+              style={{
+                background: "rgba(0,201,167,0.1)",
+                border: "1px solid rgba(0,201,167,0.3)",
+                borderRadius: 8,
+                padding: "9px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--teal)",
+                cursor: "pointer",
+              }}
+            >
+              {isPending ? "Cancelling…" : "Cancel deletion"}
+            </button>
+            {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 8 }}>{error}</p>}
+          </div>
         ) : confirming ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
             <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
-              This permanently deletes your plans, coach history, assessment results, gap analyses,
-              resume analysis, and tasks — with no way to recover them afterward. Type{" "}
+              This schedules your plans, coach history, assessment results, gap analyses, resume
+              analysis, and tasks for deletion in 7 days — everything keeps working normally until
+              then, and you can cancel any time before. Type{" "}
               <strong style={{ color: "var(--text)" }}>{CONFIRM_WORD}</strong> to confirm.
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -83,8 +130,9 @@ export default function DataPrivacy() {
                 disabled={isPending || confirmText !== CONFIRM_WORD}
                 onClick={() =>
                   startTransition(async () => {
-                    await deleteMyData();
-                    setDone(true);
+                    const result = await deleteMyData();
+                    if (result?.error) setError(result.error);
+                    else if (result?.deletionAt) setScheduledFor(result.deletionAt);
                   })
                 }
                 style={{
@@ -99,7 +147,7 @@ export default function DataPrivacy() {
                   opacity: isPending || confirmText !== CONFIRM_WORD ? 0.5 : 1,
                 }}
               >
-                {isPending ? "Deleting…" : "Confirm delete — this can't be undone"}
+                {isPending ? "Scheduling…" : "Schedule deletion (7-day grace period)"}
               </button>
               <button
                 type="button"
@@ -120,6 +168,7 @@ export default function DataPrivacy() {
                 Cancel
               </button>
             </div>
+            {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
           </div>
         ) : (
           <button

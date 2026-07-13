@@ -46,6 +46,7 @@ export type CompanyData = {
   organizationFinanceContactEmail: string | null;
   organizationLogoUrl: string | null;
   organizationBrandColor: string | null;
+  organizationPendingDeletionAt: string | null;
   rows: WorkforceRow[];
   companyCareerHealthScore: number | null;
   dimensionAverages: Partial<Record<CompetencyDimension, number>>;
@@ -77,6 +78,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
     organizationFinanceContactEmail: null,
     organizationLogoUrl: null,
     organizationBrandColor: null,
+    organizationPendingDeletionAt: null,
     rows: [],
     companyCareerHealthScore: null,
     dimensionAverages: {},
@@ -111,7 +113,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
   const { data: contactFields } = await supabase
     .from("organizations")
     .select(
-      "platform_contact_name, platform_contact_email, finance_contact_name, finance_contact_email, logo_url, brand_color"
+      "platform_contact_name, platform_contact_email, finance_contact_name, finance_contact_email, logo_url, brand_color, pending_deletion_at"
     )
     .eq("id", membership.organization_id)
     .maybeSingle<{
@@ -121,6 +123,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
       finance_contact_email: string | null;
       logo_url: string | null;
       brand_color: string | null;
+      pending_deletion_at: string | null;
     }>();
 
   const [{ data: members }, { data: invites }, { data: competencies }] = await Promise.all([
@@ -201,6 +204,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
     organizationFinanceContactEmail: contactFields?.finance_contact_email ?? null,
     organizationLogoUrl: contactFields?.logo_url ?? null,
     organizationBrandColor: contactFields?.brand_color ?? null,
+    organizationPendingDeletionAt: contactFields?.pending_deletion_at ?? null,
   };
   if (memberIds.length === 0) {
     return {
