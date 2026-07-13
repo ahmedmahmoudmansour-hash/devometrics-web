@@ -10,17 +10,14 @@ export const PRICING: Record<PricingRegion, { monthly: number; annual: number }>
   developing: { monthly: 7.99, annual: 66.99 },
 };
 
-// Enterprise starting price — was previously shown as "Custom" with no
-// number at all, which contradicts the product's own "self-serve, no sales
-// call required" positioning everywhere else and is real friction for the
-// small/medium teams that positioning targets (a price-less "Contact
-// sales" wall reads as "built for big companies with procurement," not
-// "sign up in a minute"). Same region split as the individual tiers.
-// PLACEHOLDER NUMBERS — adjust freely, this is a starting proposal, not a
-// number I have authority to finalize.
+// Enterprise per-employee/mo (billed annually). Deliberately set ABOVE the
+// individual Premium price in each region — the company gets the HR
+// dashboard, workforce analytics, and admin layer on top of everything an
+// individual gets, so per-seat it should cost more, not less. (Premium is
+// $7.99/mo developing, $14.99/mo premium; these sit just above both.)
 export const ENTERPRISE_PRICING: Record<PricingRegion, number> = {
-  premium: 12,
-  developing: 6,
+  premium: 15.99,
+  developing: 8.99,
 };
 export const ENTERPRISE_MIN_SEATS = 5;
 
