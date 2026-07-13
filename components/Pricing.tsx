@@ -116,10 +116,11 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 56 }}>
         <span
+          className="mono"
           style={{
             fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
+            fontWeight: 600,
+            letterSpacing: "0.1em",
             color: "var(--teal)",
             textTransform: "uppercase",
           }}
@@ -273,9 +274,9 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             <div style={{ marginBottom: 8 }}>
               {plan.perSeat ? (
                 <>
-                  <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>
+                  <span className="mono" style={{ fontSize: 34, fontWeight: 700, color: "var(--text)" }}>
                     ${plan.price.monthly}
-                    <span style={{ fontSize: 16, fontWeight: 400, color: "var(--text-muted)" }}>/employee/mo</span>
+                    <span style={{ fontSize: 15, fontWeight: 400, color: "var(--text-muted)" }}>/employee/mo</span>
                   </span>
                   <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
                     Billed annually · {ENTERPRISE_MIN_SEATS}-employee minimum
@@ -288,13 +289,13 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
               ) : (
                 <>
                   {(annual ? plan.originalPrice.annual : plan.originalPrice.monthly) !== null && (
-                    <span style={{ fontSize: 18, fontWeight: 600, color: "var(--text-muted)", textDecoration: "line-through", marginRight: 8 }}>
+                    <span className="mono" style={{ fontSize: 18, fontWeight: 400, color: "var(--text-muted)", textDecoration: "line-through", marginRight: 8 }}>
                       ${annual ? plan.originalPrice.annual : plan.originalPrice.monthly}
                     </span>
                   )}
-                  <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>
+                  <span className="mono" style={{ fontSize: 34, fontWeight: 700, color: "var(--text)" }}>
                     ${annual ? plan.price.annual : plan.price.monthly}
-                    <span style={{ fontSize: 16, fontWeight: 400, color: "var(--text-muted)" }}>
+                    <span style={{ fontSize: 15, fontWeight: 400, color: "var(--text-muted)" }}>
                       {annual ? "/yr" : "/mo"}
                     </span>
                   </span>

@@ -47,8 +47,25 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--navy);
   color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* var(--font-inter) is the next/font-loaded family; the bare 'Inter' name
+     it used before never matched the hashed family next/font actually
+     emits, so the whole site was silently rendering in the system fallback.
+     The stack degrades to native system fonts (SF, Segoe) if the webfont
+     is slow or blocked. */
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Instrument-readout treatment for figures and eyebrow labels — a metrics
+   product should show its numbers like an instrument, not in the same
+   proportional face as its prose. Uses the platform's own high-quality
+   monospace (SF Mono on macOS/iOS, Consolas on Windows, system mono on
+   Linux) so it needs no webfont download, and tabular figures so digits
+   line up in columns (scores, gaps, stat rows). Applied deliberately to
+   data and eyebrow labels, never to body copy. */
+.mono {
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 ::-webkit-scrollbar { width: 6px; }

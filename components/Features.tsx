@@ -81,10 +81,11 @@ export default function Features() {
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 64 }}>
           <span
+            className="mono"
             style={{
               fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: "0.12em",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
               color: "var(--teal)",
               textTransform: "uppercase",
             }}

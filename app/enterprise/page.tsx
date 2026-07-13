@@ -298,7 +298,7 @@ export default function EnterprisePage() {
                         </div>
                       </td>
                       {COMPETENCY_DIMENSIONS.map((d) => (
-                        <td key={d} style={{ ...sampleCellStyle, textAlign: "center", background: levelBg(r.levels[d]) }}>
+                        <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", background: levelBg(r.levels[d]) }}>
                           {r.levels[d]}
                         </td>
                       ))}
@@ -307,7 +307,7 @@ export default function EnterprisePage() {
                   <tr>
                     <td style={{ ...sampleCellStyle, fontWeight: 700, color: "var(--text-muted)" }}>Team average</td>
                     {COMPETENCY_DIMENSIONS.map((d) => (
-                      <td key={d} style={{ ...sampleCellStyle, textAlign: "center", fontWeight: 700, color: levelText(SAMPLE_AVERAGES[d]) }}>
+                      <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", fontWeight: 700, color: levelText(SAMPLE_AVERAGES[d]) }}>
                         {SAMPLE_AVERAGES[d]}
                       </td>
                     ))}
@@ -333,7 +333,7 @@ export default function EnterprisePage() {
         >
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: "var(--teal)", textTransform: "uppercase" }}>
+              <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
                 What&apos;s included
               </span>
               <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-0.03em", marginTop: 12, color: "var(--text)" }}>
@@ -359,7 +359,7 @@ export default function EnterprisePage() {
 
         <section style={{ padding: "100px 24px", maxWidth: 1000, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: "var(--teal)", textTransform: "uppercase" }}>
+            <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
               How it works
             </span>
             <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-0.03em", marginTop: 12, color: "var(--text)" }}>
@@ -370,6 +370,7 @@ export default function EnterprisePage() {
             {steps.map((s) => (
               <div key={s.n} style={{ textAlign: "center" }}>
                 <div
+                  className="mono"
                   style={{
                     width: 44,
                     height: 44,
@@ -377,8 +378,8 @@ export default function EnterprisePage() {
                     background: "rgba(0,201,167,0.1)",
                     border: "1px solid rgba(0,201,167,0.3)",
                     color: "var(--teal)",
-                    fontWeight: 800,
-                    fontSize: 18,
+                    fontWeight: 600,
+                    fontSize: 17,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

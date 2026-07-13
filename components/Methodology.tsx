@@ -45,10 +45,11 @@ export default function Methodology() {
     >
       <div style={{ textAlign: "center", marginBottom: 64 }}>
         <span
+          className="mono"
           style={{
             fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
+            fontWeight: 600,
+            letterSpacing: "0.1em",
             color: "var(--teal)",
             textTransform: "uppercase",
           }}
@@ -96,10 +97,11 @@ export default function Methodology() {
             }}
           >
             <div
+              className="mono"
               style={{
                 fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
+                fontWeight: 600,
+                letterSpacing: "0.08em",
                 color: "var(--teal)",
                 marginBottom: 12,
                 textTransform: "uppercase",
@@ -127,10 +129,11 @@ export default function Methodology() {
 
       <div style={{ marginTop: 64, textAlign: "center" }}>
         <span
+          className="mono"
           style={{
             fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
+            fontWeight: 600,
+            letterSpacing: "0.08em",
             color: "var(--teal)",
             textTransform: "uppercase",
           }}

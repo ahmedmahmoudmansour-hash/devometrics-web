@@ -31,10 +31,11 @@ export default function SkillRadar() {
         {/* Left: copy */}
         <div>
           <span
+            className="mono"
             style={{
               fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: "0.12em",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
               color: "var(--teal)",
               textTransform: "uppercase",
             }}
@@ -128,7 +129,7 @@ export default function SkillRadar() {
                 <div key={skill.label}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{skill.label}</span>
-                    <span style={{ fontSize: 12, color: "rgba(255,100,100,0.8)", fontWeight: 600 }}>−{gap}</span>
+                    <span className="mono" style={{ fontSize: 12, color: "rgba(255,100,100,0.8)", fontWeight: 600 }}>−{gap}</span>
                   </div>
                   <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 100 }}>
                     {/* Target bar */}
@@ -158,8 +159,8 @@ export default function SkillRadar() {
                     />
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{skill.current}/100</span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Target: {skill.target}</span>
+                    <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>{skill.current}/100</span>
+                    <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>Target: {skill.target}</span>
                   </div>
                 </div>
               );
@@ -179,13 +180,13 @@ export default function SkillRadar() {
           >
             <div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Career Health Score</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--teal)", letterSpacing: "-0.02em" }}>
+              <div className="mono" style={{ fontSize: 28, fontWeight: 600, color: "var(--teal)" }}>
                 62<span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 400 }}>/100</span>
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Promotion Readiness</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--amber)" }}>68% ready</div>
+              <div className="mono" style={{ fontSize: 14, fontWeight: 600, color: "var(--amber)" }}>68% ready</div>
             </div>
           </div>
         </div>

@@ -215,7 +215,7 @@ export default function Hero() {
             { value: "AI-first", label: "Gap analysis engine" },
           ].map((stat) => (
             <div key={stat.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--teal)", letterSpacing: "-0.02em" }}>
+              <div className="mono" style={{ fontSize: 28, fontWeight: 600, color: "var(--teal)" }}>
                 {stat.value}
               </div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
