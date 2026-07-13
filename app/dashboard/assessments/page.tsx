@@ -59,10 +59,23 @@ export default async function AssessmentsPage() {
     .order("created_at", { ascending: false })
     .returns<CaseStudyExerciseAttempt[]>();
 
+  // New table (migration 0058) — a query error before it's run just yields
+  // null, so this degrades to "nothing assigned" rather than breaking the
+  // page for everyone else.
+  const { data: assignedRows } = await supabase
+    .from("assigned_assessments")
+    .select("assessment_slug")
+    .eq("employee_user_id", user.id)
+    .returns<{ assessment_slug: string }[]>();
+
   const latestBySlug = new Map<string, AssessmentResult>();
   for (const r of results ?? []) {
     if (!latestBySlug.has(r.assessment_slug)) latestBySlug.set(r.assessment_slug, r);
   }
+
+  const pendingAssigned = (assignedRows ?? [])
+    .map((r) => ASSESSMENTS.find((a) => a.slug === r.assessment_slug))
+    .filter((a): a is (typeof ASSESSMENTS)[number] => !!a && !latestBySlug.has(a.slug));
 
   const latestAttemptBySlug = new Map<string, CaseStudyExerciseAttempt>();
   for (const a of exerciseAttempts ?? []) {
@@ -96,6 +109,26 @@ export default async function AssessmentsPage() {
             strengths and blind spots more clearly.
           </p>
         </div>
+
+        {pendingAssigned.length > 0 && (
+          <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#f0b840", marginBottom: 10 }}>
+              Assigned to you ({pendingAssigned.length})
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {pendingAssigned.map((a) => (
+                <Link
+                  key={a.slug}
+                  href={`/dashboard/assessments/${a.slug}`}
+                  style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}
+                >
+                  <span style={{ color: "var(--text)" }}>{a.name}</span>
+                  <span style={{ color: "#f0b840", fontWeight: 600 }}>Start →</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <AssessmentPlanGenerator completedCount={latestBySlug.size} learningPreferences={profile?.learning_preferences ?? []} />
 

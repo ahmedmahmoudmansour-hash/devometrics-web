@@ -331,6 +331,7 @@ export type EmployeeDetail = {
   gapAnalysis: { competencies: CompetencyScore[]; careerHealthScore: number; targetRole: string; generatedAt: string } | null;
   assessmentResults: { slug: string; name: string; score: number; completedAt: string }[];
   resumeScore: number | null;
+  assignedAssessments: { slug: string; name: string; assignedAt: string; completed: boolean }[];
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -346,6 +347,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     gapAnalysis: null,
     assessmentResults: [],
     resumeScore: null,
+    assignedAssessments: [],
   };
 
   const supabase = await createClient();
@@ -369,36 +371,50 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     .maybeSingle<{ user_id: string; title: string | null }>();
   if (!targetMembership) return empty;
 
-  const [{ data: profile }, { data: plans }, { data: latestAnalysis }, { data: assessmentRows }, { data: latestResume }] =
-    await Promise.all([
-      supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
-      supabase
-        .from("development_plans")
-        .select("*")
-        .eq("user_id", employeeUserId)
-        .order("created_at", { ascending: false })
-        .returns<DevelopmentPlan[]>(),
-      supabase
-        .from("gap_analyses")
-        .select("*")
-        .eq("user_id", employeeUserId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle<GapAnalysis>(),
-      supabase
-        .from("assessment_results")
-        .select("assessment_slug, score, completed_at")
-        .eq("user_id", employeeUserId)
-        .order("completed_at", { ascending: false })
-        .returns<Pick<AssessmentResult, "assessment_slug" | "score" | "completed_at">[]>(),
-      supabase
-        .from("resume_analyses")
-        .select("overall_score")
-        .eq("user_id", employeeUserId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle<{ overall_score: number }>(),
-    ]);
+  const [
+    { data: profile },
+    { data: plans },
+    { data: latestAnalysis },
+    { data: assessmentRows },
+    { data: latestResume },
+    { data: assignedRows },
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
+    supabase
+      .from("development_plans")
+      .select("*")
+      .eq("user_id", employeeUserId)
+      .order("created_at", { ascending: false })
+      .returns<DevelopmentPlan[]>(),
+    supabase
+      .from("gap_analyses")
+      .select("*")
+      .eq("user_id", employeeUserId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<GapAnalysis>(),
+    supabase
+      .from("assessment_results")
+      .select("assessment_slug, score, completed_at")
+      .eq("user_id", employeeUserId)
+      .order("completed_at", { ascending: false })
+      .returns<Pick<AssessmentResult, "assessment_slug" | "score" | "completed_at">[]>(),
+    supabase
+      .from("resume_analyses")
+      .select("overall_score")
+      .eq("user_id", employeeUserId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ overall_score: number }>(),
+    // New table (migration 0058) — same isolated-query graceful degrade as
+    // every other newer table: a query error before the migration has run
+    // just yields null here, falling through to an empty list below.
+    supabase
+      .from("assigned_assessments")
+      .select("assessment_slug, created_at")
+      .eq("employee_user_id", employeeUserId)
+      .returns<{ assessment_slug: string; created_at: string }[]>(),
+  ]);
 
   // Keep only the latest attempt per assessment — same "latest wins"
   // dedup the individual's own Assessment Center and the workforce
@@ -450,6 +466,15 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     assessmentResults: Array.from(latestAssessmentBySlug.values())
       .map((r) => ({ ...r, name: ASSESSMENTS.find((a) => a.slug === r.slug)?.name ?? r.slug }))
       .sort((a, b) => b.score - a.score),
+    assignedAssessments: (assignedRows ?? []).map((r) => ({
+      slug: r.assessment_slug,
+      name: ASSESSMENTS.find((a) => a.slug === r.assessment_slug)?.name ?? r.assessment_slug,
+      assignedAt: r.created_at,
+      // Completed if any real result exists for this assessment, regardless
+      // of whether it happened before or after the assignment — someone who
+      // already took it before being assigned shouldn't be shown as pending.
+      completed: latestAssessmentBySlug.has(r.assessment_slug),
+    })),
     resumeScore: latestResume?.overall_score ?? null,
   };
 }

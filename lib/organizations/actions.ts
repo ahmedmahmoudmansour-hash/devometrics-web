@@ -499,6 +499,46 @@ export async function assignTaskToEmployee(
   return { success: true };
 }
 
+export async function assignAssessment(employeeUserId: string, assessmentSlug: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("assigned_assessments").insert({
+    employee_user_id: employeeUserId,
+    assessment_slug: assessmentSlug,
+    assigned_by: user.id,
+  });
+  if (error) {
+    // Unique constraint violation (already assigned) shouldn't read as a
+    // real failure to the admin — same "already assigned" intent either way.
+    if (error.code === "23505") return { error: "Already assigned to this person." };
+    return { error: "Could not assign — the database may need migration 0058 run first." };
+  }
+
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true };
+}
+
+export async function removeAssignedAssessment(employeeUserId: string, assessmentSlug: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  await supabase
+    .from("assigned_assessments")
+    .delete()
+    .eq("employee_user_id", employeeUserId)
+    .eq("assessment_slug", assessmentSlug);
+
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true };
+}
+
 // Admin-only, deletes the whole workspace. Cascades to organization_members
 // and organization_invites via the on-delete-cascade FKs in 0016/0017 — one
 // delete, not a manual cleanup of each child table.

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
+import AssignAssessmentForm from "@/components/dashboard/AssignAssessmentForm";
 import Avatar from "@/components/Avatar";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import { HBarChart } from "@/components/dashboard/charts";
@@ -24,7 +25,7 @@ export default async function EmployeeDetailPage({
   const data = await buildEmployeeDetail(userId);
   if (!data.isAuthorized || !data.profile) redirect("/dashboard/company");
 
-  const { profile, plans, gapAnalysis, assessmentResults, resumeScore } = data;
+  const { profile, plans, gapAnalysis, assessmentResults, resumeScore, assignedAssessments } = data;
   const dimensionLevels = gapAnalysis
     ? Object.fromEntries(gapAnalysis.competencies.map((c) => [c.dimension, c.currentLevel]))
     : {};
@@ -127,7 +128,10 @@ export default async function EmployeeDetailPage({
           </div>
         )}
 
-        <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
+          <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
+        </div>
 
         <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 20 }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Development plans</h2>
