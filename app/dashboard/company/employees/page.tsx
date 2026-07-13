@@ -142,7 +142,19 @@ export default async function CompanyEmployeesPage() {
                           <td style={{ ...cellStyle, textAlign: "right" }}>
                             {r.milestonesDone}/{r.milestonesTotal}
                           </td>
-                          <td style={{ ...cellStyle, textAlign: "right" }}>
+                          <td style={{ ...cellStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                            <Link
+                              href={`/dashboard/company/${r.userId}#assign-task`}
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: "var(--teal)",
+                                textDecoration: "none",
+                                marginRight: 14,
+                              }}
+                            >
+                              Assign task
+                            </Link>
                             <EditEmployeeButton
                               memberId={r.memberId}
                               name={r.name}

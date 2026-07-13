@@ -4,6 +4,7 @@ import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
 import AssignAssessmentForm from "@/components/dashboard/AssignAssessmentForm";
+import EmployeeReportExportBar from "@/components/dashboard/EmployeeReportExportBar";
 import Avatar from "@/components/Avatar";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import { HBarChart } from "@/components/dashboard/charts";
@@ -33,11 +34,30 @@ export default async function EmployeeDetailPage({
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <Link href="/dashboard/company/employees" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-          ← Back to employees
-        </Link>
+        <div className="no-print">
+          <Link href="/dashboard/company/employees" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
+            ← Back to employees
+          </Link>
+        </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14, marginTop: 12, marginBottom: 28 }}>
+        <div style={{ marginTop: 12, marginBottom: 20 }}>
+          <EmployeeReportExportBar />
+        </div>
+
+        <div className="print-plan" style={{ ...card, padding: 32 }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <span
+            className="print-accent"
+            style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}
+          >
+            Devometrics
+          </span>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+            Employee Development Report · Confidential
+          </p>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14, marginBottom: 28 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <Avatar name={profile.name} avatarUrl={profile.avatarUrl} size={44} />
             <div>
@@ -45,11 +65,14 @@ export default async function EmployeeDetailPage({
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
                 {[profile.title, profile.email].filter(Boolean).join(" · ")}
               </p>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              </p>
             </div>
           </div>
           {gapAnalysis && (
             <div style={{ textAlign: "right" }}>
-              <span className="mono" style={{ fontSize: 30, fontWeight: 800, color: levelText(gapAnalysis.careerHealthScore) }}>
+              <span className="mono print-accent" style={{ fontSize: 30, fontWeight: 800, color: levelText(gapAnalysis.careerHealthScore) }}>
                 {gapAnalysis.careerHealthScore}
               </span>
               <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Career Health Score</p>
@@ -58,13 +81,11 @@ export default async function EmployeeDetailPage({
         </div>
 
         {!gapAnalysis && assessmentResults.length === 0 && resumeScore === null ? (
-          <div style={{ ...card, marginBottom: 24 }}>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              {profile.name} hasn&apos;t run a Gap Analysis, taken an assessment, or analyzed a resume
-              yet — there&apos;s no measured data to report on. This isn&apos;t a reflection of them;
-              it just means these tools haven&apos;t been used yet.
-            </p>
-          </div>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+            {profile.name} hasn&apos;t run a Gap Analysis, taken an assessment, or analyzed a resume
+            yet — there&apos;s no measured data to report on. This isn&apos;t a reflection of them;
+            it just means these tools haven&apos;t been used yet.
+          </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
             {gapAnalysis && (
@@ -128,12 +149,7 @@ export default async function EmployeeDetailPage({
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
-          <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
-        </div>
-
-        <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 20 }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Development plans</h2>
           {plans.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
@@ -193,6 +209,32 @@ export default async function EmployeeDetailPage({
               </div>
             ))
           )}
+        </div>
+
+        <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 32, textAlign: "center" }}>
+          AI-assisted development report generated by Devometrics — a decision-support input, not a
+          certified psychometric evaluation or a guarantee of any career outcome.
+        </p>
+        </div>
+
+        {/* The block above is the clean, print-optimized report snapshot (used
+            by the Download PDF button). This is the live management view —
+            assign tasks and assessments — kept separate and marked no-print
+            so it never shows up in the export. */}
+        <div id="assign-task" className="no-print" style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 20 }}>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
+          >
+            Manage this employee
+          </p>
+          <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
+          <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
         </div>
       </div>
     </div>
