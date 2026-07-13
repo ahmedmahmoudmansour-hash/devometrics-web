@@ -25,6 +25,9 @@ export type Profile = {
   student_verified_at: string | null;
   student_school_email: string | null;
   badges_enabled: boolean;
+  // Added in migration 0057 — optional/defensive like the other
+  // recently-added flags, may be absent until that migration has run.
+  upgrade_prompt_dismissed?: boolean;
   current_streak_days: number;
   longest_streak_days: number;
   last_active_date: string | null;

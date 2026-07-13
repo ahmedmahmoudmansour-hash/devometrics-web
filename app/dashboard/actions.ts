@@ -212,6 +212,25 @@ export async function updateBadgesEnabled(enabled: boolean) {
   return { success: true };
 }
 
+// Free-tier users saw the Upgrade/trial/student-discount cluster on every
+// single visit to the home dashboard with no way to hide it — this is the
+// one-way "hide this" a returning user reaches for once they've already
+// seen the pitch. No "undo" surfaced in the UI (matches badges_enabled's
+// simplicity), but nothing stops re-enabling it directly if ever needed.
+export async function dismissUpgradePrompt() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("profiles").update({ upgrade_prompt_dismissed: true }).eq("id", user.id);
+  if (error) return { error: "Could not save — try again." };
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 // Persists the theme choice for logged-in users so it syncs across devices.
 // No-op if not authenticated — localStorage + the data-theme attribute
 // still handle the logged-out/public-page case on their own.

@@ -24,6 +24,8 @@ import { listMySurveys } from "@/lib/surveys/actions";
 import { listTodayTasks, listOverdueTasks } from "@/lib/tasks/actions";
 import TodayTasksCard from "@/components/dashboard/TodayTasksCard";
 import UpcomingDeadlinesCard from "@/components/dashboard/UpcomingDeadlinesCard";
+import DashboardSection from "@/components/dashboard/DashboardSection";
+import DismissibleUpgradePrompt from "@/components/dashboard/DismissibleUpgradePrompt";
 import type {
   AssessmentResult,
   DevelopmentPlan,
@@ -187,46 +189,63 @@ export default async function DashboardPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Your progress</h1>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <OnboardingChecklist steps={onboardingSteps} />
-          <UpcomingDeadlinesCard milestones={milestones ?? []} />
-          <TodayTasksCard tasks={todayTasks} overdue={overdueTasks} />
-          <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
-          <PendingSurveysCard surveys={mySurveys} />
-          <CareerHealthOverview
-            gapAnalysisScore={latestAnalysis?.career_health_score ?? null}
-            assessmentAverage={assessmentAverage}
-            resumeScore={latestResume?.overall_score ?? null}
-          />
-          <CareerMomentumCard momentum={momentum} />
-          <AchievementsCard earnedKeys={earnedAchievements} badgesEnabled={profile?.badges_enabled ?? true} />
-          {(plans ?? []).map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              milestones={(milestones ?? []).filter((m) => m.plan_id === plan.id)}
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          <DashboardSection label="Today">
+            <OnboardingChecklist steps={onboardingSteps} />
+            <UpcomingDeadlinesCard milestones={milestones ?? []} />
+            <TodayTasksCard tasks={todayTasks} overdue={overdueTasks} />
+            <PendingSurveysCard surveys={mySurveys} />
+          </DashboardSection>
+
+          <DashboardSection label="Your career health">
+            <CareerHealthOverview
+              gapAnalysisScore={latestAnalysis?.career_health_score ?? null}
+              assessmentAverage={assessmentAverage}
+              resumeScore={latestResume?.overall_score ?? null}
             />
-          ))}
-          <ProfileSettings profile={profile} />
-          <NewPlanForm
-            subscriptionTier={effectiveSubscriptionTier(profile ?? null)}
-            existingPlanCount={(plans ?? []).length}
-          />
-          {effectiveSubscriptionTier(profile ?? null) === "free" && <UpgradeToPremiumCard />}
-          {effectiveSubscriptionTier(profile ?? null) === "free" && <PremiumTrialForm />}
-          {effectiveSubscriptionTier(profile ?? null) === "free" && (
-            <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
-              Student?{" "}
-              <a href="mailto:sales@devometrics.com" style={{ color: "var(--teal)" }}>
-                Email sales@devometrics.com
-              </a>{" "}
-              for a discount.
-            </p>
+            <CareerMomentumCard momentum={momentum} />
+            <AchievementsCard earnedKeys={earnedAchievements} badgesEnabled={profile?.badges_enabled ?? true} />
+            <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
+          </DashboardSection>
+
+          <DashboardSection label="Development">
+            {(plans ?? []).map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                milestones={(milestones ?? []).filter((m) => m.plan_id === plan.id)}
+              />
+            ))}
+            <NewPlanForm
+              subscriptionTier={effectiveSubscriptionTier(profile ?? null)}
+              existingPlanCount={(plans ?? []).length}
+            />
+          </DashboardSection>
+
+          {effectiveSubscriptionTier(profile ?? null) === "free" && !profile?.upgrade_prompt_dismissed && (
+            <DismissibleUpgradePrompt>
+              <UpgradeToPremiumCard />
+              <PremiumTrialForm />
+              <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
+                Student?{" "}
+                <a href="mailto:sales@devometrics.com" style={{ color: "var(--teal)" }}>
+                  Email sales@devometrics.com
+                </a>{" "}
+                for a discount.
+              </p>
+            </DismissibleUpgradePrompt>
           )}
+
           {membership?.role === "member" && (
-            <CompanyMembershipCard organizationName={membership.organization_name} />
+            <DashboardSection label="Company">
+              <CompanyMembershipCard organizationName={membership.organization_name} />
+            </DashboardSection>
           )}
-          <DataPrivacy />
+
+          <DashboardSection label="Account">
+            <ProfileSettings profile={profile} />
+            <DataPrivacy />
+          </DashboardSection>
         </div>
       </div>
     </div>
