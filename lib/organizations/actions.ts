@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
+import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -614,7 +615,14 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
     })
     .join("\n");
 
-  const assessmentLines = detail.assessmentResults.map((a) => `${a.name}: ${a.score}/100`).join("\n") || "(none completed)";
+  const assessmentLines =
+    detail.assessmentResults
+      .map((a) =>
+        a.slug === ENGLISH_PROFICIENCY_SLUG
+          ? `${a.name}: CEFR ${cefrLevelFromScore(a.score)} (${a.score}/100 correct — objective test, not self-report)`
+          : `${a.name}: ${a.score}/100`
+      )
+      .join("\n") || "(none completed)";
 
   const prompt = [
     `EMPLOYEE: ${detail.profile.name}${detail.profile.title ? `, ${detail.profile.title}` : ""}`,

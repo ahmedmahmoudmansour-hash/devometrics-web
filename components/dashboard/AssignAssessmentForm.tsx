@@ -3,6 +3,17 @@
 import { useState, useTransition } from "react";
 import { assignAssessment, removeAssignedAssessment } from "@/lib/organizations/actions";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
+import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
+
+// English Proficiency lives outside ASSESSMENTS (it's an objective test,
+// not the self-report catalog — see lib/assessments/englishProficiency.ts),
+// but admins should still be able to push it to someone the same way as
+// any other assessment, so it's added here rather than to the catalog
+// itself (which would wrongly route it through the Likert AssessmentForm).
+const ASSIGNABLE = [
+  ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: a.name, level: a.level as string })),
+  { slug: ENGLISH_PROFICIENCY_SLUG, name: "English Proficiency", level: "A1–C2" },
+];
 
 const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -22,7 +33,7 @@ export default function AssignAssessmentForm({
   assigned: { slug: string; name: string; assignedAt: string; completed: boolean }[];
 }) {
   const assignedSlugs = new Set(assigned.map((a) => a.slug));
-  const available = ASSESSMENTS.filter((a) => !assignedSlugs.has(a.slug));
+  const available = ASSIGNABLE.filter((a) => !assignedSlugs.has(a.slug));
   const [slug, setSlug] = useState(available[0]?.slug ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();

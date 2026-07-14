@@ -10,6 +10,7 @@ import Avatar from "@/components/Avatar";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import { HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
 import { levelText } from "@/lib/ui/levelColor";
+import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 
 const LEADERSHIP_DIMS = ["Leadership", "Strategic Thinking", "People Management"] as const;
 
@@ -236,7 +237,13 @@ export default async function EmployeeDetailPage({
                       {assessmentResults.slice(0, 6).map((a) => (
                         <div key={a.slug} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
                           <span style={{ color: "var(--text)" }}>{a.name}</span>
-                          <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>{a.score}</span>
+                          {a.slug === ENGLISH_PROFICIENCY_SLUG ? (
+                            <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>
+                              {cefrLevelFromScore(a.score)} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({a.score})</span>
+                            </span>
+                          ) : (
+                            <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>{a.score}</span>
+                          )}
                         </div>
                       ))}
                       {assessmentResults.length > 6 && (
