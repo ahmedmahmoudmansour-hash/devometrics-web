@@ -74,9 +74,17 @@ export default async function AssessmentsPage() {
     if (!latestBySlug.has(r.assessment_slug)) latestBySlug.set(r.assessment_slug, r);
   }
 
+  // English Proficiency lives outside ASSESSMENTS (it's an objective test,
+  // not the self-report catalog) — without this, someone assigned it would
+  // never see it in the "Assigned to you" callout below, even though the
+  // admin-side assignment picker already lets it be assigned.
   const pendingAssigned = (assignedRows ?? [])
-    .map((r) => ASSESSMENTS.find((a) => a.slug === r.assessment_slug))
-    .filter((a): a is (typeof ASSESSMENTS)[number] => !!a && !latestBySlug.has(a.slug));
+    .map((r) =>
+      r.assessment_slug === ENGLISH_PROFICIENCY_SLUG
+        ? { slug: ENGLISH_PROFICIENCY_SLUG, name: "English Proficiency" }
+        : ASSESSMENTS.find((a) => a.slug === r.assessment_slug)
+    )
+    .filter((a): a is { slug: string; name: string } => !!a && !latestBySlug.has(a.slug));
 
   const latestAttemptBySlug = new Map<string, CaseStudyExerciseAttempt>();
   for (const a of exerciseAttempts ?? []) {
