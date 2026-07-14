@@ -10,6 +10,7 @@ import type {
   Profile,
 } from "@/lib/supabase/types";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
+import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
 
 export type WorkforceRow = {
@@ -493,7 +494,13 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
         }
       : null,
     assessmentResults: Array.from(latestAssessmentBySlug.values())
-      .map((r) => ({ ...r, name: ASSESSMENTS.find((a) => a.slug === r.slug)?.name ?? r.slug }))
+      .map((r) => ({
+        ...r,
+        // Not in ASSESSMENTS (it's an objective test, not the self-report
+        // catalog — see lib/assessments/englishProficiency.ts), so it needs
+        // its own name resolution here or it'd show the raw slug.
+        name: r.slug === ENGLISH_PROFICIENCY_SLUG ? "English Proficiency" : ASSESSMENTS.find((a) => a.slug === r.slug)?.name ?? r.slug,
+      }))
       .sort((a, b) => b.score - a.score),
     assignedAssessments: (assignedRows ?? []).map((r) => ({
       slug: r.assessment_slug,

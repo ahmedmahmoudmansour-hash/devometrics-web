@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ASSESSMENTS, LEVEL_SECTIONS, type LevelSection } from "@/lib/assessments/catalog";
 import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
+import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { rankByImpact } from "@/lib/gap-analysis/dimensions";
 import AssessmentPlanGenerator from "@/components/dashboard/AssessmentPlanGenerator";
 import type { AssessmentResult, CaseStudyExerciseAttempt, GapAnalysis, Profile } from "@/lib/supabase/types";
@@ -131,6 +132,45 @@ export default async function AssessmentsPage() {
         )}
 
         <AssessmentPlanGenerator completedCount={latestBySlug.size} learningPreferences={profile?.learning_preferences ?? []} />
+
+        <div style={{ marginBottom: 36 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+            Language Proficiency
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+            A real ability test — grammar, vocabulary, and reading comprehension with correct answers,
+            leveled A1–C2. Unlike everything below, this isn&apos;t a self-rating.
+          </p>
+          <Link
+            href={`/dashboard/assessments/${ENGLISH_PROFICIENCY_SLUG}`}
+            style={{
+              display: "block",
+              maxWidth: 280,
+              background: "var(--navy-mid)",
+              border: "1px solid var(--border)",
+              borderRadius: 14,
+              padding: 20,
+              textDecoration: "none",
+            }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
+              CEFR-style · 24 questions
+            </span>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
+              English Proficiency
+            </h3>
+            {(() => {
+              const result = latestBySlug.get(ENGLISH_PROFICIENCY_SLUG);
+              return result ? (
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
+                  Completed — {cefrLevelFromScore(result.score)}
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+              );
+            })()}
+          </Link>
+        </div>
 
         <div style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
