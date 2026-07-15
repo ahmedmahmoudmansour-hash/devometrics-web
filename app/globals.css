@@ -112,6 +112,11 @@ a:focus-visible {
   .print-plan { border: none !important; }
   .print-plan .print-rule { border-bottom: 1px solid #d8dce3 !important; }
   .print-plan .print-accent { color: #097066 !important; }
+  /* Chart-bearing cards (competency bars, capability pyramid, 9-box grid)
+     were splitting across a page boundary mid-chart when printed —
+     break-inside keeps each card whole on one page instead of letting the
+     browser's print pagination cut through an SVG or stacked chart. */
+  .print-plan .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
 }
 
 /* Home dashboard content grid — was a single 640px column centered inside

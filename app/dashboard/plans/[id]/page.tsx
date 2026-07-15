@@ -92,7 +92,7 @@ export default async function PlanDetailPage({
                 return (
                   <div
                     key={m.id}
-                    className="print-rule"
+                    className="print-rule print-avoid-break"
                     style={{ padding: "18px 0", borderBottom: "1px solid var(--border)" }}
                   >
                     <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>

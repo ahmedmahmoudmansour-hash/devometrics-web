@@ -121,7 +121,7 @@ export default async function EmployeeDetailPage({
         </div>
 
         {assessmentSummary && (
-          <div style={{ ...card, marginBottom: 20, borderLeft: "3px solid var(--teal)" }}>
+          <div className="print-avoid-break" style={{ ...card, marginBottom: 20, borderLeft: "3px solid var(--teal)" }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
               Assessment Summary
             </p>
@@ -174,7 +174,7 @@ export default async function EmployeeDetailPage({
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
             {gapAnalysis && (
-              <div style={card}>
+              <div className="print-avoid-break" style={card}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
                   Competency breakdown
                 </h2>
@@ -199,7 +199,7 @@ export default async function EmployeeDetailPage({
             )}
 
             {nineBoxPoint && (
-              <div style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div className="print-avoid-break" style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", alignSelf: "flex-start", marginBottom: 4 }}>
                   Talent grid position
                 </h2>
@@ -218,7 +218,7 @@ export default async function EmployeeDetailPage({
             {(assessmentResults.length > 0 || resumeScore !== null) && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                 {resumeScore !== null && (
-                  <div style={card}>
+                  <div className="print-avoid-break" style={card}>
                     <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
                       Resume Intelligence
                     </p>
@@ -229,7 +229,7 @@ export default async function EmployeeDetailPage({
                   </div>
                 )}
                 {assessmentResults.length > 0 && (
-                  <div style={card}>
+                  <div className="print-avoid-break" style={card}>
                     <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
                       Assessments ({assessmentResults.length})
                     </p>
@@ -269,6 +269,7 @@ export default async function EmployeeDetailPage({
             plans.map((plan) => (
               <div
                 key={plan.id}
+                className="print-avoid-break"
                 style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}
               >
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{plan.title}</h3>
