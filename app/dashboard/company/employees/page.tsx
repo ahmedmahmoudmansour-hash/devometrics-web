@@ -157,7 +157,9 @@ export default async function CompanyEmployeesPage() {
                             </Link>
                             <EditEmployeeButton
                               memberId={r.memberId}
+                              userId={r.userId}
                               name={r.name}
+                              pendingDataDeletionAt={r.pendingDataDeletionAt}
                               initial={{
                                 title: r.title,
                                 department: r.department,

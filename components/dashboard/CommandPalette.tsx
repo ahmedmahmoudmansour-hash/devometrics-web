@@ -28,6 +28,7 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean): Entry[
     { label: "Discovery", href: "/dashboard/discovery", hint: "AI interview about you", keywords: "interview questions profile onboarding" },
     { label: "Resume Intelligence", href: "/dashboard/resume", keywords: "cv ats score keywords bullets" },
     { label: "Scorecard", href: "/dashboard/scorecard", keywords: "score career health momentum badges" },
+    { label: "My Development", href: "/dashboard/plans", hint: "All your plans and milestones", keywords: "plans milestones status in progress completed deferred track" },
     { label: "My Journey", href: "/dashboard/journey", hint: "Your story so far", keywords: "history timeline progress log" },
     { label: "Profile", href: "/dashboard/profile", keywords: "account avatar settings preferences experience education" },
   ];

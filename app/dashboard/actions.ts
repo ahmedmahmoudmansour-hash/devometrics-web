@@ -42,6 +42,36 @@ export async function toggleMilestone(id: string, completed: boolean) {
   revalidatePath("/dashboard");
 }
 
+export type MilestoneStatus = "in_progress" | "completed" | "deferred";
+
+// The richer 3-state control (see MilestoneRow) — kept as a distinct
+// function from toggleMilestone rather than replacing it, since the two
+// have different call sites and toggleMilestone's simple boolean shape
+// still suits the compact task-list widgets. This keeps `completed` (and
+// `completed_at`) in sync with `status` on every write, so the ~30 other
+// places in the app that read the boolean directly (analytics, calendar
+// feed, achievements, exports) never need to know status exists.
+export async function setMilestoneStatus(id: string, status: MilestoneStatus) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("milestones")
+    .update({
+      status,
+      completed: status === "completed",
+      completed_at: status === "completed" ? new Date().toISOString() : null,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/plans");
+  return { success: true };
+}
+
 // Lets someone reword, reschedule, or add detail to an AI-generated
 // milestone instead of treating it as fixed output — the plan should feel
 // like theirs to shape, not a read-only report.
@@ -269,6 +299,23 @@ export async function deleteMyData() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+
+  // Enterprise employees can't self-delete — their org has a legitimate
+  // governance interest in that data (performance history, assessment
+  // completion, compliance records), so only an org admin can trigger
+  // deletion for them (see admin_schedule_employee_data_deletion,
+  // migration 0066). Server-side enforcement, not just hiding the button —
+  // DataPrivacy.tsx also hides the button, but this is the real gate.
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", user.id)
+    .maybeSingle<{ organization_id: string }>();
+  if (membership) {
+    return {
+      error: "Your account is managed by your organization — contact your HR admin to request data deletion.",
+    };
+  }
 
   const deletionAt = new Date(Date.now() + DATA_DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { error } = await supabase

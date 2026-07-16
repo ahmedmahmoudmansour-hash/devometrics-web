@@ -11,8 +11,15 @@ function formatDate(iso: string): string {
 
 export default function DataPrivacy({
   pendingDataDeletionAt,
+  organizationName,
 }: {
   pendingDataDeletionAt: string | null;
+  // Set only when the current user belongs to an organization — enterprise
+  // employees can't self-delete their data (their org has a legitimate
+  // governance interest in it), so the delete control is replaced with an
+  // explanation instead of hidden outright, matching how deleteMyData()
+  // enforces the same rule server-side.
+  organizationName?: string | null;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -58,7 +65,27 @@ export default function DataPrivacy({
           Export my data
         </a>
 
-        {scheduledFor ? (
+        {organizationName && !scheduledFor ? (
+          <div
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              padding: 16,
+              width: "100%",
+            }}
+          >
+            <p style={{ fontSize: 13, color: "var(--text)", fontWeight: 700, marginBottom: 4 }}>
+              Managed by {organizationName}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+              Your account is part of an organization workspace, so data deletion is handled by
+              your HR admin rather than self-service — this keeps your performance history and
+              records consistent for your employer&apos;s records. If you&apos;d like your data
+              deleted, ask your admin to do it from their side.
+            </p>
+          </div>
+        ) : scheduledFor ? (
           <div
             style={{
               background: "rgba(248,113,113,0.06)",
@@ -72,9 +99,11 @@ export default function DataPrivacy({
               Scheduled for deletion on {formatDate(scheduledFor)}
             </p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-              Your data still works normally until then — cancel any time before that date. Once
-              this date passes, everything is permanently removed and cannot be recovered.
+              {organizationName
+                ? `Your data still works normally until then. This was scheduled by your organization's admin — contact them if you'd like to cancel it. Once this date passes, everything is permanently removed and cannot be recovered.`
+                : "Your data still works normally until then — cancel any time before that date. Once this date passes, everything is permanently removed and cannot be recovered."}
             </p>
+            {!organizationName && (
             <button
               type="button"
               disabled={isPending}
@@ -98,6 +127,7 @@ export default function DataPrivacy({
             >
               {isPending ? "Cancelling…" : "Cancel deletion"}
             </button>
+            )}
             {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 8 }}>{error}</p>}
           </div>
         ) : confirming ? (

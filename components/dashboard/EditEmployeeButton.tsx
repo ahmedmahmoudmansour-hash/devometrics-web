@@ -2,7 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateMemberDetails, setMemberArchived } from "@/lib/organizations/actions";
+import {
+  updateMemberDetails,
+  setMemberArchived,
+  adminScheduleEmployeeDataDeletion,
+  adminCancelEmployeeDataDeletion,
+} from "@/lib/organizations/actions";
+
+const DELETE_CONFIRM_WORD = "DELETE";
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
 
 const fieldStyle: React.CSSProperties = {
   width: "100%",
@@ -17,10 +28,16 @@ const fieldStyle: React.CSSProperties = {
 
 export default function EditEmployeeButton({
   memberId,
+  userId,
   name,
   initial,
+  pendingDataDeletionAt = null,
 }: {
   memberId: string | null;
+  // Needed for the data-deletion actions specifically — those key off the
+  // auth user id (profiles.id), not the organization_members row id that
+  // everything else here uses.
+  userId: string;
   name: string;
   initial: {
     title: string | null;
@@ -31,6 +48,7 @@ export default function EditEmployeeButton({
     businessUnit: string | null;
     location: string | null;
   };
+  pendingDataDeletionAt?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initial.title ?? "");
@@ -43,6 +61,9 @@ export default function EditEmployeeButton({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const [scheduledFor, setScheduledFor] = useState(pendingDataDeletionAt);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   // memberId is null only before migration 0049 is run — show nothing
   // rather than a button that can't work.
@@ -209,6 +230,102 @@ export default function EditEmployeeButton({
               Archiving removes them from workforce views and analytics but keeps their history — it
               doesn&apos;t delete their account or data.
             </p>
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
+                Data deletion
+              </p>
+              {scheduledFor ? (
+                <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10, padding: 14 }}>
+                  <p style={{ fontSize: 12.5, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
+                    Scheduled for deletion on {formatDate(scheduledFor)}
+                  </p>
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
+                    Their account still works normally until then. After that date this is permanent
+                    and cannot be recovered.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        const result = await adminCancelEmployeeDataDeletion(userId);
+                        if (result?.error) setError(result.error);
+                        else setScheduledFor(null);
+                      })
+                    }
+                    style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                  >
+                    Cancel deletion
+                  </button>
+                </div>
+              ) : confirmingDelete ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                    Schedules {name}&apos;s plans, coach history, assessment results, gap analyses,
+                    resume analysis, and tasks for deletion in 30 days. Employees can&apos;t trigger
+                    this themselves — as their org admin, this is your call. Type{" "}
+                    <strong style={{ color: "var(--text)" }}>{DELETE_CONFIRM_WORD}</strong> to confirm.
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input
+                      type="text"
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder={DELETE_CONFIRM_WORD}
+                      aria-label={`Type ${DELETE_CONFIRM_WORD} to confirm`}
+                      style={{ ...fieldStyle, width: 140 }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isPending || confirmText !== DELETE_CONFIRM_WORD}
+                      onClick={() =>
+                        startTransition(async () => {
+                          const result = await adminScheduleEmployeeDataDeletion(userId);
+                          if (result?.error) setError(result.error);
+                          else if (result?.deletionAt) {
+                            setScheduledFor(result.deletionAt);
+                            setConfirmingDelete(false);
+                            setConfirmText("");
+                          }
+                        })
+                      }
+                      style={{
+                        background: "rgba(248,113,113,0.12)",
+                        border: "1px solid rgba(248,113,113,0.4)",
+                        borderRadius: 8,
+                        padding: "8px 14px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#f87171",
+                        cursor: confirmText === DELETE_CONFIRM_WORD ? "pointer" : "not-allowed",
+                        opacity: isPending || confirmText !== DELETE_CONFIRM_WORD ? 0.5 : 1,
+                      }}
+                    >
+                      {isPending ? "Scheduling…" : "Schedule deletion"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmingDelete(false);
+                        setConfirmText("");
+                      }}
+                      style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  style={{ background: "transparent", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+                >
+                  Delete employee data
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

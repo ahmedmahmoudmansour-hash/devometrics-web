@@ -34,6 +34,11 @@ export type WorkforceRow = {
   plans: number;
   milestonesDone: number;
   milestonesTotal: number;
+  // Set only by an org admin (see admin_schedule_employee_data_deletion,
+  // migration 0066) — employees themselves can't schedule this once they're
+  // an org member, so unlike the individual dashboard this is never
+  // self-triggered.
+  pendingDataDeletionAt: string | null;
 };
 
 export type CompanyData = {
@@ -292,6 +297,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
       plans: planCountByUser.get(p.id) ?? 0,
       milestonesDone: stats.done,
       milestonesTotal: stats.total,
+      pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
     };
   });
 
@@ -337,7 +343,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
 // lib/assessments/englishProficiency.ts and cognitiveAbility.ts), so they
 // need their own name resolution wherever an assessment_slug is turned
 // into a display name, or it'd show the raw slug.
-function resolveAssessmentName(slug: string): string {
+export function resolveAssessmentName(slug: string): string {
   if (slug === ENGLISH_PROFICIENCY_SLUG) return "English Proficiency";
   if (slug === COGNITIVE_ABILITY_SLUG) return "Cognitive Reasoning";
   return ASSESSMENTS.find((a) => a.slug === slug)?.name ?? slug;

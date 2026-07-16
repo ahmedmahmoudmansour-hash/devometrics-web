@@ -21,6 +21,7 @@ import {
   NotebookPen,
   Route,
   Search,
+  Milestone as MilestoneIcon,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { signOut } from "@/app/dashboard/actions";
@@ -59,6 +60,7 @@ const SECTIONS: { label: string | null; items: NavItem[] }[] = [
       { href: "/dashboard/coach", label: "AI Coach", icon: Sparkles },
       { href: "/dashboard/roleplay", label: "Practice Scenarios", icon: Drama, premium: true },
       { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
+      { href: "/dashboard/plans", label: "My Development", icon: MilestoneIcon },
       { href: "/dashboard/journey", label: "My Journey", icon: History },
     ],
   },

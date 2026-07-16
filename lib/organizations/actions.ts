@@ -800,3 +800,51 @@ export async function setMemberArchived(memberId: string, archived: boolean) {
   revalidatePath("/dashboard/company/employees");
   return { success: true };
 }
+
+// Enterprise employees can't self-delete their data (see deleteMyData,
+// app/dashboard/actions.ts) — only their org admin can, since the
+// organization has a legitimate governance interest in that data. These
+// two call a narrowly-scoped SECURITY DEFINER function (migration 0066)
+// rather than updating profiles directly: a plain RLS UPDATE policy on
+// profiles gated by is_org_admin_of_user() would let an admin edit
+// anything on the row, not just trigger deletion, so the SQL function is
+// the safer, narrower grant.
+export async function adminScheduleEmployeeDataDeletion(employeeUserId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data, error } = await supabase.rpc("admin_schedule_employee_data_deletion", {
+    employee_id: employeeUserId,
+  });
+  if (error) {
+    console.error("adminScheduleEmployeeDataDeletion failed:", error);
+    return { error: "Could not schedule deletion — the database may need migration 0066 run first." };
+  }
+
+  revalidatePath("/dashboard/company/employees");
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true, deletionAt: data as string };
+}
+
+export async function adminCancelEmployeeDataDeletion(employeeUserId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.rpc("admin_cancel_employee_data_deletion", {
+    employee_id: employeeUserId,
+  });
+  if (error) {
+    console.error("adminCancelEmployeeDataDeletion failed:", error);
+    return { error: "Could not cancel — try again." };
+  }
+
+  revalidatePath("/dashboard/company/employees");
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true };
+}

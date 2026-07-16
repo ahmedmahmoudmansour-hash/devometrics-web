@@ -205,7 +205,7 @@ export default async function AssessmentsPage() {
             }}
           >
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-              12 questions · 3 domains
+              54 questions · 3 domains
             </span>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
               Cognitive Reasoning

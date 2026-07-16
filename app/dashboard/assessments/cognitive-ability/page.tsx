@@ -23,8 +23,8 @@ export default async function CognitiveAbilityPage() {
             Cognitive Reasoning
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            A short numerical, verbal, and logical reasoning exercise with real correct answers — a
-            self-development tool, not a hiring or selection instrument.
+            A numerical, verbal, and logical reasoning exercise with real correct answers — guidance
+            for your own development, not intended for hiring, promotion, or any other decision.
           </p>
         </div>
         <CognitiveAbilityForm />

@@ -29,7 +29,11 @@ import {
   GAP_ANALYSIS_RATE_LIMIT_MAX_RUNS,
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
-import type { GapAnalysis, Profile } from "@/lib/supabase/types";
+import { resolveAssessmentName } from "@/lib/organizations/aggregate";
+import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
+import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
+import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
+import type { GapAnalysis, Profile, BigFiveProfile } from "@/lib/supabase/types";
 
 function targetDateWeeksFromNow(weeks: number): string {
   const d = new Date();
@@ -42,8 +46,16 @@ function targetDateWeeksFromNow(weeks: number): string {
 // role alone whenever that box is left blank. Priority: whatever they just
 // typed, plus their most recent full Gap Analysis CV text, plus their
 // structured Career Profile (job history/skills/qualifications/
-// aspirations) — combined, not one-or-the-other, since each can carry
-// details the others don't.
+// aspirations), plus every completed assessment (Assessment Center,
+// English Proficiency, Cognitive Reasoning) and their working-style
+// context (Big Five, only if they've opted to share it — same
+// self-report-sentence guardrail used for the enterprise AI report:
+// interpretation text only, never raw trait scores) — combined, not
+// one-or-the-other, since each can carry details the others don't. This is
+// what "the plan should use everything I've told this platform" means in
+// practice: the milestone selection and personalization downstream
+// (extractCompetencies → generatePlanFromAnalysis) are only as complete as
+// the picture handed to them here.
 async function buildBackgroundContext(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -81,6 +93,46 @@ async function buildBackgroundContext(
     );
   }
   if (profile?.career_aspirations?.trim()) parts.push("Career aspirations: " + profile.career_aspirations.trim());
+
+  // Isolated, defensive queries — a missing table/column (older database,
+  // migration not yet run) degrades to "this signal just isn't included"
+  // rather than breaking plan generation entirely, same pattern used
+  // throughout lib/organizations/aggregate.ts.
+  const { data: assessmentResults } = await supabase
+    .from("assessment_results")
+    .select("assessment_slug, score, completed_at")
+    .eq("user_id", userId)
+    .order("completed_at", { ascending: false })
+    .returns<{ assessment_slug: string; score: number; completed_at: string }[]>();
+  if (assessmentResults?.length) {
+    const latestBySlug = new Map<string, { assessment_slug: string; score: number }>();
+    for (const r of assessmentResults) if (!latestBySlug.has(r.assessment_slug)) latestBySlug.set(r.assessment_slug, r);
+    const lines = [...latestBySlug.values()].map((r) => {
+      if (r.assessment_slug === ENGLISH_PROFICIENCY_SLUG) {
+        return `English Proficiency: CEFR ${cefrLevelFromScore(r.score)}`;
+      }
+      if (r.assessment_slug === COGNITIVE_ABILITY_SLUG) {
+        return `Cognitive Reasoning: ${cognitiveBandFromScore(r.score)} (self-development signal only)`;
+      }
+      return `${resolveAssessmentName(r.assessment_slug)}: ${r.score}/100`;
+    });
+    parts.push("Completed assessments:\n" + lines.join("\n"));
+  }
+
+  const { data: bigFive } = await supabase
+    .from("big_five_profiles")
+    .select("scores")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<Pick<BigFiveProfile, "scores">>();
+  if (bigFive?.scores) {
+    const lines = BIG_FIVE_TRAITS.map((trait) => bigFiveInterpretation(trait, bigFive.scores[trait]));
+    parts.push(
+      "Working style (self-reported — use only to shape how milestones are framed, e.g. preferred learning format or pacing, never as a strength/weakness judgment):\n" +
+        lines.join("\n")
+    );
+  }
 
   return parts.length > 0 ? parts.join("\n\n") : "No background details provided yet.";
 }

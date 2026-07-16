@@ -1,9 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleMilestone, updateMilestone, deleteMilestone } from "@/app/dashboard/actions";
+import { setMilestoneStatus, updateMilestone, deleteMilestone, type MilestoneStatus } from "@/app/dashboard/actions";
 import CourseRecommendations from "@/components/dashboard/CourseRecommendations";
 import type { Milestone } from "@/lib/supabase/types";
+
+const STATUS_LABEL: Record<MilestoneStatus, string> = {
+  in_progress: "In progress",
+  completed: "Completed",
+  deferred: "Deferred",
+};
+
+const STATUS_COLOR: Record<MilestoneStatus, string> = {
+  in_progress: "var(--text)",
+  completed: "var(--teal)",
+  deferred: "var(--amber)",
+};
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -22,6 +34,11 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(milestone.title);
   const [description, setDescription] = useState(milestone.description ?? "");
+  // Falls back to "in_progress" if the migration adding this column hasn't
+  // been run yet on this database — degrades gracefully rather than
+  // rendering a blank status, same pattern used elsewhere in this app for
+  // not-yet-migrated columns.
+  const status: MilestoneStatus = milestone.status ?? "in_progress";
   const [targetDate, setTargetDate] = useState(milestone.target_date ?? "");
   const [userNotes, setUserNotes] = useState(milestone.user_notes ?? "");
 
@@ -131,23 +148,40 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
   return (
     <div style={{ padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <input
-          type="checkbox"
-          checked={milestone.completed}
-          onChange={() =>
+        <select
+          aria-label={`Status for ${milestone.title}`}
+          value={status}
+          onChange={(e) =>
             startTransition(async () => {
-              const result = await toggleMilestone(milestone.id, !milestone.completed);
+              const result = await setMilestoneStatus(milestone.id, e.target.value as MilestoneStatus);
               setError(result?.error ?? null);
             })
           }
-          style={{ width: 18, height: 18, marginTop: 2, accentColor: "var(--teal)", flexShrink: 0, cursor: "pointer" }}
-        />
+          style={{
+            marginTop: 1,
+            flexShrink: 0,
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "4px 8px",
+            borderRadius: 6,
+            cursor: "pointer",
+            background: "rgba(255,255,255,0.05)",
+            border: `1px solid ${STATUS_COLOR[status]}`,
+            color: STATUS_COLOR[status],
+          }}
+        >
+          {(Object.keys(STATUS_LABEL) as MilestoneStatus[]).map((s) => (
+            <option key={s} value={s} style={{ color: "#0A0F1E" }}>
+              {STATUS_LABEL[s]}
+            </option>
+          ))}
+        </select>
         <div style={{ flex: 1, opacity: isPending ? 0.5 : 1 }}>
           <span
             style={{
               fontSize: 14,
-              color: milestone.completed ? "var(--text-muted)" : "var(--text)",
-              textDecoration: milestone.completed ? "line-through" : "none",
+              color: status === "completed" ? "var(--text-muted)" : "var(--text)",
+              textDecoration: status === "completed" ? "line-through" : "none",
             }}
           >
             {milestone.title}
@@ -185,7 +219,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
               Success: {milestone.success_indicator}
             </div>
           )}
-          {!milestone.completed && <CourseRecommendations topic={milestone.title} />}
+          {status !== "completed" && <CourseRecommendations topic={milestone.title} />}
           {milestone.user_notes && (
             <div
               style={{

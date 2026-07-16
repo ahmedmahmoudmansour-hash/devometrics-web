@@ -69,7 +69,7 @@ export default function CognitiveAbilityForm() {
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24, lineHeight: 1.6 }}>
-          This is a fixed 12-question snapshot across numerical, verbal, and logical reasoning — not an
+          This is a fixed 54-question snapshot across numerical, verbal, and logical reasoning — not an
           adaptive or certified aptitude battery. {COGNITIVE_DISCLAIMER}
         </p>
         <Link
@@ -94,7 +94,7 @@ export default function CognitiveAbilityForm() {
       </div>
 
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
-        12 questions across numerical, verbal, and logical reasoning. Each has one correct answer —
+        54 questions across numerical, verbal, and logical reasoning. Each has one correct answer —
         this measures reasoning, not job knowledge or vocabulary.
       </p>
 

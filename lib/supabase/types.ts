@@ -247,6 +247,10 @@ export type Milestone = {
   position: number;
   completed: boolean;
   completed_at: string | null;
+  // "in_progress" | "completed" | "deferred" (migration 0066) — completed
+  // stays as the single source of truth for every other reader in the app;
+  // this is purely the richer display/edit state for the plan UI.
+  status: "in_progress" | "completed" | "deferred";
   weekly_hours: number | null;
   hours_period: string | null;
   budget_note: string | null;
