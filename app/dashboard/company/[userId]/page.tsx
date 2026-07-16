@@ -15,6 +15,7 @@ import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection";
+import ManagerNotesSection from "@/components/dashboard/ManagerNotesSection";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -48,6 +49,9 @@ export default async function EmployeeDetailPage({
     memberId,
     currentRoleId,
     allRoles,
+    performanceRating,
+    performanceRatingNote,
+    managerNotes,
   } = data;
   const dimensionLevels = gapAnalysis
     ? Object.fromEntries(gapAnalysis.competencies.map((c) => [c.dimension, c.currentLevel]))
@@ -122,6 +126,14 @@ export default async function EmployeeDetailPage({
             </div>
           )}
         </div>
+
+        {performanceRating && (
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 20, marginTop: -12 }}>
+            Manager performance rating: <span style={{ color: "var(--amber)", fontWeight: 700 }}>{performanceRating}/5</span>
+            {performanceRatingNote && ` — "${performanceRatingNote}"`}
+            <span style={{ marginLeft: 6 }}>(direct management input, not derived from measured data)</span>
+          </p>
+        )}
 
         {assessmentSummary && (
           <div className="print-avoid-break" style={{ ...card, marginBottom: 20, borderLeft: "3px solid var(--teal)" }}>
@@ -398,6 +410,7 @@ export default async function EmployeeDetailPage({
           />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
+          <ManagerNotesSection employeeUserId={userId} notes={managerNotes} employeeName={profile.name} />
         </div>
       </div>
     </div>

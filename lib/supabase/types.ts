@@ -81,6 +81,24 @@ export type OrganizationMember = {
   business_unit?: string | null;
   location?: string | null;
   archived?: boolean;
+  // Added in migration 0068 — direct management input, never AI-inferred;
+  // may be absent until the migration is run.
+  performance_rating?: number | null;
+  performance_rating_note?: string;
+  performance_rating_updated_at?: string | null;
+  created_at: string;
+};
+
+// A single entry in the manager-notes log (migration 0068) — a running
+// record, not a single field, so each note is its own row with its own
+// author and timestamp rather than one overwritable text box.
+export type ManagerNote = {
+  id: string;
+  organization_id: string;
+  employee_user_id: string;
+  author_id: string;
+  authorName?: string;
+  note: string;
   created_at: string;
 };
 

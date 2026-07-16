@@ -7,7 +7,16 @@ import {
   setMemberArchived,
   adminScheduleEmployeeDataDeletion,
   adminCancelEmployeeDataDeletion,
+  updateMemberPerformance,
 } from "@/lib/organizations/actions";
+
+const RATING_LABEL: Record<number, string> = {
+  1: "1 — Below expectations",
+  2: "2 — Developing",
+  3: "3 — Meets expectations",
+  4: "4 — Exceeds expectations",
+  5: "5 — Outstanding",
+};
 
 const DELETE_CONFIRM_WORD = "DELETE";
 
@@ -32,6 +41,8 @@ export default function EditEmployeeButton({
   name,
   initial,
   pendingDataDeletionAt = null,
+  performanceRating = null,
+  performanceRatingNote = "",
 }: {
   memberId: string | null;
   // Needed for the data-deletion actions specifically — those key off the
@@ -49,6 +60,10 @@ export default function EditEmployeeButton({
     location: string | null;
   };
   pendingDataDeletionAt?: string | null;
+  // Direct management input (migration 0068) — always optional, null means
+  // simply not rated yet.
+  performanceRating?: number | null;
+  performanceRatingNote?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initial.title ?? "");
@@ -58,6 +73,8 @@ export default function EditEmployeeButton({
   const [managerEmail, setManagerEmail] = useState(initial.managerEmail ?? "");
   const [businessUnit, setBusinessUnit] = useState(initial.businessUnit ?? "");
   const [location, setLocation] = useState(initial.location ?? "");
+  const [rating, setRating] = useState(performanceRating ?? 0);
+  const [ratingNote, setRatingNote] = useState(performanceRatingNote);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -100,6 +117,18 @@ export default function EditEmployeeButton({
       }
       router.refresh();
       setOpen(false);
+    });
+  }
+
+  function savePerformance() {
+    setError(null);
+    startTransition(async () => {
+      const result = await updateMemberPerformance(memberId!, rating || null, ratingNote);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
     });
   }
 
@@ -230,6 +259,41 @@ export default function EditEmployeeButton({
               Archiving removes them from workforce views and analytics but keeps their history — it
               doesn&apos;t delete their account or data.
             </p>
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
+                Performance rating <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span>
+              </p>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
+                Direct input from you, not derived from any measured data — used only as an optional
+                extra signal alongside the real competency data in reports and succession rankings.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...fieldStyle, cursor: "pointer" }}>
+                  <option value={0}>— Not rated —</option>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>
+                      {RATING_LABEL[n]}
+                    </option>
+                  ))}
+                </select>
+                <textarea
+                  value={ratingNote}
+                  onChange={(e) => setRatingNote(e.target.value)}
+                  placeholder="Optional context for this rating"
+                  rows={2}
+                  style={{ ...fieldStyle, resize: "vertical" }}
+                />
+                <button
+                  type="button"
+                  onClick={savePerformance}
+                  disabled={isPending}
+                  style={{ alignSelf: "flex-start", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                >
+                  {isPending ? "Saving…" : "Save rating"}
+                </button>
+              </div>
+            </div>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>

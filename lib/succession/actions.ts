@@ -206,6 +206,10 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
         dims ? `measured competencies: ${dims}` : "measured competencies: none (no Gap Analysis run yet)",
         `career health score: ${r.careerHealthScore ?? "n/a"}`,
         `assessments completed: ${r.assessmentsCompleted}`,
+        // Direct management input, optional — manager-reported and
+        // single-source, not independently verified, so weigh it as one
+        // input alongside the measured data, not as settled fact.
+        r.performanceRating ? `manager performance rating: ${r.performanceRating}/5${r.performanceRatingNote ? ` (${r.performanceRatingNote})` : ""}` : null,
       ]
         .filter(Boolean)
         .join(" | ");

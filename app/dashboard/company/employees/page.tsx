@@ -106,6 +106,7 @@ export default async function CompanyEmployeesPage() {
                         <th style={{ ...headStyle, textAlign: "left" }}>Country</th>
                         <th style={{ ...headStyle, textAlign: "left" }}>Email</th>
                         <th style={{ ...headStyle, textAlign: "right" }}>Career Health Score</th>
+                        <th style={{ ...headStyle, textAlign: "right" }} title="Direct management input — optional, not derived from measured data">Rating</th>
                         <th style={{ ...headStyle, textAlign: "right" }}>Assessments</th>
                         <th style={{ ...headStyle, textAlign: "right" }}>Plans</th>
                         <th style={{ ...headStyle, textAlign: "right" }}>Milestones</th>
@@ -137,6 +138,9 @@ export default async function CompanyEmployeesPage() {
                           <td style={{ ...cellStyle, textAlign: "right", color: "var(--teal)", fontWeight: 700 }}>
                             {r.careerHealthScore ?? "—"}
                           </td>
+                          <td style={{ ...cellStyle, textAlign: "right", color: r.performanceRating ? "var(--amber)" : "var(--text-muted)", fontWeight: r.performanceRating ? 700 : 400 }}>
+                            {r.performanceRating ? `${r.performanceRating}/5` : "—"}
+                          </td>
                           <td style={{ ...cellStyle, textAlign: "right" }}>{r.assessmentsCompleted}</td>
                           <td style={{ ...cellStyle, textAlign: "right" }}>{r.plans}</td>
                           <td style={{ ...cellStyle, textAlign: "right" }}>
@@ -160,6 +164,8 @@ export default async function CompanyEmployeesPage() {
                               userId={r.userId}
                               name={r.name}
                               pendingDataDeletionAt={r.pendingDataDeletionAt}
+                              performanceRating={r.performanceRating}
+                              performanceRatingNote={r.performanceRatingNote}
                               initial={{
                                 title: r.title,
                                 department: r.department,

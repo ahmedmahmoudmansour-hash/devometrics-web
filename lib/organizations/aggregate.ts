@@ -11,6 +11,7 @@ import type {
   JobRole,
   RoleCompetencyRequirement,
   RoleTransition,
+  ManagerNote,
 } from "@/lib/supabase/types";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
@@ -43,6 +44,11 @@ export type WorkforceRow = {
   // an org member, so unlike the individual dashboard this is never
   // self-triggered.
   pendingDataDeletionAt: string | null;
+  // Direct management input (migration 0068) — never AI-inferred, always
+  // optional. null means simply not rated yet, not a zero.
+  performanceRating: number | null;
+  performanceRatingNote: string;
+  performanceRatingUpdatedAt: string | null;
 };
 
 export type CompanyData = {
@@ -192,6 +198,16 @@ export async function buildCompanyData(): Promise<CompanyData> {
     .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; archived: boolean }[]>();
   const hrByMemberUser = new Map((memberHrFields ?? []).map((m) => [m.user_id, m]));
 
+  // Performance rating (migration 0068) — same isolated-query pattern: a
+  // missing column before that migration runs just yields nothing, and
+  // every member shows as unrated rather than breaking the roster.
+  const { data: memberPerformance } = await supabase
+    .from("organization_members")
+    .select("user_id, performance_rating, performance_rating_note, performance_rating_updated_at")
+    .eq("organization_id", membership.organization_id)
+    .returns<{ user_id: string; performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }[]>();
+  const performanceByMemberUser = new Map((memberPerformance ?? []).map((m) => [m.user_id, m]));
+
   const pendingInvites = (invites ?? []).map((invite) => ({
     ...invite,
     department: locationByInviteId.get(invite.id)?.department ?? null,
@@ -302,6 +318,9 @@ export async function buildCompanyData(): Promise<CompanyData> {
       milestonesDone: stats.done,
       milestonesTotal: stats.total,
       pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
+      performanceRating: performanceByMemberUser.get(p.id)?.performance_rating ?? null,
+      performanceRatingNote: performanceByMemberUser.get(p.id)?.performance_rating_note ?? "",
+      performanceRatingUpdatedAt: performanceByMemberUser.get(p.id)?.performance_rating_updated_at ?? null,
     };
   });
 
@@ -379,6 +398,12 @@ export type EmployeeDetail = {
   currentRoleId: string | null;
   allRoles: JobRole[];
   mobility: Mobility | null;
+  // Direct management input (migration 0068) — never AI-inferred, always
+  // optional. performanceRating null means simply not rated yet.
+  performanceRating: number | null;
+  performanceRatingNote: string;
+  performanceRatingUpdatedAt: string | null;
+  managerNotes: ManagerNote[];
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -404,6 +429,10 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     currentRoleId: null,
     allRoles: [],
     mobility: null,
+    performanceRating: null,
+    performanceRatingNote: "",
+    performanceRatingUpdatedAt: null,
+    managerNotes: [],
   };
 
   const supabase = await createClient();
@@ -438,6 +467,14 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     .maybeSingle<{ current_role_id: string | null }>();
   const currentRoleId = roleRow?.current_role_id ?? null;
 
+  // Performance rating (migration 0068) — same defensive-fallback shape as
+  // current_role_id above.
+  const { data: performanceRow } = await supabase
+    .from("organization_members")
+    .select("performance_rating, performance_rating_note, performance_rating_updated_at")
+    .eq("id", targetMembership.id)
+    .maybeSingle<{ performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }>();
+
   // Reuses the same org-wide aggregation buildCompanyData already computes
   // (rather than re-deriving dimension averages here) so the two never
   // drift out of sync — this page and the Employees roster show the exact
@@ -453,6 +490,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     { data: assignedRows },
     { data: summaryRow },
     { data: bigFiveRow },
+    { data: managerNoteRows },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
     supabase
@@ -507,7 +545,28 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<{ scores: Record<BigFiveTrait, number>; created_at: string }>(),
+    // New table (migration 0068) — same isolated-query graceful degrade:
+    // a query error before the migration has run just yields null here.
+    supabase
+      .from("employee_manager_notes")
+      .select("*")
+      .eq("employee_user_id", employeeUserId)
+      .order("created_at", { ascending: false })
+      .returns<ManagerNote[]>(),
   ]);
+
+  // Author names resolved in a second, batched query rather than a join —
+  // manager notes only ever have a handful of distinct authors (the org's
+  // admins), so this stays cheap and keeps the notes query itself simple.
+  const authorIds = [...new Set((managerNoteRows ?? []).map((n) => n.author_id))];
+  const { data: authorProfiles } = authorIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", authorIds).returns<{ id: string; full_name: string | null }[]>()
+    : { data: [] as { id: string; full_name: string | null }[] };
+  const authorNameById = new Map((authorProfiles ?? []).map((p) => [p.id, p.full_name ?? "Admin"]));
+  const managerNotes: ManagerNote[] = (managerNoteRows ?? []).map((n) => ({
+    ...n,
+    authorName: authorNameById.get(n.author_id) ?? "Admin",
+  }));
 
   // Keep only the latest attempt per assessment — same "latest wins"
   // dedup the individual's own Assessment Center and the workforce
@@ -598,5 +657,9 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     currentRoleId,
     allRoles: allRoles ?? [],
     mobility,
+    performanceRating: performanceRow?.performance_rating ?? null,
+    performanceRatingNote: performanceRow?.performance_rating_note ?? "",
+    performanceRatingUpdatedAt: performanceRow?.performance_rating_updated_at ?? null,
+    managerNotes,
   };
 }

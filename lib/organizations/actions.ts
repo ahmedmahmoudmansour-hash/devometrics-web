@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
-import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
+import { buildEmployeeDetail, buildCompanyData } from "@/lib/organizations/aggregate";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
@@ -637,6 +637,20 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
     ? BIG_FIVE_TRAITS.map((trait) => `${trait}: ${bigFiveInterpretation(trait, detail.bigFive!.scores[trait])}`).join("\n")
     : null;
 
+  // Direct management input (migration 0068), optional — unlike Big
+  // Five/Cognitive Reasoning above, a performance rating and manager notes
+  // ARE legitimately relevant to a talent report; they're just
+  // single-source and subjective, so the framing asks the model to weigh
+  // them as one input rather than treat a single manager's opinion as
+  // settled fact.
+  const performanceLine = detail.performanceRating
+    ? `${detail.performanceRating}/5${detail.performanceRatingNote ? ` — "${detail.performanceRatingNote}"` : ""}`
+    : null;
+  const managerNoteLines = detail.managerNotes
+    .slice(0, 5)
+    .map((n) => `- (${new Date(n.created_at).toLocaleDateString()}) ${n.authorName}: ${n.note}`)
+    .join("\n");
+
   const prompt = [
     `EMPLOYEE: ${detail.profile.name}${detail.profile.title ? `, ${detail.profile.title}` : ""}`,
     detail.gapAnalysis
@@ -648,6 +662,12 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
     `\nDEVELOPMENT PLAN PROGRESS: ${detail.plans.reduce((a, p) => a + p.milestones.filter((m) => m.completed).length, 0)}/${detail.plans.reduce((a, p) => a + p.milestones.length, 0)} milestones complete across ${detail.plans.length} plan(s)`,
     bigFiveLines
       ? `\nWORKING STYLE (Big Five, self-reported, shared voluntarily by the employee — use only for how-to-coach framing, never as a strength/weakness or suitability judgment):\n${bigFiveLines}`
+      : "",
+    performanceLine
+      ? `\nMANAGER PERFORMANCE RATING (single-source, manager-reported — one input among several, not independently verified): ${performanceLine}`
+      : "",
+    managerNoteLines
+      ? `\nRECENT MANAGER NOTES (qualitative, single-source context — most recent first):\n${managerNoteLines}`
       : "",
   ].join("\n");
 
@@ -806,6 +826,81 @@ export async function setMemberArchived(memberId: string, archived: boolean) {
 // organization has a legitimate governance interest in that data. These
 // two call a narrowly-scoped SECURITY DEFINER function (migration 0066)
 // rather than updating profiles directly: a plain RLS UPDATE policy on
+// Performance rating and manager notes (migration 0068) — direct
+// management input, never AI-inferred, and always optional: nothing else
+// (9-box, HiPo, succession math) requires either to exist. They're
+// surfaced as additional context wherever an admin views an employee, and
+// as optional extra lines in the succession/summary AI prompts when set.
+export async function updateMemberPerformance(memberId: string, rating: number | null, note: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (rating !== null && (rating < 1 || rating > 5)) return { error: "Rating must be between 1 and 5" };
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .update({
+      performance_rating: rating,
+      performance_rating_note: note.trim().slice(0, 1000),
+      performance_rating_updated_at: new Date().toISOString(),
+    })
+    .eq("id", memberId)
+    .select("id");
+  if (error) {
+    console.error("updateMemberPerformance failed:", error);
+    return { error: "Could not update — the database may need migration 0068 run first." };
+  }
+  if (!data || data.length === 0) return { error: "Not authorized to edit this employee." };
+
+  revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}
+
+const MAX_MANAGER_NOTE = 2000;
+
+export async function addManagerNote(employeeUserId: string, note: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const data = await buildCompanyData();
+  if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
+
+  const trimmed = note.trim().slice(0, MAX_MANAGER_NOTE);
+  if (!trimmed) return { error: "Write a note first" };
+
+  const { error } = await supabase.from("employee_manager_notes").insert({
+    organization_id: data.organizationId,
+    employee_user_id: employeeUserId,
+    author_id: user.id,
+    note: trimmed,
+  });
+  if (error) {
+    console.error("addManagerNote failed:", error);
+    return { error: "Could not save the note — the database may need migration 0068 run first." };
+  }
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true };
+}
+
+export async function deleteManagerNote(noteId: string, employeeUserId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  // RLS restricts this to admins of the note's own org — a non-admin's
+  // delete simply matches zero rows.
+  await supabase.from("employee_manager_notes").delete().eq("id", noteId);
+  revalidatePath(`/dashboard/company/${employeeUserId}`);
+  return { success: true };
+}
+
 // profiles gated by is_org_admin_of_user() would let an admin edit
 // anything on the row, not just trigger deletion, so the SQL function is
 // the safer, narrower grant.
