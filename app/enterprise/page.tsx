@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import PlatformChatWidget from "@/components/PlatformChatWidget";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
+import Reveal from "@/components/Reveal";
 import { levelBg, levelText } from "@/lib/ui/levelColor";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 
@@ -192,10 +193,11 @@ export default function EnterprisePage() {
               For teams &amp; organizations
             </span>
             <h1
+              className="font-display"
               style={{
                 fontSize: "clamp(2.2rem, 5.5vw, 3.8rem)",
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
                 lineHeight: 1.1,
                 marginBottom: 24,
                 color: "var(--text)",
@@ -251,6 +253,7 @@ export default function EnterprisePage() {
           </div>
         </section>
 
+        <Reveal>
         <section style={{ padding: "0 24px 100px", maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 12 }}>
             <span
@@ -321,7 +324,9 @@ export default function EnterprisePage() {
             <CapabilityPyramid dimensionLevels={SAMPLE_AVERAGES} />
           </div>
         </section>
+        </Reveal>
 
+        <Reveal>
         <section
           id="capabilities"
           style={{
@@ -336,7 +341,7 @@ export default function EnterprisePage() {
               <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
                 What&apos;s included
               </span>
-              <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-0.03em", marginTop: 12, color: "var(--text)" }}>
+              <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
                 Built for the people accountable for the team
               </h2>
             </div>
@@ -356,13 +361,15 @@ export default function EnterprisePage() {
             </div>
           </div>
         </section>
+        </Reveal>
 
+        <Reveal>
         <section style={{ padding: "100px 24px", maxWidth: 1000, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
               How it works
             </span>
-            <h2 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-0.03em", marginTop: 12, color: "var(--text)" }}>
+            <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
               No sales call to get started
             </h2>
           </div>
@@ -394,7 +401,9 @@ export default function EnterprisePage() {
             ))}
           </div>
         </section>
+        </Reveal>
 
+        <Reveal>
         <section
           style={{
             padding: "80px 24px 100px",
@@ -402,7 +411,7 @@ export default function EnterprisePage() {
             borderTop: "1px solid var(--border)",
           }}
         >
-          <h2 style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 16 }}>
+          <h2 className="font-display" style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 16 }}>
             Ready to see your team&apos;s skill graph?
           </h2>
           <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
@@ -454,6 +463,7 @@ export default function EnterprisePage() {
             </a>
           </p>
         </section>
+        </Reveal>
       </main>
       <Footer />
       <PlatformChatWidget />

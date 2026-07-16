@@ -43,10 +43,11 @@ export default function SkillRadar() {
             Gap analysis
           </span>
           <h2
+            className="font-display"
             style={{
               fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
               lineHeight: 1.2,
               marginTop: 12,
               marginBottom: 20,

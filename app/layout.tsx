@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 // display:"swap" so text paints in the metric-compatible fallback stack
 // immediately rather than blocking on the webfont.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+// A second, distinct typeface reserved for headlines only (marketing pages —
+// see .font-display in globals.css) — Inter alone reads as competent SaaS
+// default; pairing it with a geometric display face for large headline
+// moments is the detail that separates "clean" from "distinctive" without
+// touching body copy legibility anywhere.
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 export const metadata: Metadata = {
   // Without metadataBase, Next can't resolve relative Open Graph / canonical
@@ -35,11 +41,22 @@ const themeScript = `(function(){try{var t=localStorage.getItem('devometrics-the
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${spaceGrotesk.variable} h-full`}
+      // The theme script above intentionally sets data-theme on this exact
+      // element before hydration runs, to avoid a flash of the wrong theme
+      // — server-rendered HTML can never know localStorage, so this one
+      // attribute always mismatches on a light-theme visitor and always
+      // will, by design. Expected divergence, not a real bug — this is
+      // the documented React/Next.js escape hatch for exactly this case.
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col antialiased" style={{ background: "var(--navy)", color: "var(--text)" }}>
+        <div className="grain-overlay" aria-hidden="true" />
         {children}
       </body>
     </html>

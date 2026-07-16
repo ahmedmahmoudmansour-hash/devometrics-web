@@ -111,11 +111,11 @@ export default function Hero() {
 
         {/* Headline */}
         <h1
-          className="fade-up fade-up-2"
+          className="fade-up fade-up-2 font-display"
           style={{
             fontSize: "clamp(2.4rem, 6vw, 4.5rem)",
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
             lineHeight: 1.1,
             marginBottom: 24,
             color: "var(--text)",

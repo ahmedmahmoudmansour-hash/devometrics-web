@@ -183,6 +183,29 @@ a:focus-visible {
   }
 }
 
+/* Reserved for marketing-page headline moments only (hero h1, section h2s)
+   — never body copy, never dashboard UI, so product screens stay on the
+   plain, efficient Inter-only stack. */
+.font-display {
+  font-family: var(--font-display), var(--font-inter), -apple-system, sans-serif;
+}
+
+/* Subtle film-grain overlay — a fixed, screen-space texture (not tied to
+   any one section) that's the difference between a flat gradient and a
+   surface with depth. Generated inline via feTurbulence so it costs zero
+   network requests; opacity is low enough to read as "material," not
+   "noisy." Purely decorative (pointer-events:none, aria-hidden via the
+   caller); it never animates, so prefers-reduced-motion doesn't apply. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
 .gradient-text {
   background: linear-gradient(135deg, #00C9A7 0%, #7dd3fc 100%);
   -webkit-background-clip: text;

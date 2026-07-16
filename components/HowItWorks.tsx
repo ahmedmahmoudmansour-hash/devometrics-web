@@ -78,10 +78,11 @@ export default function HowItWorks() {
           How it works
         </span>
         <h2
+          className="font-display"
           style={{
             fontSize: "clamp(2rem, 4vw, 3rem)",
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
             lineHeight: 1.15,
             marginTop: 12,
             color: "var(--text)",

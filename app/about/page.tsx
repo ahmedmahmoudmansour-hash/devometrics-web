@@ -11,9 +11,10 @@ export default function AboutPage() {
       <main style={{ padding: "140px 24px 80px" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <h1
+            className="font-display"
             style={{
               fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: "-0.02em",
               color: "var(--text)",
               marginBottom: 32,

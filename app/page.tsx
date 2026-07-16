@@ -7,6 +7,7 @@ import Methodology from "@/components/Methodology";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import PlatformChatWidget from "@/components/PlatformChatWidget";
+import Reveal from "@/components/Reveal";
 import { detectVisitorCountry } from "@/lib/billing/detectCountry";
 import { tierForCountry } from "@/lib/billing/pricingTiers";
 
@@ -23,11 +24,21 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero />
-        <HowItWorks />
-        <SkillRadar />
-        <Features />
-        <Methodology />
-        <Pricing initialRegion={region} />
+        <Reveal>
+          <HowItWorks />
+        </Reveal>
+        <Reveal>
+          <SkillRadar />
+        </Reveal>
+        <Reveal>
+          <Features />
+        </Reveal>
+        <Reveal>
+          <Methodology />
+        </Reveal>
+        <Reveal>
+          <Pricing initialRegion={region} />
+        </Reveal>
       </main>
       <Footer />
       <PlatformChatWidget />
