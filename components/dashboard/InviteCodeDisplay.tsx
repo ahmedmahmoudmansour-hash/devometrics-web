@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 
 // Small teams often prefer sharing one code over an admin entering every
 // email individually — but a plain, un-copyable string meant re-typing it
@@ -29,18 +30,23 @@ export default function InviteCodeDisplay({ slug }: { slug: string }) {
       <button
         type="button"
         onClick={copy}
+        title={copied ? "Copied" : "Copy invite code"}
+        aria-label={copied ? "Copied" : "Copy invite code"}
         style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
           background: "none",
           border: "1px solid var(--border)",
           borderRadius: 6,
-          padding: "2px 10px",
-          fontSize: 11,
-          fontWeight: 700,
+          width: 26,
+          height: 26,
           color: copied ? "var(--teal)" : "var(--text-muted)",
           cursor: "pointer",
+          flexShrink: 0,
         }}
       >
-        {copied ? "✓ Copied" : "Copy"}
+        {copied ? <Check size={13} /> : <Copy size={13} />}
       </button>
       <span style={{ fontSize: 11 }}>— anyone with this code can join your workspace as a member</span>
     </p>

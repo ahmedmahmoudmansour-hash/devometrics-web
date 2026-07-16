@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import * as XLSX from "xlsx";
+import { UserPlus, Upload } from "lucide-react";
 import { inviteEmployee, revokeInvite, bulkInviteEmployees, type BulkInviteRow, type BulkInviteResult } from "@/lib/organizations/actions";
 
 const fieldStyle: React.CSSProperties = {
@@ -25,13 +26,15 @@ const labelStyle: React.CSSProperties = {
 
 function modeButtonStyle(active: boolean): React.CSSProperties {
   return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     background: active ? "var(--teal)" : "transparent",
     color: active ? "#0A0F1E" : "var(--text-muted)",
     border: "none",
     borderRadius: 6,
-    padding: "6px 14px",
-    fontSize: 12,
-    fontWeight: 700,
+    width: 34,
+    height: 30,
     cursor: "pointer",
   };
 }
@@ -195,12 +198,12 @@ export default function InviteEmployeeForm({
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 4 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Invite employees</h2>
-        <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3 }}>
-          <button type="button" onClick={() => setMode("single")} style={modeButtonStyle(mode === "single")}>
-            Add one
+        <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, gap: 2 }}>
+          <button type="button" onClick={() => setMode("single")} title="Add one employee" aria-label="Add one employee" style={modeButtonStyle(mode === "single")}>
+            <UserPlus size={15} />
           </button>
-          <button type="button" onClick={() => setMode("import")} style={modeButtonStyle(mode === "import")}>
-            Import file
+          <button type="button" onClick={() => setMode("import")} title="Import from file" aria-label="Import from file" style={modeButtonStyle(mode === "import")}>
+            <Upload size={15} />
           </button>
         </div>
       </div>
