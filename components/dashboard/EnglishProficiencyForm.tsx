@@ -8,6 +8,7 @@ import {
   CEFR_DESCRIPTIONS,
   cefrLevelFromScore,
   levelBreakdown,
+  skillBreakdown,
   type CEFRLevel,
 } from "@/lib/assessments/englishProficiency";
 
@@ -36,6 +37,7 @@ export default function EnglishProficiencyForm() {
   if (result) {
     const level = cefrLevelFromScore(result.score);
     const breakdown = levelBreakdown(result.answers);
+    const bySkill = skillBreakdown(result.answers);
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
@@ -72,10 +74,35 @@ export default function EnglishProficiencyForm() {
           ))}
         </div>
 
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginTop: 24, marginBottom: 10 }}>
+          Breakdown by skill
+        </h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {bySkill.map((b) => (
+            <div key={b.skill} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 70, fontSize: 12.5, fontWeight: 700, color: "var(--text-muted)" }}>
+                {SKILL_LABEL[b.skill]}
+              </span>
+              <div style={{ flex: 1, height: 8, borderRadius: 4, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: `${(b.correct / b.total) * 100}%`,
+                    height: "100%",
+                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "#f87171" : "var(--amber)",
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "right" }}>
+                {b.correct}/{b.total}
+              </span>
+            </div>
+          ))}
+        </div>
+
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24, lineHeight: 1.6 }}>
-          This is a fixed 24-question snapshot (grammar, vocabulary, and reading comprehension), not an
-          adaptive or certified exam — treat the {level} result as a directional placement, not an
-          official language certification.
+          This is a fixed 54-question snapshot (grammar, vocabulary, and reading comprehension, evenly
+          split at every level), not an adaptive or certified exam — treat the {level} result as a
+          directional placement, not an official language certification.
         </p>
         <Link
           href="/dashboard/assessments"
@@ -95,8 +122,9 @@ export default function EnglishProficiencyForm() {
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
-        24 questions across grammar, vocabulary, and reading comprehension, ordered from beginner to
-        advanced. Unlike the self-report assessments, these have one correct answer each.
+        54 questions across grammar, vocabulary, and reading comprehension — an even 3 of each per
+        level — ordered from beginner to advanced. Unlike the self-report assessments, these have one
+        correct answer each.
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>

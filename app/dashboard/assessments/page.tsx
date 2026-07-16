@@ -166,7 +166,7 @@ export default async function AssessmentsPage() {
             }}
           >
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-              CEFR-style · 24 questions
+              CEFR-style · 54 questions
             </span>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
               English Proficiency
