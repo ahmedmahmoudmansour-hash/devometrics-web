@@ -9,12 +9,11 @@ import GenerateAssessmentSummaryButton from "@/components/dashboard/GenerateAsse
 import Avatar from "@/components/Avatar";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import { HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
+import { computeNineBoxPoint } from "@/lib/organizations/nineBox";
 import { levelText } from "@/lib/ui/levelColor";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
-
-const LEADERSHIP_DIMS = ["Leadership", "Strategic Thinking", "People Management"] as const;
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -52,16 +51,12 @@ export default async function EmployeeDetailPage({
   // Same axes as the org-wide Analytics 9-box, computed for this one
   // person — lets the report show where they sit in the exact grid an
   // admin already understands, not a report-specific metric.
-  const dimensionValues = Object.values(dimensionLevels) as number[];
-  const leadershipValues = LEADERSHIP_DIMS.map((d) => dimensionLevels[d]).filter(
-    (v): v is number => v !== undefined
-  );
+  const point = computeNineBoxPoint(dimensionLevels);
   const nineBoxPoint =
-    dimensionValues.length > 0 && leadershipValues.length > 0
+    point
       ? {
           name: profile.name,
-          x: dimensionValues.reduce((a, b) => a + b, 0) / dimensionValues.length,
-          y: leadershipValues.reduce((a, b) => a + b, 0) / leadershipValues.length,
+          ...point,
         }
       : null;
 

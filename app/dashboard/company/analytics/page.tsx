@@ -4,6 +4,7 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import { DonutChart, HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
+import { computeNineBoxPoint } from "@/lib/organizations/nineBox";
 
 export const metadata = { title: "Workforce Analytics — Devometrics" };
 
@@ -72,18 +73,14 @@ export default async function CompanyAnalyticsPage() {
   const gaps = [...dimensionBars].reverse().slice(0, 3);
 
   // 9-box: x = measured capability (avg of all dimensions), y = growth
-  // signal (avg of the leadership-oriented dimensions)
-  const LEADERSHIP_DIMS = ["Leadership", "Strategic Thinking", "People Management"] as const;
+  // signal (avg of the leadership-oriented dimensions) — same formula the
+  // High Potential Pool and individual employee reports use (see
+  // lib/organizations/nineBox.ts), so this scatter and those rosters can
+  // never quietly disagree about where someone sits.
   const nineBoxPoints = withAnalysis
     .map((r) => {
-      const values = Object.values(r.dimensionLevels);
-      const capability = values.reduce((a, b) => a + b, 0) / values.length;
-      const leadershipValues = LEADERSHIP_DIMS.map((d) => r.dimensionLevels[d]).filter(
-        (v): v is number => v !== undefined
-      );
-      if (leadershipValues.length === 0) return null;
-      const growth = leadershipValues.reduce((a, b) => a + b, 0) / leadershipValues.length;
-      return { name: r.name, x: capability, y: growth };
+      const point = computeNineBoxPoint(r.dimensionLevels);
+      return point ? { name: r.name, ...point } : null;
     })
     .filter((p): p is { name: string; x: number; y: number } => p !== null);
 

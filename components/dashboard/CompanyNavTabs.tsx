@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type TabKey = "profile" | "employees" | "competencies" | "analytics" | "succession" | "surveys";
+type TabKey = "profile" | "employees" | "competencies" | "analytics" | "highPotential" | "succession" | "surveys";
 
 export default function CompanyNavTabs({ active }: { active: TabKey }) {
   const tabs: { key: TabKey; label: string; href: string }[] = [
@@ -8,6 +8,7 @@ export default function CompanyNavTabs({ active }: { active: TabKey }) {
     { key: "employees", label: "Employees", href: "/dashboard/company/employees" },
     { key: "competencies", label: "Competencies", href: "/dashboard/company/competencies" },
     { key: "analytics", label: "Analytics", href: "/dashboard/company/analytics" },
+    { key: "highPotential", label: "High Potential", href: "/dashboard/company/high-potential" },
     { key: "succession", label: "Succession", href: "/dashboard/company/succession" },
     { key: "surveys", label: "Surveys", href: "/dashboard/company/surveys" },
   ];
