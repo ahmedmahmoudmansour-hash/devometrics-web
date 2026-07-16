@@ -8,6 +8,20 @@ import Avatar from "@/components/Avatar";
 import Reveal from "@/components/Reveal";
 import { levelBg, levelText } from "@/lib/ui/levelColor";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import {
+  LayoutList,
+  Grid3x3,
+  TrendingUp,
+  Triangle,
+  Network,
+  Star,
+  ClipboardList,
+  SlidersHorizontal,
+  MessageSquare,
+  Award,
+  Palette,
+  ShieldCheck,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Devometrics for Enterprise — Workforce Intelligence",
@@ -15,54 +29,76 @@ export const metadata: Metadata = {
     "One competency graph for your whole team — workforce skill inventory, talent heatmaps, leadership-readiness signal, and manager-assigned development tasks, built on the same engine every employee already uses individually.",
 };
 
-const capabilities: { title: string; description: string }[] = [
+const capabilities: { title: string; description: string; icon: React.ComponentType<{ size?: number }> }[] = [
+  {
+    title: "Job architecture & grading",
+    icon: Network,
+    description:
+      "Define families, graded roles, and each role's required competency profile — AI proposes a grade and profile from a role's responsibilities, and it powers vertical and horizontal career paths across the org.",
+  },
   {
     title: "Workforce skill inventory",
+    icon: LayoutList,
     description:
       "Every employee's Career Health Score, assessments completed, and plan progress in one table — scoped strictly to your own organization, never a shared pilot-wide view.",
   },
   {
     title: "Talent heatmap",
+    icon: Grid3x3,
     description:
       "All 8 competency dimensions across your whole team at a glance, so you can see where the org is strong and where a whole function is quietly under-skilled.",
   },
   {
-    title: "Leadership readiness signal",
+    title: "High Potential pool",
+    icon: Star,
     description:
-      "A directional ranking by Leadership, Strategic Thinking, and People Management — a real starting conversation for succession planning, not dressed up as a finished one.",
+      "A consolidated, cross-role roster of everyone in the top growth-signal band of your talent grid — juniors included — so deliberate investment doesn't get lost in per-person reviews.",
+  },
+  {
+    title: "Succession & leadership readiness",
+    icon: TrendingUp,
+    description:
+      "AI ranks internal candidates for a critical role by measured fit, with the reasoning, gaps, and development focus for each — decision support for a human conversation, never an automated call.",
   },
   {
     title: "Team capability pyramid",
+    icon: Triangle,
     description:
       "The same personal → professional → organizational capability model your employees see individually, averaged across the whole company.",
   },
   {
     title: "Manager-assigned tasks",
+    icon: ClipboardList,
     description:
       "Assign a task straight onto an employee's development plan from their profile — it shows up flagged as assigned by their manager, not just self-directed.",
   },
   {
     title: "Custom competency framework",
+    icon: SlidersHorizontal,
     description:
       "Name competencies in your own company's language and map each onto the dimension that actually drives scoring — or let AI suggest the mapping. Mapping is optional, since some competencies (pure values statements) don't cleanly fit any dimension.",
   },
   {
     title: "Anonymous culture & pulse surveys",
+    icon: MessageSquare,
     description:
       "AI drafts rating, multiple-choice, and open-ended questions on any theme — review and edit before assigning. Results only ever surface as anonymous aggregates once at least 3 people respond; individual answers are never visible to admins, enforced at the database level.",
   },
   {
     title: "Executive assessments",
+    icon: Award,
     description:
       "Organizational Culture Stewardship and Leading Organizational Change — executive-level assessments built for the people actually accountable for those outcomes.",
   },
   {
     title: "Company contacts & branding",
+    icon: Palette,
     description:
       "Named platform and finance contacts for your workspace, plus your own logo and accent color applied across every employee's dashboard.",
   },
   {
     title: "Fully isolated per company",
+    icon: ShieldCheck,
     description:
       "Every query is scoped through row-level security tied to organization membership — your data never mixes with another company's, even on the same platform.",
   },
@@ -345,17 +381,47 @@ export default function EnterprisePage() {
                 Built for the people accountable for the team
               </h2>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {/* Hairline-divider grid (Zoho-suite structure, dark-theme
+                translation): the 1px gap over a border-colored background
+                paints clean internal gridlines at any column count, with a
+                single rounded, clipped outer frame — no floating cards. No
+                per-cell CTA on purpose: these are features of one product,
+                not separate apps to "try" individually. */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                gap: 1,
+                background: "var(--border)",
+                border: "1px solid var(--border)",
+                borderRadius: 16,
+                overflow: "hidden",
+              }}
+            >
               {capabilities.map((c) => (
-                <div
-                  key={c.title}
-                  className="card-hover"
-                  style={{ background: "var(--navy)", border: "1px solid var(--border)", borderRadius: 14, padding: 28 }}
-                >
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 10, letterSpacing: "-0.01em" }}>
-                    {c.title}
-                  </h3>
-                  <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>{c.description}</p>
+                <div key={c.title} style={{ background: "var(--navy)", padding: 28 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                      {c.title}
+                    </h3>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        width: 38,
+                        height: 38,
+                        borderRadius: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--teal)",
+                        background: "rgba(0,201,167,0.1)",
+                        border: "1px solid rgba(0,201,167,0.2)",
+                      }}
+                    >
+                      <c.icon size={18} />
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7 }}>{c.description}</p>
                 </div>
               ))}
             </div>
