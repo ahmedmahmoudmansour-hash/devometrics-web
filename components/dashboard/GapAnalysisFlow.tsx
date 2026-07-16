@@ -227,7 +227,7 @@ export default function GapAnalysisFlow({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
-          {ranked.map((c) => (
+          {ranked.map((c, i) => (
             <div
               key={c.dimension}
               style={{
@@ -236,11 +236,26 @@ export default function GapAnalysisFlow({
                 justifyContent: "space-between",
                 padding: "10px 0",
                 borderBottom: "1px solid var(--border)",
+                flexWrap: "wrap",
+                gap: 10,
               }}
             >
               <div>
                 <div style={{ fontSize: 14, color: "var(--text)", fontWeight: 600 }}>{c.dimension}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{c.rationale}</div>
+                <Link
+                  href={`/dashboard/gap-analysis/bridge/${encodeURIComponent(c.dimension)}`}
+                  style={{
+                    display: "inline-block",
+                    marginTop: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "var(--teal)",
+                    textDecoration: "none",
+                  }}
+                >
+                  {i === 0 ? "★ Bridge this gap — highest impact →" : "Bridge this gap →"}
+                </Link>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 16 }}>
                 <div style={{ fontSize: 13, color: "var(--text)" }}>

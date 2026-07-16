@@ -42,6 +42,13 @@ export const FREE_ASSESSMENT_LIMIT = 2;
 
 export const MAX_SPEECH_TEXT_LENGTH = 2000;
 
+// Two real Claude calls per generation (a web-search call, then a
+// structured-synthesis call) — cheap per click (roughly 5-7 cents), but
+// nothing else stops someone from spam-clicking Regenerate, so this is the
+// actual cost guard, same reasoning as every other AI-calling route above.
+export const BRIDGE_CONTENT_RATE_LIMIT_WINDOW_MINUTES = 60;
+export const BRIDGE_CONTENT_RATE_LIMIT_MAX_RUNS = 10;
+
 export const MAX_ROLEPLAY_MESSAGE_LENGTH = 2000;
 // Roleplay sessions store the whole conversation as one row (jsonb array),
 // so per-message rate limiting doesn't map to a row count the way other
