@@ -1,11 +1,12 @@
 import Link from "next/link";
 
-type TabKey = "profile" | "employees" | "competencies" | "analytics" | "highPotential" | "succession" | "surveys";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "competencies" | "analytics" | "highPotential" | "succession" | "surveys";
 
 export default function CompanyNavTabs({ active }: { active: TabKey }) {
   const tabs: { key: TabKey; label: string; href: string }[] = [
     { key: "profile", label: "Profile", href: "/dashboard/company" },
     { key: "employees", label: "Employees", href: "/dashboard/company/employees" },
+    { key: "jobArchitecture", label: "Job Architecture", href: "/dashboard/company/job-architecture" },
     { key: "competencies", label: "Competencies", href: "/dashboard/company/competencies" },
     { key: "analytics", label: "Analytics", href: "/dashboard/company/analytics" },
     { key: "highPotential", label: "High Potential", href: "/dashboard/company/high-potential" },

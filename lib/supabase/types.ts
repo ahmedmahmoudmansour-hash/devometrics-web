@@ -316,6 +316,52 @@ export type SuccessionRole = {
   created_at: string;
 };
 
+// Job Architecture (migration 0067) — the structural spine roles/grades/
+// mobility hang off. RoleTrack separates the IC ladder from the management
+// ladder; grade (1-10) is the comparable band that makes vertical vs
+// horizontal a fact, not a label.
+export type RoleTrack = "ic" | "management";
+
+export type JobFamily = {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type JobRole = {
+  id: string;
+  organization_id: string;
+  job_family_id: string;
+  title: string;
+  level: string;
+  grade: number;
+  track: RoleTrack;
+  responsibilities: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type RoleCompetencyRequirement = {
+  id: string;
+  organization_id: string;
+  role_id: string;
+  dimension: string;
+  target_level: number;
+};
+
+export type RoleTransition = {
+  id: string;
+  organization_id: string;
+  from_role_id: string;
+  to_role_id: string;
+  transition_type: "vertical" | "horizontal";
+  note: string;
+  created_at: string;
+};
+
 export type RoleplayMessage = {
   role: "user" | "assistant";
   content: string;
