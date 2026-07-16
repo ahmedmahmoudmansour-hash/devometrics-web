@@ -102,6 +102,26 @@ export type ManagerNote = {
   created_at: string;
 };
 
+// Company Scorecard — manual KPIs for the 3 perspectives Devometrics
+// doesn't hold data for (migration 0070). Learning & Growth is computed
+// live, not stored — see lib/companyScorecard/learningGrowth.ts.
+export type ScorecardPerspective = "customer" | "process" | "financial";
+export type ScorecardKpiStatus = "on_track" | "at_risk" | "off_track";
+
+export type ScorecardKpi = {
+  id: string;
+  organization_id: string;
+  perspective: ScorecardPerspective;
+  name: string;
+  target: string;
+  actual: string;
+  status: ScorecardKpiStatus;
+  note: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type OrganizationInvite = {
   id: string;
   organization_id: string;
