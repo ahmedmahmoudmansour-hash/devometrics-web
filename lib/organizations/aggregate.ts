@@ -8,12 +8,16 @@ import type {
   Milestone,
   OrganizationCompetency,
   Profile,
+  JobRole,
+  RoleCompetencyRequirement,
+  RoleTransition,
 } from "@/lib/supabase/types";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
 import type { BigFiveTrait } from "@/lib/personality/bigFive";
+import { computeMobility, type Mobility } from "@/lib/jobArchitecture/mobility";
 
 export type WorkforceRow = {
   userId: string;
@@ -367,6 +371,14 @@ export type EmployeeDetail = {
   // or they have but haven't chosen to share it. RLS enforces this, not
   // just this query: an unshared profile simply won't be returned here.
   bigFive: { scores: Record<BigFiveTrait, number>; generatedAt: string } | null;
+  // Job Architecture (migration 0067). memberId + currentRoleId back the
+  // "place in role" control; allRoles feeds its picker; mobility is the
+  // computed vertical/horizontal/untapped view. All null/empty until the
+  // migration is run and roles are defined.
+  memberId: string | null;
+  currentRoleId: string | null;
+  allRoles: JobRole[];
+  mobility: Mobility | null;
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -388,6 +400,10 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     assessmentSummary: null,
     assessmentSummaryGeneratedAt: null,
     bigFive: null,
+    memberId: null,
+    currentRoleId: null,
+    allRoles: [],
+    mobility: null,
   };
 
   const supabase = await createClient();
@@ -403,13 +419,24 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     .maybeSingle<{ organization_id: string; role: string }>();
   if (!membership || membership.role !== "admin") return empty;
 
+  // current_role_id (migration 0067) is selected defensively: if the column
+  // doesn't exist yet the whole select errors, so it's a separate fallback
+  // read rather than folded into the required title/user_id select that
+  // gates authorization.
   const { data: targetMembership } = await supabase
     .from("organization_members")
-    .select("user_id, title")
+    .select("id, user_id, title")
     .eq("organization_id", membership.organization_id)
     .eq("user_id", employeeUserId)
-    .maybeSingle<{ user_id: string; title: string | null }>();
+    .maybeSingle<{ id: string; user_id: string; title: string | null }>();
   if (!targetMembership) return empty;
+
+  const { data: roleRow } = await supabase
+    .from("organization_members")
+    .select("current_role_id")
+    .eq("id", targetMembership.id)
+    .maybeSingle<{ current_role_id: string | null }>();
+  const currentRoleId = roleRow?.current_role_id ?? null;
 
   // Reuses the same org-wide aggregation buildCompanyData already computes
   // (rather than re-deriving dimension averages here) so the two never
@@ -509,6 +536,26 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     milestonesByPlan.set(m.plan_id, list);
   }
 
+  // Job Architecture (migration 0067) — three isolated defensive reads that
+  // degrade to empty if the migration hasn't run, so the mobility view just
+  // doesn't render rather than breaking the whole employee report.
+  const [{ data: allRoles }, { data: roleRequirements }, { data: roleTransitions }] = await Promise.all([
+    supabase.from("job_roles").select("*").eq("organization_id", membership.organization_id).returns<JobRole[]>(),
+    supabase.from("role_competency_requirements").select("*").eq("organization_id", membership.organization_id).returns<RoleCompetencyRequirement[]>(),
+    supabase.from("role_transitions").select("*").eq("organization_id", membership.organization_id).returns<RoleTransition[]>(),
+  ]);
+
+  // The person's measured competency levels from their latest gap analysis —
+  // the same currentLevel-per-dimension map the 9-box and report already use.
+  const mobilityLevels: Partial<Record<CompetencyDimension, number>> = {};
+  if (latestAnalysis) {
+    for (const c of latestAnalysis.competencies) mobilityLevels[c.dimension] = c.currentLevel;
+  }
+  const mobility =
+    (allRoles ?? []).length > 0
+      ? computeMobility(currentRoleId, mobilityLevels, allRoles ?? [], roleRequirements ?? [], roleTransitions ?? [])
+      : null;
+
   return {
     isAuthorized: true,
     profile: profile
@@ -547,5 +594,9 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     assessmentSummary: summaryRow?.summary ?? null,
     assessmentSummaryGeneratedAt: summaryRow?.generated_at ?? null,
     bigFive: bigFiveRow ? { scores: bigFiveRow.scores, generatedAt: bigFiveRow.created_at } : null,
+    memberId: targetMembership.id,
+    currentRoleId,
+    allRoles: allRoles ?? [],
+    mobility,
   };
 }

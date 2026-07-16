@@ -14,6 +14,7 @@ import { levelText } from "@/lib/ui/levelColor";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
+import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -43,6 +44,10 @@ export default async function EmployeeDetailPage({
     assessmentSummary,
     assessmentSummaryGeneratedAt,
     bigFive,
+    mobility,
+    memberId,
+    currentRoleId,
+    allRoles,
   } = data;
   const dimensionLevels = gapAnalysis
     ? Object.fromEntries(gapAnalysis.competencies.map((c) => [c.dimension, c.currentLevel]))
@@ -211,6 +216,16 @@ export default async function EmployeeDetailPage({
                   <NineBoxLegend forceOpen />
                 </div>
               </div>
+            )}
+
+            {mobility && memberId && (
+              <CareerMobilitySection
+                mobility={mobility}
+                memberId={memberId}
+                currentRoleId={currentRoleId}
+                allRoles={allRoles}
+                employeeName={profile.name}
+              />
             )}
 
             {(assessmentResults.length > 0 || resumeScore !== null) && (
