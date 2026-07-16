@@ -12,6 +12,7 @@ import type {
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
+import type { BigFiveTrait } from "@/lib/personality/bigFive";
 
 export type WorkforceRow = {
   userId: string;
@@ -353,6 +354,10 @@ export type EmployeeDetail = {
   orgCareerHealthScore: number | null;
   assessmentSummary: EmployeeAssessmentSummary["summary"] | null;
   assessmentSummaryGeneratedAt: string | null;
+  // Opt-in only (migration 0065) — null means either they haven't taken it,
+  // or they have but haven't chosen to share it. RLS enforces this, not
+  // just this query: an unshared profile simply won't be returned here.
+  bigFive: { scores: Record<BigFiveTrait, number>; generatedAt: string } | null;
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -373,6 +378,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     orgCareerHealthScore: null,
     assessmentSummary: null,
     assessmentSummaryGeneratedAt: null,
+    bigFive: null,
   };
 
   const supabase = await createClient();
@@ -410,6 +416,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     { data: latestResume },
     { data: assignedRows },
     { data: summaryRow },
+    { data: bigFiveRow },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
     supabase
@@ -453,6 +460,17 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
       .select("summary, generated_at")
       .eq("employee_user_id", employeeUserId)
       .maybeSingle<{ summary: EmployeeAssessmentSummary["summary"]; generated_at: string }>(),
+    // Opt-in only (migration 0065) — RLS returns nothing at all unless the
+    // employee has explicitly turned sharing on, regardless of what this
+    // query asks for. A migration-not-run error degrades the same way as
+    // every other isolated query here: falls through to null below.
+    supabase
+      .from("big_five_profiles")
+      .select("scores, created_at")
+      .eq("user_id", employeeUserId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ scores: Record<BigFiveTrait, number>; created_at: string }>(),
   ]);
 
   // Keep only the latest attempt per assessment — same "latest wins"
@@ -519,5 +537,6 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     orgCareerHealthScore: companyData.companyCareerHealthScore,
     assessmentSummary: summaryRow?.summary ?? null,
     assessmentSummaryGeneratedAt: summaryRow?.generated_at ?? null,
+    bigFive: bigFiveRow ? { scores: bigFiveRow.scores, generatedAt: bigFiveRow.created_at } : null,
   };
 }

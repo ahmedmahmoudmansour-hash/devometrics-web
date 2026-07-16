@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
+import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -624,6 +625,15 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
       )
       .join("\n") || "(none completed)";
 
+  // Only ever passed as pre-vetted, work-neutral interpretation sentences
+  // (bigFiveInterpretation), never raw trait scores — keeps the model from
+  // freely editorializing about someone's personality. Only present at all
+  // if the employee opted in (migration 0065); detail.bigFive is null
+  // otherwise, same as if they'd never taken it.
+  const bigFiveLines = detail.bigFive
+    ? BIG_FIVE_TRAITS.map((trait) => `${trait}: ${bigFiveInterpretation(trait, detail.bigFive!.scores[trait])}`).join("\n")
+    : null;
+
   const prompt = [
     `EMPLOYEE: ${detail.profile.name}${detail.profile.title ? `, ${detail.profile.title}` : ""}`,
     detail.gapAnalysis
@@ -633,6 +643,9 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
     `\nRESUME INTELLIGENCE SCORE: ${detail.resumeScore ?? "not available"}`,
     `\nASSESSMENTS COMPLETED:\n${assessmentLines}`,
     `\nDEVELOPMENT PLAN PROGRESS: ${detail.plans.reduce((a, p) => a + p.milestones.filter((m) => m.completed).length, 0)}/${detail.plans.reduce((a, p) => a + p.milestones.length, 0)} milestones complete across ${detail.plans.length} plan(s)`,
+    bigFiveLines
+      ? `\nWORKING STYLE (Big Five, self-reported, shared voluntarily by the employee — use only for how-to-coach framing, never as a strength/weakness or suitability judgment):\n${bigFiveLines}`
+      : "",
   ].join("\n");
 
   let summary: { overallSummary: string; keyStrengths: string[]; developmentPriorities: string[]; standingNote: string };
@@ -641,7 +654,7 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
       model: "claude-sonnet-5",
       max_tokens: 1500,
       system:
-        "You write professional assessment-report narratives for Devometrics' enterprise talent platform, read by HR and people managers. This is decision support, not a verdict — ground every claim strictly in the measured data provided, never invent scores, tenure, or performance history that isn't given. Where data is thin (few or no assessments run), say so plainly rather than filling the gap with generic praise. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided. Write like a careful analyst, not a marketing brochure.",
+        "You write professional assessment-report narratives for Devometrics' enterprise talent platform, read by HR and people managers. This is decision support, not a verdict — ground every claim strictly in the measured data provided, never invent scores, tenure, or performance history that isn't given. Where data is thin (few or no assessments run), say so plainly rather than filling the gap with generic praise. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided. If working-style/Big Five context is given, use it only to suggest how someone might prefer to be coached or what kind of assignments might suit their style — never as a strength, weakness, or fitness judgment, and never as a factor in the keyStrengths or developmentPriorities lists. Write like a careful analyst, not a marketing brochure.",
       tools: [ASSESSMENT_SUMMARY_TOOL],
       tool_choice: { type: "tool", name: "record_assessment_summary" },
       messages: [{ role: "user", content: prompt }],

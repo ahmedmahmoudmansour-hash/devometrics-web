@@ -11,6 +11,7 @@ import CapabilityPyramid from "@/components/CapabilityPyramid";
 import { HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
 import { levelText } from "@/lib/ui/levelColor";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
+import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 
 const LEADERSHIP_DIMS = ["Leadership", "Strategic Thinking", "People Management"] as const;
 
@@ -41,6 +42,7 @@ export default async function EmployeeDetailPage({
     orgCareerHealthScore,
     assessmentSummary,
     assessmentSummaryGeneratedAt,
+    bigFive,
   } = data;
   const dimensionLevels = gapAnalysis
     ? Object.fromEntries(gapAnalysis.competencies.map((c) => [c.dimension, c.currentLevel]))
@@ -254,6 +256,36 @@ export default async function EmployeeDetailPage({
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {bigFive && (
+              <div className="print-avoid-break" style={card}>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+                  Working style (Big Five)
+                </h2>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
+                  Self-reported, and shared voluntarily by {profile.name.split(" ")[0]} — a self-awareness
+                  input for development conversations, not a hiring, promotion, or compensation signal.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {BIG_FIVE_TRAITS.map((trait) => (
+                    <div key={trait}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{trait}</span>
+                        <span className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: levelText(bigFive.scores[trait]) }}>
+                          {bigFive.scores[trait]}
+                        </span>
+                      </div>
+                      <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3 }}>
+                        <div style={{ width: `${bigFive.scores[trait]}%`, height: "100%", background: levelText(bigFive.scores[trait]), borderRadius: 3 }} />
+                      </div>
+                      <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>
+                        {bigFiveInterpretation(trait, bigFive.scores[trait])}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

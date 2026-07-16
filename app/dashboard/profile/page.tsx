@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import BigFiveAssessment from "@/components/dashboard/BigFiveAssessment";
+import BigFiveSharingToggle from "@/components/dashboard/BigFiveSharingToggle";
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import ProfileHeader from "@/components/dashboard/ProfileHeader";
 import CareerProfileForm from "@/components/dashboard/CareerProfileForm";
@@ -83,7 +84,15 @@ export default async function ProfilePage() {
             initialCareerAspirations={profile?.career_aspirations ?? ""}
           />
 
-          <BigFiveAssessment latest={latestBigFive} />
+          <div>
+            <BigFiveAssessment latest={latestBigFive} />
+            {latestBigFive && membership && (
+              <BigFiveSharingToggle
+                organizationName={membership.organization_name ?? "your company"}
+                initialShared={profile?.share_big_five_with_admin ?? false}
+              />
+            )}
+          </div>
 
           <div>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 14 }}>
