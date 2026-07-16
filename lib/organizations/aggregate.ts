@@ -11,6 +11,7 @@ import type {
 } from "@/lib/supabase/types";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
+import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
 import type { BigFiveTrait } from "@/lib/personality/bigFive";
 
@@ -331,12 +332,14 @@ export async function buildCompanyData(): Promise<CompanyData> {
   };
 }
 
-// English Proficiency isn't in ASSESSMENTS (it's an objective test, not
-// the self-report catalog — see lib/assessments/englishProficiency.ts),
-// so it needs its own name resolution wherever an assessment_slug is
-// turned into a display name, or it'd show the raw slug.
+// English Proficiency and Cognitive Reasoning aren't in ASSESSMENTS
+// (they're objective tests, not the self-report catalog — see
+// lib/assessments/englishProficiency.ts and cognitiveAbility.ts), so they
+// need their own name resolution wherever an assessment_slug is turned
+// into a display name, or it'd show the raw slug.
 function resolveAssessmentName(slug: string): string {
   if (slug === ENGLISH_PROFICIENCY_SLUG) return "English Proficiency";
+  if (slug === COGNITIVE_ABILITY_SLUG) return "Cognitive Reasoning";
   return ASSESSMENTS.find((a) => a.slug === slug)?.name ?? slug;
 }
 

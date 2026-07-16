@@ -11,6 +11,7 @@ import CapabilityPyramid from "@/components/CapabilityPyramid";
 import { HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
 import { levelText } from "@/lib/ui/levelColor";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
+import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 
 const LEADERSHIP_DIMS = ["Leadership", "Strategic Thinking", "People Management"] as const;
@@ -242,6 +243,10 @@ export default async function EmployeeDetailPage({
                           {a.slug === ENGLISH_PROFICIENCY_SLUG ? (
                             <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>
                               {cefrLevelFromScore(a.score)} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({a.score})</span>
+                            </span>
+                          ) : a.slug === COGNITIVE_ABILITY_SLUG ? (
+                            <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>
+                              {cognitiveBandFromScore(a.score)} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({a.score})</span>
                             </span>
                           ) : (
                             <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>{a.score}</span>

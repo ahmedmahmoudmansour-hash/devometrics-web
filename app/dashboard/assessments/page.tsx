@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ASSESSMENTS, LEVEL_SECTIONS, type LevelSection } from "@/lib/assessments/catalog";
 import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
+import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { rankByImpact } from "@/lib/gap-analysis/dimensions";
 import AssessmentPlanGenerator from "@/components/dashboard/AssessmentPlanGenerator";
 import type { AssessmentResult, CaseStudyExerciseAttempt, GapAnalysis, Profile } from "@/lib/supabase/types";
@@ -74,14 +75,17 @@ export default async function AssessmentsPage() {
     if (!latestBySlug.has(r.assessment_slug)) latestBySlug.set(r.assessment_slug, r);
   }
 
-  // English Proficiency lives outside ASSESSMENTS (it's an objective test,
-  // not the self-report catalog) — without this, someone assigned it would
-  // never see it in the "Assigned to you" callout below, even though the
-  // admin-side assignment picker already lets it be assigned.
+  // English Proficiency and Cognitive Reasoning live outside ASSESSMENTS
+  // (they're objective tests, not the self-report catalog) — without this,
+  // someone assigned either would never see it in the "Assigned to you"
+  // callout below, even though the admin-side assignment picker already
+  // lets them be assigned.
   const pendingAssigned = (assignedRows ?? [])
     .map((r) =>
       r.assessment_slug === ENGLISH_PROFICIENCY_SLUG
         ? { slug: ENGLISH_PROFICIENCY_SLUG, name: "English Proficiency" }
+        : r.assessment_slug === COGNITIVE_ABILITY_SLUG
+        ? { slug: COGNITIVE_ABILITY_SLUG, name: "Cognitive Reasoning" }
         : ASSESSMENTS.find((a) => a.slug === r.assessment_slug)
     )
     .filter((a): a is { slug: string; name: string } => !!a && !latestBySlug.has(a.slug));
@@ -172,6 +176,45 @@ export default async function AssessmentsPage() {
               return result ? (
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
                   Completed — {cefrLevelFromScore(result.score)}
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+              );
+            })()}
+          </Link>
+        </div>
+
+        <div style={{ marginBottom: 36 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+            Cognitive Reasoning
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+            A short numerical, verbal, and logical reasoning exercise with real correct answers — a
+            self-development input, not a hiring or selection instrument.
+          </p>
+          <Link
+            href={`/dashboard/assessments/${COGNITIVE_ABILITY_SLUG}`}
+            style={{
+              display: "block",
+              maxWidth: 280,
+              background: "var(--navy-mid)",
+              border: "1px solid var(--border)",
+              borderRadius: 14,
+              padding: 20,
+              textDecoration: "none",
+            }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
+              12 questions · 3 domains
+            </span>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
+              Cognitive Reasoning
+            </h3>
+            {(() => {
+              const result = latestBySlug.get(COGNITIVE_ABILITY_SLUG);
+              return result ? (
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
+                  Completed — {cognitiveBandFromScore(result.score)}
                 </span>
               ) : (
                 <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>

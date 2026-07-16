@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
+import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 
@@ -621,6 +622,8 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
       .map((a) =>
         a.slug === ENGLISH_PROFICIENCY_SLUG
           ? `${a.name}: CEFR ${cefrLevelFromScore(a.score)} (${a.score}/100 correct — objective test, not self-report)`
+          : a.slug === COGNITIVE_ABILITY_SLUG
+          ? `${a.name}: ${cognitiveBandFromScore(a.score)} (${a.score}/100 correct — self-development reasoning exercise, not a validated selection instrument; do not treat as a fitness or intelligence judgment)`
           : `${a.name}: ${a.score}/100`
       )
       .join("\n") || "(none completed)";
@@ -654,7 +657,7 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
       model: "claude-sonnet-5",
       max_tokens: 1500,
       system:
-        "You write professional assessment-report narratives for Devometrics' enterprise talent platform, read by HR and people managers. This is decision support, not a verdict — ground every claim strictly in the measured data provided, never invent scores, tenure, or performance history that isn't given. Where data is thin (few or no assessments run), say so plainly rather than filling the gap with generic praise. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided. If working-style/Big Five context is given, use it only to suggest how someone might prefer to be coached or what kind of assignments might suit their style — never as a strength, weakness, or fitness judgment, and never as a factor in the keyStrengths or developmentPriorities lists. Write like a careful analyst, not a marketing brochure.",
+        "You write professional assessment-report narratives for Devometrics' enterprise talent platform, read by HR and people managers. This is decision support, not a verdict — ground every claim strictly in the measured data provided, never invent scores, tenure, or performance history that isn't given. Where data is thin (few or no assessments run), say so plainly rather than filling the gap with generic praise. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided. If working-style/Big Five context is given, use it only to suggest how someone might prefer to be coached or what kind of assignments might suit their style — never as a strength, weakness, or fitness judgment, and never as a factor in the keyStrengths or developmentPriorities lists. If a Cognitive Reasoning result is given, treat it the same way — it is a self-development input, never a general-intelligence or hiring/promotion judgment, and should not be framed as a strength or weakness. Write like a careful analyst, not a marketing brochure.",
       tools: [ASSESSMENT_SUMMARY_TOOL],
       tool_choice: { type: "tool", name: "record_assessment_summary" },
       messages: [{ role: "user", content: prompt }],

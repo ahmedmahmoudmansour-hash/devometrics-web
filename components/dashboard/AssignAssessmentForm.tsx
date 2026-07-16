@@ -4,15 +4,18 @@ import { useState, useTransition } from "react";
 import { assignAssessment, removeAssignedAssessment } from "@/lib/organizations/actions";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
+import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
 
-// English Proficiency lives outside ASSESSMENTS (it's an objective test,
-// not the self-report catalog — see lib/assessments/englishProficiency.ts),
-// but admins should still be able to push it to someone the same way as
-// any other assessment, so it's added here rather than to the catalog
-// itself (which would wrongly route it through the Likert AssessmentForm).
+// English Proficiency and Cognitive Reasoning live outside ASSESSMENTS
+// (they're objective tests, not the self-report catalog — see
+// lib/assessments/englishProficiency.ts and cognitiveAbility.ts), but
+// admins should still be able to push them to someone the same way as any
+// other assessment, so they're added here rather than to the catalog
+// itself (which would wrongly route them through the Likert AssessmentForm).
 const ASSIGNABLE = [
   ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: a.name, level: a.level as string })),
   { slug: ENGLISH_PROFICIENCY_SLUG, name: "English Proficiency", level: "A1–C2" },
+  { slug: COGNITIVE_ABILITY_SLUG, name: "Cognitive Reasoning", level: "Numerical/Verbal/Logical" },
 ];
 
 const inputStyle: React.CSSProperties = {
