@@ -265,10 +265,13 @@ export type Milestone = {
   position: number;
   completed: boolean;
   completed_at: string | null;
-  // "in_progress" | "completed" | "deferred" (migration 0066) — completed
-  // stays as the single source of truth for every other reader in the app;
-  // this is purely the richer display/edit state for the plan UI.
-  status: "in_progress" | "completed" | "deferred";
+  // "not_started" | "in_progress" | "completed" | "deferred" (migration
+  // 0066, "not_started" added in 0069) — completed stays as the single
+  // source of truth for every other reader in the app; this is purely the
+  // richer display/edit state for the plan UI. New milestones default to
+  // "not_started" as of 0069 (0066 originally defaulted to "in_progress",
+  // which was wrong for a freshly generated, untouched plan).
+  status: "not_started" | "in_progress" | "completed" | "deferred";
   weekly_hours: number | null;
   hours_period: string | null;
   budget_note: string | null;

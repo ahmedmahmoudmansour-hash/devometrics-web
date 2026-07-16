@@ -37,10 +37,14 @@ export default async function MyDevelopmentPage() {
     : { data: [] as Milestone[] };
 
   const allMilestones = milestones ?? [];
-  const totalCount = allMilestones.length;
+  // Falls back to "in_progress" only if the status column itself doesn't
+  // exist yet (pre-migration-0066 database) — once 0066 has run, every row
+  // has a real status, defaulting to "not_started" as of migration 0069.
+  const statusOf = (m: Milestone) => m.status ?? "in_progress";
+  const notStartedCount = allMilestones.filter((m) => statusOf(m) === "not_started").length;
   const completedCount = allMilestones.filter((m) => m.completed).length;
-  const deferredCount = allMilestones.filter((m) => (m.status ?? "in_progress") === "deferred").length;
-  const inProgressCount = totalCount - completedCount - deferredCount;
+  const deferredCount = allMilestones.filter((m) => statusOf(m) === "deferred").length;
+  const inProgressCount = allMilestones.length - notStartedCount - completedCount - deferredCount;
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -53,8 +57,8 @@ export default async function MyDevelopmentPage() {
             My Development
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            Every development plan and milestone you have, in one place — mark each one In progress,
-            Completed, or Deferred as your priorities actually change.
+            Every development plan and milestone you have, in one place — mark each one Not started,
+            In progress, Completed, or Deferred as your priorities actually change.
           </p>
         </div>
 
@@ -72,7 +76,11 @@ export default async function MyDevelopmentPage() {
           <>
             <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 28, background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
               <div>
-                <p style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{inProgressCount}</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: "var(--text-muted)" }}>{notStartedCount}</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Not started</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 22, fontWeight: 800, color: "var(--phase2)" }}>{inProgressCount}</p>
                 <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>In progress</p>
               </div>
               <div>

@@ -42,7 +42,7 @@ export async function toggleMilestone(id: string, completed: boolean) {
   revalidatePath("/dashboard");
 }
 
-export type MilestoneStatus = "in_progress" | "completed" | "deferred";
+export type MilestoneStatus = "not_started" | "in_progress" | "completed" | "deferred";
 
 // The richer 3-state control (see MilestoneRow) — kept as a distinct
 // function from toggleMilestone rather than replacing it, since the two

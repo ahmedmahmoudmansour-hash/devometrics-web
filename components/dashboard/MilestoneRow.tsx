@@ -6,13 +6,15 @@ import CourseRecommendations from "@/components/dashboard/CourseRecommendations"
 import type { Milestone } from "@/lib/supabase/types";
 
 const STATUS_LABEL: Record<MilestoneStatus, string> = {
+  not_started: "Not started",
   in_progress: "In progress",
   completed: "Completed",
   deferred: "Deferred",
 };
 
 const STATUS_COLOR: Record<MilestoneStatus, string> = {
-  in_progress: "var(--text)",
+  not_started: "var(--text-muted)",
+  in_progress: "var(--phase2)",
   completed: "var(--teal)",
   deferred: "var(--amber)",
 };
