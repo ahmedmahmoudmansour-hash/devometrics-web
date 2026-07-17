@@ -49,6 +49,10 @@ export type WorkforceRow = {
   performanceRating: number | null;
   performanceRatingNote: string;
   performanceRatingUpdatedAt: string | null;
+  // Real reporting relationship (migration 0072) — the Org Chart Builder's
+  // data. Independent of managerName/managerEmail above (those are
+  // free-text pre-signup hints). null at the top of a reporting line.
+  managerUserId: string | null;
 };
 
 export type CompanyData = {
@@ -208,6 +212,17 @@ export async function buildCompanyData(): Promise<CompanyData> {
     .returns<{ user_id: string; performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }[]>();
   const performanceByMemberUser = new Map((memberPerformance ?? []).map((m) => [m.user_id, m]));
 
+  // Reporting lines (migration 0072) — same isolated-query pattern: a
+  // missing column before that migration runs just yields nothing, and
+  // every member shows as unplaced in the reporting line rather than
+  // breaking the roster.
+  const { data: memberManagers } = await supabase
+    .from("organization_members")
+    .select("user_id, manager_user_id")
+    .eq("organization_id", membership.organization_id)
+    .returns<{ user_id: string; manager_user_id: string | null }[]>();
+  const managerByMemberUser = new Map((memberManagers ?? []).map((m) => [m.user_id, m.manager_user_id]));
+
   const pendingInvites = (invites ?? []).map((invite) => ({
     ...invite,
     department: locationByInviteId.get(invite.id)?.department ?? null,
@@ -321,6 +336,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
       performanceRating: performanceByMemberUser.get(p.id)?.performance_rating ?? null,
       performanceRatingNote: performanceByMemberUser.get(p.id)?.performance_rating_note ?? "",
       performanceRatingUpdatedAt: performanceByMemberUser.get(p.id)?.performance_rating_updated_at ?? null,
+      managerUserId: managerByMemberUser.get(p.id) ?? null,
     };
   });
 

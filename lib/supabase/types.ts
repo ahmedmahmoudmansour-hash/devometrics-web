@@ -86,6 +86,12 @@ export type OrganizationMember = {
   performance_rating?: number | null;
   performance_rating_note?: string;
   performance_rating_updated_at?: string | null;
+  // Added in migration 0072 — the real, structured reporting relationship
+  // the Org Chart Builder renders and edits. Independent of the free-text
+  // manager_name/manager_email above (those are pre-signup hints; this is
+  // a real FK to another member of the same org). null at the top of a
+  // reporting line.
+  manager_user_id?: string | null;
   created_at: string;
 };
 

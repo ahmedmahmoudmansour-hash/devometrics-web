@@ -62,6 +62,13 @@ export default async function CompanyProfilePage() {
         stat: jobRoleCount !== null ? `${jobRoleCount} role${jobRoleCount === 1 ? "" : "s"} defined` : "Define families & graded roles",
       },
       {
+        key: "orgChart",
+        label: "Org Chart",
+        href: "/dashboard/company/org-chart",
+        icon: COMPANY_WIDGET_ICONS.ListTree,
+        stat: `${data.rows.filter((r) => r.managerUserId).length}/${data.rows.length} have a manager set`,
+      },
+      {
         key: "competencies",
         label: "Competencies",
         href: "/dashboard/company/competencies",

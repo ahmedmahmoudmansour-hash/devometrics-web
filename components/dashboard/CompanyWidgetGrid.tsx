@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Users,
   Network,
+  ListTree,
   SlidersHorizontal,
   BarChart3,
   Star,
@@ -76,6 +77,7 @@ export default function CompanyWidgetGrid({ widgets }: { widgets: CompanyWidget[
 export const COMPANY_WIDGET_ICONS = {
   Users,
   Network,
+  ListTree,
   SlidersHorizontal,
   BarChart3,
   Star,
