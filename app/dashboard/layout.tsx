@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) return <>{children}</>;
 
-  const [{ data: membership }, { data: profile }] = await Promise.all([
+  const [{ data: membership }, { data: profile }, { count: directReportCount }] = await Promise.all([
     supabase
       .from("organization_members")
       .select("role, organizations(brand_color)")
@@ -32,7 +32,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .select("is_admin, theme, subscription_tier, premium_trial_expires_at")
       .eq("id", user.id)
       .maybeSingle<{ is_admin: boolean | null; theme: string | null; subscription_tier: string | null; premium_trial_expires_at: string | null }>(),
+    // Isolated defensive count — degrades to "no reports" rather than
+    // breaking the whole layout if 0072's manager_user_id column isn't
+    // migrated yet on this database.
+    supabase.from("organization_members").select("*", { count: "exact", head: true }).eq("manager_user_id", user.id),
   ]);
+  const hasDirectReports = (directReportCount ?? 0) > 0;
 
   const brandColor = membership?.organizations?.brand_color ?? null;
   const isFreeTier =
@@ -60,12 +65,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           isCompanyAdmin={membership?.role === "admin"}
           isPlatformAdmin={!!profile?.is_admin}
           isFreeTier={isFreeTier}
+          hasDirectReports={hasDirectReports}
         />
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
       </div>
       <CommandPalette
         isCompanyAdmin={membership?.role === "admin"}
         isPlatformAdmin={!!profile?.is_admin}
+        hasDirectReports={hasDirectReports}
       />
     </div>
   );

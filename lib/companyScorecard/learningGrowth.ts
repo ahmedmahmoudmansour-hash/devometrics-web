@@ -26,6 +26,7 @@ export function computeLearningGrowthMetrics(data: CompanyData): LearningGrowthM
       { label: "Average Career Health Score", value: "—", detail: "No team members yet", percent: null },
       { label: "Development plan completion", value: "—", detail: "No milestones yet", percent: null },
       { label: "High Potential bench strength", value: "—", detail: "No team members yet", percent: null },
+      { label: "Average performance rating", value: "—", detail: "No team members yet", percent: null },
     ];
   }
 
@@ -46,6 +47,14 @@ export function computeLearningGrowthMetrics(data: CompanyData): LearningGrowthM
     if (!point) return false;
     return zoneForPoint(point.x, point.y).row === 2;
   }).length;
+
+  // Manager-reported, single-source, optional — same lighter posture as
+  // everywhere else performance_rating is used (see EditEmployeeButton):
+  // one input among several, not a verified fact. Only averaged over
+  // whoever's actually been rated, not defaulted to a middle score for the
+  // rest.
+  const rated = rows.filter((r) => r.performanceRating !== null);
+  const avgPerformance = rated.length > 0 ? rated.reduce((a, r) => a + (r.performanceRating ?? 0), 0) / rated.length : null;
 
   return [
     {
@@ -80,6 +89,15 @@ export function computeLearningGrowthMetrics(data: CompanyData): LearningGrowthM
       value: `${benchCount}`,
       detail: "Employees in the top growth-signal row of the talent grid — see High Potential Pool",
       percent: null,
+    },
+    {
+      label: "Average performance rating",
+      value: avgPerformance !== null ? `${avgPerformance.toFixed(1)}/5` : "—",
+      detail:
+        rated.length > 0
+          ? `${rated.length}/${total} employees have a manager rating — single-source, not independently verified`
+          : "No manager ratings entered yet",
+      percent: avgPerformance !== null ? Math.round((avgPerformance / 5) * 100) : null,
     },
   ];
 }

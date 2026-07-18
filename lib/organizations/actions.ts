@@ -267,6 +267,26 @@ export async function inviteEmployee(
   const trimmed = email.trim().toLowerCase();
   if (!trimmed || !trimmed.includes("@")) return { error: "A valid email is required" };
 
+  // Friendly, early error — the real enforcement is the RLS insert policy
+  // on organization_members (org_seat_limit_ok, migration 0079), which
+  // still blocks the join even if this check is somehow bypassed. This just
+  // means an admin finds out at invite time, not after the employee tries
+  // to sign up and quietly fails.
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name, seat_limit")
+    .eq("id", organizationId)
+    .maybeSingle<{ name: string; seat_limit: number | null }>();
+  if (org?.seat_limit !== null && org?.seat_limit !== undefined) {
+    const { count } = await supabase
+      .from("organization_members")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", organizationId);
+    if ((count ?? 0) >= org.seat_limit) {
+      return { error: `This workspace is at its seat limit (${org.seat_limit}) — contact Devometrics to add more seats.` };
+    }
+  }
+
   const { error } = await supabase.from("organization_invites").insert({
     organization_id: organizationId,
     email: trimmed,
@@ -281,11 +301,6 @@ export async function inviteEmployee(
   });
   if (error) return { error: "Could not send invite — they may already be invited" };
 
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("name")
-    .eq("id", organizationId)
-    .maybeSingle<{ name: string }>();
   if (org?.name) await sendInviteEmail(trimmed, org.name);
 
   revalidatePath("/dashboard/company");
@@ -768,6 +783,7 @@ export async function updateMemberDetails(
     manager_email?: string;
     business_unit?: string;
     location?: string;
+    employee_id?: string;
   }
 ) {
   const supabase = await createClient();

@@ -1,3 +1,6 @@
+import { ENGLISH_PROFICIENCY_SLUG } from "./englishProficiency";
+import { COGNITIVE_ABILITY_SLUG } from "./cognitiveAbility";
+
 // Primary browsing section, not a hard gate — every assessment stays
 // visible and takeable by everyone; this only determines which section it's
 // grouped under and which career stages it's suggested to first.
@@ -626,6 +629,18 @@ export const ASSESSMENTS: Assessment[] = [
 
 export function getAssessment(slug: string) {
   return ASSESSMENTS.find((a) => a.slug === slug) ?? null;
+}
+
+// English Proficiency and Cognitive Reasoning aren't in ASSESSMENTS (they're
+// objective tests, not the self-report catalog — see englishProficiency.ts
+// and cognitiveAbility.ts), so a plain getAssessment(slug)?.name lookup
+// falls through to the raw slug for these two. Centralized here (rather
+// than each caller doing its own fallback) after the same bug showed up
+// independently in both the personal Scorecard and My Journey timeline.
+export function resolveAssessmentName(slug: string): string {
+  if (slug === ENGLISH_PROFICIENCY_SLUG) return "English Proficiency";
+  if (slug === COGNITIVE_ABILITY_SLUG) return "Cognitive Reasoning";
+  return getAssessment(slug)?.name ?? slug;
 }
 
 export type ScoreBand = {

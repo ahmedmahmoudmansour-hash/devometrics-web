@@ -27,6 +27,11 @@ import UpcomingDeadlinesCard from "@/components/dashboard/UpcomingDeadlinesCard"
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import DismissibleUpgradePrompt from "@/components/dashboard/DismissibleUpgradePrompt";
 import StatRail from "@/components/dashboard/StatRail";
+import CareerGpsCard from "@/components/dashboard/CareerGpsCard";
+import WhatIfSimulator from "@/components/dashboard/WhatIfSimulator";
+import DailyInsightBanner from "@/components/dashboard/DailyInsightBanner";
+import { buildCareerGpsSnapshot } from "@/lib/careerGps/gps";
+import { getDailyInsight } from "@/lib/careerGps/dailyInsight";
 import type {
   AssessmentResult,
   DevelopmentPlan,
@@ -118,6 +123,22 @@ export default async function DashboardPage() {
     ? Math.round(assessmentScores.reduce((a, b) => a + b, 0) / assessmentScores.length)
     : null;
 
+  // Isolated, defensive — only feeds the Career GPS card's Interview
+  // Readiness component, so a query hiccup here just means that one signal
+  // falls back to its no-practice-yet baseline rather than breaking the page.
+  const { data: jobInterviewSession } = await supabase
+    .from("roleplay_sessions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("scenario_slug", "job-interview")
+    .eq("completed", true)
+    .limit(1)
+    .maybeSingle();
+  const careerGps = latestAnalysis
+    ? buildCareerGpsSnapshot(latestAnalysis, milestones ?? [], new Set(latestScoreBySlug.keys()), !!jobInterviewSession)
+    : null;
+  const dailyInsight = await getDailyInsight();
+
   const streakResult = await recordDailyActivity();
   const todayTasks = await listTodayTasks();
   const overdueTasks = await listOverdueTasks();
@@ -201,6 +222,10 @@ export default async function DashboardPage() {
       <div className="dashboard-content-grid">
         <div className="dashboard-main" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Your progress</h1>
+
+          {dailyInsight && <DailyInsightBanner insight={dailyInsight} />}
+          {careerGps && <CareerGpsCard snapshot={careerGps} />}
+          {latestAnalysis && <WhatIfSimulator />}
 
           <DashboardSection label="Today">
             <OnboardingChecklist steps={onboardingSteps} />

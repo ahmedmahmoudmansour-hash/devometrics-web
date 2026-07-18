@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAssessment, scoreToBand } from "@/lib/assessments/catalog";
+import { resolveAssessmentName, scoreToBand } from "@/lib/assessments/catalog";
 import { getRoleplayScenario } from "@/lib/roleplay/scenarios";
 import type {
   AssessmentResult,
@@ -82,12 +82,11 @@ export async function buildJourney(): Promise<JourneyEvent[]> {
   }
 
   for (const r of results ?? []) {
-    const assessment = getAssessment(r.assessment_slug);
     const band = scoreToBand(r.score);
     events.push({
       date: r.completed_at,
       type: "assessment",
-      title: `Completed ${assessment?.name ?? r.assessment_slug}`,
+      title: `Completed ${resolveAssessmentName(r.assessment_slug)}`,
       description: `${r.score}/100 — ${band.label}`,
       href: "/dashboard/assessments",
     });

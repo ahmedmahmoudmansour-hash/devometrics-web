@@ -13,10 +13,10 @@ import type {
   RoleTransition,
   ManagerNote,
 } from "@/lib/supabase/types";
-import { ASSESSMENTS } from "@/lib/assessments/catalog";
-import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
-import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
+import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
+
+export { resolveAssessmentName };
 import type { BigFiveTrait } from "@/lib/personality/bigFive";
 import { computeMobility, type Mobility } from "@/lib/jobArchitecture/mobility";
 
@@ -32,6 +32,7 @@ export type WorkforceRow = {
   managerEmail: string | null;
   businessUnit: string | null;
   location: string | null;
+  employeeId: string | null;
   avatarUrl: string | null;
   careerHealthScore: number | null;
   dimensionLevels: Partial<Record<CompetencyDimension, number>>;
@@ -197,9 +198,9 @@ export async function buildCompanyData(): Promise<CompanyData> {
   // nothing and every member simply shows as active with blank HR fields.
   const { data: memberHrFields } = await supabase
     .from("organization_members")
-    .select("id, user_id, manager_name, manager_email, business_unit, location, archived")
+    .select("id, user_id, manager_name, manager_email, business_unit, location, employee_id, archived")
     .eq("organization_id", membership.organization_id)
-    .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; archived: boolean }[]>();
+    .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; employee_id: string | null; archived: boolean }[]>();
   const hrByMemberUser = new Map((memberHrFields ?? []).map((m) => [m.user_id, m]));
 
   // Performance rating (migration 0068) — same isolated-query pattern: a
@@ -325,6 +326,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
       managerEmail: hrByMemberUser.get(p.id)?.manager_email ?? null,
       businessUnit: hrByMemberUser.get(p.id)?.business_unit ?? null,
       location: hrByMemberUser.get(p.id)?.location ?? null,
+      employeeId: hrByMemberUser.get(p.id)?.employee_id ?? null,
       avatarUrl: p.avatar_url ?? null,
       careerHealthScore: analysis?.career_health_score ?? null,
       dimensionLevels,
@@ -375,17 +377,6 @@ export async function buildCompanyData(): Promise<CompanyData> {
     pendingInvites,
     organizationCompetencies,
   };
-}
-
-// English Proficiency and Cognitive Reasoning aren't in ASSESSMENTS
-// (they're objective tests, not the self-report catalog — see
-// lib/assessments/englishProficiency.ts and cognitiveAbility.ts), so they
-// need their own name resolution wherever an assessment_slug is turned
-// into a display name, or it'd show the raw slug.
-export function resolveAssessmentName(slug: string): string {
-  if (slug === ENGLISH_PROFICIENCY_SLUG) return "English Proficiency";
-  if (slug === COGNITIVE_ABILITY_SLUG) return "Cognitive Reasoning";
-  return ASSESSMENTS.find((a) => a.slug === slug)?.name ?? slug;
 }
 
 export type EmployeeDetail = {

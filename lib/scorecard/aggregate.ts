@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAssessment } from "@/lib/assessments/catalog";
+import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { AssessmentResult, GapAnalysis, Milestone, ResumeAnalysis } from "@/lib/supabase/types";
 
@@ -111,7 +111,7 @@ export async function buildScorecard(): Promise<ScorecardData | null> {
   }
   const assessmentTrends: AssessmentTrend[] = Array.from(bySlug.entries()).map(([slug, history]) => ({
     slug,
-    name: getAssessment(slug)?.name ?? slug,
+    name: resolveAssessmentName(slug),
     history,
     delta: history.length >= 2 ? history[history.length - 1].score - history[history.length - 2].score : null,
   }));

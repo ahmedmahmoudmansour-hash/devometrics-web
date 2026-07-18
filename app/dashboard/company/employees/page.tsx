@@ -174,6 +174,7 @@ export default async function CompanyEmployeesPage() {
                                 managerEmail: r.managerEmail,
                                 businessUnit: r.businessUnit,
                                 location: r.location,
+                                employeeId: r.employeeId,
                               }}
                             />
                           </td>

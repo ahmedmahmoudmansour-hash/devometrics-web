@@ -34,11 +34,12 @@ export default async function CompanyProfilePage() {
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
     const supabase = await createClient();
-    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount] = await Promise.all([
+    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount] = await Promise.all([
       countOrNull(supabase, "job_roles", data.organizationId),
       countOrNull(supabase, "succession_roles", data.organizationId),
       countOrNull(supabase, "scorecard_kpis", data.organizationId),
       countOrNull(supabase, "surveys", data.organizationId),
+      countOrNull(supabase, "performance_review_cycles", data.organizationId),
     ]);
 
     const hipoCount = data.rows.filter((r) => {
@@ -76,11 +77,11 @@ export default async function CompanyProfilePage() {
         stat: `${data.organizationCompetencies.length} custom competenc${data.organizationCompetencies.length === 1 ? "y" : "ies"}`,
       },
       {
-        key: "analytics",
-        label: "Analytics",
-        href: "/dashboard/company/analytics",
-        icon: COMPANY_WIDGET_ICONS.BarChart3,
-        stat: "Workforce skill heatmap & talent grid",
+        key: "performanceReviews",
+        label: "Impact Cycles",
+        href: "/dashboard/company/impact-cycles",
+        icon: COMPANY_WIDGET_ICONS.ClipboardCheck,
+        stat: reviewCycleCount !== null ? `${reviewCycleCount} cycle${reviewCycleCount === 1 ? "" : "s"} tracked` : "Reflection, Manager's Perspective, Focus Areas",
       },
       {
         key: "highPotential",
@@ -109,6 +110,13 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/surveys",
         icon: COMPANY_WIDGET_ICONS.MessageSquare,
         stat: surveyCount !== null ? `${surveyCount} survey${surveyCount === 1 ? "" : "s"}` : "Anonymous pulse surveys",
+      },
+      {
+        key: "analytics",
+        label: "Analytics",
+        href: "/dashboard/company/analytics",
+        icon: COMPANY_WIDGET_ICONS.BarChart3,
+        stat: "Workforce skill heatmap & talent grid",
       },
     ];
   }

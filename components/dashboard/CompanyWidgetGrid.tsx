@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Gauge,
   MessageSquare,
+  ClipboardCheck,
 } from "lucide-react";
 
 export type CompanyWidget = {
@@ -84,4 +85,5 @@ export const COMPANY_WIDGET_ICONS = {
   TrendingUp,
   Gauge,
   MessageSquare,
+  ClipboardCheck,
 };

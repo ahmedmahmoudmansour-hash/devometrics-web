@@ -58,6 +58,7 @@ export default function EditEmployeeButton({
     managerEmail: string | null;
     businessUnit: string | null;
     location: string | null;
+    employeeId: string | null;
   };
   pendingDataDeletionAt?: string | null;
   // Direct management input (migration 0068) — always optional, null means
@@ -73,6 +74,7 @@ export default function EditEmployeeButton({
   const [managerEmail, setManagerEmail] = useState(initial.managerEmail ?? "");
   const [businessUnit, setBusinessUnit] = useState(initial.businessUnit ?? "");
   const [location, setLocation] = useState(initial.location ?? "");
+  const [employeeId, setEmployeeId] = useState(initial.employeeId ?? "");
   const [rating, setRating] = useState(performanceRating ?? 0);
   const [ratingNote, setRatingNote] = useState(performanceRatingNote);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +99,7 @@ export default function EditEmployeeButton({
         manager_email: managerEmail,
         business_unit: businessUnit,
         location,
+        employee_id: employeeId,
       });
       if (result?.error) {
         setError(result.error);
@@ -186,6 +189,10 @@ export default function EditEmployeeButton({
             </h2>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
+                Employee ID
+                <input type="text" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} style={fieldStyle} placeholder="e.g. badge or payroll number" />
+              </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
                 Job title
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={fieldStyle} />

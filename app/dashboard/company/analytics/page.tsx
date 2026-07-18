@@ -87,6 +87,12 @@ export default async function CompanyAnalyticsPage() {
   const coveragePct = rows.length ? Math.round((withAnalysis.length / rows.length) * 100) : 0;
   const assessmentPct = rows.length ? Math.round((withAssessment.length / rows.length) * 100) : 0;
 
+  // Manager-reported, single-source, optional — same lighter posture as
+  // everywhere else performance_rating is used. Only averaged over whoever's
+  // actually been rated.
+  const rated = rows.filter((r) => r.performanceRating !== null);
+  const avgPerformance = rated.length > 0 ? rated.reduce((a, r) => a + (r.performanceRating ?? 0), 0) / rated.length : null;
+
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
@@ -132,6 +138,14 @@ export default async function CompanyAnalyticsPage() {
                 <div>
                   <p style={{ fontSize: 26, fontWeight: 800, color: "var(--teal)" }}>{data.companyCareerHealthScore}</p>
                   <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Company Career Health</p>
+                </div>
+              )}
+              {avgPerformance !== null && (
+                <div>
+                  <p style={{ fontSize: 26, fontWeight: 800, color: "var(--teal)" }}>{avgPerformance.toFixed(1)}/5</p>
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+                    Avg. performance rating ({rated.length}/{rows.length} rated)
+                  </p>
                 </div>
               )}
               <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6, flexBasis: "100%", marginTop: 4 }}>

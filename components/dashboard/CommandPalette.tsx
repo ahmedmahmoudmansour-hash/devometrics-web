@@ -14,7 +14,7 @@ type Entry = {
 
 // Everything reachable in two keystrokes: Ctrl+K, type, Enter. The list is
 // static and instant on purpose — no fetch, no spinner, no index to build.
-function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean): Entry[] {
+function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDirectReports: boolean): Entry[] {
   const entries: Entry[] = [
     { label: "Progress", href: "/dashboard", keywords: "home overview dashboard start" },
     { label: "AI Coach", href: "/dashboard/coach", hint: "Talk it through", keywords: "chat talk mentor advice session" },
@@ -25,17 +25,24 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean): Entry[
     { label: "Career Paths", href: "/dashboard/career-paths", hint: "Where you can go next", keywords: "map future promotion readiness next role" },
     { label: "Tasks & Calendar", href: "/dashboard/tasks", keywords: "todo task calendar day week plan sync outlook google" },
     { label: "Workspace", href: "/dashboard/notes", hint: "Private notes + AI", keywords: "notes ideas write second brain action items" },
+    { label: "Certifications", href: "/dashboard/certifications", hint: "Expiry reminders", keywords: "certification credential license expiry renew badge" },
+    { label: "Accountability Groups", href: "/dashboard/accountability", hint: "Peer check-ins", keywords: "accountability study group peer partner checkin progress" },
     { label: "Discovery", href: "/dashboard/discovery", hint: "AI interview about you", keywords: "interview questions profile onboarding" },
     { label: "Resume Intelligence", href: "/dashboard/resume", keywords: "cv ats score keywords bullets" },
     { label: "Scorecard", href: "/dashboard/scorecard", keywords: "score career health momentum badges" },
+    { label: "Impact Cycle", href: "/dashboard/impact-cycle", hint: "Your Reflection + Manager's Perspective", keywords: "performance review appraisal rating goals focus areas cycle confirm feedback impact" },
     { label: "My Development", href: "/dashboard/plans", hint: "All your plans and milestones", keywords: "plans milestones status in progress completed deferred track" },
     { label: "My Journey", href: "/dashboard/journey", hint: "Your story so far", keywords: "history timeline progress log" },
     { label: "Profile", href: "/dashboard/profile", keywords: "account avatar settings preferences experience education" },
   ];
+  if (hasDirectReports) {
+    entries.push({ label: "My Team", href: "/dashboard/my-team", hint: "Your direct reports' Impact Cycles", keywords: "team manager reports review appraisal perspective" });
+  }
   if (isCompanyAdmin) {
     entries.push(
       { label: "Company", href: "/dashboard/company", keywords: "organization workspace admin hr" },
-      { label: "Employees", href: "/dashboard/company/employees", hint: "Workforce & heatmap", keywords: "team workforce heatmap staff hr edit archive" }
+      { label: "Employees", href: "/dashboard/company/employees", hint: "Workforce & heatmap", keywords: "team workforce heatmap staff hr edit archive" },
+      { label: "Impact Cycles (admin)", href: "/dashboard/company/impact-cycles", hint: "Cycles, Manager's Perspective & Focus Areas", keywords: "performance review cycle appraisal manager assessment goals impact" }
     );
   }
   if (isPlatformAdmin) {
@@ -50,9 +57,11 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean): Entry[
 export default function CommandPalette({
   isCompanyAdmin,
   isPlatformAdmin,
+  hasDirectReports,
 }: {
   isCompanyAdmin: boolean;
   isPlatformAdmin: boolean;
+  hasDirectReports: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -60,7 +69,7 @@ export default function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const entries = useMemo(() => buildEntries(isCompanyAdmin, isPlatformAdmin), [isCompanyAdmin, isPlatformAdmin]);
+  const entries = useMemo(() => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports), [isCompanyAdmin, isPlatformAdmin, hasDirectReports]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

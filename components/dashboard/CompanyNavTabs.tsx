@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type TabKey = "profile" | "employees" | "jobArchitecture" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews";
 
 export default function CompanyNavTabs({ active }: { active: TabKey }) {
   const tabs: { key: TabKey; label: string; href: string }[] = [
@@ -9,11 +9,12 @@ export default function CompanyNavTabs({ active }: { active: TabKey }) {
     { key: "jobArchitecture", label: "Job Architecture", href: "/dashboard/company/job-architecture" },
     { key: "orgChart", label: "Org Chart", href: "/dashboard/company/org-chart" },
     { key: "competencies", label: "Competencies", href: "/dashboard/company/competencies" },
-    { key: "analytics", label: "Analytics", href: "/dashboard/company/analytics" },
+    { key: "performanceReviews", label: "Impact Cycles", href: "/dashboard/company/impact-cycles" },
     { key: "highPotential", label: "High Potential", href: "/dashboard/company/high-potential" },
     { key: "succession", label: "Succession", href: "/dashboard/company/succession" },
     { key: "scorecard", label: "Scorecard", href: "/dashboard/company/scorecard" },
     { key: "surveys", label: "Surveys", href: "/dashboard/company/surveys" },
+    { key: "analytics", label: "Analytics", href: "/dashboard/company/analytics" },
   ];
 
   return (

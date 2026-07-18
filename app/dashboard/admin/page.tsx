@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildPilotRows } from "@/lib/admin/aggregate";
+import { buildAdminOrganizations } from "@/lib/admin/organizations";
+import AdminOrganizationsTable from "@/components/dashboard/AdminOrganizationsTable";
 
 export default async function AdminPage() {
-  const { isAdmin, rows } = await buildPilotRows();
+  const [{ isAdmin, rows }, { rows: orgRows }] = await Promise.all([buildPilotRows(), buildAdminOrganizations()]);
   if (!isAdmin) redirect("/dashboard");
 
   const withScore = rows.filter((r) => r.careerHealthScore !== null);
@@ -81,6 +83,8 @@ export default async function AdminPage() {
           Scoped to this pilot cohort only — not a multi-tenant company workspace. Everyone here shares
           one admin view; per-company data isolation is a separate, larger build for after the pilot.
         </p>
+
+        <AdminOrganizationsTable initial={orgRows} />
 
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>

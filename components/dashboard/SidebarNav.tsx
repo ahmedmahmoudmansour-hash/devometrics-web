@@ -22,6 +22,9 @@ import {
   Route,
   Search,
   Milestone as MilestoneIcon,
+  BadgeCheck,
+  Users,
+  ClipboardCheck,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { signOut } from "@/app/dashboard/actions";
@@ -39,52 +42,63 @@ type NavItem = {
 // a 13-item flat list made even the flagship AI Coach hard to find. Section
 // labels hide with the rest of the text when the sidebar collapses to
 // icons-only on narrow screens.
-const SECTIONS: { label: string | null; items: NavItem[] }[] = [
-  {
-    label: null,
-    items: [{ href: "/dashboard", label: "Progress", icon: LayoutDashboard }],
-  },
-  {
-    label: "Understand",
-    items: [
-      { href: "/dashboard/discovery", label: "Discovery", icon: Compass },
-      { href: "/dashboard/gap-analysis", label: "Gap Analysis", icon: Target },
-      { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
-      { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
-      { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
-    ],
-  },
-  {
-    label: "Grow",
-    items: [
-      { href: "/dashboard/coach", label: "AI Coach", icon: Sparkles },
-      { href: "/dashboard/roleplay", label: "Practice Scenarios", icon: Drama, premium: true },
-      { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
-      { href: "/dashboard/plans", label: "My Development", icon: MilestoneIcon },
-      { href: "/dashboard/journey", label: "My Journey", icon: History },
-    ],
-  },
-  {
-    label: "Organize",
-    items: [
-      { href: "/dashboard/tasks", label: "Tasks & Calendar", icon: ListChecks },
-      { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
-    ],
-  },
-];
+function buildSections(hasDirectReports: boolean): { label: string | null; items: NavItem[] }[] {
+  return [
+    {
+      label: null,
+      items: [{ href: "/dashboard", label: "Progress", icon: LayoutDashboard }],
+    },
+    {
+      label: "Understand",
+      items: [
+        { href: "/dashboard/discovery", label: "Discovery", icon: Compass },
+        { href: "/dashboard/gap-analysis", label: "Gap Analysis", icon: Target },
+        { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
+        { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
+        { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
+        { href: "/dashboard/impact-cycle", label: "Impact Cycle", icon: ClipboardCheck },
+        // Only shown to a real reporting-line manager (migration 0078) —
+        // an individual contributor with no reports has nothing to do here.
+        ...(hasDirectReports ? [{ href: "/dashboard/my-team", label: "My Team", icon: Users }] : []),
+      ],
+    },
+    {
+      label: "Grow",
+      items: [
+        { href: "/dashboard/coach", label: "AI Coach", icon: Sparkles },
+        { href: "/dashboard/roleplay", label: "Practice Scenarios", icon: Drama, premium: true },
+        { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
+        { href: "/dashboard/plans", label: "My Development", icon: MilestoneIcon },
+        { href: "/dashboard/journey", label: "My Journey", icon: History },
+      ],
+    },
+    {
+      label: "Organize",
+      items: [
+        { href: "/dashboard/tasks", label: "Tasks & Calendar", icon: ListChecks },
+        { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
+        { href: "/dashboard/certifications", label: "Certifications", icon: BadgeCheck },
+        { href: "/dashboard/accountability", label: "Accountability Groups", icon: Users },
+      ],
+    },
+  ];
+}
 
 export default function SidebarNav({
   savedTheme,
   isCompanyAdmin,
   isPlatformAdmin,
   isFreeTier,
+  hasDirectReports,
 }: {
   savedTheme?: string | null;
   isCompanyAdmin: boolean;
   isPlatformAdmin: boolean;
   isFreeTier: boolean;
+  hasDirectReports: boolean;
 }) {
   const pathname = usePathname();
+  const sections = buildSections(hasDirectReports);
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -188,7 +202,7 @@ export default function SidebarNav({
       </button>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-        {SECTIONS.map((section, i) => (
+        {sections.map((section, i) => (
           <div key={section.label ?? `section-${i}`} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {section.label && (
               <p
