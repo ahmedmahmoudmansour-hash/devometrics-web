@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { buildPilotRows } from "@/lib/admin/aggregate";
 import { buildAdminOrganizations } from "@/lib/admin/organizations";
 import AdminOrganizationsTable from "@/components/dashboard/AdminOrganizationsTable";
+import CreateCompanyWorkspaceForm from "@/components/dashboard/CreateCompanyWorkspaceForm";
 
 export default async function AdminPage() {
   const [{ isAdmin, rows }, { rows: orgRows }] = await Promise.all([buildPilotRows(), buildAdminOrganizations()]);
@@ -83,6 +84,8 @@ export default async function AdminPage() {
           Scoped to this pilot cohort only — not a multi-tenant company workspace. Everyone here shares
           one admin view; per-company data isolation is a separate, larger build for after the pilot.
         </p>
+
+        <CreateCompanyWorkspaceForm />
 
         <AdminOrganizationsTable initial={orgRows} />
 

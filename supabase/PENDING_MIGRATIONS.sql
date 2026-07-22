@@ -1,13 +1,15 @@
 -- ============================================================
 -- DEVOMETRICS — PENDING MIGRATIONS IN ONE PASTE
--- Combines 0076 + 0077 + 0078 + 0079 + 0080 (Impact Cycles, its standard-
--- appraisal-shape upgrade, the manager-role RBAC fix, employee ID + seat
--- limits, and the daily insight cache). Every statement is idempotent
--- (IF NOT EXISTS / OR REPLACE / DROP ... IF EXISTS / a catalog-lookup DO
--- block instead of a guessed constraint name), so running this more than
--- once, or after part of it already ran, is safe. Order matters within
--- this file (0077 alters tables 0076 creates; 0078 replaces functions 0076/
--- 0077 create) — paste and run the whole thing as one block.
+-- Combines 0076 + 0077 + 0078 + 0079 + 0080 + 0081 (Impact Cycles, its
+-- standard-appraisal-shape upgrade, the manager-role RBAC fix, employee ID
+-- + seat limits, the daily insight cache, and platform-admin company
+-- provisioning). Every statement is idempotent (IF NOT EXISTS / OR REPLACE
+-- / DROP ... IF EXISTS / a catalog-lookup DO block instead of a guessed
+-- constraint name), so running this more than once, or after part of it
+-- already ran, is safe. Order matters within this file (0077 alters tables
+-- 0076 creates; 0078 replaces functions 0076/0077 create; 0081 redefines
+-- the organization_members insert policy 0079 last defined) — paste and
+-- run the whole thing as one block.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -651,3 +653,74 @@ create policy "Users can manage their own daily insights"
   on public.career_gps_daily_insights for all
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- ============================================================
+-- 0081: Platform-admin company provisioning
+-- ============================================================
+
+-- Lets a platform (super) admin provision a brand-new company workspace
+-- from the backend — name, seat count, basic profile — and hand it off to
+-- the company's actual admin, without the platform admin ever becoming a
+-- member of that org themselves. This app has no service-role key, so the
+-- platform admin still creates the org row as themselves (created_by =
+-- their own uid, already permitted by 0016's "Authenticated users can
+-- create an organization" policy) and the real admin claims it by signing
+-- up against a pre-authorized invite — same "invite, don't impersonate"
+-- shape as employee invites (0017), just for the founding admin seat.
+
+-- Distinguishes "join an existing team as staff" from "become the founding
+-- admin of a workspace someone already provisioned for you" — same table,
+-- one more column, so bulkInviteEmployees/inviteEmployee callers are
+-- unaffected by the default.
+alter table public.organization_invites
+  add column if not exists intended_role text not null default 'member';
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.table_constraints
+    where table_schema = 'public'
+      and table_name = 'organization_invites'
+      and constraint_name = 'organization_invites_intended_role_check'
+  ) then
+    alter table public.organization_invites
+      add constraint organization_invites_intended_role_check
+      check (intended_role in ('member', 'admin'));
+  end if;
+end $$;
+
+-- Platform admins need to write invites for organizations they didn't
+-- create and aren't a member of — the existing "Org admins can manage
+-- invites for their organization" policy (is_org_admin-gated) doesn't
+-- cover that. Same precedent as 0079's platform-admin write grant on
+-- organizations itself.
+drop policy if exists "Platform admins can manage any organization's invites" on public.organization_invites;
+create policy "Platform admins can manage any organization's invites"
+  on public.organization_invites for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Adds a third way to self-insert as 'admin': a platform-admin-provisioned,
+-- not-yet-accepted invite addressed to your own verified email. Mirrors the
+-- existing created_by = auth.uid() branch (self-serve signup) rather than
+-- replacing it.
+drop policy if exists "Users can join an organization as themselves" on public.organization_members;
+create policy "Users can join an organization as themselves"
+  on public.organization_members for insert
+  with check (
+    user_id = auth.uid()
+    and (
+      (role = 'admin' and exists (
+        select 1 from public.organizations o
+        where o.id = organization_id and o.created_by = auth.uid()
+      ))
+      or (role = 'admin' and exists (
+        select 1 from public.organization_invites i
+        where i.organization_id = organization_id
+          and i.intended_role = 'admin'
+          and i.accepted_at is null
+          and lower(i.email) = lower(auth.jwt() ->> 'email')
+      ))
+      or (role = 'member' and public.org_seat_limit_ok(organization_id))
+    )
+  );

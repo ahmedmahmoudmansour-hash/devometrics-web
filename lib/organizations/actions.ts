@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { buildEmployeeDetail, buildCompanyData } from "@/lib/organizations/aggregate";
+import { slugify } from "@/lib/organizations/slug";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
@@ -44,18 +45,6 @@ async function sendInviteEmail(email: string, orgName: string): Promise<void> {
   } catch (err) {
     console.error(`Invite email failed for ${email}:`, err);
   }
-}
-
-function slugify(name: string): string {
-  const base = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  // Short random suffix so two companies with the same display name
-  // ("Acme") don't collide on the unique slug used as the join code.
-  const suffix = Math.random().toString(36).slice(2, 6);
-  return `${base || "company"}-${suffix}`;
 }
 
 export async function getMyOrganizationMembership(): Promise<
@@ -433,7 +422,7 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
   const { error: memberError } = await supabase.from("organization_members").insert({
     organization_id: invite.organization_id,
     user_id: user.id,
-    role: "member",
+    role: invite.intended_role ?? "member",
     title: invite.title ?? null,
     department: invite.department ?? null,
     country: invite.country ?? null,

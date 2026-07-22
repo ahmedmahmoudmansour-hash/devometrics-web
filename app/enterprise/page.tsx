@@ -21,12 +21,15 @@ import {
   Award,
   Palette,
   ShieldCheck,
+  ClipboardCheck,
+  GitBranch,
+  IdCard,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Devometrics for Enterprise — Workforce Intelligence",
   description:
-    "One competency graph for your whole team — workforce skill inventory, talent heatmaps, leadership-readiness signal, and manager-assigned development tasks, built on the same engine every employee already uses individually.",
+    "One competency graph for your whole team — workforce skill inventory, talent heatmaps, standards-based Impact Cycle appraisals, and manager-assigned development tasks, built on the same engine every employee already uses individually.",
 };
 
 const capabilities: { title: string; description: string; icon: React.ComponentType<{ size?: number }> }[] = [
@@ -35,6 +38,24 @@ const capabilities: { title: string; description: string; icon: React.ComponentT
     icon: Network,
     description:
       "Define families, graded roles, and each role's required competency profile — AI proposes a grade and profile from a role's responsibilities, and it powers vertical and horizontal career paths across the org.",
+  },
+  {
+    title: "Org chart builder",
+    icon: GitBranch,
+    description:
+      "Real reporting lines, not a static diagram — set each person's manager once, and a direct-report manager automatically gets a scoped My Team view for their own people, without full company-admin rights.",
+  },
+  {
+    title: "Impact Cycles",
+    icon: ClipboardCheck,
+    description:
+      "Structured appraisals researched against global standards for medium and large companies: past goals, KPI-linked focus areas, competency ratings, development needs, and a conclusion both employee and manager sign off on.",
+  },
+  {
+    title: "Employee ID & seat management",
+    icon: IdCard,
+    description:
+      "Add a badge or payroll number to any employee record, and manage how many seats your workspace has — enforced at the database level, not just the invite screen.",
   },
   {
     title: "Workforce skill inventory",

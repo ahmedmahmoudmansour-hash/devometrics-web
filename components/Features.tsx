@@ -47,6 +47,27 @@ const features: { title: string; description: string; tag?: string; tagColor?: s
     tagColor: "var(--teal)",
   },
   {
+    title: "Career GPS",
+    description:
+      "A “you are here” view of your current destination role — Promotion Readiness and Interview Readiness scored from your real measured competencies, the fastest route to close your biggest gap, and a “what if?” simulator that recalculates your readiness instantly if you change your target or improve a skill.",
+    tag: "New",
+    tagColor: "var(--teal)",
+  },
+  {
+    title: "Certifications & Credentials",
+    description:
+      "Track every certification and credential in one place, with expiry reminders so nothing lapses quietly.",
+    tag: "New",
+    tagColor: "var(--teal)",
+  },
+  {
+    title: "Accountability Groups",
+    description:
+      "Small peer groups that keep momentum going — check in on each other's goals without needing a manager or coach in the loop.",
+    tag: "New",
+    tagColor: "var(--teal)",
+  },
+  {
     title: "Career Profile & Momentum",
     description:
       "A LinkedIn-style profile — job history, skills, qualifications, career aspirations — auto-filled from the CV you already uploaded. Your Career Health trend, streaks, and achievements track your progress automatically as you use the platform.",
@@ -61,7 +82,7 @@ const features: { title: string; description: string; tag?: string; tagColor?: s
   {
     title: "Corporate Platform",
     description:
-      "Company workspace with its own admin, full employee records (title, department, business unit, manager, location — editable, archivable, exportable to Excel), a workforce skill inventory, a talent heatmap across your team, a leadership-readiness signal, and a custom competency framework mapped onto the scoring engine (with AI-assisted suggestions). Anonymous culture and pulse surveys with AI-drafted questions round out the picture — built on the same competency graph your people already use individually. Each company's data stays fully isolated from every other company.",
+      "Company workspace with its own admin, full employee records (employee ID, title, department, business unit, manager, location — editable, archivable, exportable to Excel), a real org chart, a workforce skill inventory, a talent heatmap, and a custom competency framework mapped onto the scoring engine. Impact Cycles bring appraisals built on real global standards — past goals, KPI-linked focus areas, competency ratings, development needs, and dual sign-off — with a manager-only view scoped to just their own direct reports. Each company's data stays fully isolated from every other company.",
     href: "/enterprise",
   },
 ];

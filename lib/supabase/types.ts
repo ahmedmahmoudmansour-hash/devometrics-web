@@ -144,6 +144,9 @@ export type OrganizationInvite = {
   invited_by: string;
   accepted_at: string | null;
   created_at: string;
+  // Added in migration 0081 — defaults to 'member' at the DB level, so
+  // absence (pre-migration) is equivalent to 'member'.
+  intended_role?: "member" | "admin";
 };
 
 export type CaseStudyResponse = {

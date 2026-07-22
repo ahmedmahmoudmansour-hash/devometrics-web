@@ -274,7 +274,8 @@ export default function CoachChat({
     }
     handleVoiceChange(lastNamedVoice);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
-    if (latest) play(latest.content, lastNamedVoice);
+    const label = NAMED_VOICES.find((v) => v.value === lastNamedVoice)?.label ?? lastNamedVoice;
+    play(latest ? latest.content : `Hi, this is ${label}.`, lastNamedVoice);
   }
 
   // Picking a different voice replays the coach's latest line in that voice —
