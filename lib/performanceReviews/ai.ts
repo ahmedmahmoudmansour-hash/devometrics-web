@@ -114,7 +114,8 @@ export async function suggestFocusAreas(reviewId: string): Promise<{ error: stri
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
-    const raw = (toolUse.input as { focusAreas: FocusAreaSuggestion[] }).focusAreas ?? [];
+    const rawInput = (toolUse.input as { focusAreas: FocusAreaSuggestion[] }).focusAreas;
+    const raw = Array.isArray(rawInput) ? rawInput : [];
     return { suggestions: raw.slice(0, 4) };
   } catch (err) {
     console.error("suggestFocusAreas failed:", err);
@@ -241,7 +242,8 @@ export async function suggestCompetencyRatings(reviewId: string): Promise<{ erro
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
     const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
-    const raw = (toolUse.input as { ratings: CompetencyRatingSuggestion[] }).ratings ?? [];
+    const rawInput = (toolUse.input as { ratings: CompetencyRatingSuggestion[] }).ratings;
+    const raw = Array.isArray(rawInput) ? rawInput : [];
     return {
       suggestions: raw
         .filter((r) => validDims.has(r.dimension))

@@ -1,16 +1,23 @@
 -- ============================================================
 -- DEVOMETRICS — PENDING MIGRATIONS IN ONE PASTE
--- Combines 0076 + 0077 + 0078 + 0079 + 0080 + 0081 + 0082 (Impact Cycles,
--- its standard-appraisal-shape upgrade, the manager-role RBAC fix, employee
--- ID + seat limits, the daily insight cache, platform-admin company
--- provisioning, review escalation/co-sign, and the JD builder). Every
--- statement is idempotent (IF NOT EXISTS / OR REPLACE / DROP ... IF EXISTS
--- / a catalog-lookup DO block instead of a guessed constraint name), so
--- running this more than once, or after part of it already ran, is safe.
--- Order matters within this file (0077 alters tables 0076 creates; 0078
--- replaces functions 0076/0077 create; 0081 redefines the
--- organization_members insert policy 0079 last defined) — paste and run
--- the whole thing as one block.
+-- Combines 0076 + 0077 + 0078 + 0079 + 0080 + 0081 + 0082 + 0083 (Impact
+-- Cycles, its standard-appraisal-shape upgrade, the manager-role RBAC fix,
+-- employee ID + seat limits, the daily insight cache, platform-admin
+-- company provisioning, review escalation/co-sign, the JD builder, and a
+-- hardening fix for a live production bug where upline_level_of_user()
+-- could throw inside RLS and silently empty the admin's Impact Cycles
+-- roster for every company). Every statement is idempotent (IF NOT EXISTS
+-- / OR REPLACE / DROP ... IF EXISTS / a catalog-lookup DO block instead of
+-- a guessed constraint name), so running this more than once, or after
+-- part of it already ran, is safe. Order matters within this file (0077
+-- alters tables 0076 creates; 0078 replaces functions 0076/0077 create;
+-- 0081 redefines the organization_members insert policy 0079 last
+-- defined) — paste and run the whole thing as one block.
+--
+-- NOTE: if 0076-0082 are already applied to your database (true for
+-- production as of 2026-07-23), you only need to run the standalone
+-- migrations/0083_harden_upline_level_function.sql file — it's a short,
+-- idempotent `create or replace function` and safe to run on its own.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -767,6 +774,21 @@ end $$;
 -- null if the caller isn't in the chain within that cap. A hard 10-hop
 -- safety limit applies regardless of the org setting, independent of
 -- whatever the org configures, to bound a pathological manager-cycle.
+--
+-- Hardened by 0083: the original `select ... into` calls here had no
+-- `limit 1`, so any user who happens to match more than one
+-- organization_members row (e.g. someone belonging to more than one org)
+-- makes plpgsql throw "query returned more than one row". This function
+-- is called from a permissive RLS policy on performance_reviews — Postgres
+-- combines multiple permissive policies for the same command with OR, but
+-- if ANY policy's USING expression throws while evaluating a row, the
+-- ENTIRE query aborts, even for rows a different, already-passing policy
+-- would have separately allowed. That's what broke the admin's Impact
+-- Cycles roster (listReviewsForCycle) for every company in production
+-- after this function first shipped. A helper used inside RLS must never
+-- be allowed to raise, so this also wraps the body in an exception
+-- handler that degrades to "not in the chain" (null) instead of failing
+-- the calling query.
 create or replace function public.upline_level_of_user(target_user_id uuid)
 returns integer
 language plpgsql
@@ -782,13 +804,14 @@ declare
 begin
   select organization_id, manager_user_id into v_org_id, v_current
   from public.organization_members
-  where user_id = target_user_id;
+  where user_id = target_user_id
+  limit 1;
 
   if v_org_id is null then
     return null;
   end if;
 
-  select least(review_escalation_levels, 10) into v_max_level
+  select least(coalesce(review_escalation_levels, 1), 10) into v_max_level
   from public.organizations where id = v_org_id;
 
   while v_current is not null and v_level < coalesce(v_max_level, 1) loop
@@ -798,10 +821,14 @@ begin
     end if;
     select manager_user_id into v_current
     from public.organization_members
-    where user_id = v_current and organization_id = v_org_id;
+    where user_id = v_current and organization_id = v_org_id
+    limit 1;
   end loop;
 
   return null;
+exception
+  when others then
+    return null;
 end;
 $$;
 
