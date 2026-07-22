@@ -141,7 +141,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
         <select value={selfRating} onChange={(e) => setSelfRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
           {[1, 2, 3, 4, 5].map((n) => (
             <option key={n} value={n}>
-              {n}
+              {n} — {COMPETENCY_RATING_LABELS[n]}
             </option>
           ))}
         </select>
@@ -224,7 +224,12 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       {manager?.submitted_at ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>Manager&apos;s Perspective</p>
-          <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)" }}>{manager.rating}/5</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)" }}>
+            {manager.rating}/5
+            {manager.rating !== null && (
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}> — {COMPETENCY_RATING_LABELS[manager.rating]}</span>
+            )}
+          </p>
           {manager.feedback && <p style={{ fontSize: 13, color: "var(--text)", marginTop: 8, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{manager.feedback}</p>}
           {manager.development_needs && (
             <div style={{ marginTop: 10 }}>

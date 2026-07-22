@@ -596,7 +596,7 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
           <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
-                {n}
+                {n} — {COMPETENCY_RATING_LABELS[n]}
               </option>
             ))}
           </select>
