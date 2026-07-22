@@ -224,9 +224,12 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
           max_delay: 2,
           // 1s fired on natural mid-sentence thinking pauses, sending the
           // half-finished thought and making the coach "interrupt" the user.
-          // 2.2s tolerates a normal pause; the trade-off is a slightly
-          // longer wait after genuinely finishing before the reply starts.
-          conversation_config: { end_of_utterance_silence_trigger: 2.2 },
+          // Speechmatics caps this at 2s server-side — anything higher
+          // fails the whole StartRecognition handshake with a
+          // protocol_error, which silently killed real-time transcription
+          // for every session (confirmed live: the server's rejection
+          // reason was literally "must be less than or equal to 2").
+          conversation_config: { end_of_utterance_silence_trigger: 2 },
         },
         audio_format: { type: "raw", encoding: "pcm_f32le", sample_rate: audioContext.sampleRate },
       });

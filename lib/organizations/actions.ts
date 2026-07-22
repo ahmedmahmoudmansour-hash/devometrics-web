@@ -171,6 +171,35 @@ export async function updateOrganizationProfile(
   return { success: true };
 }
 
+// How many manager-hops up the Org Chart get read + co-sign access on an
+// Impact Cycle review, beyond the direct manager (who always has full
+// access regardless of this setting). Each company picks its own depth —
+// deliberately not a fixed number, since how many layers of management
+// should see a review varies a lot by company size and culture.
+export async function updateReviewEscalationLevels(organizationId: string, levels: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (!Number.isInteger(levels) || levels < 1 || levels > 10) {
+    return { error: "Escalation levels must be a whole number between 1 and 10" };
+  }
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({ review_escalation_levels: levels })
+    .eq("id", organizationId);
+  if (error) {
+    console.error("updateReviewEscalationLevels failed:", error);
+    return { error: "Could not update — the database may need migration 0082 run first." };
+  }
+
+  revalidatePath("/dashboard/company/impact-cycles");
+  return { success: true };
+}
+
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 // Lets an org admin apply a custom logo + accent color, picked up by every

@@ -112,4 +112,35 @@ export type ReviewDetail = {
   competencyRatings: CompetencyRating[];
   employeeName: string;
   employeeEmail: string;
+  // Read-only from the employee's side — only ever populated with signed-off
+  // rows, since a not-yet-signed skip-level entry isn't "his relevant part"
+  // yet.
+  uplineSignoffs: UplineSignoff[];
+};
+
+// One link in the Org Chart's manager_user_id chain above an employee —
+// level 1 is their direct manager, level 2 their manager's manager, etc.
+export type UplineChainEntry = {
+  level: number;
+  managerUserId: string;
+  managerName: string;
+};
+
+export type UplineSignoff = {
+  review_id: string;
+  manager_user_id: string;
+  level: number;
+  comment: string | null;
+  signed_off_at: string | null;
+  managerName?: string;
+};
+
+// The employee's role-required target level (from Job Architecture, if
+// they have a current_role_id set) and their most recently measured level
+// (from their latest Gap Analysis) for one competency dimension — shown as
+// reference alongside the manager's own rating, not a substitute for it.
+export type AppraisalCompetencyContext = {
+  dimension: string;
+  roleTarget: number | null;
+  measuredCurrent: number | null;
 };

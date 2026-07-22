@@ -12,6 +12,11 @@ import {
   getCompetencyRatings,
   setCompetencyRating,
   closeReview,
+  getUplineChain,
+  getUplineSignoffs,
+  submitUplineSignoff,
+  getAppraisalCompetencyContext,
+  getMyUserId,
 } from "@/lib/performanceReviews/actions";
 import {
   suggestFocusAreas,
@@ -29,6 +34,9 @@ import {
   type ReviewGoal,
   type GoalStatus,
   type CompetencyRating,
+  type UplineChainEntry,
+  type UplineSignoff,
+  type AppraisalCompetencyContext,
 } from "@/lib/performanceReviews/types";
 
 // Shared by both the admin's per-cycle roster (PerformanceReviewsManager)
@@ -239,13 +247,24 @@ function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId:
   );
 }
 
-function CompetencyRatingsEditor({ reviewId, ratings, onChanged }: { reviewId: string; ratings: CompetencyRating[]; onChanged: () => void }) {
+function CompetencyRatingsEditor({
+  reviewId,
+  ratings,
+  context,
+  onChanged,
+}: {
+  reviewId: string;
+  ratings: CompetencyRating[];
+  context: AppraisalCompetencyContext[];
+  onChanged: () => void;
+}) {
   const [suggestions, setSuggestions] = useState<CompetencyRatingSuggestion[] | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [, startTransition] = useTransition();
 
   const ratingByDim = new Map(ratings.map((r) => [r.dimension, r]));
+  const contextByDim = new Map(context.map((c) => [c.dimension, c]));
 
   function save(dimension: string, rating: number, note: string) {
     startTransition(async () => {
@@ -295,10 +314,20 @@ function CompetencyRatingsEditor({ reviewId, ratings, onChanged }: { reviewId: s
         {COMPETENCY_DIMENSIONS.map((dim) => {
           const existing = ratingByDim.get(dim);
           const suggestion = suggestions?.find((s) => s.dimension === dim);
+          const ctx = contextByDim.get(dim);
           return (
             <div key={dim} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "6px 10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "var(--text)" }}>{dim}</span>
+                <div>
+                  <span style={{ fontSize: 12, color: "var(--text)" }}>{dim}</span>
+                  {ctx && (ctx.roleTarget !== null || ctx.measuredCurrent !== null) && (
+                    <span style={{ fontSize: 10.5, color: "var(--text-muted)", marginLeft: 6 }}>
+                      {ctx.measuredCurrent !== null ? `measured ${ctx.measuredCurrent}` : ""}
+                      {ctx.measuredCurrent !== null && ctx.roleTarget !== null ? " · " : ""}
+                      {ctx.roleTarget !== null ? `role needs ${ctx.roleTarget}` : ""}
+                    </span>
+                  )}
+                </div>
                 <select
                   defaultValue={suggestion?.rating ?? existing?.rating ?? 3}
                   onChange={(e) => save(dim, Number(e.target.value), existing?.note ?? suggestion?.note ?? "")}
@@ -388,11 +417,96 @@ function ConclusionSection({ item, canClose, onChanged }: { item: ReviewListItem
   );
 }
 
+// Shown only to whoever is actually in the chain (or an admin) — RLS is the
+// real gate on what data even comes back, this just renders it. A skip-level
+// manager sees an editable comment box for their own row; everyone else sees
+// whatever's already been signed, read-only.
+function UplineSignoffSection({
+  reviewId,
+  chain,
+  signoffs,
+  myUserId,
+  onChanged,
+}: {
+  reviewId: string;
+  chain: UplineChainEntry[];
+  signoffs: UplineSignoff[];
+  myUserId: string | null;
+  onChanged: () => void;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [isPending, startTransition] = useTransition();
+
+  // Level 1 is the direct manager — already covered by Manager's
+  // Perspective above, not repeated here.
+  const escalationChain = chain.filter((c) => c.level >= 2);
+  if (escalationChain.length === 0) return null;
+
+  const signoffByManager = new Map(signoffs.map((s) => [s.manager_user_id, s]));
+
+  function submit(managerUserId: string) {
+    startTransition(async () => {
+      await submitUplineSignoff(reviewId, drafts[managerUserId] ?? "");
+      onChanged();
+    });
+  }
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+      <p style={sectionLabelStyle()}>Upline review</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+        {escalationChain.map((c) => {
+          const existing = signoffByManager.get(c.managerUserId);
+          const isMe = c.managerUserId === myUserId;
+          return (
+            <div key={c.managerUserId} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
+                  {c.managerName} <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>· level {c.level}</span>
+                </span>
+                {existing?.signed_off_at && (
+                  <span style={{ fontSize: 10.5, color: "var(--teal)", fontWeight: 700 }}>
+                    Co-signed {new Date(existing.signed_off_at).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              {isMe ? (
+                <>
+                  <textarea
+                    defaultValue={existing?.comment ?? ""}
+                    onChange={(e) => setDrafts((prev) => ({ ...prev, [c.managerUserId]: e.target.value }))}
+                    placeholder="Optional comment — you're seeing this as a skip-level manager…"
+                    style={{ ...inputStyle(), minHeight: 50, resize: "vertical", fontFamily: "inherit", marginTop: 6, fontSize: 12 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => submit(c.managerUserId)}
+                    disabled={isPending}
+                    style={{ marginTop: 6, background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 6, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                  >
+                    {existing?.signed_off_at ? "Update co-sign" : "Co-sign"}
+                  </button>
+                </>
+              ) : (
+                existing?.comment && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>{existing.comment}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ImpactCycleReviewRow({ item, onChanged }: { item: ReviewListItem; onChanged: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [goals, setGoals] = useState<ReviewGoal[]>([]);
   const [pastGoals, setPastGoals] = useState<ReviewGoal[]>([]);
   const [ratings, setRatings] = useState<CompetencyRating[]>([]);
+  const [competencyContext, setCompetencyContext] = useState<AppraisalCompetencyContext[]>([]);
+  const [uplineChain, setUplineChain] = useState<UplineChainEntry[]>([]);
+  const [uplineSignoffs, setUplineSignoffs] = useState<UplineSignoff[]>([]);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [rating, setRating] = useState(item.managerRating ?? 3);
   const [feedback, setFeedback] = useState("");
   const [developmentNeeds, setDevelopmentNeeds] = useState("");
@@ -402,10 +516,22 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
   const [isPending, startTransition] = useTransition();
 
   async function loadAll() {
-    const [g, pg, r] = await Promise.all([getReviewGoals(item.id), getPastGoals(item.id), getCompetencyRatings(item.id)]);
+    const [g, pg, r, ctx, chain, signoffs, uid] = await Promise.all([
+      getReviewGoals(item.id),
+      getPastGoals(item.id),
+      getCompetencyRatings(item.id),
+      getAppraisalCompetencyContext(item.id),
+      getUplineChain(item.id),
+      getUplineSignoffs(item.id),
+      getMyUserId(),
+    ]);
     setGoals(g);
     setPastGoals(pg);
     setRatings(r);
+    setCompetencyContext(ctx);
+    setUplineChain(chain);
+    setUplineSignoffs(signoffs);
+    setMyUserId(uid);
   }
 
   function toggle() {
@@ -499,8 +625,9 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
           </button>
 
           <FocusAreasEditor reviewId={item.id} goals={goals} pastGoals={pastGoals} onChanged={loadAll} />
-          <CompetencyRatingsEditor reviewId={item.id} ratings={ratings} onChanged={loadAll} />
+          <CompetencyRatingsEditor reviewId={item.id} ratings={ratings} context={competencyContext} onChanged={loadAll} />
           <ConclusionSection item={item} canClose={item.managerRating !== null} onChanged={onChanged} />
+          <UplineSignoffSection reviewId={item.id} chain={uplineChain} signoffs={uplineSignoffs} myUserId={myUserId} onChanged={loadAll} />
         </div>
       )}
     </div>

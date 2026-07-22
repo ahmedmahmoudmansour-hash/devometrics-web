@@ -10,6 +10,8 @@ import {
   addRoleTransition,
   removeRoleTransition,
   suggestRoleGrading,
+  generateJobDescription,
+  saveJobDescription,
   type RoleGradingSuggestion,
 } from "@/lib/jobArchitecture/actions";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
@@ -204,6 +206,95 @@ function gradeColor(grade: number): string {
   return "var(--text-muted)";
 }
 
+function JDBuilder({ role }: { role: JobRole }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(role.generated_jd ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function generate() {
+    setError(null);
+    setSaved(false);
+    setGenerating(true);
+    startTransition(async () => {
+      const result = await generateJobDescription(role.id);
+      setGenerating(false);
+      if ("error" in result) setError(result.error);
+      else setText(result.formatted);
+    });
+  }
+
+  function save() {
+    setError(null);
+    startTransition(async () => {
+      const result = await saveJobDescription(role.id, text);
+      if (result?.error) setError(result.error);
+      else setSaved(true);
+    });
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSaved(true);
+    } catch {
+      // Clipboard access can fail (permissions, insecure context) — not
+      // worth surfacing as an error, the textarea is right there to
+      // select-and-copy manually either way.
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 8, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "#a78bfa", cursor: "pointer", flexShrink: 0 }}
+      >
+        {role.generated_jd ? "View JD" : "✨ Generate JD"}
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 12, background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 10, padding: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <p style={{ fontSize: 11.5, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Job description</p>
+        <button type="button" onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer" }}>
+          Close
+        </button>
+      </div>
+      {!text && !generating && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Nothing generated yet for this role.</p>}
+      {text && (
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          style={{ ...input, minHeight: 220, resize: "vertical", fontFamily: "inherit", fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap" }}
+        />
+      )}
+      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+        <button type="button" onClick={generate} disabled={generating} style={{ ...ghostBtn, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", opacity: generating ? 0.6 : 1 }}>
+          {generating ? "Generating…" : text ? "Regenerate" : "Generate from role data"}
+        </button>
+        {text && (
+          <>
+            <button type="button" onClick={save} disabled={isPending} style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }}>
+              {isPending ? "Saving…" : "Save edits"}
+            </button>
+            <button type="button" onClick={copy} style={ghostBtn}>
+              Copy
+            </button>
+          </>
+        )}
+        {saved && <span style={{ fontSize: 11.5, color: "var(--teal)", fontWeight: 700, alignSelf: "center" }}>Saved</span>}
+      </div>
+    </div>
+  );
+}
+
 function RoleCard({ role, requirements, onChanged }: { role: JobRole; requirements: RoleCompetencyRequirement[]; onChanged: () => void }) {
   const [isPending, startTransition] = useTransition();
   const sorted = [...requirements].sort((a, b) => b.target_level - a.target_level);
@@ -243,6 +334,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>{role.responsibilities}</p>
           )}
         </div>
+        <JDBuilder role={role} />
         <button
           type="button"
           disabled={isPending}

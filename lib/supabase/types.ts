@@ -392,6 +392,8 @@ export type JobRole = {
   responsibilities: string;
   created_by: string;
   created_at: string;
+  // Added in migration 0082 — may be absent until that's run.
+  generated_jd?: string | null;
 };
 
 export type RoleCompetencyRequirement = {

@@ -13,6 +13,9 @@ import type {
   ReviewListItem,
   ReviewDetail,
   GoalStatus,
+  UplineChainEntry,
+  UplineSignoff,
+  AppraisalCompetencyContext,
 } from "./types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -390,13 +393,14 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
   });
   const { performance_review_cycles: cycle, ...review } = sorted[0];
 
-  const [{ data: self }, { data: manager }, { data: goals }, { data: competencyRatings }, pastGoals, { data: profile }] = await Promise.all([
+  const [{ data: self }, { data: manager }, { data: goals }, { data: competencyRatings }, pastGoals, { data: profile }, uplineSignoffs] = await Promise.all([
     supabase.from("performance_review_self_assessments").select("*").eq("review_id", review.id).maybeSingle<SelfAssessment>(),
     supabase.from("performance_review_manager_assessments").select("*").eq("review_id", review.id).maybeSingle<ManagerAssessment>(),
     supabase.from("performance_review_goals").select("*").eq("review_id", review.id).order("created_at").returns<ReviewGoal[]>(),
     supabase.from("performance_review_competency_ratings").select("*").eq("review_id", review.id).returns<CompetencyRating[]>(),
     fetchPastGoals(supabase, review.id),
     supabase.from("profiles").select("full_name, email").eq("id", user.id).maybeSingle<{ full_name: string | null; email: string }>(),
+    getUplineSignoffs(review.id),
   ]);
 
   return {
@@ -410,6 +414,7 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
       competencyRatings: competencyRatings ?? [],
       employeeName: profile?.full_name ?? "You",
       employeeEmail: profile?.email ?? "",
+      uplineSignoffs: uplineSignoffs.filter((s) => s.signed_off_at !== null),
     },
   };
 }
@@ -441,4 +446,150 @@ export async function acknowledgeReview(reviewId: string, comment: string) {
   }
   revalidatePath("/dashboard/impact-cycle");
   return { success: true };
+}
+
+// ---------- Escalation: skip-level visibility + co-sign ----------
+
+// Lets a client component that's already deep in the performanceReviews
+// data-loading flow tell "is this upline-chain row me" apart from "someone
+// else in the chain" without threading auth state down as a prop.
+export async function getMyUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+// Walks organization_members.manager_user_id upward from the review's
+// employee, one hop at a time, up to the org's configured
+// review_escalation_levels — same cap the RLS-side upline_level_of_user()
+// enforces, kept in sync here purely to bound how many round trips this
+// makes (RLS is still the real boundary on what's actually readable).
+export async function getUplineChain(reviewId: string): Promise<UplineChainEntry[]> {
+  const supabase = await createClient();
+
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("employee_user_id, organization_id")
+    .eq("id", reviewId)
+    .maybeSingle<{ employee_user_id: string; organization_id: string }>();
+  if (!review) return [];
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("review_escalation_levels")
+    .eq("id", review.organization_id)
+    .maybeSingle<{ review_escalation_levels: number | null }>();
+  const maxLevel = Math.min(org?.review_escalation_levels ?? 1, 10);
+
+  const chain: { level: number; managerUserId: string }[] = [];
+  let current = review.employee_user_id;
+  for (let level = 1; level <= maxLevel; level++) {
+    const { data: member } = await supabase
+      .from("organization_members")
+      .select("manager_user_id")
+      .eq("user_id", current)
+      .eq("organization_id", review.organization_id)
+      .maybeSingle<{ manager_user_id: string | null }>();
+    if (!member?.manager_user_id) break;
+    chain.push({ level, managerUserId: member.manager_user_id });
+    current = member.manager_user_id;
+  }
+  if (chain.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", chain.map((c) => c.managerUserId))
+    .returns<{ id: string; full_name: string | null }[]>();
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]));
+
+  return chain.map((c) => ({ level: c.level, managerUserId: c.managerUserId, managerName: nameById.get(c.managerUserId) ?? "Unknown" }));
+}
+
+export async function getUplineSignoffs(reviewId: string): Promise<UplineSignoff[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("performance_review_upline_signoffs")
+    .select("*")
+    .eq("review_id", reviewId)
+    .returns<UplineSignoff[]>();
+  if (!data || data.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", data.map((s) => s.manager_user_id))
+    .returns<{ id: string; full_name: string | null }[]>();
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]));
+
+  return data.map((s) => ({ ...s, managerName: nameById.get(s.manager_user_id) ?? "Unknown" }));
+}
+
+// Level (2+) is computed server-side from the Org Chart itself
+// (upline_level_of_user, inside the RPC) — never trusted from the client.
+export async function submitUplineSignoff(reviewId: string, comment: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("submit_upline_signoff", {
+    target_review_id: reviewId,
+    p_comment: comment,
+  });
+  if (error) {
+    console.error("submitUplineSignoff failed:", error);
+    return { error: "Could not save — try again." };
+  }
+  revalidatePath("/dashboard/company/impact-cycles");
+  return { success: true };
+}
+
+// ---------- Appraisal context: what the role requires + what's measured ----------
+
+// Reference numbers shown alongside the manager's own competency rating —
+// never written into performance_review_competency_ratings itself, since
+// the manager's rating is their own independent judgment call, not a
+// copy of the role profile or the Gap Analysis score.
+export async function getAppraisalCompetencyContext(reviewId: string): Promise<AppraisalCompetencyContext[]> {
+  const supabase = await createClient();
+
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("employee_user_id, organization_id")
+    .eq("id", reviewId)
+    .maybeSingle<{ employee_user_id: string; organization_id: string }>();
+  if (!review) return [];
+
+  const { data: member } = await supabase
+    .from("organization_members")
+    .select("current_role_id")
+    .eq("user_id", review.employee_user_id)
+    .eq("organization_id", review.organization_id)
+    .maybeSingle<{ current_role_id: string | null }>();
+
+  const roleTargetByDim = new Map<string, number>();
+  if (member?.current_role_id) {
+    const { data: requirements } = await supabase
+      .from("role_competency_requirements")
+      .select("dimension, target_level")
+      .eq("role_id", member.current_role_id)
+      .returns<{ dimension: string; target_level: number }[]>();
+    for (const r of requirements ?? []) roleTargetByDim.set(r.dimension, r.target_level);
+  }
+
+  const measuredByDim = new Map<string, number>();
+  const { data: latestAnalysis } = await supabase
+    .from("gap_analyses")
+    .select("competencies")
+    .eq("user_id", review.employee_user_id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ competencies: { dimension: string; currentLevel: number }[] }>();
+  for (const c of latestAnalysis?.competencies ?? []) measuredByDim.set(c.dimension, c.currentLevel);
+
+  const dimensions = new Set([...roleTargetByDim.keys(), ...measuredByDim.keys()]);
+  return [...dimensions].map((dimension) => ({
+    dimension,
+    roleTarget: roleTargetByDim.get(dimension) ?? null,
+    measuredCurrent: measuredByDim.get(dimension) ?? null,
+  }));
 }

@@ -250,3 +250,128 @@ export async function suggestRoleGrading(title: string, responsibilities: string
     return { error: "Couldn't generate a grading suggestion right now — try again in a moment." };
   }
 }
+
+const JD_TOOL = {
+  name: "record_job_description",
+  description: "Write a polished, candidate-facing job description from a role's structured internal data.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      summary: { type: "string", description: "2-3 sentence overview of the role and its purpose on the team — no invented mission/values language not implied by the data given." },
+      responsibilities: {
+        type: "array",
+        items: { type: "string" },
+        description: "5-8 action-verb-led bullet points, grounded strictly in the responsibilities text given — never invent duties.",
+      },
+      requirements: {
+        type: "array",
+        items: { type: "string" },
+        description: "5-8 bullet points of required skills/experience, translated from the role's grade/level and competency profile into natural language — never invent a specific years-of-experience number not implied by the grade.",
+      },
+      niceToHaves: {
+        type: "array",
+        items: { type: "string" },
+        description: "2-4 clearly-optional bullet points.",
+      },
+    },
+    required: ["summary", "responsibilities", "requirements", "niceToHaves"],
+  },
+};
+
+export type GeneratedJD = {
+  summary: string;
+  responsibilities: string[];
+  requirements: string[];
+  niceToHaves: string[];
+};
+
+function formatJD(title: string, jd: GeneratedJD): string {
+  return [
+    title,
+    "",
+    jd.summary,
+    "",
+    "Responsibilities",
+    ...jd.responsibilities.map((r) => `- ${r}`),
+    "",
+    "Requirements",
+    ...jd.requirements.map((r) => `- ${r}`),
+    ...(jd.niceToHaves.length ? ["", "Nice to have", ...jd.niceToHaves.map((r) => `- ${r}`)] : []),
+  ].join("\n");
+}
+
+// Turns a Job Architecture role's structured data (already collected for
+// leveling/competency purposes) into a polished, candidate-facing document —
+// the same underlying substance a JD needs, just not written twice. The
+// competency targets are internal 0-100 scoring data; the model is told to
+// translate them into plain-language requirements, never surface the raw
+// numbers to a candidate.
+export async function generateJobDescription(roleId: string): Promise<{ error: string } | { jd: GeneratedJD; formatted: string }> {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { data: role } = await supabase
+    .from("job_roles")
+    .select("title, level, grade, track, responsibilities, job_families(name)")
+    .eq("id", roleId)
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ title: string; level: string; grade: number; track: RoleTrack; responsibilities: string; job_families: { name: string } }>();
+  if (!role) return { error: "Role not found" };
+
+  const { data: requirements } = await supabase
+    .from("role_competency_requirements")
+    .select("dimension, target_level")
+    .eq("role_id", roleId)
+    .returns<{ dimension: string; target_level: number }[]>();
+  const reqLines =
+    (requirements ?? [])
+      .sort((a, b) => b.target_level - a.target_level)
+      .map((r) => `${r.dimension}: target ${r.target_level}/100`)
+      .join("\n") || "(none defined)";
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 1200,
+      system:
+        "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, or requirements not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output.",
+      tools: [JD_TOOL],
+      tool_choice: { type: "tool", name: "record_job_description" },
+      messages: [
+        {
+          role: "user",
+          content: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}`,
+        },
+      ],
+    });
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
+    const jd = toolUse.input as GeneratedJD;
+    const formatted = formatJD(role.title, jd);
+
+    await supabase.from("job_roles").update({ generated_jd: formatted }).eq("id", roleId);
+    revalidatePath("/dashboard/company/job-architecture");
+
+    return { jd, formatted };
+  } catch (err) {
+    console.error("generateJobDescription failed:", err);
+    return { error: "Couldn't generate a job description right now — try again in a moment." };
+  }
+}
+
+export async function saveJobDescription(roleId: string, text: string) {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { error } = await supabase
+    .from("job_roles")
+    .update({ generated_jd: text.trim().slice(0, 8000) })
+    .eq("id", roleId)
+    .eq("organization_id", organizationId);
+  if (error) {
+    console.error("saveJobDescription failed:", error);
+    return { error: "Could not save — the database may need migration 0082 run first." };
+  }
+  revalidatePath("/dashboard/company/job-architecture");
+  return { success: true };
+}

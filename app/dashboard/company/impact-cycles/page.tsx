@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { listReviewCycles } from "@/lib/performanceReviews/actions";
+import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import PerformanceReviewsManager from "@/components/dashboard/PerformanceReviewsManager";
+import EscalationLevelsSetting from "@/components/dashboard/EscalationLevelsSetting";
 
 export const metadata = { title: "Impact Cycles — Devometrics" };
 
@@ -12,6 +14,20 @@ export default async function ImpactCyclesPage() {
   if (!data.isOrgAdmin) redirect("/dashboard");
 
   const { cycles, error } = await listReviewCycles();
+
+  // Isolated from buildCompanyData's main query — a small, feature-specific
+  // field not worth adding to that already-large shared aggregate. Degrades
+  // to the default (1 = direct manager only) if migration 0082 hasn't run.
+  let escalationLevels = 1;
+  if (!error && data.organizationId) {
+    const supabase = await createClient();
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("review_escalation_levels")
+      .eq("id", data.organizationId)
+      .maybeSingle<{ review_escalation_levels: number | null }>();
+    escalationLevels = org?.review_escalation_levels ?? 1;
+  }
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -42,7 +58,10 @@ export default async function ImpactCyclesPage() {
             </p>
           </div>
         ) : (
-          <PerformanceReviewsManager initialCycles={cycles} />
+          <>
+            <EscalationLevelsSetting organizationId={data.organizationId!} initialLevels={escalationLevels} />
+            <PerformanceReviewsManager initialCycles={cycles} />
+          </>
         )}
       </div>
     </div>

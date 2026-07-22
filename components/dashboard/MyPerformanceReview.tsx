@@ -49,7 +49,7 @@ function aiButtonStyle(): React.CSSProperties {
 
 export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }) {
   const router = useRouter();
-  const { review, cycle, self, manager, goals, pastGoals, competencyRatings } = detail;
+  const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs } = detail;
 
   const [selfRating, setSelfRating] = useState(self?.rating ?? 3);
   const [selfReflection, setSelfReflection] = useState(self?.reflection ?? "");
@@ -269,6 +269,22 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       ) : (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Your manager hasn&apos;t shared their Perspective yet.</p>
+        </div>
+      )}
+
+      {uplineSignoffs.length > 0 && (
+        <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
+          <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>Upline review</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {uplineSignoffs.map((s) => (
+              <div key={s.manager_user_id} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "8px 12px" }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
+                  {s.managerName} <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>· level {s.level}</span>
+                </p>
+                {s.comment && <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>{s.comment}</p>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
