@@ -226,9 +226,13 @@ export default function CoachChat({
       else if (result.summary) setSummary(result.summary);
     });
   }
-  // Mic input auto-sends the recognized phrase instead of just dropping it
-  // in the text box — matches how someone actually wants voice mode to
-  // work (speak, done), rather than speak-then-still-have-to-click-Send.
+  // Mic input fills the text box rather than auto-sending — continuous
+  // listening mode has no way to tell "the user speaking" apart from
+  // ambient noise (a TV, someone else talking nearby), and an auto-sent
+  // phantom message reads as the user, derailing the conversation with no
+  // chance to catch it first. Dropping it in the box for a manual Send
+  // costs one click but means nothing reaches the coach without the user
+  // actually seeing it.
   const {
     listening,
     supported: sttSupported,
@@ -237,7 +241,7 @@ export default function CoachChat({
     error: micError,
   } = useSpeechInput((transcript) => {
     if (playingRef.current) return; // coach is talking — this is its own voice, not the user
-    if (transcript.trim()) send(transcript);
+    if (transcript.trim()) setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript.trim()}` : transcript.trim()));
   });
 
   // Keep the newest message in view whenever one is added (user send AND

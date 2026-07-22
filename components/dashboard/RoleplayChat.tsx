@@ -92,9 +92,12 @@ export default function RoleplayChat({
   // button — otherwise showing it on every reply makes it look like
   // clicking is always required, even when autoplay already worked.
   const [autoplayFailedFor, setAutoplayFailedFor] = useState<Set<number>>(new Set());
-  // Auto-sends the recognized phrase instead of just dropping it in the
-  // text box — speaking should be enough on its own, without also having
-  // to reach for Send afterward.
+  // Mic input fills the text box rather than auto-sending — continuous
+  // listening mode has no way to tell the user's own voice apart from
+  // ambient noise (a TV, someone else talking nearby), and an auto-sent
+  // phantom message reads as something the user said, derailing the
+  // scenario with no chance to catch it first. A manual Send costs one
+  // click but means nothing reaches the character without being seen.
   const {
     listening,
     supported: sttSupported,
@@ -103,7 +106,7 @@ export default function RoleplayChat({
     error: micError,
   } = useSpeechInput((transcript) => {
     if (speakingRef.current) return; // that's the character's voice, not the user
-    if (transcript.trim()) send(transcript, false);
+    if (transcript.trim()) setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript.trim()}` : transcript.trim()));
   });
 
   async function send(text: string, endScenario: boolean) {
