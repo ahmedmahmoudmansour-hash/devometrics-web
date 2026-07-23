@@ -95,7 +95,17 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName, account_type: accountType } },
+        options: {
+          data: { full_name: fullName, account_type: accountType },
+          // Without this, the confirmation link falls back to the
+          // project's Supabase "Site URL" setting — which drifts from
+          // whatever's actually deployed (e.g. still pointing at
+          // localhost from local dev) unless someone remembers to keep
+          // it in sync. Passing it explicitly, the same way
+          // resetPasswordForEmail already does below, makes the link
+          // always point at wherever this page is actually running.
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
       });
       setLoading(false);
       if (error) {
