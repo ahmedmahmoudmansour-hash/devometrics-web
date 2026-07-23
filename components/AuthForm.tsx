@@ -6,6 +6,16 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { verifyInviteCode } from "@/lib/auth/inviteGate";
 
+// Supabase's AuthError.message is usually a clean string, but errors
+// surfaced from the auth server's own side effects (e.g. its SMTP relay
+// rejecting a confirmation email) don't always arrive in that shape —
+// falling back here means a user never sees a raw `{}` instead of words.
+function readableAuthError(error: { message?: unknown }): string {
+  return typeof error.message === "string" && error.message.trim()
+    ? error.message
+    : "Something went wrong — please try again in a moment.";
+}
+
 const labelStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
@@ -63,7 +73,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(readableAuthError(error));
       return;
     }
     setResetSent(true);
@@ -89,7 +99,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
       });
       setLoading(false);
       if (error) {
-        setError(error.message);
+        setError(readableAuthError(error));
         return;
       }
       // If email confirmation isn't required (or already satisfied), signUp
@@ -109,7 +119,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(readableAuthError(error));
       return;
     }
     router.push("/dashboard");
