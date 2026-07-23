@@ -159,6 +159,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
         <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
           We sent a confirmation link to <strong style={{ color: "var(--text)" }}>{email}</strong>.
           Click it to finish creating your account — you&apos;ll land right back here, ready to go.
+          Don&apos;t see it? Check your spam or junk folder.
         </p>
       </div>
     );
@@ -180,6 +181,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
           <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
             If an account exists for <strong style={{ color: "var(--text)" }}>{email}</strong>, we sent a
             password reset link. It expires after a while, so use it soon.
+            Don&apos;t see it? Check your spam or junk folder.
           </p>
           <button
             type="button"
