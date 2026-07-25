@@ -11,14 +11,19 @@ export default async function CompanyKnowledgeHubPage() {
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
   const supabase = await createClient();
-  const { data: content } = await supabase
+  const { data: allContent } = await supabase
     .from("knowledge_hub_content")
     .select("*")
     .eq("organization_id", data.organizationId)
     .order("created_at", { ascending: false })
     .returns<KnowledgeHubContent[]>();
 
-  const contentIds = (content ?? []).map((c) => c.id);
+  // Archived content is hidden from the active list but its row (and
+  // completion history) is never deleted — see migration 0085.
+  const content = (allContent ?? []).filter((c) => !c.archived_at);
+  const archivedContent = (allContent ?? []).filter((c) => c.archived_at);
+
+  const contentIds = content.map((c) => c.id);
   const [{ data: assignments }, { data: completions }] = contentIds.length
     ? await Promise.all([
         supabase
@@ -82,7 +87,7 @@ export default async function CompanyKnowledgeHubPage() {
           <KnowledgeHubUploadForm organizationId={data.organizationId} />
         </div>
 
-        {(content ?? []).length === 0 ? (
+        {content.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
               No content uploaded yet. Use the form above to add your first document.
@@ -97,6 +102,7 @@ export default async function CompanyKnowledgeHubPage() {
                     <th style={{ ...headStyle, textAlign: "left" }}>Title</th>
                     <th style={{ ...headStyle, textAlign: "left" }}>Format</th>
                     <th style={{ ...headStyle, textAlign: "left" }}>Completion</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>Due</th>
                     <th style={{ ...headStyle, textAlign: "right" }}>Assigned</th>
                     <th style={{ ...headStyle, textAlign: "right" }}>Completed</th>
                     <th style={{ ...headStyle, textAlign: "right" }}>Completion rate</th>
@@ -104,7 +110,7 @@ export default async function CompanyKnowledgeHubPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(content ?? []).map((c) => {
+                  {content.map((c) => {
                     const assigned = assignedCountByContent.get(c.id) ?? 0;
                     const completed = completedEmployeesByContent.get(c.id)?.size ?? 0;
                     const rate = assigned ? Math.round((completed / assigned) * 100) : 0;
@@ -124,6 +130,7 @@ export default async function CompanyKnowledgeHubPage() {
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>
                           {c.completion_type === "exam" ? `Exam (${c.passing_score_percent}% to pass)` : "Read confirmation"}
                         </td>
+                        <td style={{ ...cellStyle, color: "var(--text-muted)" }}>{c.due_date ?? "—"}</td>
                         <td style={{ ...cellStyle, textAlign: "right" }}>{assigned}</td>
                         <td style={{ ...cellStyle, textAlign: "right" }}>{completed}</td>
                         <td style={{ ...cellStyle, textAlign: "right", color: "var(--teal)", fontWeight: 700 }}>
@@ -142,6 +149,36 @@ export default async function CompanyKnowledgeHubPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {archivedContent.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
+              Archived ({archivedContent.length})
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {archivedContent.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/dashboard/company/knowledge-hub/${c.id}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    background: "var(--navy-mid)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    fontSize: 13,
+                    color: "var(--text-muted)",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span>{c.title}</span>
+                  <span>Archived {new Date(c.archived_at!).toLocaleDateString()}</span>
+                </Link>
+              ))}
             </div>
           </div>
         )}

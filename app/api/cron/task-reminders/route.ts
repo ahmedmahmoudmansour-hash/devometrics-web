@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { sendDueCertificationReminders } from "@/lib/certifications/sendReminders";
+import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
 
 type ReminderTask = { title: string; date: string; overdue: boolean };
 type ReminderRow = { user_id: string; email: string; full_name: string | null; tasks: ReminderTask[] };
@@ -16,9 +17,10 @@ type ReminderRow = { user_id: string; email: string; full_name: string | null; t
 // function itself).
 //
 // Also sends due certification-expiry reminders (sendDueCertificationReminders)
-// piggybacking on this same daily run rather than getting a separate Vercel
-// Cron entry — see that function's own comment for why (Hobby plan's 2-cron
-// cap).
+// and Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
+// both piggybacking on this same daily run rather than getting a separate
+// Vercel Cron entry — see each function's own comment for why (Hobby
+// plan's 2-cron cap).
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
@@ -90,10 +92,12 @@ export async function GET(request: Request) {
   }
 
   const certResult = await sendDueCertificationReminders(supabase, secret);
+  const knowledgeHubResult = await sendDueKnowledgeHubReminders(supabase, secret);
 
   return NextResponse.json({
     candidates: rows?.length ?? 0,
     sent,
     certifications: certResult,
+    knowledgeHub: knowledgeHubResult,
   });
 }

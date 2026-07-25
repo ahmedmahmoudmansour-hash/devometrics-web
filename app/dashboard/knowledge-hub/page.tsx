@@ -32,6 +32,13 @@ export default async function KnowledgeHubPage() {
     if (!latestCompletionByContent.has(c.content_id)) latestCompletionByContent.set(c.content_id, c);
   }
 
+  const today = new Date().toISOString().slice(0, 10);
+  // Same rgb-triple pill-badge convention as CertificationsView's
+  // STATUS_STYLE (expired/soon/ok) — reused here rather than inventing a
+  // separate red/amber/teal language for the same "how urgent is this"
+  // concept.
+  const STATUS_COLOR = { overdue: "248,113,113", pending: "240,184,64", done: "0,201,167" } as const;
+
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -58,6 +65,8 @@ export default async function KnowledgeHubPage() {
             {(assignments ?? []).map((a) => {
               const content = a.knowledge_hub_content;
               const completion = latestCompletionByContent.get(a.content_id);
+              const isOverdue = !completion && !!content.due_date && content.due_date < today;
+              const statusColor = completion ? STATUS_COLOR.done : isOverdue ? STATUS_COLOR.overdue : STATUS_COLOR.pending;
               return (
                 <Link
                   key={a.id}
@@ -81,6 +90,7 @@ export default async function KnowledgeHubPage() {
                       )}
                       <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {content.completion_type === "exam" ? "Exam required" : "Read confirmation"}
+                        {content.due_date && !completion ? ` · due ${content.due_date}` : ""}
                       </p>
                     </div>
                     <span
@@ -88,14 +98,20 @@ export default async function KnowledgeHubPage() {
                         fontSize: 12,
                         fontWeight: 700,
                         whiteSpace: "nowrap",
-                        color: completion ? "var(--teal)" : "var(--amber)",
+                        padding: "4px 10px",
+                        borderRadius: 8,
+                        background: `rgba(${statusColor},0.12)`,
+                        border: `1px solid rgba(${statusColor},0.35)`,
+                        color: `rgb(${statusColor})`,
                       }}
                     >
                       {completion
                         ? content.completion_type === "exam"
                           ? `${completion.passed ? "Passed" : "Completed"} — ${completion.score_percent}%`
                           : "Completed"
-                        : "Not started"}
+                        : isOverdue
+                          ? "Overdue"
+                          : "Not started"}
                     </span>
                   </div>
                 </Link>

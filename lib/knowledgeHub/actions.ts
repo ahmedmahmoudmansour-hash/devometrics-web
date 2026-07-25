@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { sendEmail } from "@/lib/email/resend";
+import { renderEmail, escapeHtml } from "@/lib/email/template";
 import type {
   KnowledgeHubContent,
   KnowledgeHubCompletion,
@@ -29,6 +31,7 @@ export async function createKnowledgeHubContent(input: {
   mimeType: string;
   completionType: KnowledgeHubCompletionType;
   passingScorePercent: number;
+  dueDate?: string | null;
   questions?: NewExamQuestion[];
 }) {
   const company = await buildCompanyData();
@@ -57,6 +60,7 @@ export async function createKnowledgeHubContent(input: {
     mime_type: input.mimeType,
     completion_type: input.completionType,
     passing_score_percent: input.passingScorePercent,
+    due_date: input.dueDate || null,
     created_by: user.id,
   });
   if (contentError) {
@@ -95,10 +99,50 @@ export async function createKnowledgeHubContent(input: {
   return { success: true, contentId: input.id };
 }
 
+// Best-effort — a failed assignment email shouldn't fail the assignment
+// itself (the row in knowledge_hub_assignments is still the source of
+// truth), same posture as sendInviteEmail in lib/organizations/actions.ts.
+async function sendKnowledgeHubAssignmentEmail(
+  email: string,
+  contentTitle: string,
+  dueDate: string | null,
+  orgName: string
+): Promise<void> {
+  try {
+    await sendEmail(
+      email,
+      `${orgName} assigned you training on Devometrics`,
+      renderEmail({
+        preheader: `${contentTitle}${dueDate ? ` — due ${dueDate}` : ""}`,
+        footerNote: "You're getting this because your organization assigned you training on Devometrics.",
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New training assigned</h2>
+          <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
+            <strong>${escapeHtml(orgName)}</strong> assigned you <strong>${escapeHtml(contentTitle)}</strong> on Devometrics.
+          </p>
+          ${
+            dueDate
+              ? `<p style="font-size:13px;color:#8892a4;margin:0 0 24px;">Due by ${escapeHtml(dueDate)}</p>`
+              : `<p style="margin:0 0 24px;"></p>`
+          }
+          <p style="margin:0;">
+            <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
+          </p>
+        `,
+      })
+    );
+  } catch (err) {
+    console.error(`Knowledge Hub assignment email failed for ${email}:`, err);
+  }
+}
+
 // Bulk assign — uses upsert with ignoreDuplicates so assigning to a mix of
 // already-assigned and new employees in one call succeeds for the new ones
 // instead of the whole insert failing on the first unique-constraint hit
 // (a plain multi-row .insert() aborts entirely if any row conflicts).
+// Only genuinely-new assignees get an email — re-running an assignment
+// over a batch that includes already-assigned people shouldn't re-notify
+// them, so the existing rows are diffed out before the upsert.
 export async function assignKnowledgeHubContent(contentId: string, employeeUserIds: string[]) {
   const supabase = await createClient();
   const {
@@ -106,6 +150,15 @@ export async function assignKnowledgeHubContent(contentId: string, employeeUserI
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
   if (employeeUserIds.length === 0) return { error: "Select at least one employee" };
+
+  const { data: existing } = await supabase
+    .from("knowledge_hub_assignments")
+    .select("employee_user_id")
+    .eq("content_id", contentId)
+    .in("employee_user_id", employeeUserIds)
+    .returns<{ employee_user_id: string }[]>();
+  const alreadyAssigned = new Set((existing ?? []).map((r) => r.employee_user_id));
+  const newlyAssignedIds = employeeUserIds.filter((id) => !alreadyAssigned.has(id));
 
   const { error } = await supabase
     .from("knowledge_hub_assignments")
@@ -119,6 +172,79 @@ export async function assignKnowledgeHubContent(contentId: string, employeeUserI
     );
   if (error) {
     return { error: "Could not assign — the database may need migration 0084 run first." };
+  }
+
+  if (newlyAssignedIds.length > 0) {
+    const [{ data: content }, company] = await Promise.all([
+      supabase
+        .from("knowledge_hub_content")
+        .select("title, due_date")
+        .eq("id", contentId)
+        .maybeSingle<{ title: string; due_date: string | null }>(),
+      buildCompanyData(),
+    ]);
+    if (content && company.organizationName) {
+      const emailByUserId = new Map(company.rows.map((r) => [r.userId, r.email]));
+      await Promise.allSettled(
+        newlyAssignedIds
+          .map((id) => emailByUserId.get(id))
+          .filter((email): email is string => !!email)
+          .map((email) => sendKnowledgeHubAssignmentEmail(email, content.title, content.due_date, company.organizationName!))
+      );
+    }
+  }
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  revalidatePath(`/dashboard/company/knowledge-hub/${contentId}`);
+  return { success: true };
+}
+
+// Archives rather than deletes — knowledge_hub_content cascades to
+// knowledge_hub_completions, and a real delete would destroy the
+// compliance completion history for anyone who already finished it. This
+// just hides it from active admin/employee lists while keeping the row
+// (and its history) intact, same posture as organization_members.archived.
+export async function archiveKnowledgeHubContent(contentId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("knowledge_hub_content")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", contentId)
+    .select("id");
+  if (error) {
+    return { error: "Could not archive — the database may need migration 0085 run first." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to archive this content." };
+  }
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+export async function updateKnowledgeHubContent(
+  contentId: string,
+  fields: { title: string; description: string; passingScorePercent: number; dueDate: string | null }
+) {
+  const supabase = await createClient();
+  const title = fields.title.trim();
+  if (!title) return { error: "Title is required" };
+
+  const { data, error } = await supabase
+    .from("knowledge_hub_content")
+    .update({
+      title,
+      description: fields.description.trim() || null,
+      passing_score_percent: fields.passingScorePercent,
+      due_date: fields.dueDate || null,
+    })
+    .eq("id", contentId)
+    .select("id");
+  if (error) {
+    return { error: "Could not update this content." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to edit this content." };
   }
 
   revalidatePath("/dashboard/company/knowledge-hub");
@@ -274,6 +400,50 @@ export async function getSignedKnowledgeHubUrl(contentId: string): Promise<{ err
   if (error || !data) return { error: "Could not open this document — try again." };
 
   return { url: data.signedUrl };
+}
+
+export type PendingKnowledgeHubItem = {
+  contentId: string;
+  title: string;
+  dueDate: string | null;
+  overdue: boolean;
+};
+
+// Feeds PendingKnowledgeHubCard on the main dashboard — everything assigned
+// to the current user with no completion row yet, archived content
+// excluded since it's been retired from active circulation.
+export async function listMyPendingKnowledgeHub(): Promise<PendingKnowledgeHubItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: assignments } = await supabase
+    .from("knowledge_hub_assignments")
+    .select("content_id, knowledge_hub_content(title, due_date, archived_at)")
+    .eq("employee_user_id", user.id)
+    .returns<{ content_id: string; knowledge_hub_content: { title: string; due_date: string | null; archived_at: string | null } }[]>();
+  if (!assignments || assignments.length === 0) return [];
+
+  const contentIds = assignments.map((a) => a.content_id);
+  const { data: completions } = await supabase
+    .from("knowledge_hub_completions")
+    .select("content_id")
+    .eq("employee_user_id", user.id)
+    .in("content_id", contentIds)
+    .returns<{ content_id: string }[]>();
+  const completedIds = new Set((completions ?? []).map((c) => c.content_id));
+
+  const today = new Date().toISOString().slice(0, 10);
+  return assignments
+    .filter((a) => a.knowledge_hub_content && !a.knowledge_hub_content.archived_at && !completedIds.has(a.content_id))
+    .map((a) => ({
+      contentId: a.content_id,
+      title: a.knowledge_hub_content.title,
+      dueDate: a.knowledge_hub_content.due_date,
+      overdue: !!a.knowledge_hub_content.due_date && a.knowledge_hub_content.due_date < today,
+    }));
 }
 
 export async function confirmKnowledgeHubRead(contentId: string) {

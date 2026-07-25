@@ -23,6 +23,8 @@ import { recordAndComputeMomentum } from "@/lib/momentum/momentum";
 import { listMySurveys } from "@/lib/surveys/actions";
 import { listTodayTasks, listOverdueTasks } from "@/lib/tasks/actions";
 import TodayTasksCard from "@/components/dashboard/TodayTasksCard";
+import { listMyPendingKnowledgeHub } from "@/lib/knowledgeHub/actions";
+import PendingKnowledgeHubCard from "@/components/dashboard/PendingKnowledgeHubCard";
 import UpcomingDeadlinesCard from "@/components/dashboard/UpcomingDeadlinesCard";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import DismissibleUpgradePrompt from "@/components/dashboard/DismissibleUpgradePrompt";
@@ -142,6 +144,7 @@ export default async function DashboardPage() {
   const streakResult = await recordDailyActivity();
   const todayTasks = await listTodayTasks();
   const overdueTasks = await listOverdueTasks();
+  const pendingKnowledgeHub = await listMyPendingKnowledgeHub();
   const { data: completedTaskCheck } = await supabase
     .from("personal_tasks")
     .select("id")
@@ -231,6 +234,7 @@ export default async function DashboardPage() {
             <OnboardingChecklist steps={onboardingSteps} />
             <UpcomingDeadlinesCard milestones={milestones ?? []} />
             <TodayTasksCard tasks={todayTasks} overdue={overdueTasks} />
+            <PendingKnowledgeHubCard items={pendingKnowledgeHub} />
             <PendingSurveysCard surveys={mySurveys} />
           </DashboardSection>
 

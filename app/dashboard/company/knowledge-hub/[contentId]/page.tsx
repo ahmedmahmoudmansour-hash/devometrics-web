@@ -4,6 +4,7 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { getKnowledgeHubContentReport } from "@/lib/knowledgeHub/actions";
 import AssignKnowledgeHubContentModal from "@/components/dashboard/AssignKnowledgeHubContentModal";
 import RemoveKnowledgeHubAssignmentButton from "@/components/dashboard/RemoveKnowledgeHubAssignmentButton";
+import EditKnowledgeHubContentForm from "@/components/dashboard/EditKnowledgeHubContentForm";
 
 export default async function KnowledgeHubContentDetailPage({
   params,
@@ -53,7 +54,15 @@ export default async function KnowledgeHubContentDetailPage({
               : "Completed by confirming they've read it"}
             {" · "}
             {content.file_name}
+            {content.due_date && (
+              <>
+                {" · "}Due {content.due_date}
+              </>
+            )}
           </p>
+          <div style={{ marginTop: 12 }}>
+            <EditKnowledgeHubContentForm content={content} />
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>

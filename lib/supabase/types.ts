@@ -443,6 +443,8 @@ export type KnowledgeHubContent = {
   mime_type: string;
   completion_type: KnowledgeHubCompletionType;
   passing_score_percent: number;
+  due_date: string | null;
+  archived_at: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -474,6 +476,7 @@ export type KnowledgeHubAssignment = {
   content_id: string;
   assigned_by: string;
   created_at: string;
+  last_reminder_sent_at: string | null;
 };
 
 export type KnowledgeHubCompletion = {

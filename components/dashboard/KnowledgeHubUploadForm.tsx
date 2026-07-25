@@ -35,6 +35,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
   const [file, setFile] = useState<File | null>(null);
   const [completionType, setCompletionType] = useState<KnowledgeHubCompletionType>("attestation");
   const [passingScore, setPassingScore] = useState(80);
+  const [dueDate, setDueDate] = useState("");
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       return;
     }
     if (!(KNOWLEDGE_HUB_ALLOWED_MIME_TYPES as readonly string[]).includes(f.type)) {
-      setError("Only Word, PDF, Excel, and PowerPoint files are supported.");
+      setError("Only Word, PDF, Excel, PowerPoint, or video (MP4/WebM/MOV) files are supported.");
       return;
     }
     if (f.size > KNOWLEDGE_HUB_MAX_BYTES) {
@@ -123,6 +124,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           mimeType: file.type,
           completionType,
           passingScorePercent: passingScore,
+          dueDate: dueDate || null,
           questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
         });
         if (result?.error) {
@@ -133,6 +135,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
         setDescription("");
         setFile(null);
         setCompletionType("attestation");
+        setDueDate("");
         setQuestions([newQuestion()]);
         setExpanded(false);
         router.refresh();
@@ -194,15 +197,27 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
         />
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            File — Word, PDF, Excel, or PowerPoint, 50MB max
+            File — Word, PDF, Excel, PowerPoint, or video, 50MB max
           </label>
           <input
             type="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4,.webm,.mov"
             onChange={handleFileChange}
             style={{ fontSize: 13, color: "var(--text-muted)" }}
           />
           {file && <p style={{ fontSize: 12, color: "var(--teal)", marginTop: 4 }}>{file.name}</p>}
+        </div>
+
+        <div>
+          <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+            Due date — optional
+          </label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            style={{ ...inputStyle, maxWidth: 200, colorScheme: "dark" }}
+          />
         </div>
 
         <div>

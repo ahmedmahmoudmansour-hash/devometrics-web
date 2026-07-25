@@ -53,6 +53,7 @@ export default function KnowledgeHubContentViewer({
   }, [contentId]);
 
   const isPdf = mimeType === "application/pdf";
+  const isVideo = mimeType.startsWith("video/");
 
   async function handleConfirmRead() {
     setConfirming(true);
@@ -107,6 +108,8 @@ export default function KnowledgeHubContentViewer({
             title={fileName}
             style={{ width: "100%", height: 600, border: "none", borderRadius: 8, background: "#fff" }}
           />
+        ) : isVideo ? (
+          <video controls src={signedUrl} style={{ width: "100%", maxHeight: 480, borderRadius: 8, background: "#000" }} />
         ) : (
           <div style={{ textAlign: "center", padding: "20px 0" }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>

@@ -12,4 +12,13 @@ export const KNOWLEDGE_HUB_ALLOWED_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  // Video templates (e.g. a recorded walkthrough or training clip) — still
+  // capped at KNOWLEDGE_HUB_MAX_BYTES, which is the real ceiling on
+  // Supabase's current Free plan regardless of this bucket's own config;
+  // raising it needs the paid plan (see the size conversation this came
+  // out of — storage is cheap, egress from repeated viewing is the real
+  // cost driver for video specifically).
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
 ] as const;
