@@ -42,7 +42,7 @@ type NavItem = {
 // a 13-item flat list made even the flagship AI Coach hard to find. Section
 // labels hide with the rest of the text when the sidebar collapses to
 // icons-only on narrow screens.
-function buildSections(hasDirectReports: boolean): { label: string | null; items: NavItem[] }[] {
+function buildSections(hasDirectReports: boolean, hasManager: boolean): { label: string | null; items: NavItem[] }[] {
   return [
     {
       label: null,
@@ -56,7 +56,11 @@ function buildSections(hasDirectReports: boolean): { label: string | null; items
         { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
         { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
         { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
-        { href: "/dashboard/impact-cycle", label: "Impact Cycle", icon: ClipboardCheck },
+        // Only shown to someone with an actual manager assigned in the Org
+        // Chart — with no manager, this page can never have anything on it
+        // (no one to give a Manager's Perspective), so the link is just
+        // permanent clutter otherwise, not a real feature they can use.
+        ...(hasManager ? [{ href: "/dashboard/impact-cycle", label: "Impact Cycle", icon: ClipboardCheck }] : []),
         // Only shown to a real reporting-line manager (migration 0078) —
         // an individual contributor with no reports has nothing to do here.
         ...(hasDirectReports ? [{ href: "/dashboard/my-team", label: "My Team", icon: Users }] : []),
@@ -90,15 +94,17 @@ export default function SidebarNav({
   isPlatformAdmin,
   isFreeTier,
   hasDirectReports,
+  hasManager,
 }: {
   savedTheme?: string | null;
   isCompanyAdmin: boolean;
   isPlatformAdmin: boolean;
   isFreeTier: boolean;
   hasDirectReports: boolean;
+  hasManager: boolean;
 }) {
   const pathname = usePathname();
-  const sections = buildSections(hasDirectReports);
+  const sections = buildSections(hasDirectReports, hasManager);
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";

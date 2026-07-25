@@ -24,9 +24,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [{ data: membership }, { data: profile }, { count: directReportCount }] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("role, organizations(brand_color)")
+      .select("role, manager_user_id, organizations(brand_color)")
       .eq("user_id", user.id)
-      .maybeSingle<{ role: string; organizations: { brand_color: string | null } | null }>(),
+      .maybeSingle<{ role: string; manager_user_id: string | null; organizations: { brand_color: string | null } | null }>(),
     supabase
       .from("profiles")
       .select("is_admin, theme, subscription_tier, premium_trial_expires_at")
@@ -38,6 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     supabase.from("organization_members").select("*", { count: "exact", head: true }).eq("manager_user_id", user.id),
   ]);
   const hasDirectReports = (directReportCount ?? 0) > 0;
+  const hasManager = !!membership?.manager_user_id;
 
   const brandColor = membership?.organizations?.brand_color ?? null;
   const isFreeTier =
@@ -66,6 +67,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           isPlatformAdmin={!!profile?.is_admin}
           isFreeTier={isFreeTier}
           hasDirectReports={hasDirectReports}
+          hasManager={hasManager}
         />
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
       </div>
@@ -73,6 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         isCompanyAdmin={membership?.role === "admin"}
         isPlatformAdmin={!!profile?.is_admin}
         hasDirectReports={hasDirectReports}
+        hasManager={hasManager}
       />
     </div>
   );

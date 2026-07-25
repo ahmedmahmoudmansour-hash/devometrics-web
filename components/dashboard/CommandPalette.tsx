@@ -14,7 +14,7 @@ type Entry = {
 
 // Everything reachable in two keystrokes: Ctrl+K, type, Enter. The list is
 // static and instant on purpose — no fetch, no spinner, no index to build.
-function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDirectReports: boolean): Entry[] {
+function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDirectReports: boolean, hasManager: boolean): Entry[] {
   const entries: Entry[] = [
     { label: "Progress", href: "/dashboard", keywords: "home overview dashboard start" },
     { label: "AI Coach", href: "/dashboard/coach", hint: "Talk it through", keywords: "chat talk mentor advice session" },
@@ -30,11 +30,13 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDire
     { label: "Discovery", href: "/dashboard/discovery", hint: "AI interview about you", keywords: "interview questions profile onboarding" },
     { label: "Resume Intelligence", href: "/dashboard/resume", keywords: "cv ats score keywords bullets" },
     { label: "Scorecard", href: "/dashboard/scorecard", keywords: "score career health momentum badges" },
-    { label: "Impact Cycle", href: "/dashboard/impact-cycle", hint: "Your Reflection + Manager's Perspective", keywords: "performance review appraisal rating goals focus areas cycle confirm feedback impact" },
     { label: "My Development", href: "/dashboard/plans", hint: "All your plans and milestones", keywords: "plans milestones status in progress completed deferred track" },
     { label: "My Journey", href: "/dashboard/journey", hint: "Your story so far", keywords: "history timeline progress log" },
     { label: "Profile", href: "/dashboard/profile", keywords: "account avatar settings preferences experience education" },
   ];
+  if (hasManager) {
+    entries.push({ label: "Impact Cycle", href: "/dashboard/impact-cycle", hint: "Your Reflection + Manager's Perspective", keywords: "performance review appraisal rating goals focus areas cycle confirm feedback impact" });
+  }
   if (hasDirectReports) {
     entries.push({ label: "My Team", href: "/dashboard/my-team", hint: "Your direct reports' Impact Cycles", keywords: "team manager reports review appraisal perspective" });
   }
@@ -58,10 +60,12 @@ export default function CommandPalette({
   isCompanyAdmin,
   isPlatformAdmin,
   hasDirectReports,
+  hasManager,
 }: {
   isCompanyAdmin: boolean;
   isPlatformAdmin: boolean;
   hasDirectReports: boolean;
+  hasManager: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -69,7 +73,10 @@ export default function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const entries = useMemo(() => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports), [isCompanyAdmin, isPlatformAdmin, hasDirectReports]);
+  const entries = useMemo(
+    () => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports, hasManager),
+    [isCompanyAdmin, isPlatformAdmin, hasDirectReports, hasManager]
+  );
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
