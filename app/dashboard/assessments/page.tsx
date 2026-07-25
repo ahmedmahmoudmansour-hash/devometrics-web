@@ -41,9 +41,9 @@ export default async function AssessmentsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("career_stage, learning_preferences")
+    .select("career_stage, learning_preferences, location, accommodation, resource_tier")
     .eq("id", user.id)
-    .single<Pick<Profile, "career_stage" | "learning_preferences">>();
+    .single<Pick<Profile, "career_stage" | "learning_preferences" | "location" | "accommodation" | "resource_tier">>();
 
   const { data: latestAnalysis } = await supabase
     .from("gap_analyses")
@@ -145,7 +145,13 @@ export default async function AssessmentsPage() {
 
         <AssessmentPlanGenerator
           completedCount={latestBySlug.size}
-          learningPreferences={profile?.learning_preferences ?? []}
+          personalization={{
+            location: profile?.location ?? "",
+            learningPreferences: profile?.learning_preferences ?? [],
+            careerStage: profile?.career_stage ?? "",
+            accommodation: profile?.accommodation ?? "",
+            resourceTier: profile?.resource_tier ?? "",
+          }}
           defaultTargetRole={latestAnalysis?.target_role ?? ""}
         />
 

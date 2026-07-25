@@ -3,30 +3,26 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { generateQuickPlan } from "@/app/dashboard/gap-analysis/actions";
-import { updateLearningPreferences } from "@/app/dashboard/actions";
-import { LEARNING_FORMATS, LEARNING_FORMAT_DESCRIPTIONS } from "@/lib/gap-analysis/actionLibrary";
+import { updateProfile } from "@/app/dashboard/actions";
+import PersonalizationFields, { type PersonalizationValues } from "@/components/dashboard/PersonalizationFields";
 import { HORIZONS, type Horizon } from "@/lib/gap-analysis/horizons";
 
 export default function AssessmentPlanGenerator({
   completedCount,
-  learningPreferences,
+  personalization,
   defaultTargetRole,
 }: {
   completedCount: number;
-  learningPreferences: string[];
+  personalization: PersonalizationValues;
   defaultTargetRole: string;
 }) {
   const [targetRole, setTargetRole] = useState(defaultTargetRole);
   const [horizon, setHorizon] = useState<Horizon>("90-day");
-  const [selectedFormats, setSelectedFormats] = useState<string[]>(learningPreferences);
+  const [values, setValues] = useState<PersonalizationValues>(personalization);
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success?: boolean; planId?: string; error?: string } | null>(null);
 
   if (completedCount === 0) return null;
-
-  function toggleFormat(format: string) {
-    setSelectedFormats((prev) => (prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format]));
-  }
 
   return (
     <div
@@ -82,34 +78,7 @@ export default function AssessmentPlanGenerator({
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>
-              How do you want to learn?
-            </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {LEARNING_FORMATS.map((format) => {
-                const checked = selectedFormats.includes(format);
-                return (
-                  <button
-                    key={format}
-                    type="button"
-                    onClick={() => toggleFormat(format)}
-                    title={LEARNING_FORMAT_DESCRIPTIONS[format]}
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 100,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: checked ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                      background: checked ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
-                      color: checked ? "var(--teal)" : "var(--text-muted)",
-                    }}
-                  >
-                    {format}
-                  </button>
-                );
-              })}
-            </div>
+            <PersonalizationFields value={values} onChange={setValues} showCareerStage={false} />
           </div>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
@@ -143,15 +112,14 @@ export default function AssessmentPlanGenerator({
                   setResult({ error: "Target role is required." });
                   return;
                 }
-                const prefResult = await updateLearningPreferences(selectedFormats);
-                const r = await generateQuickPlan(targetRole, "", horizon);
-                if (r.planId) {
-                  setResult(r);
-                } else if (prefResult?.error) {
-                  setResult({ error: `Couldn't save your learning preference (${prefResult.error}) — generating with your last saved preference instead.` });
-                } else {
-                  setResult(r);
-                }
+                await updateProfile(
+                  values.location,
+                  values.learningPreferences,
+                  values.careerStage,
+                  values.accommodation,
+                  values.resourceTier
+                );
+                setResult(await generateQuickPlan(targetRole, "", horizon));
               })
             }
             style={{

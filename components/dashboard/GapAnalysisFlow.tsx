@@ -6,8 +6,9 @@ import CompetencyRadar from "./CompetencyRadar";
 import PlanOptionsReview from "./PlanOptionsReview";
 import FileUploadButton from "@/components/FileUploadButton";
 import { generatePlanFromAnalysis } from "@/app/dashboard/gap-analysis/actions";
-import { updateLearningPreferences } from "@/app/dashboard/actions";
-import { LEARNING_FORMATS, LEARNING_FORMAT_DESCRIPTIONS, type LearningFormat } from "@/lib/gap-analysis/actionLibrary";
+import { updateProfile } from "@/app/dashboard/actions";
+import PersonalizationFields, { type PersonalizationValues } from "@/components/dashboard/PersonalizationFields";
+import type { LearningFormat } from "@/lib/gap-analysis/actionLibrary";
 import { rankByImpact } from "@/lib/gap-analysis/dimensions";
 import { HORIZONS, type Horizon } from "@/lib/gap-analysis/horizons";
 import type { GapAnalysis } from "@/lib/supabase/types";
@@ -32,10 +33,10 @@ const priorityColor: Record<string, string> = {
 
 export default function GapAnalysisFlow({
   latest,
-  learningPreferences,
+  personalization,
 }: {
   latest: GapAnalysis | null;
-  learningPreferences: string[];
+  personalization: PersonalizationValues;
 }) {
   const [analysis, setAnalysis] = useState<GapAnalysis | null>(latest);
   const [showForm, setShowForm] = useState(!latest);
@@ -50,11 +51,7 @@ export default function GapAnalysisFlow({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [consent, setConsent] = useState(false);
   const [horizon, setHorizon] = useState<Horizon>("90-day");
-  const [selectedFormats, setSelectedFormats] = useState<string[]>(learningPreferences);
-
-  function toggleFormat(format: string) {
-    setSelectedFormats((prev) => (prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format]));
-  }
+  const [values, setValues] = useState<PersonalizationValues>(personalization);
 
   async function runAnalysis(e: React.FormEvent) {
     e.preventDefault();
@@ -288,7 +285,7 @@ export default function GapAnalysisFlow({
           analysisId={analysis.id}
           targetRole={analysis.target_role}
           horizon={horizon}
-          defaultFormat={(selectedFormats[0] as LearningFormat) ?? null}
+          defaultFormat={(values.learningPreferences[0] as LearningFormat) ?? null}
           onDone={(planId) => {
             setReviewOpen(false);
             setCreatedPlanId(planId);
@@ -329,38 +326,7 @@ export default function GapAnalysisFlow({
           ) : (
             <>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>
-                  How do you want to learn?
-                </label>
-                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.5 }}>
-                  Pick as many as apply — this also updates your saved preference for next time. Hover a pill
-                  for what it means.
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {LEARNING_FORMATS.map((format) => {
-                    const checked = selectedFormats.includes(format);
-                    return (
-                      <button
-                        key={format}
-                        type="button"
-                        onClick={() => toggleFormat(format)}
-                        title={LEARNING_FORMAT_DESCRIPTIONS[format]}
-                        style={{
-                          padding: "8px 14px",
-                          borderRadius: 100,
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          border: checked ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                          background: checked ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
-                          color: checked ? "var(--teal)" : "var(--text-muted)",
-                        }}
-                      >
-                        {format}
-                      </button>
-                    );
-                  })}
-                </div>
+                <PersonalizationFields value={values} onChange={setValues} showCareerStage={false} />
               </div>
 
               <div style={{ marginBottom: 16 }}>
@@ -398,13 +364,10 @@ export default function GapAnalysisFlow({
                   disabled={isPending}
                   onClick={() =>
                     startTransition(async () => {
-                      const prefResult = await updateLearningPreferences(selectedFormats);
-                      if (prefResult?.error) {
-                        setError(`Couldn't save your learning preference (${prefResult.error}) — generating the plan with your last saved preference instead.`);
-                      }
+                      await updateProfile(values.location, values.learningPreferences, values.careerStage, values.accommodation, values.resourceTier);
                       const result = await generatePlanFromAnalysis(analysis.id, horizon);
                       if (result?.planId) setCreatedPlanId(result.planId);
-                      else if (!prefResult?.error) setError(result?.error ?? "Something went wrong");
+                      else setError(result?.error ?? "Something went wrong");
                     })
                   }
                   style={{
@@ -425,10 +388,7 @@ export default function GapAnalysisFlow({
                   type="button"
                   onClick={() =>
                     startTransition(async () => {
-                      const prefResult = await updateLearningPreferences(selectedFormats);
-                      if (prefResult?.error) {
-                        setError(`Couldn't save your learning preference (${prefResult.error}).`);
-                      }
+                      await updateProfile(values.location, values.learningPreferences, values.careerStage, values.accommodation, values.resourceTier);
                       setReviewOpen(true);
                     })
                   }

@@ -184,27 +184,6 @@ export async function updateAvatarUrl(avatarUrl: string) {
   return { success: true };
 }
 
-// Lighter than updateProfile — used by the inline "how do you want to
-// learn?" step during plan creation, which shouldn't need to also touch
-// location/career stage/accommodation/budget just to save this one field.
-// Saving it here (not just using it for this one plan) means the choice
-// sticks for next time too, instead of asking again on every plan.
-export async function updateLearningPreferences(learningPreferences: string[]) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ learning_preferences: learningPreferences })
-    .eq("id", user.id);
-  if (error) return { error: error.message };
-  revalidatePath("/dashboard");
-  return { success: true };
-}
-
 const VALID_COACH_VOICES = new Set(["off", "sarah", "theo", "megan", "jack"]);
 
 // Persists which of the 4 Speechmatics voices (or "off") the Coach should

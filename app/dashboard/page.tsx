@@ -256,7 +256,13 @@ export default async function DashboardPage() {
             <NewPlanForm
               subscriptionTier={effectiveSubscriptionTier(profile ?? null)}
               existingPlanCount={(plans ?? []).length}
-              learningPreferences={profile?.learning_preferences ?? []}
+              personalization={{
+                location: profile?.location ?? "",
+                learningPreferences: profile?.learning_preferences ?? [],
+                careerStage: profile?.career_stage ?? "",
+                accommodation: profile?.accommodation ?? "",
+                resourceTier: profile?.resource_tier ?? "",
+              }}
             />
           </DashboardSection>
 
