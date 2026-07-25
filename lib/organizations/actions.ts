@@ -440,12 +440,16 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
   } = await supabase.auth.getUser();
   if (!user?.email) return false;
 
-  const { data: invite } = await supabase
+  const { data: invite, error: inviteError } = await supabase
     .from("organization_invites")
     .select("*")
     .is("accepted_at", null)
     .ilike("email", user.email)
     .maybeSingle<OrganizationInvite>();
+  if (inviteError) {
+    console.error(`checkAndConsumeInvite: lookup failed for ${user.email}:`, inviteError);
+    return false;
+  }
   if (!invite) return false;
 
   const { error: memberError } = await supabase.from("organization_members").insert({
@@ -460,7 +464,10 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
     business_unit: invite.business_unit ?? null,
     location: invite.location ?? null,
   });
-  if (memberError) return false;
+  if (memberError) {
+    console.error(`checkAndConsumeInvite: insert failed for ${user.email} into org ${invite.organization_id}:`, memberError);
+    return false;
+  }
 
   await supabase.from("organization_invites").update({ accepted_at: new Date().toISOString() }).eq("id", invite.id);
   return true;
