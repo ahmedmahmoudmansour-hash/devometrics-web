@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   updateMemberDetails,
   setMemberArchived,
+  setMemberRole,
   adminScheduleEmployeeDataDeletion,
   adminCancelEmployeeDataDeletion,
   updateMemberPerformance,
@@ -43,6 +44,8 @@ export default function EditEmployeeButton({
   pendingDataDeletionAt = null,
   performanceRating = null,
   performanceRatingNote = "",
+  role,
+  isSelf = false,
 }: {
   memberId: string | null;
   // Needed for the data-deletion actions specifically — those key off the
@@ -65,6 +68,10 @@ export default function EditEmployeeButton({
   // simply not rated yet.
   performanceRating?: number | null;
   performanceRatingNote?: string;
+  // A company can have more than one admin — this just promotes/demotes
+  // between the two roles organization_members actually has.
+  role: "admin" | "member";
+  isSelf?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initial.title ?? "");
@@ -77,6 +84,9 @@ export default function EditEmployeeButton({
   const [employeeId, setEmployeeId] = useState(initial.employeeId ?? "");
   const [rating, setRating] = useState(performanceRating ?? 0);
   const [ratingNote, setRatingNote] = useState(performanceRatingNote);
+  const [currentRole, setCurrentRole] = useState(role);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [roleSaving, setRoleSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -120,6 +130,22 @@ export default function EditEmployeeButton({
       }
       router.refresh();
       setOpen(false);
+    });
+  }
+
+  function toggleRole() {
+    const nextRole = currentRole === "admin" ? "member" : "admin";
+    setRoleError(null);
+    setRoleSaving(true);
+    startTransition(async () => {
+      const result = await setMemberRole(memberId!, nextRole);
+      if (result?.error) {
+        setRoleError(result.error);
+      } else {
+        setCurrentRole(nextRole);
+        router.refresh();
+      }
+      setRoleSaving(false);
     });
   }
 
@@ -266,6 +292,51 @@ export default function EditEmployeeButton({
               Archiving removes them from workforce views and analytics but keeps their history — it
               doesn&apos;t delete their account or data.
             </p>
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
+                Role
+              </p>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
+                A company can have more than one admin — everyone with admin access has identical
+                full permissions over this workspace.
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: currentRole === "admin" ? "var(--amber)" : "var(--text-muted)",
+                  }}
+                >
+                  {currentRole === "admin" ? "Admin" : "Member"}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleRole}
+                  disabled={roleSaving || (isSelf && currentRole === "admin")}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "var(--text)",
+                    cursor: roleSaving ? "wait" : "pointer",
+                    opacity: roleSaving ? 0.6 : 1,
+                  }}
+                >
+                  {roleSaving ? "Saving…" : currentRole === "admin" ? "Remove admin access" : "Make admin"}
+                </button>
+              </div>
+              {isSelf && currentRole === "admin" && (
+                <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                  Ask another admin to remove your own admin access.
+                </p>
+              )}
+              {roleError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{roleError}</p>}
+            </div>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>

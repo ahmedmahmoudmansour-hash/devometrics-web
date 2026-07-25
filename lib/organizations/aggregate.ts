@@ -54,6 +54,7 @@ export type WorkforceRow = {
   // data. Independent of managerName/managerEmail above (those are
   // free-text pre-signup hints). null at the top of a reporting line.
   managerUserId: string | null;
+  role: "admin" | "member";
 };
 
 export type CompanyData = {
@@ -153,9 +154,9 @@ export async function buildCompanyData(): Promise<CompanyData> {
   const [{ data: members }, { data: invites }, { data: competencies }] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("id, user_id, title")
+      .select("id, user_id, title, role")
       .eq("organization_id", membership.organization_id)
-      .returns<{ id: string; user_id: string; title: string | null }[]>(),
+      .returns<{ id: string; user_id: string; title: string | null; role: string }[]>(),
     supabase
       .from("organization_invites")
       .select("id, email, title")
@@ -235,6 +236,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
   const activeMembers = (members ?? []).filter((m) => hrByMemberUser.get(m.user_id)?.archived !== true);
   const memberIds = activeMembers.map((m) => m.user_id);
   const titleByUser = new Map(activeMembers.map((m) => [m.user_id, m.title]));
+  const roleByUser = new Map(activeMembers.map((m) => [m.user_id, m.role]));
   const memberIdByUser = new Map(activeMembers.map((m) => [m.user_id, m.id]));
   const orgIdentity = {
     organizationId: membership.organization_id,
@@ -339,6 +341,7 @@ export async function buildCompanyData(): Promise<CompanyData> {
       performanceRatingNote: performanceByMemberUser.get(p.id)?.performance_rating_note ?? "",
       performanceRatingUpdatedAt: performanceByMemberUser.get(p.id)?.performance_rating_updated_at ?? null,
       managerUserId: managerByMemberUser.get(p.id) ?? null,
+      role: roleByUser.get(p.id) === "admin" ? "admin" : "member",
     };
   });
 

@@ -105,6 +105,7 @@ function buildSteps(name: string | null, role: "admin" | "member" | null): Step[
             <li><strong>Surveys</strong> — AI-generated culture and pulse surveys with anonymized results</li>
             <li><strong>Competency framework</strong> — define what great looks like for your organization</li>
             <li><strong>Assign development plans</strong> — set milestones for any employee</li>
+            <li><strong>Knowledge Hub</strong> — upload your own training content and track who&apos;s completed it</li>
           </ul>
         </div>
       ),

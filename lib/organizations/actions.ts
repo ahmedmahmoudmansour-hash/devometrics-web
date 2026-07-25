@@ -862,6 +862,55 @@ export async function setMemberArchived(memberId: string, archived: boolean) {
   return { success: true };
 }
 
+// A company can have any number of admins — organization_members.role is
+// just 'admin'/'member' with no uniqueness constraint, and the existing
+// "Org admins can update member records" policy (0049) already covers role
+// changes since it doesn't restrict which columns an admin can touch. The
+// one thing worth guarding in code (not just relying on RLS for) is
+// demoting the org's last remaining admin, which would lock everyone out
+// of the Company dashboard with no way back in short of direct DB access.
+export async function setMemberRole(memberId: string, role: "admin" | "member") {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (role === "member") {
+    const { data: target } = await supabase
+      .from("organization_members")
+      .select("organization_id, role")
+      .eq("id", memberId)
+      .maybeSingle<{ organization_id: string; role: string }>();
+    if (target?.role === "admin") {
+      const { count: adminCount } = await supabase
+        .from("organization_members")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", target.organization_id)
+        .eq("role", "admin");
+      if ((adminCount ?? 0) <= 1) {
+        return { error: "This is the only admin — promote someone else first before removing admin access." };
+      }
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .update({ role })
+    .eq("id", memberId)
+    .select("id");
+  if (error) {
+    console.error("setMemberRole failed:", error);
+    return { error: "Could not update this person's role." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to change this employee's role." };
+  }
+
+  revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}
+
 // Enterprise employees can't self-delete their data (see deleteMyData,
 // app/dashboard/actions.ts) — only their org admin can, since the
 // organization has a legitimate governance interest in that data. These

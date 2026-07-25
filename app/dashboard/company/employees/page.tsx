@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
@@ -11,6 +12,11 @@ import { levelBg } from "@/lib/ui/levelColor";
 export default async function CompanyEmployeesPage() {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
+
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
 
   const cellStyle: React.CSSProperties = {
     padding: "10px 14px",
@@ -163,6 +169,8 @@ export default async function CompanyEmployeesPage() {
                               memberId={r.memberId}
                               userId={r.userId}
                               name={r.name}
+                              role={r.role}
+                              isSelf={r.userId === currentUser?.id}
                               pendingDataDeletionAt={r.pendingDataDeletionAt}
                               performanceRating={r.performanceRating}
                               performanceRatingNote={r.performanceRatingNote}
