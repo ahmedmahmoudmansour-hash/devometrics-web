@@ -305,7 +305,9 @@ export async function generateQuickPlan(targetRole: string, cvText: string, hori
       user_id: user.id,
       target_role: trimmedRole,
       job_description: inferred.inferredJobDescription,
-      cv_text: effectiveCvText,
+      // Raw cvText, not the enriched effectiveCvText used for scoring above
+      // — see the matching comment in app/api/gap-analysis/route.ts for why.
+      cv_text: cvText,
       performance_data: null,
       competencies,
       career_health_score: careerHealthScore(competencies),

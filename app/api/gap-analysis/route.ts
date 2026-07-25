@@ -119,7 +119,14 @@ export async function POST(request: Request) {
       user_id: user.id,
       target_role: targetRole,
       job_description: effectiveJobDescription,
-      cv_text: effectiveCvText,
+      // Stores the raw pasted/uploaded CV, not the enriched version sent to
+      // the AI above — buildBackgroundContext() re-derives the profile/
+      // assessments/Big Five context fresh on every future run from their
+      // live source tables, so storing the enriched blob here would make it
+      // get folded back in as "prior CV text" next time and compound with
+      // each run. This also keeps "Import from CV" (lib/profile/actions.ts)
+      // extracting from an actual CV instead of a mixed context blob.
+      cv_text: cvText,
       performance_data: performanceData || null,
       competencies,
       career_health_score: score,

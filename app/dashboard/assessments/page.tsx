@@ -41,9 +41,11 @@ export default async function AssessmentsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("career_stage, learning_preferences, location, accommodation, resource_tier")
+    .select("career_stage, learning_preferences, location, accommodation, resource_tier, job_history")
     .eq("id", user.id)
-    .single<Pick<Profile, "career_stage" | "learning_preferences" | "location" | "accommodation" | "resource_tier">>();
+    .single<
+      Pick<Profile, "career_stage" | "learning_preferences" | "location" | "accommodation" | "resource_tier" | "job_history">
+    >();
 
   const { data: latestAnalysis } = await supabase
     .from("gap_analyses")
@@ -152,7 +154,7 @@ export default async function AssessmentsPage() {
             accommodation: profile?.accommodation ?? "",
             resourceTier: profile?.resource_tier ?? "",
           }}
-          defaultTargetRole={latestAnalysis?.target_role ?? ""}
+          defaultTargetRole={latestAnalysis?.target_role ?? profile?.job_history?.[0]?.title ?? ""}
         />
 
         <div style={{ marginBottom: 36 }}>
