@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   // reduction, costs nothing.
   poweredByHeader: false,
 
+  // pdf-parse ships its own worker/CanvasFactory setup that breaks if
+  // Next.js bundles it into the serverless function instead of leaving it
+  // as a real node_modules require — pdf-parse's own docs call this out
+  // specifically for Vercel/serverless deployments.
+  serverExternalPackages: ["pdf-parse"],
+
   async headers() {
     return [
       {

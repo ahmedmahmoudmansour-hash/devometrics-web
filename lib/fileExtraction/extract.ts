@@ -1,3 +1,8 @@
+// CanvasFactory must be imported before PDFParse itself — pdf-parse (built
+// on PDF.js) references the browser-only DOMMatrix API, which doesn't exist
+// in Node/serverless by default. This is pdf-parse's own documented fix
+// (see their docs/troubleshooting.md), not a workaround of our own.
+import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import WordExtractor from "word-extractor";
@@ -20,7 +25,7 @@ export async function extractTextFromFile(buffer: Buffer, filename: string): Pro
 
   let text: string;
   if (lower.endsWith(".pdf")) {
-    const parser = new PDFParse({ data: buffer });
+    const parser = new PDFParse({ data: buffer, CanvasFactory });
     try {
       const result = await parser.getText();
       text = result.text;
