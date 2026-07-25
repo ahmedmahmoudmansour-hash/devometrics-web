@@ -45,6 +45,7 @@ export async function POST(request: Request) {
         { status: 422 }
       );
     }
+    console.error(`extract-text failed for "${file.name}" (${file.size} bytes):`, err);
     return NextResponse.json({ error: "Failed to read file — please try again" }, { status: 500 });
   }
 }
