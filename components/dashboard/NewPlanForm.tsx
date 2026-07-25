@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateQuickPlan } from "@/app/dashboard/gap-analysis/actions";
+import { updateLearningPreferences } from "@/app/dashboard/actions";
+import { LEARNING_FORMATS, LEARNING_FORMAT_DESCRIPTIONS } from "@/lib/gap-analysis/actionLibrary";
 
 const HORIZON_OPTIONS: { value: "30-day" | "90-day" | "12-month" | "3-year"; label: string }[] = [
   { value: "30-day", label: "30 days" },
@@ -25,13 +27,16 @@ const inputStyle: React.CSSProperties = {
 export default function NewPlanForm({
   subscriptionTier,
   existingPlanCount = 0,
+  learningPreferences = [],
 }: {
   subscriptionTier: "free" | "premium" | "enterprise";
   existingPlanCount?: number;
+  learningPreferences?: string[];
 }) {
   const [targetRole, setTargetRole] = useState("");
   const [cvText, setCvText] = useState("");
   const [horizon, setHorizon] = useState<"30-day" | "90-day" | "12-month" | "3-year">("30-day");
+  const [selectedFormats, setSelectedFormats] = useState<string[]>(learningPreferences);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   // When plans already exist, the form starts collapsed behind an explicit
@@ -44,14 +49,22 @@ export default function NewPlanForm({
 
   const isFree = subscriptionTier === "free";
 
+  function toggleFormat(format: string) {
+    setSelectedFormats((prev) => (prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format]));
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
+      const prefResult = await updateLearningPreferences(selectedFormats);
       const result = await generateQuickPlan(targetRole, cvText, isFree ? "30-day" : horizon);
       if (result?.error) {
         setError(result.error);
         return;
+      }
+      if (prefResult?.error) {
+        setError(`Plan created, but couldn't save your learning preference (${prefResult.error}).`);
       }
       router.refresh();
     });
@@ -117,6 +130,36 @@ export default function NewPlanForm({
           rows={2}
           style={{ ...inputStyle, resize: "vertical" }}
         />
+        <div>
+          <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+            How do you want to learn?
+          </label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {LEARNING_FORMATS.map((format) => {
+              const checked = selectedFormats.includes(format);
+              return (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => toggleFormat(format)}
+                  title={LEARNING_FORMAT_DESCRIPTIONS[format]}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: 100,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: checked ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
+                    background: checked ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                    color: checked ? "var(--teal)" : "var(--text-muted)",
+                  }}
+                >
+                  {format}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
             Plan duration

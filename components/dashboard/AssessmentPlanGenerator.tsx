@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { generatePlanFromAssessments } from "@/app/dashboard/assessments/planActions";
+import { generateQuickPlan } from "@/app/dashboard/gap-analysis/actions";
 import { updateLearningPreferences } from "@/app/dashboard/actions";
 import { LEARNING_FORMATS, LEARNING_FORMAT_DESCRIPTIONS } from "@/lib/gap-analysis/actionLibrary";
 import { HORIZONS, type Horizon } from "@/lib/gap-analysis/horizons";
@@ -10,10 +10,13 @@ import { HORIZONS, type Horizon } from "@/lib/gap-analysis/horizons";
 export default function AssessmentPlanGenerator({
   completedCount,
   learningPreferences,
+  defaultTargetRole,
 }: {
   completedCount: number;
   learningPreferences: string[];
+  defaultTargetRole: string;
 }) {
+  const [targetRole, setTargetRole] = useState(defaultTargetRole);
   const [horizon, setHorizon] = useState<Horizon>("90-day");
   const [selectedFormats, setSelectedFormats] = useState<string[]>(learningPreferences);
   const [isPending, startTransition] = useTransition();
@@ -39,9 +42,9 @@ export default function AssessmentPlanGenerator({
         Turn these results into a Personal Development Plan
       </h2>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-        Ranks your weakest completed assessments and builds a paced plan from them —
-        the same personalization engine behind the Gap Analysis plan, driven by your
-        Assessment Center scores instead.
+        Builds a paced plan from everything known about you — your completed
+        assessments, CV, Career Profile, and Big Five — the same engine behind
+        every plan on Devometrics, just triggered from here.
       </p>
 
       {result?.success ? (
@@ -54,6 +57,30 @@ export default function AssessmentPlanGenerator({
         </p>
       ) : (
         <>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>
+              Target role
+            </label>
+            <input
+              type="text"
+              required
+              value={targetRole}
+              onChange={(e) => setTargetRole(e.target.value)}
+              aria-label="Target role"
+              placeholder="e.g. Senior Product Manager"
+              style={{
+                width: "100%",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 14,
+                color: "var(--text)",
+                outline: "none",
+              }}
+            />
+          </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>
               How do you want to learn?
@@ -112,8 +139,12 @@ export default function AssessmentPlanGenerator({
             disabled={isPending}
             onClick={() =>
               startTransition(async () => {
+                if (!targetRole.trim()) {
+                  setResult({ error: "Target role is required." });
+                  return;
+                }
                 const prefResult = await updateLearningPreferences(selectedFormats);
-                const r = await generatePlanFromAssessments(horizon);
+                const r = await generateQuickPlan(targetRole, "", horizon);
                 if (r.planId) {
                   setResult(r);
                 } else if (prefResult?.error) {

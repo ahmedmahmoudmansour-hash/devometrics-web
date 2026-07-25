@@ -256,6 +256,7 @@ export default async function DashboardPage() {
             <NewPlanForm
               subscriptionTier={effectiveSubscriptionTier(profile ?? null)}
               existingPlanCount={(plans ?? []).length}
+              learningPreferences={profile?.learning_preferences ?? []}
             />
           </DashboardSection>
 

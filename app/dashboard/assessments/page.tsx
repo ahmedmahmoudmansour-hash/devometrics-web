@@ -143,7 +143,11 @@ export default async function AssessmentsPage() {
           </div>
         )}
 
-        <AssessmentPlanGenerator completedCount={latestBySlug.size} learningPreferences={profile?.learning_preferences ?? []} />
+        <AssessmentPlanGenerator
+          completedCount={latestBySlug.size}
+          learningPreferences={profile?.learning_preferences ?? []}
+          defaultTargetRole={latestAnalysis?.target_role ?? ""}
+        />
 
         <div style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
