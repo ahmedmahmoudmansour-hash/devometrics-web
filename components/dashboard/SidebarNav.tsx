@@ -25,6 +25,7 @@ import {
   BadgeCheck,
   Users,
   ClipboardCheck,
+  Library,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { signOut } from "@/app/dashboard/actions";
@@ -42,7 +43,11 @@ type NavItem = {
 // a 13-item flat list made even the flagship AI Coach hard to find. Section
 // labels hide with the rest of the text when the sidebar collapses to
 // icons-only on narrow screens.
-function buildSections(hasDirectReports: boolean, hasManager: boolean): { label: string | null; items: NavItem[] }[] {
+function buildSections(
+  hasDirectReports: boolean,
+  hasManager: boolean,
+  hasOrgMembership: boolean
+): { label: string | null; items: NavItem[] }[] {
   return [
     {
       label: null,
@@ -83,6 +88,9 @@ function buildSections(hasDirectReports: boolean, hasManager: boolean): { label:
         { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
         { href: "/dashboard/certifications", label: "Certifications", icon: BadgeCheck },
         { href: "/dashboard/accountability", label: "Accountability Groups", icon: Users },
+        // Only relevant to someone actually part of a company workspace —
+        // an individual account will never have anything assigned here.
+        ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", label: "Knowledge Hub", icon: Library }] : []),
       ],
     },
   ];
@@ -95,6 +103,7 @@ export default function SidebarNav({
   isFreeTier,
   hasDirectReports,
   hasManager,
+  hasOrgMembership,
 }: {
   savedTheme?: string | null;
   isCompanyAdmin: boolean;
@@ -102,9 +111,10 @@ export default function SidebarNav({
   isFreeTier: boolean;
   hasDirectReports: boolean;
   hasManager: boolean;
+  hasOrgMembership: boolean;
 }) {
   const pathname = usePathname();
-  const sections = buildSections(hasDirectReports, hasManager);
+  const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership);
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";

@@ -39,6 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]);
   const hasDirectReports = (directReportCount ?? 0) > 0;
   const hasManager = !!membership?.manager_user_id;
+  const hasOrgMembership = !!membership;
 
   const brandColor = membership?.organizations?.brand_color ?? null;
   const isFreeTier =
@@ -68,6 +69,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           isFreeTier={isFreeTier}
           hasDirectReports={hasDirectReports}
           hasManager={hasManager}
+          hasOrgMembership={hasOrgMembership}
         />
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
       </div>
@@ -76,6 +78,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         isPlatformAdmin={!!profile?.is_admin}
         hasDirectReports={hasDirectReports}
         hasManager={hasManager}
+        hasOrgMembership={hasOrgMembership}
       />
     </div>
   );

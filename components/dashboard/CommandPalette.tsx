@@ -14,7 +14,13 @@ type Entry = {
 
 // Everything reachable in two keystrokes: Ctrl+K, type, Enter. The list is
 // static and instant on purpose — no fetch, no spinner, no index to build.
-function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDirectReports: boolean, hasManager: boolean): Entry[] {
+function buildEntries(
+  isCompanyAdmin: boolean,
+  isPlatformAdmin: boolean,
+  hasDirectReports: boolean,
+  hasManager: boolean,
+  hasOrgMembership: boolean
+): Entry[] {
   const entries: Entry[] = [
     { label: "Progress", href: "/dashboard", keywords: "home overview dashboard start" },
     { label: "AI Coach", href: "/dashboard/coach", hint: "Talk it through", keywords: "chat talk mentor advice session" },
@@ -37,6 +43,9 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDire
   if (hasManager) {
     entries.push({ label: "Impact Cycle", href: "/dashboard/impact-cycle", hint: "Your Reflection + Manager's Perspective", keywords: "performance review appraisal rating goals focus areas cycle confirm feedback impact" });
   }
+  if (hasOrgMembership) {
+    entries.push({ label: "Knowledge Hub", href: "/dashboard/knowledge-hub", hint: "Training assigned to you", keywords: "training document exam attestation library course learning assigned" });
+  }
   if (hasDirectReports) {
     entries.push({ label: "My Team", href: "/dashboard/my-team", hint: "Your direct reports' Impact Cycles", keywords: "team manager reports review appraisal perspective" });
   }
@@ -44,7 +53,8 @@ function buildEntries(isCompanyAdmin: boolean, isPlatformAdmin: boolean, hasDire
     entries.push(
       { label: "Company", href: "/dashboard/company", keywords: "organization workspace admin hr" },
       { label: "Employees", href: "/dashboard/company/employees", hint: "Workforce & heatmap", keywords: "team workforce heatmap staff hr edit archive" },
-      { label: "Impact Cycles (admin)", href: "/dashboard/company/impact-cycles", hint: "Cycles, Manager's Perspective & Focus Areas", keywords: "performance review cycle appraisal manager assessment goals impact" }
+      { label: "Impact Cycles (admin)", href: "/dashboard/company/impact-cycles", hint: "Cycles, Manager's Perspective & Focus Areas", keywords: "performance review cycle appraisal manager assessment goals impact" },
+      { label: "Knowledge Hub (admin)", href: "/dashboard/company/knowledge-hub", hint: "Upload, assign & track training", keywords: "training document exam attestation library course upload assign lms" }
     );
   }
   if (isPlatformAdmin) {
@@ -61,11 +71,13 @@ export default function CommandPalette({
   isPlatformAdmin,
   hasDirectReports,
   hasManager,
+  hasOrgMembership,
 }: {
   isCompanyAdmin: boolean;
   isPlatformAdmin: boolean;
   hasDirectReports: boolean;
   hasManager: boolean;
+  hasOrgMembership: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -74,8 +86,8 @@ export default function CommandPalette({
   const router = useRouter();
 
   const entries = useMemo(
-    () => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports, hasManager),
-    [isCompanyAdmin, isPlatformAdmin, hasDirectReports, hasManager]
+    () => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports, hasManager, hasOrgMembership),
+    [isCompanyAdmin, isPlatformAdmin, hasDirectReports, hasManager, hasOrgMembership]
   );
 
   const results = useMemo(() => {

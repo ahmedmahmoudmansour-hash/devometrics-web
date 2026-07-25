@@ -430,6 +430,63 @@ export type RoleplaySession = {
   updated_at: string;
 };
 
+export type KnowledgeHubCompletionType = "exam" | "attestation";
+
+export type KnowledgeHubContent = {
+  id: string;
+  organization_id: string;
+  title: string;
+  description: string | null;
+  storage_path: string;
+  file_name: string;
+  file_size_bytes: number;
+  mime_type: string;
+  completion_type: KnowledgeHubCompletionType;
+  passing_score_percent: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type KnowledgeHubExamQuestion = {
+  id: string;
+  content_id: string;
+  prompt: string;
+  options: string[];
+  order_index: number;
+  created_at: string;
+};
+
+// Client-safe shape returned by the get_knowledge_hub_exam_questions RPC —
+// never carries a correct-answer field, since the RPC itself never selects
+// one (see migration 0084's header note on why the answer key can't live
+// anywhere an employee-readable query could reach).
+export type KnowledgeHubExamQuestionForTaking = {
+  question_id: string;
+  prompt: string;
+  options: string[];
+  order_index: number;
+};
+
+export type KnowledgeHubAssignment = {
+  id: string;
+  employee_user_id: string;
+  content_id: string;
+  assigned_by: string;
+  created_at: string;
+};
+
+export type KnowledgeHubCompletion = {
+  id: string;
+  content_id: string;
+  employee_user_id: string;
+  method: KnowledgeHubCompletionType;
+  score_percent: number | null;
+  passed: boolean;
+  answers: { question_id: string; selected_index: number }[] | null;
+  completed_at: string;
+};
+
 export type CustomScenario = {
   id: string;
   user_id: string;

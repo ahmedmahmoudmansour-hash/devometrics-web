@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type TabKey = "profile" | "employees" | "jobArchitecture" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub";
 
 export default function CompanyNavTabs({ active }: { active: TabKey }) {
   const tabs: { key: TabKey; label: string; href: string }[] = [
@@ -10,6 +10,7 @@ export default function CompanyNavTabs({ active }: { active: TabKey }) {
     { key: "orgChart", label: "Org Chart", href: "/dashboard/company/org-chart" },
     { key: "competencies", label: "Competencies", href: "/dashboard/company/competencies" },
     { key: "performanceReviews", label: "Impact Cycles", href: "/dashboard/company/impact-cycles" },
+    { key: "knowledgeHub", label: "Knowledge Hub", href: "/dashboard/company/knowledge-hub" },
     { key: "highPotential", label: "High Potential", href: "/dashboard/company/high-potential" },
     { key: "succession", label: "Succession", href: "/dashboard/company/succession" },
     { key: "scorecard", label: "Scorecard", href: "/dashboard/company/scorecard" },
