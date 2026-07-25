@@ -41,6 +41,28 @@ the only place a rule is enforced. Consistently in this codebase:
 - A new capability that "shouldn't be possible for role Y" needs to be blocked by the `with check` clause on the relevant `insert`/`update` policy, not just by hiding the button in the UI.
 - When extending an existing policy (e.g. adding a new way to satisfy an `insert` policy), add an `or (...)` branch alongside the existing branches rather than replacing the whole policy's intent — re-read what the existing branches protect against before touching them, since a rewritten policy that "looks equivalent" can quietly drop a check.
 
+## A SECURITY DEFINER helper used inside RLS must never be able to throw
+
+Postgres combines multiple permissive policies for the same command with OR —
+but if **any** policy's `USING`/`WITH CHECK` expression throws while
+evaluating a row, the **entire query aborts**, even for rows a different,
+already-passing policy on the same table would have separately allowed. A
+fragile helper function used inside just one new policy can silently break
+totally unrelated visibility for every existing row/org on that table the
+moment it hits an edge case in real data — not a hypothetical: this exact
+failure mode has shipped here before (a plpgsql helper's `select ... into`
+had no `limit 1`, so any user matching more than one row in the queried table
+made it throw `query returned more than one row`, which silently emptied an
+admin-facing list for every organization, not just new ones).
+
+Concretely, when writing or reviewing a `SECURITY DEFINER` function meant to
+be called from an RLS policy:
+
+- **Never use a bare `select col into var from table where ...` without `limit 1`** unless the `where` clause is provably unique (e.g. filtering by primary key). If more than one row could ever match — a user in more than one org, more than one manager row, etc. — plpgsql's `select into` throws `query returned more than one row` rather than silently taking the first one.
+- **Wrap the function body in `exception when others then return <safe default>`** (`null`, `false` — whatever means "doesn't grant/doesn't match" for that function) so a throw inside it can never propagate up into the calling policy's evaluation, no matter what edge case triggers it later. This is cheap insurance and should be the default for every new RLS helper, not just ones that "seem risky."
+- **Test against a shape that violates the function's implicit uniqueness assumption**, not just the single-match happy path — e.g. before shipping, ask "what happens if this user has two rows in the table this function queries?" and actually create that case if you can (a throwaway second org membership, a duplicate row) rather than assuming it can't happen.
+- A function using only `select exists(...)` or a single scalar subquery keyed by primary key (`where id = x`) doesn't have this failure mode — the risk is specifically in multi-row-shaped lookups inside `plpgsql`.
+
 ## Updating supabase/PENDING_MIGRATIONS.sql
 
 This file is the single paste-and-run block the user actually executes. After
