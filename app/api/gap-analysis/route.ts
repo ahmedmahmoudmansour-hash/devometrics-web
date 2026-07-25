@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { extractCompetencies } from "@/lib/gap-analysis/extract";
 import { inferRoleContext } from "@/lib/gap-analysis/inferRoleContext";
 import { careerHealthScore } from "@/lib/gap-analysis/dimensions";
+import { buildBackgroundContext } from "@/lib/gap-analysis/backgroundContext";
 import {
   MAX_CV_LENGTH,
   MAX_JOB_DESCRIPTION_LENGTH,
@@ -74,6 +75,14 @@ export async function POST(request: Request) {
     }
   }
 
+  // Enriched with everything else already known about this person — saved
+  // Career Profile, completed assessments, Big Five — so a full Gap
+  // Analysis run is informed by the whole picture, not just whatever's
+  // pasted in this one form. Length limits above are checked against the
+  // raw pasted cvText, not this enriched version, since the added context
+  // isn't free-form user input that needs the same bound.
+  const effectiveCvText = await buildBackgroundContext(supabase, user.id, cvText);
+
   // No real job description pasted — infer typical responsibilities for the
   // named role instead of blocking the whole analysis on a missing paste.
   let effectiveJobDescription = jobDescription?.trim() ?? "";
@@ -82,7 +91,7 @@ export async function POST(request: Request) {
   let timelineRationale: string | null = null;
   if (!effectiveJobDescription) {
     try {
-      const inferred = await inferRoleContext(targetRole, cvText);
+      const inferred = await inferRoleContext(targetRole, effectiveCvText);
       effectiveJobDescription = inferred.inferredJobDescription;
       roleContextInferred = true;
       estimatedTimelineMonths = inferred.estimatedTimelineMonths;
@@ -97,7 +106,7 @@ export async function POST(request: Request) {
 
   let competencies;
   try {
-    competencies = await extractCompetencies({ cvText, jobDescription: effectiveJobDescription, targetRole, performanceData });
+    competencies = await extractCompetencies({ cvText: effectiveCvText, jobDescription: effectiveJobDescription, targetRole, performanceData });
   } catch {
     return NextResponse.json({ error: "Gap analysis failed — please try again" }, { status: 502 });
   }
@@ -110,7 +119,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       target_role: targetRole,
       job_description: effectiveJobDescription,
-      cv_text: cvText,
+      cv_text: effectiveCvText,
       performance_data: performanceData || null,
       competencies,
       career_health_score: score,
