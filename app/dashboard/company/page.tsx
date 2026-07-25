@@ -34,12 +34,13 @@ export default async function CompanyProfilePage() {
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
     const supabase = await createClient();
-    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount] = await Promise.all([
+    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount] = await Promise.all([
       countOrNull(supabase, "job_roles", data.organizationId),
       countOrNull(supabase, "succession_roles", data.organizationId),
       countOrNull(supabase, "scorecard_kpis", data.organizationId),
       countOrNull(supabase, "surveys", data.organizationId),
       countOrNull(supabase, "performance_review_cycles", data.organizationId),
+      countOrNull(supabase, "knowledge_hub_content", data.organizationId),
     ]);
 
     const hipoCount = data.rows.filter((r) => {
@@ -110,6 +111,16 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/surveys",
         icon: COMPANY_WIDGET_ICONS.MessageSquare,
         stat: surveyCount !== null ? `${surveyCount} survey${surveyCount === 1 ? "" : "s"}` : "Anonymous pulse surveys",
+      },
+      {
+        key: "knowledgeHub",
+        label: "Knowledge Hub",
+        href: "/dashboard/company/knowledge-hub",
+        icon: COMPANY_WIDGET_ICONS.Library,
+        stat:
+          knowledgeHubContentCount !== null
+            ? `${knowledgeHubContentCount} document${knowledgeHubContentCount === 1 ? "" : "s"} uploaded`
+            : "Upload, assign & track training",
       },
       {
         key: "analytics",

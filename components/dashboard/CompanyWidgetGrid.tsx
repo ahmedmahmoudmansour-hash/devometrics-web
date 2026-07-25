@@ -10,6 +10,7 @@ import {
   Gauge,
   MessageSquare,
   ClipboardCheck,
+  Library,
 } from "lucide-react";
 
 export type CompanyWidget = {
@@ -86,4 +87,5 @@ export const COMPANY_WIDGET_ICONS = {
   Gauge,
   MessageSquare,
   ClipboardCheck,
+  Library,
 };
