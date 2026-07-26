@@ -918,6 +918,31 @@
     "addToCalendar": "Add to calendar",
     "timezoneNote": "Time shown in your detected timezone ({timezone}) — the downloaded event adjusts automatically for whoever's calendar it lands in."
   },
+  "discoveryPage": {
+    "backToProgress": "← Back to progress",
+    "title": "AI Discovery Interview",
+    "subtitle": "5 short questions about your actual day-to-day work — a richer starting profile than a job title alone."
+  },
+  "discoveryWizard": {
+    "yourProfileLabel": "Your discovery profile",
+    "retake": "Retake",
+    "questionOf": "Question {current} of {total}",
+    "answerPlaceholder": "Answer in your own words…",
+    "consentLabel": "I consent to Devometrics using AI to synthesize a profile summary from these answers.",
+    "back": "Back",
+    "synthesizing": "Synthesizing…",
+    "finish": "Finish",
+    "next": "Next",
+    "errorFallback": "Something went wrong"
+  },
+  "bigFiveAssessment": {
+    "title": "Personality snapshot",
+    "retake": "Retake",
+    "resultDisclaimer": "Based on the Big Five (OCEAN) model — a self-awareness reference, not a competency score to close a gap on.",
+    "intro": "20 short statements, based on the Big Five (OCEAN) model. Rate how much each one reflects you generally — there are no right answers, just a clearer picture of your working style.",
+    "scoring": "Scoring…",
+    "seeMySnapshot": "See my snapshot"
+  },
   "footer": {
     "tagline": "The quantitative science of career development — turning a CV, a job description, and ambition into a measured plan to close the gap.",
     "linkedin": "LinkedIn",

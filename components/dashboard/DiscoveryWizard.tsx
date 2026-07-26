@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { DISCOVERY_QUESTIONS } from "@/lib/discovery/questions";
 import type { DiscoveryProfile } from "@/lib/supabase/types";
 
@@ -18,6 +19,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile | null }) {
+  const t = useTranslations("discoveryWizard");
   const [profile, setProfile] = useState<DiscoveryProfile | null>(latest);
   const [retaking, setRetaking] = useState(!latest);
   const [step, setStep] = useState(0);
@@ -31,7 +33,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-            Your discovery profile
+            {t("yourProfileLabel")}
           </span>
           <button
             type="button"
@@ -50,7 +52,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
               cursor: "pointer",
             }}
           >
-            Retake
+            {t("retake")}
           </button>
         </div>
         <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
@@ -75,13 +77,13 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Something went wrong");
+        throw new Error(body.error || t("errorFallback"));
       }
       const { profile } = await res.json();
       setProfile(profile);
       setRetaking(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("errorFallback"));
     } finally {
       setLoading(false);
     }
@@ -91,7 +93,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Question {step + 1} of {DISCOVERY_QUESTIONS.length}
+          {t("questionOf", { current: step + 1, total: DISCOVERY_QUESTIONS.length })}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
           {DISCOVERY_QUESTIONS.map((_, i) => (
@@ -120,7 +122,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
           next[step] = e.target.value;
           setAnswers(next);
         }}
-        placeholder="Answer in your own words…"
+        placeholder={t("answerPlaceholder")}
         rows={5}
         style={inputStyle}
       />
@@ -133,7 +135,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
             onChange={(e) => setConsent(e.target.checked)}
             style={{ marginTop: 2, accentColor: "var(--teal)" }}
           />
-          <span>I consent to Devometrics using AI to synthesize a profile summary from these answers.</span>
+          <span>{t("consentLabel")}</span>
         </label>
       )}
 
@@ -155,7 +157,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
               cursor: "pointer",
             }}
           >
-            Back
+            {t("back")}
           </button>
         )}
         {isLastStep ? (
@@ -175,7 +177,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
               opacity: loading || !currentAnswer.trim() || !consent ? 0.6 : 1,
             }}
           >
-            {loading ? "Synthesizing…" : "Finish"}
+            {loading ? t("synthesizing") : t("finish")}
           </button>
         ) : (
           <button
@@ -194,7 +196,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
               opacity: currentAnswer.trim() ? 1 : 0.6,
             }}
           >
-            Next
+            {t("next")}
           </button>
         )}
       </div>

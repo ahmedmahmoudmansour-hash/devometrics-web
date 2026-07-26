@@ -1,17 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { saveBigFiveProfile } from "@/app/dashboard/personality/actions";
 import { BIG_FIVE_ITEMS, BIG_FIVE_TRAITS, bigFiveInterpretation, type BigFiveTrait } from "@/lib/personality/bigFive";
 import type { BigFiveProfile } from "@/lib/supabase/types";
-
-const LIKERT = [
-  { value: 1, label: "Strongly disagree" },
-  { value: 2, label: "Disagree" },
-  { value: 3, label: "Neutral" },
-  { value: 4, label: "Agree" },
-  { value: 5, label: "Strongly agree" },
-];
 
 function barColor(score: number): string {
   if (score >= 70) return "#00C9A7";
@@ -41,6 +34,15 @@ function ScoreBars({ scores }: { scores: Record<BigFiveTrait, number> }) {
 }
 
 export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile | null }) {
+  const t = useTranslations("bigFiveAssessment");
+  const tLikert = useTranslations("assessmentForm");
+  const LIKERT = [
+    { value: 1, label: tLikert("likertStronglyDisagree") },
+    { value: 2, label: tLikert("likertDisagree") },
+    { value: 3, label: tLikert("likertNeutral") },
+    { value: 4, label: tLikert("likertAgree") },
+    { value: 5, label: tLikert("likertStronglyAgree") },
+  ];
   const [profile, setProfile] = useState<BigFiveProfile | null>(latest);
   const [retaking, setRetaking] = useState(!latest);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -72,7 +74,7 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Personality snapshot</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
           <button
             type="button"
             onClick={() => {
@@ -89,12 +91,11 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
               cursor: "pointer",
             }}
           >
-            Retake
+            {t("retake")}
           </button>
         </div>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          Based on the Big Five (OCEAN) model — a self-awareness reference, not a competency score
-          to close a gap on.
+          {t("resultDisclaimer")}
         </p>
         <ScoreBars scores={profile.scores} />
       </div>
@@ -103,10 +104,9 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Personality snapshot</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("title")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-        20 short statements, based on the Big Five (OCEAN) model. Rate how much each one reflects
-        you generally — there are no right answers, just a clearer picture of your working style.
+        {t("intro")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {BIG_FIVE_ITEMS.map((item, i) => (
@@ -157,7 +157,7 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
           opacity: allAnswered && !isPending ? 1 : 0.4,
         }}
       >
-        {isPending ? "Scoring…" : "See my snapshot"}
+        {isPending ? t("scoring") : t("seeMySnapshot")}
       </button>
     </div>
   );

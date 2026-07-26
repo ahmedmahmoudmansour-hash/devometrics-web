@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import DiscoveryWizard from "@/components/dashboard/DiscoveryWizard";
 import BigFiveAssessment from "@/components/dashboard/BigFiveAssessment";
 import type { DiscoveryProfile, BigFiveProfile } from "@/lib/supabase/types";
 
 export default async function DiscoveryPage() {
+  const t = await getTranslations("discoveryPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,14 +35,13 @@ export default async function DiscoveryPage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            AI Discovery Interview
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-            5 short questions about your actual day-to-day work — a richer starting profile
-            than a job title alone.
+            {t("subtitle")}
           </p>
         </div>
         <DiscoveryWizard latest={latest} />
