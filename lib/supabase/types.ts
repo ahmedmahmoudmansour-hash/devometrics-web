@@ -17,6 +17,7 @@ export type Profile = {
   accommodation: string | null;
   resource_tier: string | null;
   theme: string | null;
+  language: string | null;
   is_admin: boolean;
   account_type: "individual" | "company";
   coach_voice: "off" | "sarah" | "theo" | "megan" | "jack";

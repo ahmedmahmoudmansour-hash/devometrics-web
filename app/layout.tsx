@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Space_Grotesk, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
 // display:"swap" so text paints in the metric-compatible fallback stack
@@ -11,6 +13,15 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 // moments is the detail that separates "clean" from "distinctive" without
 // touching body copy legibility anywhere.
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+// Inter/Space Grotesk have no Arabic glyphs at all — this is the font
+// actually used for `dir="rtl"` content (see globals.css, applied via the
+// same CSS-variable-swap pattern as the other two).
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-arabic",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   // Without metadataBase, Next can't resolve relative Open Graph / canonical
@@ -39,11 +50,21 @@ export const metadata: Metadata = {
 // standard pattern for theme toggles that can't wait for React hydration.
 const themeScript = `(function(){try{var t=localStorage.getItem('devometrics-theme');if(t==='light'){document.documentElement.setAttribute('data-theme','light');}}catch(e){}})();`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read server-side from the devometrics-locale cookie (see
+  // lib/i18n/request.ts) — unlike the theme/localStorage split below, this
+  // is readable during SSR, so lang/dir are correct in the very first
+  // server-rendered response with no hydration-mismatch escape hatch
+  // needed for them specifically.
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const dir = locale === "ar" ? "rtl" : "ltr";
+
   return (
     <html
-      lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} h-full`}
+      lang={locale}
+      dir={dir}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexSansArabic.variable} h-full`}
       // The theme script above intentionally sets data-theme on this exact
       // element before hydration runs, to avoid a flash of the wrong theme
       // — server-rendered HTML can never know localStorage, so this one
@@ -57,7 +78,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col antialiased" style={{ background: "var(--navy)", color: "var(--text)" }}>
         <div className="grain-overlay" aria-hidden="true" />
-        {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,0 +1,47 @@
+{
+  "common": {
+    "howItWorks": "How it works",
+    "features": "Features",
+    "methodology": "Methodology",
+    "pricing": "Pricing",
+    "forEnterprise": "For Enterprise",
+    "getEarlyAccess": "Get early access"
+  },
+  "nav": {
+    "signIn": "Sign in",
+    "toggleMenu": "Toggle menu"
+  },
+  "hero": {
+    "badge": "Now in early access — create your account free",
+    "headlinePrefix": "The science of",
+    "headlineHighlight": "career growth",
+    "subheadline": "Upload your CV, a job description, and your ambitions. Devometrics builds a precise competency gap map and a prioritized, time-bound plan to close it — not course recommendations. A real career advisor, powered by AI.",
+    "emailPlaceholder": "your@email.com",
+    "emailAriaLabel": "Email address for early access",
+    "submitCta": "Get early access →",
+    "noCreditCard": "Takes 30 seconds — no credit card required.",
+    "statDimensions": "Competency dimensions",
+    "statHorizons": "Plan horizons",
+    "statEngine": "Gap analysis engine",
+    "statEngineValue": "AI-first",
+    "scroll": "SCROLL"
+  },
+  "footer": {
+    "tagline": "The quantitative science of career development — turning a CV, a job description, and ambition into a measured plan to close the gap.",
+    "linkedin": "LinkedIn",
+    "twitter": "X",
+    "productHeading": "Product",
+    "companyHeading": "Company",
+    "legalHeading": "Legal",
+    "about": "About",
+    "blog": "Blog",
+    "careers": "Careers",
+    "contact": "Contact",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "dataEthics": "Data Ethics",
+    "cookiePolicy": "Cookie Policy",
+    "copyright": "© {year} Empiric Consultancy. All rights reserved.",
+    "productOf": "Devometrics is a product of"
+  }
+}

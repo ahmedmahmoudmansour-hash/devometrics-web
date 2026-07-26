@@ -1,0 +1,47 @@
+{
+  "common": {
+    "howItWorks": "كيف يعمل",
+    "features": "المزايا",
+    "methodology": "المنهجية",
+    "pricing": "الأسعار",
+    "forEnterprise": "للشركات",
+    "getEarlyAccess": "احصل على وصول مبكر"
+  },
+  "nav": {
+    "signIn": "تسجيل الدخول",
+    "toggleMenu": "فتح القائمة"
+  },
+  "hero": {
+    "badge": "الآن في مرحلة الوصول المبكر — أنشئ حسابك مجانًا",
+    "headlinePrefix": "علم",
+    "headlineHighlight": "النمو المهني",
+    "subheadline": "ارفع سيرتك الذاتية، والوصف الوظيفي المستهدف، وطموحاتك. يبني ديفومتركس خريطة دقيقة للفجوة في الكفاءات وخطة مرتبة الأولويات ومحددة زمنيًا لسدها — وليس مجرد توصيات بدورات تدريبية. مستشار مهني حقيقي، مدعوم بالذكاء الاصطناعي.",
+    "emailPlaceholder": "your@email.com",
+    "emailAriaLabel": "عنوان البريد الإلكتروني للوصول المبكر",
+    "submitCta": "احصل على وصول مبكر ←",
+    "noCreditCard": "يستغرق الأمر 30 ثانية — دون الحاجة إلى بطاقة ائتمان.",
+    "statDimensions": "أبعاد الكفاءة",
+    "statHorizons": "آفاق الخطة",
+    "statEngine": "محرك تحليل الفجوات",
+    "statEngineValue": "قائم على الذكاء الاصطناعي",
+    "scroll": "مرر للأسفل"
+  },
+  "footer": {
+    "tagline": "العلم الكمي لتطوير المسار المهني — تحويل السيرة الذاتية، والوصف الوظيفي، والطموح إلى خطة مدروسة لسد الفجوة.",
+    "linkedin": "LinkedIn",
+    "twitter": "X",
+    "productHeading": "المنتج",
+    "companyHeading": "الشركة",
+    "legalHeading": "قانوني",
+    "about": "من نحن",
+    "blog": "المدونة",
+    "careers": "الوظائف",
+    "contact": "تواصل معنا",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "dataEthics": "أخلاقيات البيانات",
+    "cookiePolicy": "سياسة ملفات تعريف الارتباط",
+    "copyright": "© {year} Empiric Consultancy. جميع الحقوق محفوظة.",
+    "productOf": "ديفومتركس هو أحد منتجات"
+  }
+}

@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   // Drops the "X-Powered-By: Next.js" response header — free fingerprinting
@@ -39,4 +42,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

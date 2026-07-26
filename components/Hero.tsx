@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Mascot from "./Mascot";
 
 export default function Hero() {
+  const t = useTranslations("hero");
   const router = useRouter();
   const [email, setEmail] = useState("");
 
@@ -23,7 +25,9 @@ export default function Hero() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "120px 24px 80px",
+        paddingBlockStart: 120,
+        paddingInline: 24,
+        paddingBlockEnd: 80,
         position: "relative",
         overflow: "hidden",
         textAlign: "center",
@@ -33,8 +37,8 @@ export default function Hero() {
       <div
         style={{
           position: "absolute",
-          top: "20%",
-          left: "50%",
+          insetBlockStart: "20%",
+          insetInlineStart: "50%",
           transform: "translateX(-50%)",
           width: 600,
           height: 600,
@@ -46,8 +50,8 @@ export default function Hero() {
       <div
         style={{
           position: "absolute",
-          top: "40%",
-          left: "20%",
+          insetBlockStart: "40%",
+          insetInlineStart: "20%",
           width: 300,
           height: 300,
           borderRadius: "50%",
@@ -58,8 +62,8 @@ export default function Hero() {
       <div
         style={{
           position: "absolute",
-          top: "30%",
-          right: "15%",
+          insetBlockStart: "30%",
+          insetInlineEnd: "15%",
           width: 250,
           height: 250,
           borderRadius: "50%",
@@ -99,13 +103,14 @@ export default function Hero() {
             background: "rgba(0,201,167,0.08)",
             border: "1px solid rgba(0,201,167,0.2)",
             borderRadius: 100,
-            padding: "6px 16px",
+            paddingInline: 16,
+            paddingBlock: 6,
             marginBottom: 32,
           }}
         >
           <span className="teal-dot" style={{ width: 6, height: 6, flexShrink: 0 }} />
           <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600, letterSpacing: "0.04em" }}>
-            Now in early access — create your account free
+            {t("badge")}
           </span>
         </div>
 
@@ -121,8 +126,8 @@ export default function Hero() {
             color: "var(--text)",
           }}
         >
-          The science of{" "}
-          <span className="gradient-text">career growth</span>
+          {t("headlinePrefix")}{" "}
+          <span className="gradient-text">{t("headlineHighlight")}</span>
         </h1>
 
         {/* Subheadline */}
@@ -137,9 +142,7 @@ export default function Hero() {
             fontWeight: 400,
           }}
         >
-          Upload your CV, a job description, and your ambitions. Devometrics builds
-          a precise competency gap map and a prioritized, time-bound plan to close it —
-          not course recommendations. A real career advisor, powered by AI.
+          {t("subheadline")}
         </p>
 
         {/* Email capture */}
@@ -148,15 +151,16 @@ export default function Hero() {
             <input
               type="email"
               required
-              aria-label="Email address for early access"
+              aria-label={t("emailAriaLabel")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={t("emailPlaceholder")}
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
-                padding: "14px 20px",
+                paddingInline: 20,
+                paddingBlock: 14,
                 fontSize: 15,
                 color: "var(--text)",
                 outline: "none",
@@ -173,7 +177,8 @@ export default function Hero() {
                 color: "#0A0F1E",
                 border: "none",
                 borderRadius: 10,
-                padding: "14px 28px",
+                paddingInline: 28,
+                paddingBlock: 14,
                 fontSize: 15,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -190,11 +195,11 @@ export default function Hero() {
                 (e.currentTarget as HTMLElement).style.boxShadow = "none";
               }}
             >
-              Get early access →
+              {t("submitCta")}
             </button>
           </form>
           <p style={{ marginTop: 14, fontSize: 13, color: "var(--text-muted)" }}>
-            Takes 30 seconds — no credit card required.
+            {t("noCreditCard")}
           </p>
         </div>
 
@@ -210,9 +215,9 @@ export default function Hero() {
           }}
         >
           {[
-            { value: "8", label: "Competency dimensions" },
-            { value: "4", label: "Plan horizons" },
-            { value: "AI-first", label: "Gap analysis engine" },
+            { value: "8", label: t("statDimensions") },
+            { value: "4", label: t("statHorizons") },
+            { value: t("statEngineValue"), label: t("statEngine") },
           ].map((stat) => (
             <div key={stat.label} style={{ textAlign: "center" }}>
               <div className="mono" style={{ fontSize: 28, fontWeight: 600, color: "var(--teal)" }}>
@@ -230,8 +235,8 @@ export default function Hero() {
       <div
         style={{
           position: "absolute",
-          bottom: 32,
-          left: "50%",
+          insetBlockEnd: 32,
+          insetInlineStart: "50%",
           transform: "translateX(-50%)",
           display: "flex",
           flexDirection: "column",
@@ -240,7 +245,7 @@ export default function Hero() {
           opacity: 0.4,
         }}
       >
-        <span style={{ fontSize: 12, letterSpacing: "0.1em", color: "var(--text-muted)" }}>SCROLL</span>
+        <span style={{ fontSize: 12, letterSpacing: "0.1em", color: "var(--text-muted)" }}>{t("scroll")}</span>
         <svg width="16" height="24" viewBox="0 0 16 24" fill="none">
           <rect x="0.75" y="0.75" width="14.5" height="22.5" rx="7.25" stroke="currentColor" strokeWidth="1.5" />
           <circle cx="8" cy="8" r="2" fill="var(--teal)">

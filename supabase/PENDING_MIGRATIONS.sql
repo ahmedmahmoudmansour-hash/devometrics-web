@@ -12,20 +12,22 @@
 -- answer key can never be read by an employee even via a raw API call)
 -- PLUS 0085 (Knowledge Hub due dates, an archive flag, video templates
 -- added to the allowed upload types, and the overdue/due-soon reminder
--- RPCs that piggyback on the existing daily task-reminders cron). Every
--- statement is idempotent (IF NOT EXISTS /
--- OR REPLACE / DROP ... IF EXISTS / a catalog-lookup DO block instead of
--- a guessed constraint name), so running this more than once, or after
--- part of it already ran, is safe. Order matters within this file (0077
--- alters tables 0076 creates; 0078 replaces functions 0076/0077 create;
--- 0081 redefines the organization_members insert policy 0079 last
--- defined; 0084 and 0085 are independent of everything before them and
--- safe to run standalone, but 0085 depends on 0084's tables existing
--- first) — paste and run the whole thing as one block.
+-- RPCs that piggyback on the existing daily task-reminders cron) PLUS
+-- 0086 (a profiles.language column for Arabic localization, same simple
+-- pattern as the existing theme column). Every statement is idempotent
+-- (IF NOT EXISTS / OR REPLACE / DROP ... IF EXISTS / a catalog-lookup DO
+-- block instead of a guessed constraint name), so running this more than
+-- once, or after part of it already ran, is safe. Order matters within
+-- this file (0077 alters tables 0076 creates; 0078 replaces functions
+-- 0076/0077 create; 0081 redefines the organization_members insert policy
+-- 0079 last defined; 0084, 0085, and 0086 are each independent of
+-- everything before them and safe to run standalone, though 0085 depends
+-- on 0084's tables existing first) — paste and run the whole thing as one
+-- block.
 --
--- NOTE: 0076-0084 are already applied to production (confirmed
+-- NOTE: 0076-0085 are already applied to production (confirmed
 -- 2026-07-26) — you only need to run the standalone
--- migrations/0085_knowledge_hub_due_dates_and_archive.sql file on its own.
+-- migrations/0086_profile_language.sql file on its own.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -1514,3 +1516,17 @@ revoke all on function public.mark_knowledge_hub_reminder_sent(text, uuid) from 
 grant execute on function public.mark_knowledge_hub_reminder_sent(text, uuid) to anon, authenticated;
 
 create index if not exists knowledge_hub_content_due_date_idx on public.knowledge_hub_content (due_date) where due_date is not null;
+
+-- ============================================================
+-- 0086: Profile language preference (en/ar)
+-- ============================================================
+
+-- Self-disclosed language preference (en/ar), same pattern as theme (0011):
+-- a plain nullable text column with a sensible default, no enum/check
+-- constraint. Persisted so a logged-in user's language choice follows them
+-- across devices — the live source of truth for rendering is the
+-- devometrics-locale cookie (see lib/i18n/request.ts), this column is the
+-- cross-device sync backup, same relationship theme has with the
+-- devometrics-theme localStorage key.
+alter table public.profiles
+  add column if not exists language text default 'en';

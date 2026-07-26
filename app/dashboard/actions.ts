@@ -253,6 +253,20 @@ export async function updateTheme(theme: "dark" | "light") {
   await supabase.from("profiles").update({ theme }).eq("id", user.id);
 }
 
+// Cross-device sync backup for language — the devometrics-locale cookie
+// (see lib/i18n/request.ts) is the live source of truth for what actually
+// renders; this just persists the choice so a new device without that
+// cookie yet falls back to it. Same shape as updateTheme.
+export async function updateLanguage(language: "en" | "ar") {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("profiles").update({ language }).eq("id", user.id);
+}
+
 // Deletes all app data for the current user (plans, milestones via cascade,
 // coach history, assessment results, gap analyses, resume/discovery/Big
 // Five profiles, coach GROW memory, achievements, momentum snapshots,

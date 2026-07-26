@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
@@ -9,15 +10,24 @@ import ThemeToggle from "./ThemeToggle";
 // not just the homepage — plain "#how-it-works" only works when already on
 // "/", since that's the only page with a matching element id to scroll to.
 // From /enterprise, /contact, etc. it silently did nothing.
-const navLinks = [
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "Features", href: "/#features" },
-  { label: "Methodology", href: "/#methodology" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "For Enterprise", href: "/enterprise" },
-];
+// Labels come from the "common" i18n namespace (shared with Footer.tsx,
+// which lists the same four product links) rather than being hardcoded
+// here, so the two never drift out of translation sync.
+function useNavLinks() {
+  const t = useTranslations("common");
+  return [
+    { label: t("howItWorks"), href: "/#how-it-works" },
+    { label: t("features"), href: "/#features" },
+    { label: t("methodology"), href: "/#methodology" },
+    { label: t("pricing"), href: "/#pricing" },
+    { label: t("forEnterprise"), href: "/enterprise" },
+  ];
+}
 
 export default function Navbar() {
+  const t = useTranslations("nav");
+  const tCommon = useTranslations("common");
+  const navLinks = useNavLinks();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,9 +41,9 @@ export default function Navbar() {
     <nav
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
+        insetBlockStart: 0,
+        insetInlineStart: 0,
+        insetInlineEnd: 0,
         zIndex: 50,
         transition: "all 0.3s ease",
         background: scrolled ? "var(--nav-scrolled-bg)" : "transparent",
@@ -45,7 +55,7 @@ export default function Navbar() {
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "0 24px",
+          paddingInline: 24,
           height: 72,
           display: "flex",
           alignItems: "center",
@@ -91,13 +101,14 @@ export default function Navbar() {
               textDecoration: "none",
               fontSize: 14,
               fontWeight: 500,
-              padding: "8px 16px",
+              paddingInline: 16,
+              paddingBlock: 8,
               transition: "color 0.2s",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
           >
-            Sign in
+            {t("signIn")}
           </Link>
           <Link
             href="/signup"
@@ -107,7 +118,8 @@ export default function Navbar() {
               textDecoration: "none",
               fontSize: 14,
               fontWeight: 700,
-              padding: "9px 20px",
+              paddingInline: 20,
+              paddingBlock: 9,
               borderRadius: 8,
               letterSpacing: "0.01em",
               transition: "all 0.2s",
@@ -124,7 +136,7 @@ export default function Navbar() {
               (e.currentTarget as HTMLElement).style.boxShadow = "none";
             }}
           >
-            Get early access
+            {tCommon("getEarlyAccess")}
           </Link>
         </div>
 
@@ -140,7 +152,7 @@ export default function Navbar() {
             padding: 8,
             color: "var(--text)",
           }}
-          aria-label="Toggle menu"
+          aria-label={t("toggleMenu")}
         >
           <div style={{ width: 22, display: "flex", flexDirection: "column", gap: 5 }}>
             <span style={{ height: 2, background: menuOpen ? "var(--teal)" : "var(--text)", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(7px)" : "none", display: "block", borderRadius: 2 }} />
@@ -158,7 +170,9 @@ export default function Navbar() {
             background: "var(--nav-mobile-menu-bg)",
             backdropFilter: "blur(16px)",
             borderTop: "1px solid var(--border)",
-            padding: "20px 24px 28px",
+            paddingInline: 24,
+            paddingBlockStart: 20,
+            paddingBlockEnd: 28,
             display: "flex",
             flexDirection: "column",
             gap: 4,
@@ -174,7 +188,7 @@ export default function Navbar() {
                 textDecoration: "none",
                 fontSize: 16,
                 fontWeight: 500,
-                padding: "12px 0",
+                paddingBlock: 12,
                 borderBottom: "1px solid var(--border)",
                 transition: "color 0.2s",
               }}
@@ -192,13 +206,14 @@ export default function Navbar() {
               textDecoration: "none",
               fontSize: 15,
               fontWeight: 700,
-              padding: "14px 24px",
+              paddingInline: 24,
+              paddingBlock: 14,
               borderRadius: 8,
               textAlign: "center",
               display: "block",
             }}
           >
-            Get early access
+            {tCommon("getEarlyAccess")}
           </Link>
         </div>
       )}

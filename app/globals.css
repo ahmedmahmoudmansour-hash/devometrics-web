@@ -56,6 +56,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Inter/Space Grotesk have no Arabic glyphs — swap to the Arabic-covering
+   family whenever the page direction is RTL, regardless of which
+   component set dir (the root <html dir> from app/layout.tsx covers this
+   automatically since it cascades). */
+[dir="rtl"] body {
+  font-family: var(--font-arabic), var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 /* Instrument-readout treatment for figures and eyebrow labels — a metrics
    product should show its numbers like an instrument, not in the same
    proportional face as its prose. Uses the platform's own high-quality

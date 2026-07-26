@@ -1,32 +1,47 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Logo from "./Logo";
 
-const links = {
+export default function Footer() {
+  const t = useTranslations("footer");
+  const tCommon = useTranslations("common");
+
   // Prefixed with "/" so these resolve from any page, not just the
   // homepage — plain "#pricing" etc. only works when already on "/".
-  Product: [
-    { label: "How it works", href: "/#how-it-works" },
-    { label: "Features", href: "/#features" },
-    { label: "Methodology", href: "/#methodology" },
-    { label: "Pricing", href: "/#pricing" },
-    { label: "For Enterprise", href: "/enterprise" },
-  ],
-  Company: [
-    { label: "About", href: "/about" },
-    { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "/careers" },
-    { label: "Contact", href: "/contact" },
-  ],
-  Legal: [
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Data Ethics", href: "/data-ethics" },
-    { label: "Cookie Policy", href: "/cookies" },
-  ],
-};
+  // Built inside the component (not a module-level const) since the
+  // labels now come from useTranslations, which only works in render.
+  const linkGroups = [
+    {
+      heading: t("productHeading"),
+      items: [
+        { label: tCommon("howItWorks"), href: "/#how-it-works" },
+        { label: tCommon("features"), href: "/#features" },
+        { label: tCommon("methodology"), href: "/#methodology" },
+        { label: tCommon("pricing"), href: "/#pricing" },
+        { label: tCommon("forEnterprise"), href: "/enterprise" },
+      ],
+    },
+    {
+      heading: t("companyHeading"),
+      items: [
+        { label: t("about"), href: "/about" },
+        { label: t("blog"), href: "/blog" },
+        { label: t("careers"), href: "/careers" },
+        { label: t("contact"), href: "/contact" },
+      ],
+    },
+    {
+      heading: t("legalHeading"),
+      items: [
+        { label: t("privacyPolicy"), href: "/privacy" },
+        { label: t("termsOfService"), href: "/terms" },
+        { label: t("dataEthics"), href: "/data-ethics" },
+        { label: t("cookiePolicy"), href: "/cookies" },
+      ],
+    },
+  ];
 
-export default function Footer() {
   return (
     <footer
       style={{
@@ -38,7 +53,9 @@ export default function Footer() {
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "64px 24px 40px",
+          paddingInline: 24,
+          paddingBlockStart: 64,
+          paddingBlockEnd: 40,
         }}
       >
         <div
@@ -62,8 +79,7 @@ export default function Footer() {
                 maxWidth: 260,
               }}
             >
-              The quantitative science of career development — turning a CV, a job
-              description, and ambition into a measured plan to close the gap.
+              {t("tagline")}
             </p>
             <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
               {/* LinkedIn */}
@@ -89,7 +105,7 @@ export default function Footer() {
                   (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
                   (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
                 }}
-                aria-label="LinkedIn"
+                aria-label={t("linkedin")}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z" />
@@ -119,7 +135,7 @@ export default function Footer() {
                   (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
                   (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
                 }}
-                aria-label="X"
+                aria-label={t("twitter")}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -129,8 +145,8 @@ export default function Footer() {
           </div>
 
           {/* Link columns */}
-          {Object.entries(links).map(([category, items]) => (
-            <div key={category}>
+          {linkGroups.map((group) => (
+            <div key={group.heading}>
               <h4
                 style={{
                   fontSize: 12,
@@ -141,10 +157,10 @@ export default function Footer() {
                   marginBottom: 16,
                 }}
               >
-                {category}
+                {group.heading}
               </h4>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                {items.map((item) => (
+                {group.items.map((item) => (
                   <li key={item.label}>
                     <a
                       href={item.href}
@@ -180,10 +196,10 @@ export default function Footer() {
           }}
         >
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            © {new Date().getFullYear()} Empiric Consultancy. All rights reserved.
+            {t("copyright", { year: new Date().getFullYear() })}
           </p>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            Devometrics is a product of{" "}
+            {t("productOf")}{" "}
             <a href="#" style={{ color: "var(--teal)", textDecoration: "none" }}>
               Empiric Consultancy
             </a>
