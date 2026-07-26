@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = { title: "Careers — Devometrics" };
 
-export default function CareersPage() {
+export default async function CareersPage() {
+  const t = await getTranslations("careers");
+
   return (
     <>
       <Navbar />
@@ -19,21 +22,17 @@ export default function CareersPage() {
               marginBottom: 24,
             }}
           >
-            Careers
+            {t("title")}
           </h1>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 20, fontSize: 15, color: "var(--text-muted)", lineHeight: 1.8 }}>
+            <p>{t("p1")}</p>
             <p>
-              We don&apos;t have any open positions right now — Devometrics is run by a small, lean
-              team, and we&apos;d rather be upfront about that than list roles we&apos;re not actually
-              hiring for. When that changes, we&apos;ll post the role here.
-            </p>
-            <p>
-              In the meantime, you&apos;re welcome to reach out any time at{" "}
+              {t("p2Prefix")}{" "}
               <a href="mailto:careers@devometrics.com" style={{ color: "var(--teal)" }}>
                 careers@devometrics.com
               </a>{" "}
-              — we do read those.
+              {t("p2Suffix")}
             </p>
           </div>
 
@@ -51,7 +50,7 @@ export default function CareersPage() {
               borderRadius: 10,
             }}
           >
-            Send us a message →
+            {t("cta")}
           </Link>
         </div>
       </main>

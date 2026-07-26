@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PlatformChatWidget from "@/components/PlatformChatWidget";
@@ -32,107 +33,31 @@ export const metadata: Metadata = {
     "One competency graph for your whole team — workforce skill inventory, talent heatmaps, standards-based Impact Cycle appraisals, and manager-assigned development tasks, built on the same engine every employee already uses individually.",
 };
 
-const capabilities: { title: string; description: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  {
-    title: "Job architecture & grading",
-    icon: Network,
-    description:
-      "Define families, graded roles, and each role's required competency profile — AI proposes a grade and profile from a role's responsibilities, and it powers vertical and horizontal career paths across the org.",
-  },
-  {
-    title: "Org chart builder",
-    icon: GitBranch,
-    description:
-      "Real reporting lines, not a static diagram — set each person's manager once, and a direct-report manager automatically gets a scoped My Team view for their own people, without full company-admin rights.",
-  },
-  {
-    title: "Impact Cycles",
-    icon: ClipboardCheck,
-    description:
-      "Structured appraisals researched against global standards for medium and large companies: past goals, KPI-linked focus areas, competency ratings, development needs, and a conclusion both employee and manager sign off on.",
-  },
-  {
-    title: "Employee ID & seat management",
-    icon: IdCard,
-    description:
-      "Add a badge or payroll number to any employee record, and manage how many seats your workspace has — enforced at the database level, not just the invite screen.",
-  },
-  {
-    title: "Workforce skill inventory",
-    icon: LayoutList,
-    description:
-      "Every employee's Career Health Score, assessments completed, and plan progress in one table — scoped strictly to your own organization, never a shared pilot-wide view.",
-  },
-  {
-    title: "Talent heatmap",
-    icon: Grid3x3,
-    description:
-      "All 8 competency dimensions across your whole team at a glance, so you can see where the org is strong and where a whole function is quietly under-skilled.",
-  },
-  {
-    title: "High Potential pool",
-    icon: Star,
-    description:
-      "A consolidated, cross-role roster of everyone in the top growth-signal band of your talent grid — juniors included — so deliberate investment doesn't get lost in per-person reviews.",
-  },
-  {
-    title: "Succession & leadership readiness",
-    icon: TrendingUp,
-    description:
-      "AI ranks internal candidates for a critical role by measured fit, with the reasoning, gaps, and development focus for each — decision support for a human conversation, never an automated call.",
-  },
-  {
-    title: "Team capability pyramid",
-    icon: Triangle,
-    description:
-      "The same personal → professional → organizational capability model your employees see individually, averaged across the whole company.",
-  },
-  {
-    title: "Manager-assigned tasks",
-    icon: ClipboardList,
-    description:
-      "Assign a task straight onto an employee's development plan from their profile — it shows up flagged as assigned by their manager, not just self-directed.",
-  },
-  {
-    title: "Custom competency framework",
-    icon: SlidersHorizontal,
-    description:
-      "Name competencies in your own company's language and map each onto the dimension that actually drives scoring — or let AI suggest the mapping. Mapping is optional, since some competencies (pure values statements) don't cleanly fit any dimension.",
-  },
-  {
-    title: "Anonymous culture & pulse surveys",
-    icon: MessageSquare,
-    description:
-      "AI drafts rating, multiple-choice, and open-ended questions on any theme — review and edit before assigning. Results only ever surface as anonymous aggregates once at least 3 people respond; individual answers are never visible to admins, enforced at the database level.",
-  },
-  {
-    title: "Executive assessments",
-    icon: Award,
-    description:
-      "Organizational Culture Stewardship and Leading Organizational Change — executive-level assessments built for the people actually accountable for those outcomes.",
-  },
-  {
-    title: "Company contacts & branding",
-    icon: Palette,
-    description:
-      "Named platform and finance contacts for your workspace, plus your own logo and accent color applied across every employee's dashboard.",
-  },
-  {
-    title: "Fully isolated per company",
-    icon: ShieldCheck,
-    description:
-      "Every query is scoped through row-level security tied to organization membership — your data never mixes with another company's, even on the same platform.",
-  },
+const CAPABILITY_ICONS: React.ComponentType<{ size?: number }>[] = [
+  Network,
+  GitBranch,
+  ClipboardCheck,
+  IdCard,
+  LayoutList,
+  Grid3x3,
+  Star,
+  TrendingUp,
+  Triangle,
+  ClipboardList,
+  SlidersHorizontal,
+  MessageSquare,
+  Award,
+  Palette,
+  ShieldCheck,
 ];
 
 // Fictional workspace used purely to illustrate the shape of the real
 // Talent Heatmap + Capability Pyramid — the components below are the exact
 // ones every real workspace renders, just fed made-up data instead of a
 // live buildCompanyData() query.
-const SAMPLE_ROWS: { name: string; title: string; levels: Partial<Record<CompetencyDimension, number>> }[] = [
+const SAMPLE_ROWS_LEVELS: { name: string; levels: Partial<Record<CompetencyDimension, number>> }[] = [
   {
     name: "Amara Osei",
-    title: "Senior Product Manager",
     levels: {
       "Technical Skills": 72,
       Leadership: 58,
@@ -146,7 +71,6 @@ const SAMPLE_ROWS: { name: string; title: string; levels: Partial<Record<Compete
   },
   {
     name: "Priya Kapoor",
-    title: "Engineering Manager",
     levels: {
       "Technical Skills": 88,
       Leadership: 74,
@@ -160,7 +84,6 @@ const SAMPLE_ROWS: { name: string; title: string; levels: Partial<Record<Compete
   },
   {
     name: "Daniel Mensah",
-    title: "Product Analyst",
     levels: {
       "Technical Skills": 65,
       Leadership: 35,
@@ -176,7 +99,7 @@ const SAMPLE_ROWS: { name: string; title: string; levels: Partial<Record<Compete
 
 const SAMPLE_AVERAGES: Partial<Record<CompetencyDimension, number>> = Object.fromEntries(
   COMPETENCY_DIMENSIONS.map((d) => {
-    const values = SAMPLE_ROWS.map((r) => r.levels[d]).filter((v): v is number => v !== undefined);
+    const values = SAMPLE_ROWS_LEVELS.map((r) => r.levels[d]).filter((v): v is number => v !== undefined);
     return [d, Math.round(values.reduce((a, b) => a + b, 0) / values.length)];
   })
 );
@@ -197,25 +120,29 @@ const sampleHeadStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
 };
 
-const steps = [
-  {
-    n: "1",
-    title: "Create your workspace",
-    description: "Any team member signs up, then sets up a company workspace in under a minute — no sales call required to start.",
-  },
-  {
-    n: "2",
-    title: "Invite your team",
-    description: "Add employee emails and they're attached automatically the moment they sign up — no shared invite code to manage.",
-  },
-  {
-    n: "3",
-    title: "See and support the whole team",
-    description: "Watch the workforce inventory and talent heatmap fill in as people run their Gap Analysis, then assign tasks where you see a real gap.",
-  },
-];
+export default async function EnterprisePage() {
+  const t = await getTranslations("enterprisePage");
 
-export default function EnterprisePage() {
+  const capabilityTitles = [t("cap1Title"), t("cap2Title"), t("cap3Title"), t("cap4Title"), t("cap5Title"), t("cap6Title"), t("cap7Title"), t("cap8Title"), t("cap9Title"), t("cap10Title"), t("cap11Title"), t("cap12Title"), t("cap13Title"), t("cap14Title"), t("cap15Title")];
+  const capabilityDescriptions = [t("cap1Description"), t("cap2Description"), t("cap3Description"), t("cap4Description"), t("cap5Description"), t("cap6Description"), t("cap7Description"), t("cap8Description"), t("cap9Description"), t("cap10Description"), t("cap11Description"), t("cap12Description"), t("cap13Description"), t("cap14Description"), t("cap15Description")];
+  const capabilities = CAPABILITY_ICONS.map((icon, i) => ({
+    title: capabilityTitles[i],
+    description: capabilityDescriptions[i],
+    icon,
+  }));
+
+  const sampleTitles = [t("sampleTitle1"), t("sampleTitle2"), t("sampleTitle3")];
+  const sampleRows = SAMPLE_ROWS_LEVELS.map((r, i) => ({
+    ...r,
+    title: sampleTitles[i],
+  }));
+
+  const steps = [
+    { n: "1", title: t("step1Title"), description: t("step1Description") },
+    { n: "2", title: t("step2Title"), description: t("step2Description") },
+    { n: "3", title: t("step3Title"), description: t("step3Description") },
+  ];
+
   return (
     <>
       <Navbar />
@@ -247,7 +174,7 @@ export default function EnterprisePage() {
                 fontWeight: 600,
               }}
             >
-              For teams &amp; organizations
+              {t("badge")}
             </span>
             <h1
               className="font-display"
@@ -260,8 +187,8 @@ export default function EnterprisePage() {
                 color: "var(--text)",
               }}
             >
-              One competency graph.{" "}
-              <span className="gradient-text">Your whole team.</span>
+              {t("heroTitlePrefix")}{" "}
+              <span className="gradient-text">{t("heroTitleHighlight")}</span>
             </h1>
             <p
               style={{
@@ -272,9 +199,7 @@ export default function EnterprisePage() {
                 margin: "0 auto 40px",
               }}
             >
-              Every employee still uses the exact same individual tools — Gap Analysis, Assessment
-              Center, AI Coach. This layer just aggregates what they&apos;ve already done into a
-              real workforce-intelligence view for you.
+              {t("heroSubtext")}
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <Link
@@ -290,7 +215,7 @@ export default function EnterprisePage() {
                   letterSpacing: "0.01em",
                 }}
               >
-                Set up your company workspace →
+                {t("ctaSetup")}
               </Link>
               <a
                 href="#capabilities"
@@ -304,7 +229,7 @@ export default function EnterprisePage() {
                   borderRadius: 10,
                 }}
               >
-                See what&apos;s included
+                {t("ctaSeeIncluded")}
               </a>
             </div>
           </div>
@@ -324,12 +249,11 @@ export default function EnterprisePage() {
                 fontWeight: 700,
               }}
             >
-              Sample workspace — not a mockup, the real components
+              {t("sampleBadge")}
             </span>
           </div>
           <p style={{ textAlign: "center", fontSize: 14, color: "var(--text-muted)", maxWidth: 560, margin: "12px auto 40px" }}>
-            This is the actual Talent Heatmap and Team Capability Pyramid every workspace gets, filled
-            with three fictional people so you can see the shape of it before setting anything up.
+            {t("sampleSubtext")}
           </p>
 
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden", marginBottom: 32 }}>
@@ -337,7 +261,7 @@ export default function EnterprisePage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th style={{ ...sampleHeadStyle, textAlign: "left" }}>Name</th>
+                    <th style={{ ...sampleHeadStyle, textAlign: "start" }}>{t("tableNameHeader")}</th>
                     {COMPETENCY_DIMENSIONS.map((d) => (
                       <th key={d} style={{ ...sampleHeadStyle, textAlign: "center", whiteSpace: "nowrap" }}>
                         {d}
@@ -346,7 +270,7 @@ export default function EnterprisePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {SAMPLE_ROWS.map((r) => (
+                  {sampleRows.map((r) => (
                     <tr key={r.name}>
                       <td style={sampleCellStyle}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -365,7 +289,7 @@ export default function EnterprisePage() {
                     </tr>
                   ))}
                   <tr>
-                    <td style={{ ...sampleCellStyle, fontWeight: 700, color: "var(--text-muted)" }}>Team average</td>
+                    <td style={{ ...sampleCellStyle, fontWeight: 700, color: "var(--text-muted)" }}>{t("teamAverage")}</td>
                     {COMPETENCY_DIMENSIONS.map((d) => (
                       <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", fontWeight: 700, color: levelText(SAMPLE_AVERAGES[d]) }}>
                         {SAMPLE_AVERAGES[d]}
@@ -396,10 +320,10 @@ export default function EnterprisePage() {
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 56 }}>
               <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-                What&apos;s included
+                {t("capabilitiesLabel")}
               </span>
               <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
-                Built for the people accountable for the team
+                {t("capabilitiesHeadline")}
               </h2>
             </div>
             {/* Hairline-divider grid (Zoho-suite structure, dark-theme
@@ -454,10 +378,10 @@ export default function EnterprisePage() {
         <section style={{ padding: "100px 24px", maxWidth: 1000, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-              How it works
+              {t("howItWorksLabel")}
             </span>
             <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
-              No sales call to get started
+              {t("howItWorksHeadline")}
             </h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
@@ -499,14 +423,14 @@ export default function EnterprisePage() {
           }}
         >
           <h2 className="font-display" style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 16 }}>
-            Ready to see your team&apos;s skill graph?
+            {t("finalHeadline")}
           </h2>
           <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" }}>
-            Full pricing for teams is on the{" "}
+            {t("finalSubtextPrefix")}{" "}
             <Link href="/#pricing" style={{ color: "var(--teal)", textDecoration: "none" }}>
-              main pricing page
+              {t("finalSubtextLink")}
             </Link>
-            . During the pilot phase, workspaces get full access free.
+            {t("finalSubtextSuffix")}
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
@@ -522,7 +446,7 @@ export default function EnterprisePage() {
                 letterSpacing: "0.01em",
               }}
             >
-              Set up your company workspace →
+              {t("ctaSetup")}
             </Link>
             <Link
               href="/contact?type=sales"
@@ -536,15 +460,15 @@ export default function EnterprisePage() {
                 borderRadius: 10,
               }}
             >
-              Talk to sales
+              {t("talkToSales")}
             </Link>
           </div>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 20 }}>
-            Prefer email? Sales:{" "}
+            {t("preferEmailPrefix")}{" "}
             <a href="mailto:sales@devometrics.com" style={{ color: "var(--teal)", textDecoration: "none" }}>
               sales@devometrics.com
             </a>{" "}
-            · Support:{" "}
+            {t("preferEmailSupport")}{" "}
             <a href="mailto:support@devometrics.com" style={{ color: "var(--teal)", textDecoration: "none" }}>
               support@devometrics.com
             </a>

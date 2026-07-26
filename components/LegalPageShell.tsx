@@ -1,3 +1,4 @@
+import { getTranslations, getLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -10,7 +11,7 @@ export function LegalSection({ title, children }: { title: string; children: Rea
   );
 }
 
-export default function LegalPageShell({
+export default async function LegalPageShell({
   title,
   lastUpdated,
   children,
@@ -19,6 +20,15 @@ export default function LegalPageShell({
   lastUpdated: string;
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("legal");
+  const locale = await getLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
+  const formattedDate = new Date(lastUpdated).toLocaleDateString(dateLocale, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
     <>
       <Navbar />
@@ -36,7 +46,7 @@ export default function LegalPageShell({
             {title}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 32 }}>
-            Last updated {lastUpdated}
+            {t("lastUpdated", { date: formattedDate })}
           </p>
 
           <div
@@ -51,11 +61,7 @@ export default function LegalPageShell({
               lineHeight: 1.6,
             }}
           >
-            <strong style={{ color: "var(--amber)" }}>Draft, not final legal advice:</strong> this
-            page is a good-faith draft covering the standard points for an early-stage product. It
-            has not been reviewed by a lawyer yet. Treat it as a placeholder describing our actual
-            practices, not as a substitute for professional legal review before this is relied on
-            at scale or in a jurisdiction with specific requirements.
+            <strong style={{ color: "var(--amber)" }}>{t("draftLabel")}</strong> {t("draftBody")}
           </div>
 
           <div

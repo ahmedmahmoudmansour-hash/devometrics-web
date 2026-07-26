@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { BLOG_POSTS, getBlogPost } from "@/lib/blog/posts";
@@ -20,13 +21,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = getBlogPost(slug);
   if (!post) notFound();
 
+  const t = await getTranslations("blog");
+  const locale = await getLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
+
   return (
     <>
       <Navbar />
       <main style={{ padding: "140px 24px 80px" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <Link href="/blog" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← All posts
+            {t("allPosts")}
           </Link>
 
           <span
@@ -56,9 +61,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             {post.title}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 40 }}>
-            {new Date(post.publishedDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            {new Date(post.publishedDate).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })}
             {" · "}
-            {post.readMinutes} min read
+            {t("minRead", { count: post.readMinutes })}
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -95,7 +100,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             }}
           >
             <p style={{ fontSize: 14, color: "var(--text)", fontWeight: 600 }}>
-              See where your own gap actually is — run a free Devometrics gap analysis.
+              {t("ctaText")}
             </p>
             <Link
               href="/signup"
@@ -110,7 +115,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 whiteSpace: "nowrap",
               }}
             >
-              Get started
+              {t("ctaButton")}
             </Link>
           </div>
         </div>

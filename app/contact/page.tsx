@@ -1,11 +1,14 @@
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ContactForm from "@/components/ContactForm";
 
 export const metadata = { title: "Contact — Devometrics" };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const t = await getTranslations("contact");
+
   return (
     <>
       <Navbar />
@@ -20,11 +23,10 @@ export default function ContactPage() {
               marginBottom: 12,
             }}
           >
-            Get in touch
+            {t("title")}
           </h1>
           <p style={{ fontSize: 15, color: "var(--text-muted)", lineHeight: 1.7, marginBottom: 36 }}>
-            Sales, support, or careers — pick what this is about and we&apos;ll get back to you at
-            the email you provide.
+            {t("subtext")}
           </p>
           <Suspense>
             <ContactForm />

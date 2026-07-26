@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import type { BlogPost } from "@/lib/blog/posts";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -10,6 +11,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function BlogPostCard({ post }: { post: BlogPost }) {
+  const t = useTranslations("blog");
+  const locale = useLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
+
   return (
     <Link
       href={`/blog/${post.slug}`}
@@ -43,9 +48,9 @@ export default function BlogPostCard({ post }: { post: BlogPost }) {
         {post.excerpt}
       </p>
       <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-        {new Date(post.publishedDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+        {new Date(post.publishedDate).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" })}
         {" · "}
-        {post.readMinutes} min read
+        {t("minRead", { count: post.readMinutes })}
       </p>
     </Link>
   );

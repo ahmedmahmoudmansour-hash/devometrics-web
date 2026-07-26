@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogPostCard from "@/components/blog/BlogPostCard";
@@ -5,7 +6,8 @@ import { BLOG_POSTS } from "@/lib/blog/posts";
 
 export const metadata = { title: "Blog — Devometrics" };
 
-export default function BlogIndexPage() {
+export default async function BlogIndexPage() {
+  const t = await getTranslations("blog");
   const posts = [...BLOG_POSTS].sort((a, b) => (a.publishedDate < b.publishedDate ? 1 : -1));
 
   return (
@@ -22,10 +24,10 @@ export default function BlogIndexPage() {
               marginBottom: 8,
             }}
           >
-            Blog
+            {t("title")}
           </h1>
           <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 48, maxWidth: 600, lineHeight: 1.6 }}>
-            Notes on career development, leadership, and where AI genuinely helps (and where it doesn&apos;t).
+            {t("subtext")}
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>

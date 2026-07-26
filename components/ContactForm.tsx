@@ -2,13 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { submitContactInquiry, type InquiryType } from "@/lib/contact/actions";
-
-const TYPES: { value: InquiryType; label: string }[] = [
-  { value: "sales", label: "Sales" },
-  { value: "support", label: "Support" },
-  { value: "careers", label: "Careers" },
-];
 
 const labelStyle: React.CSSProperties = {
   fontSize: 13,
@@ -35,6 +30,12 @@ function isInquiryType(v: string | null): v is InquiryType {
 }
 
 export default function ContactForm() {
+  const t = useTranslations("contact");
+  const TYPES: { value: InquiryType; label: string }[] = [
+    { value: "sales", label: t("typeSales") },
+    { value: "support", label: t("typeSupport") },
+    { value: "careers", label: t("typeCareers") },
+  ];
   const searchParams = useSearchParams();
   const initialType = searchParams.get("type");
 
@@ -71,9 +72,9 @@ export default function ContactForm() {
           textAlign: "center",
         }}
       >
-        <p style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Message sent ✓</p>
+        <p style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{t("sentTitle")}</p>
         <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
-          Thanks for reaching out — our {type} team will get back to you shortly.
+          {t("sentBody", { type: TYPES.find((item) => item.value === type)?.label ?? type })}
         </p>
       </div>
     );
@@ -82,18 +83,18 @@ export default function ContactForm() {
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div>
-        <label style={labelStyle}>What&apos;s this about?</label>
+        <label style={labelStyle}>{t("aboutLabel")}</label>
         <div style={{ display: "flex", gap: 8 }}>
-          {TYPES.map((t) => (
+          {TYPES.map((item) => (
             <button
-              key={t.value}
+              key={item.value}
               type="button"
-              onClick={() => setType(t.value)}
+              onClick={() => setType(item.value)}
               style={{
                 flex: 1,
-                background: type === t.value ? "var(--teal)" : "rgba(255,255,255,0.05)",
-                color: type === t.value ? "#0A0F1E" : "var(--text-muted)",
-                border: type === t.value ? "none" : "1px solid var(--border)",
+                background: type === item.value ? "var(--teal)" : "rgba(255,255,255,0.05)",
+                color: type === item.value ? "#0A0F1E" : "var(--text-muted)",
+                border: type === item.value ? "none" : "1px solid var(--border)",
                 borderRadius: 10,
                 padding: "10px 14px",
                 fontSize: 14,
@@ -101,14 +102,14 @@ export default function ContactForm() {
                 cursor: "pointer",
               }}
             >
-              {t.label}
+              {item.label}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <label htmlFor="contact-name" style={labelStyle}>Your name</label>
+        <label htmlFor="contact-name" style={labelStyle}>{t("nameLabel")}</label>
         <input
           id="contact-name"
           type="text"
@@ -120,7 +121,7 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="contact-email" style={labelStyle}>Email address</label>
+        <label htmlFor="contact-email" style={labelStyle}>{t("emailLabel")}</label>
         <input
           id="contact-email"
           type="email"
@@ -132,7 +133,7 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="contact-message" style={labelStyle}>Message</label>
+        <label htmlFor="contact-message" style={labelStyle}>{t("messageLabel")}</label>
         <textarea
           id="contact-message"
           value={message}
@@ -145,8 +146,8 @@ export default function ContactForm() {
 
       {/* Honeypot — hidden from real visitors via layout, not display:none
           (bots skip fields they detect as hidden that way). */}
-      <div style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }} aria-hidden="true">
-        <label htmlFor="contact-company">Company</label>
+      <div style={{ position: "absolute", insetInlineStart: "-9999px", width: 1, height: 1, overflow: "hidden" }} aria-hidden="true">
+        <label htmlFor="contact-company">{t("companyLabel")}</label>
         <input
           id="contact-company"
           type="text"
@@ -174,7 +175,7 @@ export default function ContactForm() {
           opacity: isPending ? 0.6 : 1,
         }}
       >
-        {isPending ? "Sending…" : "Send message"}
+        {isPending ? t("sending") : t("send")}
       </button>
     </form>
   );
