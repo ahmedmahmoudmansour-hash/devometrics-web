@@ -21,6 +21,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
   const [title, setTitle] = useState(content.title);
   const [description, setDescription] = useState(content.description ?? "");
   const [passingScore, setPassingScore] = useState(content.passing_score_percent);
+  const [maxAttempts, setMaxAttempts] = useState<string>(content.max_attempts?.toString() ?? "");
   const [dueDate, setDueDate] = useState(content.due_date ?? "");
   const [confirmingArchive, setConfirmingArchive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
         title,
         description,
         passingScorePercent: passingScore,
+        maxAttempts: maxAttempts.trim() ? Number(maxAttempts) : null,
         dueDate: dueDate || null,
       });
       if (result?.error) {
@@ -108,6 +110,19 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
                 max={100}
                 value={passingScore}
                 onChange={(e) => setPassingScore(Math.min(100, Math.max(1, Number(e.target.value) || 1)))}
+                style={inputStyle}
+              />
+            </label>
+          )}
+          {content.completion_type === "exam" && (
+            <label style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 6 }}>
+              Max attempts (blank = unlimited)
+              <input
+                type="number"
+                min={1}
+                value={maxAttempts}
+                onChange={(e) => setMaxAttempts(e.target.value)}
+                placeholder="Unlimited"
                 style={inputStyle}
               />
             </label>

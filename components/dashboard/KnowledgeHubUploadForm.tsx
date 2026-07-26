@@ -35,6 +35,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
   const [file, setFile] = useState<File | null>(null);
   const [completionType, setCompletionType] = useState<KnowledgeHubCompletionType>("attestation");
   const [passingScore, setPassingScore] = useState(80);
+  const [maxAttempts, setMaxAttempts] = useState<string>("");
   const [dueDate, setDueDate] = useState("");
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
   const [uploading, setUploading] = useState(false);
@@ -124,6 +125,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           mimeType: file.type,
           completionType,
           passingScorePercent: passingScore,
+          maxAttempts: maxAttempts.trim() ? Number(maxAttempts) : null,
           dueDate: dueDate || null,
           questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
         });
@@ -135,6 +137,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
         setDescription("");
         setFile(null);
         setCompletionType("attestation");
+        setMaxAttempts("");
         setDueDate("");
         setQuestions([newQuestion()]);
         setExpanded(false);
@@ -259,6 +262,20 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                 max={100}
                 value={passingScore}
                 onChange={(e) => setPassingScore(Math.min(100, Math.max(1, Number(e.target.value) || 1)))}
+                style={{ ...inputStyle, maxWidth: 120 }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+                Max attempts — optional, leave blank for unlimited
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={maxAttempts}
+                onChange={(e) => setMaxAttempts(e.target.value)}
+                placeholder="Unlimited"
                 style={{ ...inputStyle, maxWidth: 120 }}
               />
             </div>

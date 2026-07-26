@@ -444,6 +444,7 @@ export type KnowledgeHubContent = {
   mime_type: string;
   completion_type: KnowledgeHubCompletionType;
   passing_score_percent: number;
+  max_attempts: number | null;
   due_date: string | null;
   archived_at: string | null;
   created_by: string;

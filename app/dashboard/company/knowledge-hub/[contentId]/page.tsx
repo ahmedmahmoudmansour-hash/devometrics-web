@@ -5,6 +5,7 @@ import { getKnowledgeHubContentReport } from "@/lib/knowledgeHub/actions";
 import AssignKnowledgeHubContentModal from "@/components/dashboard/AssignKnowledgeHubContentModal";
 import RemoveKnowledgeHubAssignmentButton from "@/components/dashboard/RemoveKnowledgeHubAssignmentButton";
 import EditKnowledgeHubContentForm from "@/components/dashboard/EditKnowledgeHubContentForm";
+import KnowledgeHubAttemptHistory from "@/components/dashboard/KnowledgeHubAttemptHistory";
 
 export default async function KnowledgeHubContentDetailPage({
   params,
@@ -50,7 +51,7 @@ export default async function KnowledgeHubContentDetailPage({
           )}
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
             {content.completion_type === "exam"
-              ? `Exam — ${content.passing_score_percent}% required to pass`
+              ? `Exam — ${content.passing_score_percent}% required to pass · ${content.max_attempts ? `${content.max_attempts} attempt${content.max_attempts === 1 ? "" : "s"} max` : "unlimited attempts"}`
               : "Completed by confirming they've read it"}
             {" · "}
             {content.file_name}
@@ -112,7 +113,10 @@ export default async function KnowledgeHubContentDetailPage({
                     <th style={{ ...headStyle, textAlign: "left" }}>Status</th>
                     <th style={{ ...headStyle, textAlign: "left" }}>Completed</th>
                     {content.completion_type === "exam" && (
-                      <th style={{ ...headStyle, textAlign: "right" }}>Score</th>
+                      <>
+                        <th style={{ ...headStyle, textAlign: "right" }}>Score</th>
+                        <th style={{ ...headStyle, textAlign: "right" }}>Attempts</th>
+                      </>
                     )}
                     <th style={{ ...headStyle, textAlign: "right" }} aria-label="Actions" />
                   </tr>
@@ -123,6 +127,9 @@ export default async function KnowledgeHubContentDetailPage({
                       <td style={cellStyle}>
                         <div>{r.name}</div>
                         <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.email}</div>
+                        {content.completion_type === "exam" && (
+                          <KnowledgeHubAttemptHistory contentId={contentId} employeeUserId={r.employeeUserId} attemptCount={r.examAttempts} />
+                        )}
                       </td>
                       <td style={cellStyle}>
                         <span
@@ -148,6 +155,12 @@ export default async function KnowledgeHubContentDetailPage({
                           }}
                         >
                           {r.scorePercent !== null ? `${r.scorePercent}%` : "—"}
+                        </td>
+                      )}
+                      {content.completion_type === "exam" && (
+                        <td style={{ ...cellStyle, textAlign: "right" }}>
+                          {r.examAttempts > 0 ? r.examAttempts : "—"}
+                          {content.max_attempts !== null && r.examAttempts > 0 && ` / ${content.max_attempts}`}
                         </td>
                       )}
                       <td style={{ ...cellStyle, textAlign: "right" }}>

@@ -31,14 +31,15 @@ export default async function KnowledgeHubContentPage({
     .maybeSingle<KnowledgeHubContent>();
   if (!content) redirect("/dashboard/knowledge-hub");
 
-  const { data: latestCompletion } = await supabase
+  const { data: completions } = await supabase
     .from("knowledge_hub_completions")
     .select("*")
     .eq("content_id", contentId)
     .eq("employee_user_id", user.id)
     .order("completed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<KnowledgeHubCompletion>();
+    .returns<KnowledgeHubCompletion[]>();
+  const latestCompletion = completions?.[0] ?? null;
+  const examAttemptCount = (completions ?? []).filter((c) => c.method === "exam").length;
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -61,6 +62,9 @@ export default async function KnowledgeHubContentPage({
           mimeType={content.mime_type}
           completionType={content.completion_type}
           passingScorePercent={content.passing_score_percent}
+          maxAttempts={content.max_attempts}
+          initialExamAttemptCount={examAttemptCount}
+          initialLastAttemptAt={latestCompletion?.completed_at ?? null}
           initialCompletion={
             latestCompletion
               ? { scorePercent: latestCompletion.score_percent, passed: latestCompletion.passed }

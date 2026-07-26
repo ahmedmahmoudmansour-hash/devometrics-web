@@ -31,6 +31,7 @@ export async function createKnowledgeHubContent(input: {
   mimeType: string;
   completionType: KnowledgeHubCompletionType;
   passingScorePercent: number;
+  maxAttempts?: number | null;
   dueDate?: string | null;
   questions?: NewExamQuestion[];
 }) {
@@ -60,6 +61,7 @@ export async function createKnowledgeHubContent(input: {
     mime_type: input.mimeType,
     completion_type: input.completionType,
     passing_score_percent: input.passingScorePercent,
+    max_attempts: input.completionType === "exam" ? input.maxAttempts ?? null : null,
     due_date: input.dueDate || null,
     created_by: user.id,
   });
@@ -224,7 +226,13 @@ export async function archiveKnowledgeHubContent(contentId: string) {
 
 export async function updateKnowledgeHubContent(
   contentId: string,
-  fields: { title: string; description: string; passingScorePercent: number; dueDate: string | null }
+  fields: {
+    title: string;
+    description: string;
+    passingScorePercent: number;
+    maxAttempts: number | null;
+    dueDate: string | null;
+  }
 ) {
   const supabase = await createClient();
   const title = fields.title.trim();
@@ -236,6 +244,7 @@ export async function updateKnowledgeHubContent(
       title,
       description: fields.description.trim() || null,
       passing_score_percent: fields.passingScorePercent,
+      max_attempts: fields.maxAttempts,
       due_date: fields.dueDate || null,
     })
     .eq("id", contentId)
@@ -274,6 +283,7 @@ export type KnowledgeHubReportRow = {
   completedAt: string | null;
   scorePercent: number | null;
   passed: boolean | null;
+  examAttempts: number;
 };
 
 export type KnowledgeHubContentReport = {
@@ -331,8 +341,12 @@ export async function getKnowledgeHubContentReport(contentId: string): Promise<K
   // Latest completion per employee — completions are append-only (full
   // re-certification history), the report shows the most recent attempt.
   const latestCompletionByEmployee = new Map<string, KnowledgeHubCompletion>();
+  const examAttemptsByEmployee = new Map<string, number>();
   for (const c of completions ?? []) {
     if (!latestCompletionByEmployee.has(c.employee_user_id)) latestCompletionByEmployee.set(c.employee_user_id, c);
+    if (c.method === "exam") {
+      examAttemptsByEmployee.set(c.employee_user_id, (examAttemptsByEmployee.get(c.employee_user_id) ?? 0) + 1);
+    }
   }
 
   const rows: KnowledgeHubReportRow[] = (assignments ?? []).map((a) => {
@@ -347,6 +361,7 @@ export async function getKnowledgeHubContentReport(contentId: string): Promise<K
       completedAt: completion?.completed_at ?? null,
       scorePercent: completion?.score_percent ?? null,
       passed: completion?.passed ?? null,
+      examAttempts: examAttemptsByEmployee.get(a.employee_user_id) ?? 0,
     };
   });
 
@@ -472,13 +487,49 @@ export async function getKnowledgeHubExamQuestions(
 export async function submitKnowledgeHubExam(
   contentId: string,
   answers: { question_id: string; selected_index: number }[]
-): Promise<{ error: string } | { success: true; scorePercent: number; passed: boolean }> {
+): Promise<{ error: string } | { success: true; scorePercent: number; passed: boolean; attemptNumber: number }> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("submit_knowledge_hub_exam", { p_content_id: contentId, p_answers: answers });
-  const rows = data as { score_percent: number; passed: boolean }[] | null;
+  const rows = data as { score_percent: number; passed: boolean; attempt_number: number }[] | null;
   if (error || !rows?.[0]) return { error: error?.message ?? "Could not submit this exam" };
 
   revalidatePath("/dashboard/knowledge-hub");
   revalidatePath(`/dashboard/knowledge-hub/${contentId}`);
-  return { success: true, scorePercent: rows[0].score_percent, passed: rows[0].passed };
+  return { success: true, scorePercent: rows[0].score_percent, passed: rows[0].passed, attemptNumber: rows[0].attempt_number };
+}
+
+export type KnowledgeHubAttempt = {
+  id: string;
+  method: KnowledgeHubCompletionType;
+  scorePercent: number | null;
+  passed: boolean;
+  completedAt: string;
+};
+
+// Full attempt history for one employee on one piece of content — relies
+// entirely on the existing RLS policies on knowledge_hub_completions
+// ("Employees can view their own" / "Org admins can view ... for their
+// members"), same posture as getKnowledgeHubContentReport above: a
+// non-admin querying someone else's history just gets zero rows back from
+// Postgres, no app-layer check needed on top.
+export async function getKnowledgeHubEmployeeAttempts(
+  contentId: string,
+  employeeUserId: string
+): Promise<KnowledgeHubAttempt[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("knowledge_hub_completions")
+    .select("id, method, score_percent, passed, completed_at")
+    .eq("content_id", contentId)
+    .eq("employee_user_id", employeeUserId)
+    .order("completed_at", { ascending: false })
+    .returns<{ id: string; method: KnowledgeHubCompletionType; score_percent: number | null; passed: boolean; completed_at: string }[]>();
+
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    method: r.method,
+    scorePercent: r.score_percent,
+    passed: r.passed,
+    completedAt: r.completed_at,
+  }));
 }
