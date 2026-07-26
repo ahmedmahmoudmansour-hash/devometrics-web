@@ -49,6 +49,12 @@ export const MAX_SPEECH_TEXT_LENGTH = 2000;
 export const BRIDGE_CONTENT_RATE_LIMIT_WINDOW_MINUTES = 60;
 export const BRIDGE_CONTENT_RATE_LIMIT_MAX_RUNS = 10;
 
+// Manager-entered interview notes on a hiring candidate — admin-gated (not
+// self-serve), so no per-window rate limit needed, same posture as the
+// other admin-only AI-calling actions in lib/jobArchitecture and
+// lib/succession (a length cap, not a request-count throttle).
+export const MAX_INTERVIEW_NOTE_LENGTH = 4000;
+
 export const MAX_ROLEPLAY_MESSAGE_LENGTH = 2000;
 // Roleplay sessions store the whole conversation as one row (jsonb array),
 // so per-message rate limiting doesn't map to a row count the way other

@@ -148,6 +148,10 @@ export type OrganizationInvite = {
   // Added in migration 0081 — defaults to 'member' at the DB level, so
   // absence (pre-migration) is equivalent to 'member'.
   intended_role?: "member" | "admin";
+  // Added in migration 0088 (Smart Hiring) — set only when this invite was
+  // created via markCandidateHired(); lets checkAndConsumeInvite() seed the
+  // new employee's first Gap Analysis from their pre-hire CV score.
+  candidate_id?: string | null;
 };
 
 export type CaseStudyResponse = {

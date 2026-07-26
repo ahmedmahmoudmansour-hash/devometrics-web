@@ -19,7 +19,9 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // (the row in organization_invites is still the source of truth; the
 // person is auto-attached the moment they sign up with that email either
 // way, per checkAndConsumeInvite below).
-async function sendInviteEmail(email: string, orgName: string): Promise<void> {
+// Exported so lib/hiring/hireActions.ts can reuse this exact email template
+// for hire-conversion invites rather than building a second one.
+export async function sendInviteEmail(email: string, orgName: string): Promise<void> {
   try {
     await sendEmail(
       email,
@@ -467,6 +469,41 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
   if (memberError) {
     console.error(`checkAndConsumeInvite: insert failed for ${user.email} into org ${invite.organization_id}:`, memberError);
     return false;
+  }
+
+  // Hire-conversion seeding (migration 0088, Smart Hiring): if this invite
+  // came from markCandidateHired(), give the new employee's first Gap
+  // Analysis a head start from the CV competency score already computed
+  // during hiring, instead of starting empty. Readable here via a narrow
+  // RLS policy that matches the invite's own verified email — see the
+  // migration for details. Best-effort: no CV score (e.g. a manually-added
+  // pipeline card with no CV run) just silently no-ops, same as any other
+  // freshly-invited employee today.
+  if (invite.candidate_id) {
+    const { data: cvScore } = await supabase
+      .from("hiring_candidate_cv_scores")
+      .select("target_role, job_description, cv_text, competencies, career_health_score")
+      .eq("candidate_id", invite.candidate_id)
+      .maybeSingle<{
+        target_role: string;
+        job_description: string;
+        cv_text: string;
+        competencies: unknown;
+        career_health_score: number;
+      }>();
+    if (cvScore) {
+      const { error: seedError } = await supabase.from("gap_analyses").insert({
+        user_id: user.id,
+        target_role: cvScore.target_role,
+        job_description: cvScore.job_description,
+        cv_text: cvScore.cv_text,
+        competencies: cvScore.competencies,
+        career_health_score: cvScore.career_health_score,
+      });
+      if (seedError) {
+        console.error(`checkAndConsumeInvite: gap_analyses seed failed for ${user.email}:`, seedError);
+      }
+    }
   }
 
   await supabase.from("organization_invites").update({ accepted_at: new Date().toISOString() }).eq("id", invite.id);

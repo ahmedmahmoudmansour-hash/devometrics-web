@@ -1,0 +1,159 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { suggestRoleGrading, type RoleGradingSuggestion } from "@/lib/jobArchitecture/actions";
+import { MAX_JOB_DESCRIPTION_LENGTH } from "@/lib/limits";
+import type { JobPostingStatus } from "./types";
+
+const MAX_TITLE = 120;
+const MAX_DEPARTMENT = 120;
+const MAX_RESPONSIBILITIES = 4000;
+
+async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { supabase, user: null, organizationId: null };
+  const data = await buildCompanyData();
+  if (!data.isOrgAdmin || !data.organizationId) return { supabase, user: null, organizationId: null };
+  return { supabase, user, organizationId: data.organizationId };
+}
+
+export async function createJobPosting(input: { title: string; department?: string; jobDescription?: string; responsibilities?: string }) {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const title = input.title.trim().slice(0, MAX_TITLE);
+  if (!title) return { error: "Give the posting a title" };
+
+  const { data: posting, error } = await supabase
+    .from("job_postings")
+    .insert({
+      organization_id: organizationId,
+      title,
+      department: (input.department ?? "").trim().slice(0, MAX_DEPARTMENT),
+      job_description: (input.jobDescription ?? "").trim().slice(0, MAX_JOB_DESCRIPTION_LENGTH),
+      responsibilities: (input.responsibilities ?? "").trim().slice(0, MAX_RESPONSIBILITIES),
+      created_by: user.id,
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !posting) {
+    console.error("createJobPosting failed:", error);
+    return { error: "Could not create the posting — the database may need migration 0088 run first." };
+  }
+
+  revalidatePath("/dashboard/company/hiring");
+  return { success: true, postingId: posting.id };
+}
+
+export async function updateJobPosting(
+  postingId: string,
+  fields: { title: string; department: string; jobDescription: string; responsibilities: string }
+) {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const title = fields.title.trim().slice(0, MAX_TITLE);
+  if (!title) return { error: "Give the posting a title" };
+
+  const { error } = await supabase
+    .from("job_postings")
+    .update({
+      title,
+      department: fields.department.trim().slice(0, MAX_DEPARTMENT),
+      job_description: fields.jobDescription.trim().slice(0, MAX_JOB_DESCRIPTION_LENGTH),
+      responsibilities: fields.responsibilities.trim().slice(0, MAX_RESPONSIBILITIES),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", postingId)
+    .eq("organization_id", organizationId);
+  if (error) return { error: "Could not update the posting — try again." };
+
+  revalidatePath("/dashboard/company/hiring");
+  revalidatePath(`/dashboard/company/hiring/${postingId}`);
+  return { success: true };
+}
+
+export async function setJobPostingStatus(postingId: string, status: JobPostingStatus) {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { error } = await supabase
+    .from("job_postings")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", postingId)
+    .eq("organization_id", organizationId);
+  if (error) return { error: "Could not update status — try again." };
+
+  revalidatePath("/dashboard/company/hiring");
+  revalidatePath(`/dashboard/company/hiring/${postingId}`);
+  return { success: true };
+}
+
+export async function deleteJobPosting(postingId: string) {
+  const { supabase, user } = await requireAdmin();
+  if (!user) return { error: "Not authorized" };
+
+  // RLS restricts this to admins of the posting's own org — cascade removes
+  // its requirements, candidates, and every candidate-scoped row beneath them.
+  await supabase.from("job_postings").delete().eq("id", postingId);
+  revalidatePath("/dashboard/company/hiring");
+  return { success: true };
+}
+
+// Thin wrapper around Job Architecture's existing suggestRoleGrading() —
+// reused directly rather than duplicating its prompt/tool. Only the
+// competencyRequirements portion is meant to be persisted (via
+// saveJobPostingRequirements below); grade/track/level are returned for
+// on-screen context only. Decision support the admin reviews before saving,
+// never auto-applied.
+export async function suggestPostingRequirements(
+  title: string,
+  responsibilities: string
+): Promise<{ error: string } | { suggestion: RoleGradingSuggestion }> {
+  const { user } = await requireAdmin();
+  if (!user) return { error: "Not authorized" };
+  return suggestRoleGrading(title, responsibilities);
+}
+
+export async function saveJobPostingRequirements(postingId: string, requirements: { dimension: string; targetLevel: number }[]) {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { data: posting } = await supabase
+    .from("job_postings")
+    .select("id")
+    .eq("id", postingId)
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ id: string }>();
+  if (!posting) return { error: "Posting not found" };
+
+  // Only the 8 real dimensions, clamped 0-100 — defense in depth on top of
+  // the AI tool schema, same posture as createJobRole.
+  const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
+  const rows = requirements
+    .filter((r) => validDims.has(r.dimension))
+    .map((r) => ({
+      organization_id: organizationId,
+      posting_id: postingId,
+      dimension: r.dimension,
+      target_level: Math.min(100, Math.max(0, Math.round(r.targetLevel))),
+    }));
+
+  await supabase.from("job_posting_competency_requirements").delete().eq("posting_id", postingId);
+  if (rows.length) {
+    const { error } = await supabase.from("job_posting_competency_requirements").insert(rows);
+    if (error) {
+      console.error("saveJobPostingRequirements failed:", error);
+      return { error: "Could not save requirements — try again." };
+    }
+  }
+
+  revalidatePath(`/dashboard/company/hiring/${postingId}`);
+  return { success: true };
+}
