@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import EnglishProficiencyForm from "@/components/dashboard/EnglishProficiencyForm";
 
 export const metadata = { title: "English Proficiency — Devometrics" };
 
 export default async function EnglishProficiencyPage() {
+  const t = await getTranslations("englishProficiencyPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,14 +19,13 @@ export default async function EnglishProficiencyPage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/assessments" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← All assessments
+            {t("backToAll")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            English Proficiency
+            {t("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            A CEFR-style level test (A1–C2) — grammar, vocabulary, and reading comprehension with real
-            correct answers, not a self-rating.
+            {t("subtitle")}
           </p>
         </div>
         <EnglishProficiencyForm />

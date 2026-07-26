@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { startExerciseAttempt, submitExerciseAttempt } from "@/app/dashboard/assessments/exerciseActions";
 import type { CaseStudyExercise } from "@/lib/assessments/caseStudyExercises";
 import type { ExerciseReport } from "@/lib/assessments/scoreCaseStudyExercise";
@@ -53,23 +54,24 @@ function TimerRing({ secondsLeft, totalSeconds }: { secondsLeft: number; totalSe
 }
 
 function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report: ExerciseReport }) {
+  const t = useTranslations("exerciseAttempt");
   const color = report.score >= 70 ? "#00C9A7" : report.score >= 40 ? "#f0b840" : "#f87171";
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
       <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-        {exercise.title} — result
+        {t("resultLabel", { title: exercise.title })}
       </span>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 12 }}>
         <span style={{ fontSize: 48, fontWeight: 800, color }}>{report.score}</span>
-        <span style={{ fontSize: 16, color: "var(--text-muted)" }}>/ 100 — {exercise.dimension}</span>
+        <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("outOf100", { dimension: exercise.dimension })}</span>
       </div>
 
       <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         <div style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.2)", borderRadius: 10, padding: 16 }}>
           <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginBottom: 10 }}>
-            Strengths
+            {t("strengths")}
           </h3>
-          <ul style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 18 }}>
+          <ul style={{ display: "flex", flexDirection: "column", gap: 8, paddingInlineStart: 18 }}>
             {report.strengths.map((s, i) => (
               <li key={i} style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{s}</li>
             ))}
@@ -77,9 +79,9 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
         </div>
         <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.2)", borderRadius: 10, padding: 16 }}>
           <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--amber)", textTransform: "uppercase", marginBottom: 10 }}>
-            Gaps
+            {t("gaps")}
           </h3>
-          <ul style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 18 }}>
+          <ul style={{ display: "flex", flexDirection: "column", gap: 8, paddingInlineStart: 18 }}>
             {report.gaps.map((g, i) => (
               <li key={i} style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{g}</li>
             ))}
@@ -89,22 +91,23 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
 
       <div style={{ marginTop: 20, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 16 }}>
         <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8 }}>
-          What to sharpen next
+          {t("whatToSharpen")}
         </h3>
         <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7 }}>{report.recommendation}</p>
       </div>
 
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24 }}>
-        AI-generated feedback on a single timed exercise — a directional read, not a certified assessment.
+        {t("footerDisclaimer")}
       </p>
       <Link href="/dashboard/assessments" style={{ display: "inline-block", marginTop: 16, color: "var(--teal)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-        ← Back to Assessment Center
+        {t("backToAssessmentCenter")}
       </Link>
     </div>
   );
 }
 
 export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExercise }) {
+  const t = useTranslations("exerciseAttempt");
   const totalSeconds = exercise.timeLimitMinutes * 60;
   const [phase, setPhase] = useState<"intro" | "active" | "done">("intro");
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -143,7 +146,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
     const result = await submitExerciseAttempt(attemptId, exercise.slug, response);
     setSubmitting(false);
     if (result.error || !result.report) {
-      setError(result.error ?? "Something went wrong — try again.");
+      setError(result.error ?? t("genericError"));
       return;
     }
     setReport(result.report);
@@ -181,7 +184,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
               padding: "6px 14px",
             }}
           >
-            {exercise.timeLimitMinutes} minutes once you start
+            {t("minutesOnceStarted", { count: exercise.timeLimitMinutes })}
           </span>
         </div>
         {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 16 }}>{error}</p>}
@@ -199,7 +202,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
             cursor: "pointer",
           }}
         >
-          Start the clock
+          {t("startTheClock")}
         </button>
       </div>
     );
@@ -228,14 +231,14 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
 
       {timeUp && (
         <p style={{ fontSize: 13, color: "var(--amber)", marginBottom: 12 }}>
-          Time&apos;s up — you can still submit whenever you&apos;re ready, just try to wrap up.
+          {t("timeUpNote")}
         </p>
       )}
 
       <textarea
         value={response}
         onChange={(e) => setResponse(e.target.value)}
-        placeholder="Write your response here…"
+        placeholder={t("responsePlaceholder")}
         rows={10}
         style={{
           width: "100%",
@@ -270,7 +273,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
           opacity: submitting ? 0.6 : 1,
         }}
       >
-        {submitting ? "Scoring…" : "Submit for feedback"}
+        {submitting ? t("scoring") : t("submitForFeedback")}
       </button>
     </div>
   );

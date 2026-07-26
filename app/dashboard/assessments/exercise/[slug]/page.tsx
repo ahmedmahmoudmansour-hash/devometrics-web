@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCaseStudyExercise } from "@/lib/assessments/caseStudyExercises";
 import ExerciseAttempt from "@/components/dashboard/ExerciseAttempt";
@@ -15,6 +16,7 @@ export default async function ExercisePage({
   const { slug } = await params;
   const exercise = getCaseStudyExercise(slug);
   if (!exercise) notFound();
+  const t = await getTranslations("exercisePage");
 
   const supabase = await createClient();
   const {
@@ -29,13 +31,13 @@ export default async function ExercisePage({
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/assessments" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Assessment Center
+            {t("backToAssessmentCenter")}
           </Link>
         </div>
         <PremiumGate
           tier={effectiveSubscriptionTier(profile ?? null)}
-          feature="Timed case-study exercise"
-          description="A realistic, timed scenario with AI-graded feedback on your response — upgrade to Premium to attempt it."
+          feature={t("premiumFeatureName")}
+          description={t("premiumFeatureDescription")}
         >
           <ExerciseAttempt exercise={exercise} />
         </PremiumGate>

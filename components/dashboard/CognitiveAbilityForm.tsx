@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { submitCognitiveAbility } from "@/app/dashboard/assessments/cognitiveAbilityActions";
 import {
   COGNITIVE_QUESTIONS,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/assessments/cognitiveAbility";
 
 export default function CognitiveAbilityForm() {
+  const t = useTranslations("cognitiveAbilityForm");
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -38,15 +40,15 @@ export default function CognitiveAbilityForm() {
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-          Cognitive Reasoning — result
+          {t("resultLabel")}
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 12 }}>
           <span style={{ fontSize: 44, fontWeight: 800, color: "var(--text)" }}>{band}</span>
-          <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{result.score}/100 correct</span>
+          <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("scoreCorrect", { score: result.score })}</span>
         </div>
 
         <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginTop: 24, marginBottom: 10 }}>
-          Breakdown by domain
+          {t("breakdownByDomain")}
         </h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {breakdown.map((b) => (
@@ -61,7 +63,7 @@ export default function CognitiveAbilityForm() {
                   }}
                 />
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "right" }}>
+              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "end" }}>
                 {b.correct}/{b.total}
               </span>
             </div>
@@ -69,14 +71,13 @@ export default function CognitiveAbilityForm() {
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24, lineHeight: 1.6 }}>
-          This is a fixed 54-question snapshot across numerical, verbal, and logical reasoning — not an
-          adaptive or certified aptitude battery. {COGNITIVE_DISCLAIMER}
+          {t("resultFooter", { disclaimer: COGNITIVE_DISCLAIMER })}
         </p>
         <Link
           href="/dashboard/assessments"
           style={{ display: "inline-block", marginTop: 20, color: "var(--teal)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}
         >
-          ← Back to all assessments
+          {t("backToAll")}
         </Link>
       </div>
     );
@@ -94,8 +95,7 @@ export default function CognitiveAbilityForm() {
       </div>
 
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
-        54 questions across numerical, verbal, and logical reasoning. Each has one correct answer —
-        this measures reasoning, not job knowledge or vocabulary.
+        {t("intro")}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
@@ -162,7 +162,7 @@ export default function CognitiveAbilityForm() {
           opacity: allAnswered ? 1 : 0.4,
         }}
       >
-        {isPending ? "Scoring…" : "See my result"}
+        {isPending ? t("scoring") : t("seeMyResult")}
       </button>
     </div>
   );

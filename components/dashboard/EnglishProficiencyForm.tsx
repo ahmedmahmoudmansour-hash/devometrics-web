@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { submitEnglishProficiency } from "@/app/dashboard/assessments/englishProficiencyActions";
 import {
   ENGLISH_PROFICIENCY_QUESTIONS,
@@ -12,9 +13,13 @@ import {
   type CEFRLevel,
 } from "@/lib/assessments/englishProficiency";
 
-const SKILL_LABEL: Record<string, string> = { grammar: "Grammar", vocabulary: "Vocabulary", reading: "Reading" };
-
 export default function EnglishProficiencyForm() {
+  const t = useTranslations("englishProficiencyForm");
+  const SKILL_LABEL: Record<string, string> = {
+    grammar: t("skillGrammar"),
+    vocabulary: t("skillVocabulary"),
+    reading: t("skillReading"),
+  };
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -41,18 +46,18 @@ export default function EnglishProficiencyForm() {
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-          English Proficiency — result
+          {t("resultLabel")}
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 12 }}>
           <span style={{ fontSize: 44, fontWeight: 800, color: "var(--text)" }}>{level}</span>
           <span style={{ fontSize: 16, color: "var(--text-muted)" }}>
-            {CEFR_DESCRIPTIONS[level].label} — {result.score}/100 correct
+            {t("scoreCorrect", { level: CEFR_DESCRIPTIONS[level].label, score: result.score })}
           </span>
         </div>
         <p style={{ fontSize: 14, color: "var(--text)", marginTop: 16, lineHeight: 1.7 }}>{CEFR_DESCRIPTIONS[level].canDo}</p>
 
         <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginTop: 24, marginBottom: 10 }}>
-          Breakdown by level
+          {t("breakdownByLevel")}
         </h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {breakdown.map((b) => (
@@ -67,7 +72,7 @@ export default function EnglishProficiencyForm() {
                   }}
                 />
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "right" }}>
+              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "end" }}>
                 {b.correct}/{b.total}
               </span>
             </div>
@@ -75,7 +80,7 @@ export default function EnglishProficiencyForm() {
         </div>
 
         <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginTop: 24, marginBottom: 10 }}>
-          Breakdown by skill
+          {t("breakdownBySkill")}
         </h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {bySkill.map((b) => (
@@ -92,7 +97,7 @@ export default function EnglishProficiencyForm() {
                   }}
                 />
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "right" }}>
+              <span style={{ fontSize: 12, color: "var(--text-muted)", width: 34, textAlign: "end" }}>
                 {b.correct}/{b.total}
               </span>
             </div>
@@ -100,15 +105,13 @@ export default function EnglishProficiencyForm() {
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24, lineHeight: 1.6 }}>
-          This is a fixed 54-question snapshot (grammar, vocabulary, and reading comprehension, evenly
-          split at every level), not an adaptive or certified exam — treat the {level} result as a
-          directional placement, not an official language certification.
+          {t("resultFooter", { level })}
         </p>
         <Link
           href="/dashboard/assessments"
           style={{ display: "inline-block", marginTop: 20, color: "var(--teal)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}
         >
-          ← Back to all assessments
+          {t("backToAll")}
         </Link>
       </div>
     );
@@ -122,16 +125,14 @@ export default function EnglishProficiencyForm() {
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
-        54 questions across grammar, vocabulary, and reading comprehension — an even 3 of each per
-        level — ordered from beginner to advanced. Unlike the self-report assessments, these have one
-        correct answer each.
+        {t("intro")}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
         {[...grouped.entries()].map(([level, questions]) => (
           <div key={level}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 14 }}>
-              Level {level} — {CEFR_DESCRIPTIONS[level].label}
+              {t("levelHeading", { level, label: CEFR_DESCRIPTIONS[level].label })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
               {questions.map((q) => (
@@ -142,7 +143,7 @@ export default function EnglishProficiencyForm() {
                     </p>
                   )}
                   <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 10, lineHeight: 1.6 }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", marginRight: 8 }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", marginInlineEnd: 8 }}>
                       {SKILL_LABEL[q.skill]}
                     </span>
                     {q.prompt}
@@ -193,7 +194,7 @@ export default function EnglishProficiencyForm() {
           opacity: allAnswered ? 1 : 0.4,
         }}
       >
-        {isPending ? "Scoring…" : "See my level"}
+        {isPending ? t("scoring") : t("seeMyLevel")}
       </button>
     </div>
   );

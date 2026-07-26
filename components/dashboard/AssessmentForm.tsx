@@ -2,18 +2,11 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { saveAssessmentResult } from "@/app/dashboard/assessments/actions";
 import { scoreToBand, type Assessment } from "@/lib/assessments/catalog";
 import { caseStudiesForAssessment, buildCaseStudyInsight, type CaseStudyAnswer } from "@/lib/assessments/caseStudies";
 import type { CaseStudyResponse } from "@/lib/supabase/types";
-
-const LIKERT = [
-  { value: 1, label: "Strongly disagree" },
-  { value: 2, label: "Disagree" },
-  { value: 3, label: "Neutral" },
-  { value: 4, label: "Agree" },
-  { value: 5, label: "Strongly agree" },
-];
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -35,6 +28,14 @@ export default function AssessmentForm({
   assessment: Assessment;
   careerStage: string | null;
 }) {
+  const t = useTranslations("assessmentForm");
+  const LIKERT = [
+    { value: 1, label: t("likertStronglyDisagree") },
+    { value: 2, label: t("likertDisagree") },
+    { value: 3, label: t("likertNeutral") },
+    { value: 4, label: t("likertAgree") },
+    { value: 5, label: t("likertStronglyAgree") },
+  ];
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [step, setStep] = useState<"likert" | "case-studies" | "result">("likert");
   const [likertScore, setLikertScore] = useState(0);
@@ -92,7 +93,7 @@ export default function AssessmentForm({
     const openCaseStudies = caseStudies.filter((c) => c.type === "open");
 
     if (mcqCaseStudies.some((c) => !mcqSelections[c.id])) {
-      setSubmitError("Please answer every case study before continuing.");
+      setSubmitError(t("answerEveryError"));
       return;
     }
 
@@ -145,11 +146,11 @@ export default function AssessmentForm({
         }}
       >
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-          {assessment.name} — result
+          {t("resultLabel", { name: assessment.name })}
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 12 }}>
           <span style={{ fontSize: 44, fontWeight: 800, color: "var(--text)" }}>{result.score}</span>
-          <span style={{ fontSize: 16, color: "var(--text-muted)" }}>/ 100 — {band.label}</span>
+          <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("outOf100", { band: band.label })}</span>
         </div>
         <p style={{ fontSize: 14, color: "var(--text)", marginTop: 16, lineHeight: 1.7 }}>
           {band.interpretation(assessment.name)}
@@ -158,14 +159,14 @@ export default function AssessmentForm({
         {result.insight && (
           <div style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.2)", borderRadius: 10, padding: 16, marginTop: 20 }}>
             <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginBottom: 8 }}>
-              Case study insight
+              {t("caseStudyInsightTitle")}
             </h3>
             <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.7 }}>{result.insight}</p>
           </div>
         )}
 
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginTop: 24, marginBottom: 10 }}>
-          Suggested next steps
+          {t("suggestedNextSteps")}
         </h3>
         <ul style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {band.developmentAreas.map((d) => (
@@ -175,8 +176,7 @@ export default function AssessmentForm({
           ))}
         </ul>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24 }}>
-          Designed to help you understand yourself better, not to diagnose or label you.
-          AI-generated guidance — not a certification.
+          {t("footerDisclaimer")}
         </p>
         <Link
           href="/dashboard/assessments"
@@ -189,7 +189,7 @@ export default function AssessmentForm({
             textDecoration: "none",
           }}
         >
-          ← Back to all assessments
+          {t("backToAll")}
         </Link>
       </div>
     );
@@ -199,8 +199,7 @@ export default function AssessmentForm({
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
         <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
-          A few short scenarios to add real-situation signal beyond the self-report score above —
-          how you&apos;d actually handle it, not just how you&apos;d rate yourself.
+          {t("caseStudiesIntro")}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
           {caseStudies.map((c, i) => (
@@ -216,7 +215,7 @@ export default function AssessmentForm({
                       type="button"
                       onClick={() => setMcqSelections((prev) => ({ ...prev, [c.id]: opt.id }))}
                       style={{
-                        textAlign: "left",
+                        textAlign: "start",
                         fontSize: 13,
                         padding: "10px 14px",
                         borderRadius: 8,
@@ -236,7 +235,7 @@ export default function AssessmentForm({
                   <textarea
                     value={openText[c.id] ?? ""}
                     onChange={(e) => setOpenText((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                    placeholder="Optional — answer for a deeper, AI-scored insight, or skip it."
+                    placeholder={t("openTextPlaceholder")}
                     rows={4}
                     style={inputStyle}
                   />
@@ -265,7 +264,7 @@ export default function AssessmentForm({
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            {isPending ? "Scoring…" : "See my full result"}
+            {isPending ? t("scoring") : t("seeFullResult")}
           </button>
           <button
             type="button"
@@ -282,7 +281,7 @@ export default function AssessmentForm({
               cursor: "pointer",
             }}
           >
-            Skip case studies
+            {t("skipCaseStudies")}
           </button>
         </div>
       </div>
@@ -299,8 +298,7 @@ export default function AssessmentForm({
       }}
     >
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>
-        Rate how much each statement reflects you — there are no right answers, just a
-        clearer picture of where you stand.
+        {t("likertIntro")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
         {assessment.questions.map((q, i) => (
@@ -351,7 +349,7 @@ export default function AssessmentForm({
           opacity: allAnswered ? 1 : 0.4,
         }}
       >
-        {caseStudies.length > 0 ? "Continue to case studies" : "See my score"}
+        {caseStudies.length > 0 ? t("continueToCaseStudies") : t("seeMyScore")}
       </button>
     </div>
   );

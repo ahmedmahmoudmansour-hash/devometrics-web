@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { generateQuickPlan } from "@/app/dashboard/gap-analysis/actions";
 import { updateProfile } from "@/app/dashboard/actions";
 import PersonalizationFields, { type PersonalizationValues } from "@/components/dashboard/PersonalizationFields";
@@ -16,6 +17,7 @@ export default function AssessmentPlanGenerator({
   personalization: PersonalizationValues;
   defaultTargetRole: string;
 }) {
+  const t = useTranslations("assessmentPlanGenerator");
   const [targetRole, setTargetRole] = useState(defaultTargetRole);
   const [horizon, setHorizon] = useState<Horizon>("90-day");
   const [values, setValues] = useState<PersonalizationValues>(personalization);
@@ -35,19 +37,17 @@ export default function AssessmentPlanGenerator({
       }}
     >
       <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Turn these results into a Personal Development Plan
+        {t("title")}
       </h2>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-        Builds a paced plan from everything known about you — your completed
-        assessments, CV, Career Profile, and Big Five — the same engine behind
-        every plan on Devometrics, just triggered from here.
+        {t("subtitle")}
       </p>
 
       {result?.success ? (
         <p style={{ fontSize: 14, color: "var(--teal)", fontWeight: 600 }}>
-          Plan created —{" "}
+          {t("planCreatedPrefix")}{" "}
           <Link href={`/dashboard/plans/${result.planId}`} style={{ color: "var(--teal)" }}>
-            view it on your dashboard
+            {t("viewOnDashboard")}
           </Link>
           .
         </p>
@@ -55,15 +55,15 @@ export default function AssessmentPlanGenerator({
         <>
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>
-              Target role
+              {t("targetRoleLabel")}
             </label>
             <input
               type="text"
               required
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
-              aria-label="Target role"
-              placeholder="e.g. Senior Product Manager"
+              aria-label={t("targetRoleLabel")}
+              placeholder={t("targetRolePlaceholder")}
               style={{
                 width: "100%",
                 background: "rgba(255,255,255,0.05)",
@@ -109,7 +109,7 @@ export default function AssessmentPlanGenerator({
             onClick={() =>
               startTransition(async () => {
                 if (!targetRole.trim()) {
-                  setResult({ error: "Target role is required." });
+                  setResult({ error: t("targetRoleRequired") });
                   return;
                 }
                 await updateProfile(
@@ -134,7 +134,7 @@ export default function AssessmentPlanGenerator({
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            {isPending ? "Creating plan…" : "Generate my PDP"}
+            {isPending ? t("creatingPlan") : t("generateMyPdp")}
           </button>
         </>
       )}

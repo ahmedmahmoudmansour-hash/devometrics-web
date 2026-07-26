@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getAssessment } from "@/lib/assessments/catalog";
 import AssessmentForm from "@/components/dashboard/AssessmentForm";
@@ -13,6 +14,7 @@ export default async function AssessmentPage({
   const { slug } = await params;
   const assessment = getAssessment(slug);
   if (!assessment) notFound();
+  const t = await getTranslations("assessmentPage");
 
   const supabase = await createClient();
   const {
@@ -31,7 +33,7 @@ export default async function AssessmentPage({
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/assessments" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← All assessments
+            {t("backToAll")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
             {assessment.name}

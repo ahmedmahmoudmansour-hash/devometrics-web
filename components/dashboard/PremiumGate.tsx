@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { SubscriptionTier } from "@/lib/billing/subscriptionTier";
 
 // UI-level companion to the server-side tier checks in the underlying
@@ -16,12 +17,13 @@ export default function PremiumGate({
   description: string;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("premiumGate");
   if (tier !== "free") return <>{children}</>;
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 8 }}>
-        Premium feature
+        {t("premiumFeature")}
       </p>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{feature}</h2>
       <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 20 }}>{description}</p>
@@ -39,7 +41,7 @@ export default function PremiumGate({
             textDecoration: "none",
           }}
         >
-          Upgrade — Monthly
+          {t("upgradeMonthly")}
         </a>
         <a
           href="/api/billing/checkout?cadence=annual"
@@ -54,7 +56,7 @@ export default function PremiumGate({
             textDecoration: "none",
           }}
         >
-          Annual — save more
+          {t("annualSaveMore")}
         </a>
       </div>
     </div>

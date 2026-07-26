@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ASSESSMENTS, LEVEL_SECTIONS, type LevelSection } from "@/lib/assessments/catalog";
 import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
@@ -26,6 +27,7 @@ function sectionForCareerStage(careerStage: string | null): LevelSection | null 
 }
 
 export default async function AssessmentsPage() {
+  const t = await getTranslations("assessmentsPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,9 +87,9 @@ export default async function AssessmentsPage() {
   const pendingAssigned = (assignedRows ?? [])
     .map((r) =>
       r.assessment_slug === ENGLISH_PROFICIENCY_SLUG
-        ? { slug: ENGLISH_PROFICIENCY_SLUG, name: "English Proficiency" }
+        ? { slug: ENGLISH_PROFICIENCY_SLUG, name: t("englishProficiencyName") }
         : r.assessment_slug === COGNITIVE_ABILITY_SLUG
-        ? { slug: COGNITIVE_ABILITY_SLUG, name: "Cognitive Reasoning" }
+        ? { slug: COGNITIVE_ABILITY_SLUG, name: t("cognitiveReasoningName") }
         : ASSESSMENTS.find((a) => a.slug === r.assessment_slug)
     )
     .filter((a): a is { slug: string; name: string } => !!a && !latestBySlug.has(a.slug));
@@ -109,26 +111,38 @@ export default async function AssessmentsPage() {
     ? [LEVEL_SECTIONS.find((s) => s.key === recommended)!, ...LEVEL_SECTIONS.filter((s) => s.key !== recommended)]
     : LEVEL_SECTIONS;
 
+  const SECTION_LABEL: Record<LevelSection, string> = {
+    Foundational: t("sectionFoundationalLabel"),
+    Professional: t("sectionProfessionalLabel"),
+    Leadership: t("sectionLeadershipLabel"),
+    Executive: t("sectionExecutiveLabel"),
+  };
+  const SECTION_BLURB: Record<LevelSection, string> = {
+    Foundational: t("sectionFoundationalBlurb"),
+    Professional: t("sectionProfessionalBlurb"),
+    Leadership: t("sectionLeadershipBlurb"),
+    Executive: t("sectionExecutiveBlurb"),
+  };
+
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 32 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Assessment Center
+            {t("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            {ASSESSMENTS.length} assessments, organized by level, to help you understand your
-            strengths and blind spots more clearly.
+            {t("subtitle", { count: ASSESSMENTS.length })}
           </p>
         </div>
 
         {pendingAssigned.length > 0 && (
           <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: "#f0b840", marginBottom: 10 }}>
-              Assigned to you ({pendingAssigned.length})
+              {t("assignedToYou", { count: pendingAssigned.length })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {pendingAssigned.map((a) => (
@@ -138,7 +152,7 @@ export default async function AssessmentsPage() {
                   style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}
                 >
                   <span style={{ color: "var(--text)" }}>{a.name}</span>
-                  <span style={{ color: "#f0b840", fontWeight: 600 }}>Start →</span>
+                  <span style={{ color: "#f0b840", fontWeight: 600 }}>{t("start")}</span>
                 </Link>
               ))}
             </div>
@@ -159,11 +173,10 @@ export default async function AssessmentsPage() {
 
         <div style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-            Language Proficiency
+            {t("languageProficiencyTitle")}
           </h2>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-            A real ability test — grammar, vocabulary, and reading comprehension with correct answers,
-            leveled A1–C2. Unlike everything below, this isn&apos;t a self-rating.
+            {t("languageProficiencyBlurb")}
           </p>
           <Link
             href={`/dashboard/assessments/${ENGLISH_PROFICIENCY_SLUG}`}
@@ -178,19 +191,19 @@ export default async function AssessmentsPage() {
             }}
           >
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-              CEFR-style · 54 questions
+              {t("cefrBadge")}
             </span>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
-              English Proficiency
+              {t("englishProficiencyName")}
             </h3>
             {(() => {
               const result = latestBySlug.get(ENGLISH_PROFICIENCY_SLUG);
               return result ? (
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
-                  Completed — {cefrLevelFromScore(result.score)}
+                  {t("completedCefr", { level: cefrLevelFromScore(result.score) })}
                 </span>
               ) : (
-                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
               );
             })()}
           </Link>
@@ -198,11 +211,10 @@ export default async function AssessmentsPage() {
 
         <div style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-            Cognitive Reasoning
+            {t("cognitiveReasoningTitle")}
           </h2>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-            A short numerical, verbal, and logical reasoning exercise with real correct answers — a
-            self-development input, not a hiring or selection instrument.
+            {t("cognitiveReasoningBlurb")}
           </p>
           <Link
             href={`/dashboard/assessments/${COGNITIVE_ABILITY_SLUG}`}
@@ -217,19 +229,19 @@ export default async function AssessmentsPage() {
             }}
           >
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-              54 questions · 3 domains
+              {t("cognitiveBadge")}
             </span>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
-              Cognitive Reasoning
+              {t("cognitiveReasoningName")}
             </h3>
             {(() => {
               const result = latestBySlug.get(COGNITIVE_ABILITY_SLUG);
               return result ? (
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
-                  Completed — {cognitiveBandFromScore(result.score)}
+                  {t("completedBand", { band: cognitiveBandFromScore(result.score) })}
                 </span>
               ) : (
-                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
               );
             })()}
           </Link>
@@ -237,11 +249,10 @@ export default async function AssessmentsPage() {
 
         <div style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-            Assessment Centre — Timed Case Studies
+            {t("caseStudiesTitle")}
           </h2>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-            A deeper, timed exercise — a real business case, a written response, and a structured
-            feedback report. Not a quick self-rating.
+            {t("caseStudiesBlurb")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
             {CASE_STUDY_EXERCISES.map((ex) => {
@@ -265,7 +276,7 @@ export default async function AssessmentsPage() {
                       {ex.dimension} · {ex.level}
                     </span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "var(--amber)", whiteSpace: "nowrap" }}>
-                      {ex.timeLimitMinutes} min
+                      {t("minutesSuffix", { count: ex.timeLimitMinutes })}
                     </span>
                   </div>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
@@ -286,7 +297,7 @@ export default async function AssessmentsPage() {
                         marginBottom: 8,
                       }}
                     >
-                      Matches your goal
+                      {t("matchesGoal")}
                     </span>
                   )}
                   <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 14 }}>
@@ -294,10 +305,10 @@ export default async function AssessmentsPage() {
                   </p>
                   {attempt ? (
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
-                      Completed — {attempt.score}/100 →
+                      {t("completedScoreArrow", { score: attempt.score ?? 0 })}
                     </span>
                   ) : (
-                    <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+                    <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
                   )}
                 </Link>
               );
@@ -336,7 +347,7 @@ export default async function AssessmentsPage() {
                 >
                   {SECTION_ICON[section.key]}
                 </span>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{section.label}</h2>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{SECTION_LABEL[section.key]}</h2>
                 {isRecommended && (
                   <span
                     style={{
@@ -350,14 +361,14 @@ export default async function AssessmentsPage() {
                       padding: "3px 10px",
                     }}
                   >
-                    Recommended for you
+                    {t("recommendedForYou")}
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10, marginLeft: 36 }}>
-                {section.blurb}
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10, marginInlineStart: 36 }}>
+                {SECTION_BLURB[section.key]}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginLeft: 36 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, marginInlineStart: 36 }}>
                 <div style={{ flex: 1, maxWidth: 200, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                   <div
                     style={{
@@ -369,8 +380,8 @@ export default async function AssessmentsPage() {
                   />
                 </div>
                 <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                  {completedItems.length}/{items.length} completed
-                  {sectionAverage !== null && ` · avg ${sectionAverage}/100`}
+                  {t("sectionProgress", { completed: completedItems.length, total: items.length })}
+                  {sectionAverage !== null && t("sectionAverage", { avg: sectionAverage })}
                 </span>
               </div>
 
@@ -401,10 +412,10 @@ export default async function AssessmentsPage() {
                       </p>
                       {result ? (
                         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
-                          Completed — {result.score}/100
+                          {t("completedScore", { score: result.score })}
                         </span>
                       ) : (
-                        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+                        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
                       )}
                     </Link>
                   );
