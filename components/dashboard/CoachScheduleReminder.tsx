@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Defaults to tomorrow at 9am in whatever timezone the browser is actually
 // in — good enough as a starting point without needing a location prompt;
@@ -12,6 +13,7 @@ function defaultDate(): string {
 }
 
 export default function CoachScheduleReminder() {
+  const t = useTranslations("coachScheduleReminder");
   const [frequency, setFrequency] = useState<"WEEKLY" | "BIWEEKLY" | "MONTHLY">("WEEKLY");
   const [date, setDate] = useState(defaultDate());
   const [time, setTime] = useState("09:00");
@@ -57,20 +59,20 @@ export default function CoachScheduleReminder() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 11, color: "var(--text-muted)" }}>
-        <span style={{ color: "var(--teal)", fontWeight: 700 }}>1. Talk it through</span>
+        <span style={{ color: "var(--teal)", fontWeight: 700 }}>{t("step1")}</span>
         <span>→</span>
-        <span style={{ color: "var(--teal)", fontWeight: 700 }}>2. Agree an action plan</span>
+        <span style={{ color: "var(--teal)", fontWeight: 700 }}>{t("step2")}</span>
         <span>→</span>
-        <span style={{ color: "var(--teal)", fontWeight: 700 }}>3. Get reminded to follow through</span>
+        <span style={{ color: "var(--teal)", fontWeight: 700 }}>{t("step3")}</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Get recurring check-in reminders:</span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("getReminders")}</span>
         <input
           type="date"
           lang="en-US"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          aria-label="First reminder date"
+          aria-label={t("firstReminderDateAria")}
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.1)",
@@ -87,7 +89,7 @@ export default function CoachScheduleReminder() {
           lang="en-US"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          aria-label="First reminder time"
+          aria-label={t("firstReminderTimeAria")}
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.1)",
@@ -113,19 +115,19 @@ export default function CoachScheduleReminder() {
             cursor: "pointer",
           }}
         >
-          <option value="WEEKLY">Weekly</option>
-          <option value="BIWEEKLY">Every 2 weeks</option>
-          <option value="MONTHLY">Monthly</option>
+          <option value="WEEKLY">{t("weekly")}</option>
+          <option value="BIWEEKLY">{t("biweekly")}</option>
+          <option value="MONTHLY">{t("monthly")}</option>
         </select>
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
-          for
+          {t("forLabel")}
           <input
             type="number"
             min={1}
             max={52}
             value={sessions}
             onChange={(e) => setSessions(e.target.value)}
-            aria-label="Number of sessions"
+            aria-label={t("sessionsCountAria")}
             style={{
               width: 48,
               background: "rgba(255,255,255,0.05)",
@@ -137,7 +139,7 @@ export default function CoachScheduleReminder() {
               outline: "none",
             }}
           />
-          sessions
+          {t("sessionsLabel")}
         </label>
         <a
           href={href}
@@ -154,13 +156,12 @@ export default function CoachScheduleReminder() {
             opacity: href ? 1 : 0.5,
           }}
         >
-          Add to calendar
+          {t("addToCalendar")}
         </a>
       </div>
       {timezone && (
         <p style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          Time shown in your detected timezone ({timezone}) — the downloaded event adjusts automatically for
-          whoever&apos;s calendar it lands in.
+          {t("timezoneNote", { timezone })}
         </p>
       )}
     </div>

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import CoachChat from "@/components/dashboard/CoachChat";
 import CoachMemoryCard from "@/components/dashboard/CoachMemoryCard";
 import type { CoachGrowMemory, CoachMessage, Profile } from "@/lib/supabase/types";
 
 export default async function CoachPage() {
+  const t = await getTranslations("coachPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,10 +40,10 @@ export default async function CoachPage() {
         <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
           <div>
             <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-              ← Back to progress
+              {t("backToProgress")}
             </Link>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-              AI Career Coach
+              {t("title")}
             </h1>
           </div>
           <Link
@@ -58,7 +60,7 @@ export default async function CoachPage() {
               whiteSpace: "nowrap",
             }}
           >
-            📅 Book sessions
+            {t("bookSessions")}
           </Link>
         </div>
         <CoachMemoryCard memory={growMemory ?? null} />

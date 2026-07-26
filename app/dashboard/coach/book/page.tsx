@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import CoachScheduleReminder from "@/components/dashboard/CoachScheduleReminder";
 
@@ -9,6 +10,7 @@ export const metadata = { title: "Book a Coaching Session — Devometrics" };
 // conversation — scheduling controls mixed into the chat screen made both
 // jobs harder to find (user feedback: "separate booking from coaching").
 export default async function CoachBookingPage() {
+  const t = await getTranslations("coachBookPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,15 +22,13 @@ export default async function CoachBookingPage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/coach" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to coaching
+            {t("backToCoaching")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Book coaching sessions
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6 }}>
-            Set a recurring cadence and add it to your own calendar — most people get the most out
-            of a 30–45 minute session weekly or every two weeks. Your coach is available anytime,
-            so a booked slot is a commitment to yourself, not a queue.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export default async function CoachBookingPage() {
           }}
         >
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            Ready now? You don&apos;t need an appointment to start.
+            {t("readyNow")}
           </p>
           <Link
             href="/dashboard/coach"
@@ -63,7 +63,7 @@ export default async function CoachBookingPage() {
               whiteSpace: "nowrap",
             }}
           >
-            Join session now →
+            {t("joinSessionNow")}
           </Link>
         </div>
       </div>

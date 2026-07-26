@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import type { CoachMessage } from "@/lib/supabase/types";
 import CoachAvatar from "@/components/CoachAvatar";
 import Avatar from "@/components/Avatar";
@@ -34,6 +35,7 @@ function modeButtonStyle(active: boolean): React.CSSProperties {
 }
 
 function SummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: () => void }) {
+  const t = useTranslations("coachChat");
   const [emailState, setEmailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
@@ -89,29 +91,29 @@ function SummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: 
           boxShadow: "0 20px 80px rgba(0,0,0,0.5)",
         }}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>Session summary</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text)" }}>{t("summaryTitle")}</h2>
 
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginTop: 16, marginBottom: 6 }}>
-          Meeting notes
+          {t("meetingNotes")}
         </p>
         <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7 }}>{summary.meetingNotes}</p>
 
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginTop: 16, marginBottom: 6 }}>
-          Action plan
+          {t("actionPlan")}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {summary.actionPlan.map((item, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.6 }}>— {item}</span>
               {addedItems.has(i) ? (
-                <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, whiteSpace: "nowrap" }}>✓ Added</span>
+                <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, whiteSpace: "nowrap" }}>{t("added")}</span>
               ) : (
                 <button
                   type="button"
                   onClick={() => addAsTask(item, i)}
                   style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer", whiteSpace: "nowrap" }}
                 >
-                  + Add as task
+                  {t("addAsTask")}
                 </button>
               )}
             </div>
@@ -135,14 +137,14 @@ function SummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: 
               opacity: emailState === "sending" ? 0.6 : 1,
             }}
           >
-            {emailState === "sent" ? "✓ Emailed" : emailState === "sending" ? "Sending…" : "✉️ Email me this"}
+            {emailState === "sent" ? t("emailed") : emailState === "sending" ? t("sending") : t("emailMeThis")}
           </button>
           <button
             type="button"
             onClick={onClose}
             style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
           >
-            Close
+            {t("close")}
           </button>
         </div>
         {emailError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{emailError}</p>}
@@ -186,6 +188,8 @@ export default function CoachChat({
   userAvatarUrl?: string | null;
   initialVoice: string;
 }) {
+  const t = useTranslations("coachChat");
+  const locale = useLocale();
   // Computed once from the server-provided history — new messages only ever
   // append to the live thread, so this never needs recomputing.
   const [{ today: initialToday, past: pastSessions }] = useState(() => partitionByDay(initialMessages));
@@ -309,9 +313,9 @@ export default function CoachChat({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Something went wrong");
+        throw new Error(body.error || t("errorFallback"));
       }
-      if (!res.body) throw new Error("Something went wrong");
+      if (!res.body) throw new Error(t("errorFallback"));
 
       // Streamed reply: an empty assistant bubble appears immediately and
       // fills word-by-word as chunks arrive — same experience as ChatGPT/
@@ -349,7 +353,7 @@ export default function CoachChat({
       }
       voiceStream?.end();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("errorFallback"));
     } finally {
       setLoading(false);
     }
@@ -389,7 +393,7 @@ export default function CoachChat({
             whiteSpace: "nowrap",
           }}
         >
-          ✕ End session
+          {t("endSession")}
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {messages.length >= 4 && (
@@ -410,7 +414,7 @@ export default function CoachChat({
               opacity: summaryLoading ? 0.6 : 1,
             }}
           >
-            {summaryLoading ? "Summarizing…" : "📋 Get summary"}
+            {summaryLoading ? t("summarizing") : t("getSummary")}
           </button>
         )}
         {(playing || voiceLoading) && (
@@ -429,20 +433,20 @@ export default function CoachChat({
               whiteSpace: "nowrap",
             }}
           >
-            ■ Stop speaking
+            {t("stopSpeaking")}
           </button>
         )}
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3 }}>
           <button type="button" onClick={() => handleModeChange("text")} style={modeButtonStyle(!isSpeechMode)}>
-            💬 Text
+            {t("textMode")}
           </button>
           <button type="button" onClick={() => handleModeChange("speech")} style={modeButtonStyle(isSpeechMode)}>
-            🔊 Speech
+            {t("speechMode")}
           </button>
         </div>
         {isSpeechMode && (
           <select
-            aria-label="Coach voice"
+            aria-label={t("coachVoiceAria")}
             value={voice}
             onChange={(e) => handleVoiceNameChange(e.target.value)}
             style={{
@@ -470,14 +474,14 @@ export default function CoachChat({
         {pastSessions.length > 0 && (
           <details style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: 12, padding: "10px 14px" }}>
             <summary style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer", listStyle: "none" }}>
-              🗂 Previous sessions ({pastSessions.length})
+              {t("previousSessions", { count: pastSessions.length })}
             </summary>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
               {pastSessions.map(([day, msgs]) => (
                 <details key={day} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 12px" }}>
                   <summary style={{ fontSize: 12, color: "var(--text)", cursor: "pointer" }}>
-                    {new Date(day).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric" })}
-                    <span style={{ color: "var(--text-muted)" }}> · {msgs.length} messages</span>
+                    {new Date(day).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric" })}
+                    <span style={{ color: "var(--text-muted)" }}>{t("messagesCount", { count: msgs.length })}</span>
                   </summary>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
                     {msgs.map((m, i) => (
@@ -508,8 +512,7 @@ export default function CoachChat({
           <div style={{ textAlign: "center", padding: "24px 0" }}>
             <Mascot size={64} />
             <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 12 }}>
-              Ask about your gap, next steps, or how to close a specific competency —
-              your coach knows your current plan and progress.
+              {t("emptyStatePrompt")}
             </p>
           </div>
         )}
@@ -565,10 +568,10 @@ export default function CoachChat({
                     }}
                   >
                     {voiceLoading
-                      ? "Loading…"
+                      ? t("loadingVoice")
                       : playing
-                        ? "Playing…"
-                        : `🔊 ${autoplayFailedFor.has(i) ? "Play (autoplay was blocked)" : "Play"}`}
+                        ? t("playingVoice")
+                        : autoplayFailedFor.has(i) ? t("playAutoplayBlocked") : t("play")}
                   </button>
                 </div>
               )}
@@ -578,7 +581,7 @@ export default function CoachChat({
         {loading && (
           <div style={{ display: "flex", gap: 10, alignSelf: "flex-start" }}>
             <CoachAvatar thinking />
-            <div style={{ color: "var(--text-muted)", fontSize: 13, alignSelf: "center" }}>Thinking…</div>
+            <div style={{ color: "var(--text-muted)", fontSize: 13, alignSelf: "center" }}>{t("thinking")}</div>
           </div>
         )}
         {error && (
@@ -586,12 +589,12 @@ export default function CoachChat({
         )}
         {voiceError && (
           <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>
-            Voice: {voiceError}
+            {t("voicePrefix")} {voiceError}
           </div>
         )}
         {micError && (
           <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>
-            Mic: {micError}
+            {t("micPrefix")} {micError}
           </div>
         )}
       </div>
@@ -604,8 +607,8 @@ export default function CoachChat({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          aria-label="Message to your career coach"
-          placeholder="Ask your career coach…"
+          aria-label={t("messageAria")}
+          placeholder={t("messagePlaceholder")}
           style={{
             flex: 1,
             background: "rgba(255,255,255,0.05)",
@@ -622,7 +625,7 @@ export default function CoachChat({
             type="button"
             onClick={toggleMic}
             disabled={loading}
-            aria-label={listening ? "Stop recording" : "Speak your message"}
+            aria-label={listening ? t("stopRecordingAria") : t("speakMessageAria")}
             style={{
               background: listening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
               border: listening ? "1px solid rgba(248,113,113,0.4)" : "1px solid var(--border)",
@@ -633,7 +636,7 @@ export default function CoachChat({
               color: listening ? "#f87171" : "var(--text-muted)",
             }}
           >
-            {listening ? "● Listening" : "🎙"}
+            {listening ? t("listeningLabel") : "🎙"}
           </button>
         )}
         <button
@@ -651,7 +654,7 @@ export default function CoachChat({
             opacity: loading ? 0.6 : 1,
           }}
         >
-          Send
+          {t("send")}
         </button>
       </form>
       {summary && <SummaryModal summary={summary} onClose={() => setSummary(null)} />}

@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { resetGrowMemory } from "@/lib/coach/actions";
 import type { CoachGrowMemory } from "@/lib/supabase/types";
 
@@ -20,6 +21,7 @@ function splitCommitments(will: string): string[] {
 }
 
 export default function CoachMemoryCard({ memory }: { memory: CoachGrowMemory | null }) {
+  const t = useTranslations("coachMemoryCard");
   const [isPending, startTransition] = useTransition();
 
   if (!memory || !(memory.goal || memory.reality || memory.options || memory.will)) return null;
@@ -39,7 +41,7 @@ export default function CoachMemoryCard({ memory }: { memory: CoachGrowMemory | 
           }}
         >
           <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--teal)", marginBottom: 10 }}>
-            Your action plan — agreed with your coach
+            {t("actionPlanTitle")}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {commitments.map((item, i) => (
@@ -55,7 +57,7 @@ export default function CoachMemoryCard({ memory }: { memory: CoachGrowMemory | 
       {(memory.goal || memory.reality || memory.options) && (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Coaching context so far</h2>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("coachingContextTitle")}</h2>
             <button
               type="button"
               disabled={isPending}
@@ -66,24 +68,24 @@ export default function CoachMemoryCard({ memory }: { memory: CoachGrowMemory | 
               }
               style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer" }}
             >
-              Reset
+              {t("reset")}
             </button>
           </div>
           {memory.goal && (
             <p style={ROW}>
-              <span style={LABEL}>Goal </span>
+              <span style={LABEL}>{t("goalLabel")} </span>
               <span style={{ color: "var(--text)" }}>{memory.goal}</span>
             </p>
           )}
           {memory.reality && (
             <p style={ROW}>
-              <span style={LABEL}>Reality </span>
+              <span style={LABEL}>{t("realityLabel")} </span>
               <span style={{ color: "var(--text)" }}>{memory.reality}</span>
             </p>
           )}
           {memory.options && (
             <p style={{ ...ROW, marginBottom: 0 }}>
-              <span style={LABEL}>Options </span>
+              <span style={LABEL}>{t("optionsLabel")} </span>
               <span style={{ color: "var(--text)" }}>{memory.options}</span>
             </p>
           )}
