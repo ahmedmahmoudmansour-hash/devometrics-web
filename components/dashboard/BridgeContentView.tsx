@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { generateBridgeContent } from "@/app/dashboard/gap-analysis/bridgeActions";
 import type { BridgeContent } from "@/lib/learning/bridgeContent";
 
@@ -14,6 +15,7 @@ const card: React.CSSProperties = {
 };
 
 function KnowledgeCheck({ questions }: { questions: BridgeContent["microLesson"]["knowledgeCheck"] }) {
+  const t = useTranslations("bridgeContentView");
   const [selections, setSelections] = useState<Record<number, number>>({});
   const [checked, setChecked] = useState(false);
 
@@ -22,7 +24,7 @@ function KnowledgeCheck({ questions }: { questions: BridgeContent["microLesson"]
   return (
     <div className="print-avoid-break" style={{ ...card, marginTop: 16 }}>
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 14 }}>
-        Knowledge check
+        {t("knowledgeCheckTitle")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         {questions.map((q, qi) => (
@@ -97,12 +99,11 @@ function KnowledgeCheck({ questions }: { questions: BridgeContent["microLesson"]
             opacity: Object.keys(selections).length < questions.length ? 0.4 : 1,
           }}
         >
-          Check my answers
+          {t("checkAnswers")}
         </button>
       ) : (
         <p className="no-print" style={{ marginTop: 14, fontSize: 13, color: "var(--text)" }}>
-          {correctCount}/{questions.length} correct — this is a formative self-check, not a graded
-          score.
+          {t("correctCount", { correct: correctCount, total: questions.length })}
         </p>
       )}
     </div>
@@ -122,6 +123,8 @@ export default function BridgeContentView({
   cached: BridgeContent | null;
   generatedAt: string | null;
 }) {
+  const t = useTranslations("bridgeContentView");
+  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -142,10 +145,8 @@ export default function BridgeContentView({
     return (
       <div style={card}>
         <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 16 }}>
-          Currently measured at <strong style={{ color: "var(--text)" }}>{currentLevel}/100</strong>,
-          targeting <strong style={{ color: "var(--text)" }}>{targetLevel}/100</strong>. Generate a
-          short lesson, one clear next step, a self-check, and real free resources — built for this
-          gap specifically, not pulled from a shared catalog.
+          {t("introPrefix")} <strong style={{ color: "var(--text)" }}>{currentLevel}/100</strong>
+          {t("introMiddle")} <strong style={{ color: "var(--text)" }}>{targetLevel}/100</strong>. {t("introSuffix")}
         </p>
         {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
         <button
@@ -164,7 +165,7 @@ export default function BridgeContentView({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Writing your content…" : "▶ Generate bridge content"}
+          {isPending ? t("writingContent") : t("generateBridge")}
         </button>
       </div>
     );
@@ -178,7 +179,7 @@ export default function BridgeContentView({
           onClick={() => window.print()}
           style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
         >
-          Download as PDF
+          {t("downloadPdf")}
         </button>
         <button
           type="button"
@@ -186,13 +187,13 @@ export default function BridgeContentView({
           disabled={isPending}
           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, color: "var(--text)", cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
         >
-          {isPending ? "Regenerating…" : "↻ Regenerate"}
+          {isPending ? t("regenerating") : t("regenerate")}
         </button>
         <Link
           href="/dashboard/gap-analysis"
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, color: "var(--text-muted)", textDecoration: "none" }}
         >
-          Re-run Gap Analysis to measure progress →
+          {t("rerunGapAnalysis")}
         </Link>
       </div>
       {error && <p className="no-print" style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
@@ -203,25 +204,27 @@ export default function BridgeContentView({
             Devometrics
           </span>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-            Bridging: {dimension} · {currentLevel} → {targetLevel}
+            {t("bridgingLabel", { dimension, current: currentLevel, target: targetLevel })}
           </p>
           {generatedAt && (
             <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
-              Generated {new Date(generatedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              {t("generatedOn", {
+                date: new Date(generatedAt).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { month: "long", day: "numeric", year: "numeric" }),
+              })}
             </p>
           )}
         </div>
 
         <div className="print-avoid-break" style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 6 }}>
-            Why this gap might exist
+            {t("whyGapTitle")}
           </p>
           <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{cached.diagnosticNote}</p>
         </div>
 
         <div className="print-avoid-break" style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.25)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 6 }}>
-            Your one next step
+            {t("nextStepTitle")}
           </p>
           <p style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.6 }}>{cached.recommendedActivity}</p>
         </div>
@@ -237,9 +240,9 @@ export default function BridgeContentView({
 
         <KnowledgeCheck questions={cached.microLesson.knowledgeCheck} />
 
-        <div className="print-avoid-break" style={{ ...card, marginTop: 16, borderLeft: "3px solid var(--teal)" }}>
+        <div className="print-avoid-break" style={{ ...card, marginTop: 16, borderInlineStart: "3px solid var(--teal)" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 6 }}>
-            Reflect
+            {t("reflectTitle")}
           </p>
           <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{cached.reflectionQuestion}</p>
         </div>
@@ -247,7 +250,7 @@ export default function BridgeContentView({
         {cached.externalResources.length > 0 && (
           <div className="print-avoid-break" style={{ ...card, marginTop: 16 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
-              Verified resources
+              {t("verifiedResourcesTitle")}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {cached.externalResources.map((r) => (
@@ -261,16 +264,13 @@ export default function BridgeContentView({
               ))}
             </div>
             <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 12 }}>
-              Found via a live web search when this was generated — verify a link still works before
-              relying on it, since pages can move or go offline over time.
+              {t("resourcesNote")}
             </p>
           </div>
         )}
 
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 24, textAlign: "center" }}>
-          AI-generated development content by Devometrics — a starting point for closing this gap,
-          not a certified curriculum. Re-run your Gap Analysis after practicing to see if your
-          measured score actually moved.
+          {t("footerDisclaimer")}
         </p>
       </div>
     </div>

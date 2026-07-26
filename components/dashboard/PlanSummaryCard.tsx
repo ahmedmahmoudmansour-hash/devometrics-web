@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { DevelopmentPlan, Milestone } from "@/lib/supabase/types";
 
 // Homepage-appropriate summary — title, progress, and what's next, nothing
@@ -12,6 +13,7 @@ export default function PlanSummaryCard({
   plan: DevelopmentPlan;
   milestones: Milestone[];
 }) {
+  const t = useTranslations("planSummaryCard");
   const total = milestones.length;
   const done = milestones.filter((m) => m.completed).length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
@@ -64,10 +66,10 @@ export default function PlanSummaryCard({
 
       <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
         <span style={{ fontSize: 12.5, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {next ? `Next: ${next.title}` : total === 0 ? "No milestones yet" : "All milestones complete ✓"}
+          {next ? t("nextLabel", { title: next.title }) : total === 0 ? t("noMilestones") : t("allComplete")}
         </span>
         <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 600, whiteSpace: "nowrap" }}>
-          Review &amp; update →
+          {t("reviewUpdate")}
         </span>
       </div>
     </Link>

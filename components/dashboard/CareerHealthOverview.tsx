@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 type ScoreEntry = {
   label: string;
@@ -26,7 +27,7 @@ function ScoreCard({ entry }: { entry: ScoreEntry }) {
         {entry.label}
       </p>
       {entry.score === null ? (
-        <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>{entry.cta} →</p>
+        <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>{entry.cta}</p>
       ) : (
         <p className="mono" style={{ fontSize: 28, fontWeight: 700, color }}>{entry.score}</p>
       )}
@@ -43,33 +44,34 @@ export default function CareerHealthOverview({
   assessmentAverage: number | null;
   resumeScore: number | null;
 }) {
+  const t = useTranslations("careerHealthOverview");
   const scores = [gapAnalysisScore, assessmentAverage, resumeScore].filter((s): s is number => s !== null);
   const composite = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Career Health Overview</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
         {composite !== null && (
           <span className="mono" style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            Composite: <strong style={{ color: "var(--teal)", fontSize: 16 }}>{composite}</strong>/100
+            {t("composite")} <strong style={{ color: "var(--teal)", fontSize: 16 }}>{composite}</strong>/100
           </span>
         )}
       </div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <ScoreCard
-          entry={{ label: "Gap Analysis", score: gapAnalysisScore, href: "/dashboard/gap-analysis", cta: "See your biggest skill gaps" }}
+          entry={{ label: t("gapAnalysisLabel"), score: gapAnalysisScore, href: "/dashboard/gap-analysis", cta: t("gapAnalysisCta") }}
         />
         <ScoreCard
-          entry={{ label: "Assessment Center", score: assessmentAverage, href: "/dashboard/assessments", cta: "Find your blind spots" }}
+          entry={{ label: t("assessmentLabel"), score: assessmentAverage, href: "/dashboard/assessments", cta: t("assessmentCta") }}
         />
         <ScoreCard
-          entry={{ label: "Resume Intelligence", score: resumeScore, href: "/dashboard/resume", cta: "Fix what's costing you interviews" }}
+          entry={{ label: t("resumeLabel"), score: resumeScore, href: "/dashboard/resume", cta: t("resumeCta") }}
         />
       </div>
       {scores.length > 0 && scores.length < 3 && (
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 14 }}>
-          Composite score is based on {scores.length} of 3 tools so far — complete the others for a fuller picture.
+          {t("partialNote", { count: scores.length })}
         </p>
       )}
     </div>

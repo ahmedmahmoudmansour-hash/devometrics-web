@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import GapAnalysisFlow from "@/components/dashboard/GapAnalysisFlow";
 import type { GapAnalysis, Profile } from "@/lib/supabase/types";
 
 export default async function GapAnalysisPage() {
+  const t = await getTranslations("gapAnalysisPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,10 +32,10 @@ export default async function GapAnalysisPage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Gap Analysis
+            {t("title")}
           </h1>
         </div>
         <GapAnalysisFlow

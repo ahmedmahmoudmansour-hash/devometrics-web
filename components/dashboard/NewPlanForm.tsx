@@ -2,16 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { generateQuickPlan } from "@/app/dashboard/gap-analysis/actions";
 import { updateProfile } from "@/app/dashboard/actions";
 import PersonalizationFields, { type PersonalizationValues } from "@/components/dashboard/PersonalizationFields";
-
-const HORIZON_OPTIONS: { value: "30-day" | "90-day" | "12-month" | "3-year"; label: string }[] = [
-  { value: "30-day", label: "30 days" },
-  { value: "90-day", label: "90 days" },
-  { value: "12-month", label: "12 months" },
-  { value: "3-year", label: "3 years" },
-];
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -33,6 +27,13 @@ export default function NewPlanForm({
   existingPlanCount?: number;
   personalization: PersonalizationValues;
 }) {
+  const t = useTranslations("newPlanForm");
+  const HORIZON_OPTIONS: { value: "30-day" | "90-day" | "12-month" | "3-year"; label: string }[] = [
+    { value: "30-day", label: t("horizon30") },
+    { value: "90-day", label: t("horizon90") },
+    { value: "12-month", label: t("horizon12m") },
+    { value: "3-year", label: t("horizon3y") },
+  ];
   const [targetRole, setTargetRole] = useState("");
   const [cvText, setCvText] = useState("");
   const [horizon, setHorizon] = useState<"30-day" | "90-day" | "12-month" | "3-year">("30-day");
@@ -84,8 +85,7 @@ export default function NewPlanForm({
           textAlign: "center",
         }}
       >
-        + Start another plan — you have {existingPlanCount} active plan{existingPlanCount === 1 ? "" : "s"} already;
-        consider deleting one before adding more so it stays easy to track
+        {t("startAnother", { count: existingPlanCount })}
       </button>
     );
   }

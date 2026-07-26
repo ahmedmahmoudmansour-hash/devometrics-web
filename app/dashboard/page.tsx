@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import PlanSummaryCard from "@/components/dashboard/PlanSummaryCard";
 import NewPlanForm from "@/components/dashboard/NewPlanForm";
@@ -45,6 +46,9 @@ import type {
 } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
+  const t = await getTranslations("dashboardHome");
+  const locale = await getLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const supabase = await createClient();
   const {
     data: { user },
@@ -182,32 +186,32 @@ export default async function DashboardPage() {
 
   const onboardingSteps = [
     {
-      label: "Tell us about yourself",
-      description: "5 quick questions so your AI Coach and plans start from real context, not a cold start.",
+      label: t("step1Label"),
+      description: t("step1Description"),
       href: "/dashboard/discovery",
       done: !!discoveryProfile,
     },
     {
-      label: "Take an assessment",
-      description: "See where you stand on one competency — backed by real scenarios, not just a self-rating.",
+      label: t("step2Label"),
+      description: t("step2Description"),
       href: "/dashboard/assessments",
       done: latestScoreBySlug.size > 0,
     },
     {
-      label: "Run your Gap Analysis",
-      description: "Upload your CV and a target role — see exactly which skills stand between you and it.",
+      label: t("step3Label"),
+      description: t("step3Description"),
       href: "/dashboard/gap-analysis",
       done: !!latestAnalysis,
     },
     {
-      label: "Get your development plan",
-      description: "A prioritized, paced plan to close your biggest gaps first — not a generic checklist.",
+      label: t("step4Label"),
+      description: t("step4Description"),
       href: "/dashboard/gap-analysis",
       done: (plans ?? []).length > 0,
     },
     {
-      label: "Check your resume",
-      description: "Find out what's quietly costing you interviews before a recruiter does. Optional.",
+      label: t("step5Label"),
+      description: t("step5Description"),
       href: "/dashboard/resume",
       done: !!latestResume,
     },
@@ -224,13 +228,13 @@ export default async function DashboardPage() {
       />
       <div className="dashboard-content-grid">
         <div className="dashboard-main" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>Your progress</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>{t("heading")}</h1>
 
           {dailyInsight && <DailyInsightBanner insight={dailyInsight} />}
           {careerGps && <CareerGpsCard snapshot={careerGps} />}
           {latestAnalysis && <WhatIfSimulator />}
 
-          <DashboardSection label="Today">
+          <DashboardSection label={t("sectionToday")}>
             <OnboardingChecklist steps={onboardingSteps} />
             <UpcomingDeadlinesCard milestones={milestones ?? []} />
             <TodayTasksCard tasks={todayTasks} overdue={overdueTasks} />
@@ -238,7 +242,7 @@ export default async function DashboardPage() {
             <PendingSurveysCard surveys={mySurveys} />
           </DashboardSection>
 
-          <DashboardSection label="Your career health">
+          <DashboardSection label={t("sectionCareerHealth")}>
             <CareerHealthOverview
               gapAnalysisScore={latestAnalysis?.career_health_score ?? null}
               assessmentAverage={assessmentAverage}
@@ -249,7 +253,7 @@ export default async function DashboardPage() {
             <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
           </DashboardSection>
 
-          <DashboardSection label="Development">
+          <DashboardSection label={t("sectionDevelopment")}>
             {(plans ?? []).map((plan) => (
               <PlanSummaryCard
                 key={plan.id}
@@ -275,22 +279,22 @@ export default async function DashboardPage() {
               <UpgradeToPremiumCard />
               <PremiumTrialForm />
               <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
-                Student?{" "}
+                {t("studentPrefix")}{" "}
                 <a href="mailto:sales@devometrics.com" style={{ color: "var(--teal)" }}>
-                  Email sales@devometrics.com
+                  {t("studentLink")}
                 </a>{" "}
-                for a discount.
+                {t("studentSuffix")}
               </p>
             </DismissibleUpgradePrompt>
           )}
 
           {membership?.role === "member" && (
-            <DashboardSection label="Company">
+            <DashboardSection label={t("sectionCompany")}>
               <CompanyMembershipCard organizationName={membership.organization_name} />
             </DashboardSection>
           )}
 
-          <DashboardSection label="Account">
+          <DashboardSection label={t("sectionAccount")}>
             <Link
               href="/dashboard/profile"
               style={{
@@ -302,9 +306,9 @@ export default async function DashboardPage() {
                 textDecoration: "none",
               }}
             >
-              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your profile</p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("profileLinkTitle")}</p>
               <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4 }}>
-                Career history, capability pyramid, Big Five, and learning preferences →
+                {t("profileLinkSubtitle")}
               </p>
             </Link>
             <DataPrivacy
@@ -317,26 +321,26 @@ export default async function DashboardPage() {
         <StatRail
           stats={[
             {
-              label: "Career health",
+              label: t("statCareerHealth"),
               value: compositeScore !== null ? `${compositeScore}` : "—",
               href: "/dashboard/gap-analysis",
               color: careerHealthColor,
             },
             {
-              label: "Current streak",
+              label: t("statCurrentStreak"),
               value: `${streakResult?.currentStreak ?? 0}d`,
             },
             {
-              label: "Tasks today",
+              label: t("statTasksToday"),
               value: `${pendingTasksToday}`,
               href: "/dashboard/tasks",
               color: pendingTasksToday > 0 ? "var(--amber)" : undefined,
             },
             {
-              label: "Next deadline",
+              label: t("statNextDeadline"),
               value: nextDeadline?.target_date
-                ? new Date(nextDeadline.target_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : "None set",
+                ? new Date(nextDeadline.target_date).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })
+                : t("noneSet"),
               href: "/dashboard/tasks",
             },
           ]}

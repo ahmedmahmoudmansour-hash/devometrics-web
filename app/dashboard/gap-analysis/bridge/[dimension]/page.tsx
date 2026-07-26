@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import BridgeContentView from "@/components/dashboard/BridgeContentView";
 import type { BridgeContent } from "@/lib/learning/bridgeContent";
@@ -12,6 +13,7 @@ export default async function BridgeGapPage({
 }) {
   const { dimension: encodedDimension } = await params;
   const dimension = decodeURIComponent(encodedDimension);
+  const t = await getTranslations("bridgeGapPage");
 
   const supabase = await createClient();
   const {
@@ -43,25 +45,24 @@ export default async function BridgeGapPage({
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/gap-analysis" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Gap Analysis
+            {t("backToGapAnalysis")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Bridge the gap: {dimension}
+            {t("title", { dimension })}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            Generated from your actual measured score for this dimension — not a generic course
-            catalog. A short lesson, a real next step, and resources verified by a live web search.
+            {t("subtitle")}
           </p>
         </div>
 
         {!competency ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              This dimension wasn&apos;t part of your most recent Gap Analysis —{" "}
+              {t("notPartPrefix")}{" "}
               <Link href="/dashboard/gap-analysis" style={{ color: "var(--teal)" }}>
-                run a new one
+                {t("runNewOne")}
               </Link>{" "}
-              to bridge a specific gap.
+              {t("notPartSuffix")}
             </p>
           </div>
         ) : (

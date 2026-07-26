@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { redeemPremiumTrialCode } from "@/lib/billing/trial";
 
 export default function PremiumTrialForm() {
+  const t = useTranslations("premiumTrialForm");
   const [code, setCode] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function PremiumTrialForm() {
           color: "var(--teal)",
         }}
       >
-        Premium trial activated — you have full access for {success.days} days.
+        {t("activated", { days: success.days })}
       </div>
     );
   }
@@ -46,11 +48,10 @@ export default function PremiumTrialForm() {
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
       <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
-        Have a Premium trial code?
+        {t("haveCode")}
       </p>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-        Unlocks full plan detail (longer horizons, named resources) for a limited time — for
-        testers, before billing is live.
+        {t("subtitle")}
       </p>
       <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input
@@ -58,8 +59,8 @@ export default function PremiumTrialForm() {
           required
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          aria-label="Premium trial code"
-          placeholder="Enter code"
+          aria-label={t("codeAria")}
+          placeholder={t("placeholder")}
           style={{
             flex: "1 1 160px",
             background: "rgba(255,255,255,0.05)",
@@ -86,7 +87,7 @@ export default function PremiumTrialForm() {
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Checking…" : "Activate"}
+          {isPending ? t("checking") : t("activate")}
         </button>
       </form>
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}

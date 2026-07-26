@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { TrendingUp } from "lucide-react";
 
 export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null }) {
+  const t = useTranslations("keyTrendsCard");
   const [title, setTitle] = useState(jobTitle ?? "");
   const [summary, setSummary] = useState<string | null>(null);
   const [wasCached, setWasCached] = useState(false);
@@ -25,9 +27,9 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Could not fetch trends");
+        throw new Error(body.error || t("errorFallback"));
       }
-      if (!res.body) throw new Error("Could not fetch trends");
+      if (!res.body) throw new Error(t("errorFallback"));
 
       setWasCached(res.headers.get("X-Trends-Cached") === "true");
 
@@ -46,7 +48,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
         setSummary(text);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not fetch trends");
+      setError(err instanceof Error ? err.message : t("errorFallback"));
     } finally {
       setLoading(false);
       setSearching(false);
@@ -57,10 +59,10 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <TrendingUp size={16} color="var(--teal)" />
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Key trends in your field</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
       </div>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>
-        Real, web-searched trends for a role you enter below — not a guess from training data.
+        {t("subtitle")}
       </p>
 
       <div style={{ display: "flex", gap: 8, marginBottom: summary || error || loading ? 16 : 0 }}>
@@ -68,8 +70,8 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Product Manager, Data Analyst…"
-          aria-label="Job title to search trends for"
+          placeholder={t("placeholder")}
+          aria-label={t("ariaLabel")}
           style={{
             flex: 1,
             background: "rgba(255,255,255,0.05)",
@@ -98,13 +100,13 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
             whiteSpace: "nowrap",
           }}
         >
-          {loading ? "Searching…" : "Get trends"}
+          {loading ? t("searching") : t("getTrends")}
         </button>
       </div>
 
       {searching && !summary && (
         <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          Running a few real web searches — first time for this role can take up to ~15s, instant after that.
+          {t("searchingNote")}
         </p>
       )}
 
@@ -125,7 +127,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
           {summary}
           {wasCached && (
             <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12 }}>
-              ⚡ Served from cache — refreshed weekly, not re-searched on every visit.
+              {t("cachedNote")}
             </p>
           )}
         </div>

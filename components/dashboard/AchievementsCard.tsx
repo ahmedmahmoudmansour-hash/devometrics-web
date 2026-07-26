@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateBadgesEnabled } from "@/app/dashboard/actions";
 import { ACHIEVEMENTS, type AchievementKey } from "@/lib/achievements/catalog";
 
@@ -27,6 +28,7 @@ export default function AchievementsCard({
   earnedKeys: AchievementKey[];
   badgesEnabled: boolean;
 }) {
+  const t = useTranslations("achievementsCard");
   const [enabled, setEnabled] = useState(badgesEnabled);
   const [isPending, startTransition] = useTransition();
   const earnedSet = new Set(earnedKeys);
@@ -42,9 +44,9 @@ export default function AchievementsCard({
   if (!enabled) {
     return (
       <div style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Achievements are hidden on your dashboard.</p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("hiddenText")}</p>
         <button type="button" onClick={toggle} disabled={isPending} style={linkButton}>
-          Show achievements
+          {t("show")}
         </button>
       </div>
     );
@@ -53,13 +55,13 @@ export default function AchievementsCard({
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Achievements</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
         <button type="button" onClick={toggle} disabled={isPending} style={linkButton}>
-          Hide achievements
+          {t("hide")}
         </button>
       </div>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 18 }}>
-        {earnedSet.size} of {ACHIEVEMENTS.length} unlocked
+        {t("unlockedCount", { earned: earnedSet.size, total: ACHIEVEMENTS.length })}
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
         {ACHIEVEMENTS.map((a) => {

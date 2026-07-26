@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { dismissUpgradePrompt } from "@/app/dashboard/actions";
 
 // Thin dismiss chrome around the existing upgrade/trial/student cluster —
@@ -9,6 +10,7 @@ import { dismissUpgradePrompt } from "@/app/dashboard/actions";
 // save just means it reappears next visit, which is a safe failure mode
 // for a "stop showing me this" preference.
 export default function DismissibleUpgradePrompt({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("dismissibleUpgradePrompt");
   const [hidden, setHidden] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -24,8 +26,8 @@ export default function DismissibleUpgradePrompt({ children }: { children: React
             void dismissUpgradePrompt();
           });
         }}
-        aria-label="Hide upgrade prompts"
-        title="Hide this"
+        aria-label={t("hideAria")}
+        title={t("hideTitle")}
         style={{
           position: "absolute",
           top: -10,

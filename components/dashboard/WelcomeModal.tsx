@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 
 const STORAGE_KEY = "devometrics-welcome-seen";
 
@@ -41,49 +42,45 @@ const groupTextStyle: React.CSSProperties = {
 // the first thing a new user learns is the same mental model they'll
 // navigate by, instead of a feature list organized differently from the
 // product itself.
-function buildSteps(name: string | null, role: "admin" | "member" | null): Step[] {
+function buildSteps(
+  name: string | null,
+  role: "admin" | "member" | null,
+  t: (key: string, values?: Record<string, string | number>) => string
+): Step[] {
   const steps: Step[] = [
     {
-      title: `Welcome${name ? `, ${name}` : ""} 👋`,
+      title: name ? t("welcomeTitleNamed", { name }) : t("welcomeTitle"),
       body: (
         <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
           {role === "admin"
-            ? "This is your organization's talent intelligence workspace — and your own career home too."
+            ? t("welcomeBodyAdmin")
             : role === "member"
-              ? "Your organization has set you up on Devometrics to support your career growth."
-              : "You're all set up on Devometrics."}{" "}
-          Here&apos;s the lay of the land — it takes 30 seconds, then we&apos;ll get out of your way.
+              ? t("welcomeBodyMember")
+              : t("welcomeBodyIndividual")}{" "}
+          {t("welcomeBodySuffix")}
         </p>
       ),
     },
     {
-      title: "Three ways in",
+      title: t("threeWaysTitle"),
       body: (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <p style={groupLabelStyle}>Understand</p>
-            <p style={groupTextStyle}>
-              Where do you actually stand? The Discovery interview, Gap Analysis, and Assessments
-              measure your competencies against the role you want — no guesswork.
-            </p>
+            <p style={groupLabelStyle}>{t("understandLabel")}</p>
+            <p style={groupTextStyle}>{t("understandBody")}</p>
           </div>
           <div>
-            <p style={groupLabelStyle}>Grow</p>
-            <p style={groupTextStyle}>
-              Close the gap: your AI Coach (voice or text), Practice Scenarios for interviews and
-              hard conversations, and a Career Paths map of where you can realistically go next.
-            </p>
+            <p style={groupLabelStyle}>{t("growLabel")}</p>
+            <p style={groupTextStyle}>{t("growBody")}</p>
           </div>
           <div>
-            <p style={groupLabelStyle}>Organize</p>
-            <p style={groupTextStyle}>
-              Make it a routine: Tasks &amp; Calendar (sync to Outlook or Google), and a private
-              Workspace where AI turns your notes into action items.
-            </p>
+            <p style={groupLabelStyle}>{t("organizeLabel")}</p>
+            <p style={groupTextStyle}>{t("organizeBody")}</p>
           </div>
           <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            Tip: press <kbd style={{ border: "1px solid var(--border)", borderRadius: 4, padding: "1px 5px", fontSize: 11 }}>Ctrl K</kbd>{" "}
-            anywhere to jump straight to any of it.
+            {t("tipPrefix")}{" "}
+            <kbd style={{ border: "1px solid var(--border)", borderRadius: 4, padding: "1px 5px", fontSize: 11 }}>{t("tipKey")}</kbd>{" "}
+            {t("tipSuffix")}
           </p>
         </div>
       ),
@@ -92,20 +89,19 @@ function buildSteps(name: string | null, role: "admin" | "member" | null): Step[
 
   if (role === "admin") {
     steps.push({
-      title: "Run your organization",
+      title: t("runOrgTitle"),
       body: (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7 }}>
-            The <strong style={{ color: "var(--text)" }}>Company</strong> section is yours alone as
-            an admin:
+            {t("runOrgIntroPrefix")} <strong style={{ color: "var(--text)" }}>{t("runOrgIntroStrong")}</strong> {t("runOrgIntroSuffix")}
           </p>
-          <ul style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.9, paddingLeft: 20 }}>
-            <li><strong>Employees</strong> — workforce skill inventory, talent heatmap, capability pyramid, Excel export</li>
-            <li><strong>Invite &amp; manage</strong> — add people by email, edit titles/departments, archive leavers</li>
-            <li><strong>Surveys</strong> — AI-generated culture and pulse surveys with anonymized results</li>
-            <li><strong>Competency framework</strong> — define what great looks like for your organization</li>
-            <li><strong>Assign development plans</strong> — set milestones for any employee</li>
-            <li><strong>Knowledge Hub</strong> — upload your own training content and track who&apos;s completed it</li>
+          <ul style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.9, paddingInlineStart: 20 }}>
+            <li><strong>{t("adminBullet1Strong")}</strong> {t("adminBullet1Rest")}</li>
+            <li><strong>{t("adminBullet2Strong")}</strong> {t("adminBullet2Rest")}</li>
+            <li><strong>{t("adminBullet3Strong")}</strong> {t("adminBullet3Rest")}</li>
+            <li><strong>{t("adminBullet4Strong")}</strong> {t("adminBullet4Rest")}</li>
+            <li><strong>{t("adminBullet5Strong")}</strong> {t("adminBullet5Rest")}</li>
+            <li><strong>{t("adminBullet6Strong")}</strong> {t("adminBullet6Rest")}</li>
           </ul>
         </div>
       ),
@@ -114,25 +110,25 @@ function buildSteps(name: string | null, role: "admin" | "member" | null): Step[
 
   if (role === "member") {
     steps.push({
-      title: "What's yours stays yours",
+      title: t("memberTitle"),
       body: (
         <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-          Your organization sees your competency profile and development progress — that&apos;s how
-          they support your growth. But your <strong style={{ color: "var(--text)" }}>Tasks</strong>,{" "}
-          <strong style={{ color: "var(--text)" }}>Workspace notes</strong>, and{" "}
-          <strong style={{ color: "var(--text)" }}>Coach conversations</strong> are private to you —
-          never visible to your manager or employer, by design.
+          {t("memberBodyPrefix")} <strong style={{ color: "var(--text)" }}>{t("memberBodyTasks")}</strong>
+          {t("memberBodyMiddle1")}{" "}
+          <strong style={{ color: "var(--text)" }}>{t("memberBodyWorkspace")}</strong>
+          {t("memberBodyMiddle2")}{" "}
+          <strong style={{ color: "var(--text)" }}>{t("memberBodyCoach")}</strong>{" "}
+          {t("memberBodySuffix")}
         </p>
       ),
     });
   }
 
   steps.push({
-    title: "Ready to start?",
+    title: t("readyTitle"),
     body: (
       <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-        Everything here is built around one goal: closing the specific gap between where you are
-        and where you want to be. Let&apos;s embark on your career development journey.
+        {t("readyBody")}
       </p>
     ),
   });
@@ -150,6 +146,7 @@ export default function WelcomeModal({
   // company account still mid-setup) gets the personal tour only.
   role: "admin" | "member" | null;
 }) {
+  const t = useTranslations("welcomeModal");
   const notSeenBefore = useSyncExternalStore(noopSubscribe, hasNotSeenWelcome, getServerSnapshot);
   const [dismissedThisSession, setDismissedThisSession] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -166,7 +163,7 @@ export default function WelcomeModal({
 
   if (!visible) return null;
 
-  const steps = buildSteps(name, role);
+  const steps = buildSteps(name, role, t);
   const isLastStep = stepIndex === steps.length - 1;
   const step = steps[stepIndex];
 
@@ -229,7 +226,7 @@ export default function WelcomeModal({
               padding: 0,
             }}
           >
-            Skip
+            {t("skip")}
           </button>
           <button
             type="button"
@@ -245,7 +242,7 @@ export default function WelcomeModal({
               cursor: "pointer",
             }}
           >
-            {isLastStep ? "Start my career growth →" : "Next"}
+            {isLastStep ? t("startGrowth") : t("next")}
           </button>
         </div>
       </div>

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { deleteMyData, cancelMyDataDeletion } from "@/app/dashboard/actions";
 
 const CONFIRM_WORD = "DELETE";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+function formatDate(iso: string, locale: string): string {
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
+  return new Date(iso).toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" });
 }
 
 export default function DataPrivacy({
@@ -21,6 +23,8 @@ export default function DataPrivacy({
   // enforces the same rule server-side.
   organizationName?: string | null;
 }) {
+  const t = useTranslations("dataPrivacy");
+  const locale = useLocale();
   const [confirming, setConfirming] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +41,10 @@ export default function DataPrivacy({
       }}
     >
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Data & privacy
+        {t("title")}
       </h2>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-        Export everything stored about you, or delete your app data. This does not
-        delete your login — for full account deletion, contact{" "}
+        {t("subtitlePrefix")}{" "}
         <a href="mailto:support@devometrics.com" style={{ color: "var(--teal)" }}>
           support@devometrics.com
         </a>
@@ -62,7 +65,7 @@ export default function DataPrivacy({
             textDecoration: "none",
           }}
         >
-          Export my data
+          {t("exportMyData")}
         </a>
 
         {organizationName && !scheduledFor ? (
@@ -76,13 +79,10 @@ export default function DataPrivacy({
             }}
           >
             <p style={{ fontSize: 13, color: "var(--text)", fontWeight: 700, marginBottom: 4 }}>
-              Managed by {organizationName}
+              {t("managedByPrefix")} {organizationName}
             </p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-              Your account is part of an organization workspace, so data deletion is handled by
-              your HR admin rather than self-service — this keeps your performance history and
-              records consistent for your employer&apos;s records. If you&apos;d like your data
-              deleted, ask your admin to do it from their side.
+              {t("managedByBody")}
             </p>
           </div>
         ) : scheduledFor ? (
@@ -96,12 +96,10 @@ export default function DataPrivacy({
             }}
           >
             <p style={{ fontSize: 13, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
-              Scheduled for deletion on {formatDate(scheduledFor)}
+              {t("scheduledFor", { date: formatDate(scheduledFor, locale) })}
             </p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-              {organizationName
-                ? `Your data still works normally until then. This was scheduled by your organization's admin — contact them if you'd like to cancel it. Once this date passes, everything is permanently removed and cannot be recovered.`
-                : "Your data still works normally until then — cancel any time before that date. Once this date passes, everything is permanently removed and cannot be recovered."}
+              {organizationName ? t("scheduledBodyOrg") : t("scheduledBodySelf")}
             </p>
             {!organizationName && (
             <button
@@ -125,7 +123,7 @@ export default function DataPrivacy({
                 cursor: "pointer",
               }}
             >
-              {isPending ? "Cancelling…" : "Cancel deletion"}
+              {isPending ? t("cancelling") : t("cancelDeletion")}
             </button>
             )}
             {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 8 }}>{error}</p>}
@@ -133,12 +131,8 @@ export default function DataPrivacy({
         ) : confirming ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
             <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
-              This schedules your plans, coach history, assessment results, gap analyses, resume
-              analysis, and tasks for deletion in 30 days — everything keeps working normally until
-              then, and you can cancel any time before. After 30 days the deletion is permanent and
-              we can no longer retrieve anything — this window exists purely to recover from a
-              mistaken click, not as a general trash bin. Type{" "}
-              <strong style={{ color: "var(--text)" }}>{CONFIRM_WORD}</strong> to confirm.
+              {t("confirmBodyPrefix")}{" "}
+              <strong style={{ color: "var(--text)" }}>{CONFIRM_WORD}</strong> {t("confirmBodySuffix")}
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
@@ -146,7 +140,7 @@ export default function DataPrivacy({
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder={CONFIRM_WORD}
-                aria-label={`Type ${CONFIRM_WORD} to confirm`}
+                aria-label={t("confirmWordAria", { word: CONFIRM_WORD })}
                 style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(248,113,113,0.3)",
@@ -180,7 +174,7 @@ export default function DataPrivacy({
                   opacity: isPending || confirmText !== CONFIRM_WORD ? 0.5 : 1,
                 }}
               >
-                {isPending ? "Scheduling…" : "Schedule deletion (30-day grace period)"}
+                {isPending ? t("scheduling") : t("scheduleDeletion")}
               </button>
               <button
                 type="button"
@@ -198,7 +192,7 @@ export default function DataPrivacy({
                   cursor: "pointer",
                 }}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
             {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
@@ -218,7 +212,7 @@ export default function DataPrivacy({
               cursor: "pointer",
             }}
           >
-            Delete my data
+            {t("deleteMyData")}
           </button>
         )}
       </div>

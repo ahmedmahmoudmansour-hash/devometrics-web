@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ACCOMMODATIONS, ACCOMMODATION_DESCRIPTIONS } from "@/lib/gap-analysis/accommodations";
 import { RESOURCE_TIERS } from "@/lib/gap-analysis/freeResources";
 import { LEARNING_FORMATS, LEARNING_FORMAT_DESCRIPTIONS } from "@/lib/gap-analysis/actionLibrary";
@@ -56,6 +57,7 @@ export default function PersonalizationFields({
   onChange: (next: PersonalizationValues) => void;
   showCareerStage?: boolean;
 }) {
+  const t = useTranslations("personalizationFields");
   function set<K extends keyof PersonalizationValues>(key: K, val: PersonalizationValues[K]) {
     onChange({ ...value, [key]: val });
   }
@@ -74,7 +76,7 @@ export default function PersonalizationFields({
       {showCareerStage && (
         <div>
           <label htmlFor="career-stage" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            Career stage
+            {t("careerStageLabel")}
           </label>
           <select
             id="career-stage"
@@ -83,7 +85,7 @@ export default function PersonalizationFields({
             style={selectStyle}
           >
             <option value="" style={{ color: "#000" }}>
-              Select your stage
+              {t("selectStage")}
             </option>
             {CAREER_STAGES.map((s) => (
               <option key={s} value={s} style={{ color: "#000" }}>
@@ -96,24 +98,24 @@ export default function PersonalizationFields({
 
       <div>
         <label htmlFor="location" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-          Location
+          {t("locationLabel")}
         </label>
         <input
           id="location"
           type="text"
           value={value.location}
           onChange={(e) => set("location", e.target.value)}
-          placeholder="e.g. Dubai, UAE"
+          placeholder={t("locationPlaceholder")}
           style={selectStyle}
         />
       </div>
 
       <div>
         <label style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-          Learning preferences
+          {t("learningPreferencesLabel")}
         </label>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.5 }}>
-          Pick as many as apply — plans will mix between the formats you choose.
+          {t("learningPreferencesHint")}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {LEARNING_FORMATS.map((format) => {
@@ -145,7 +147,7 @@ export default function PersonalizationFields({
 
       <div>
         <label htmlFor="accommodation" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-          How you process information
+          {t("accommodationLabel")}
         </label>
         <select
           id="accommodation"
@@ -168,7 +170,7 @@ export default function PersonalizationFields({
 
       <div>
         <label htmlFor="resource-tier" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-          Resource budget
+          {t("resourceTierLabel")}
         </label>
         <select
           id="resource-tier"
@@ -177,7 +179,7 @@ export default function PersonalizationFields({
           style={selectStyle}
         >
           <option value="" style={{ color: "#000" }}>
-            Select a budget
+            {t("selectBudget")}
           </option>
           {RESOURCE_TIERS.map((t) => (
             <option key={t} value={t} style={{ color: "#000" }}>

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { submitSurveyResponse, type MySurvey } from "@/lib/surveys/actions";
 import type { SurveyAnswers } from "@/lib/surveys/types";
 
 function SurveyForm({ survey, onDone }: { survey: MySurvey; onDone: () => void }) {
+  const t = useTranslations("pendingSurveysCard");
   const [answers, setAnswers] = useState<SurveyAnswers>({});
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,7 @@ function SurveyForm({ survey, onDone }: { survey: MySurvey; onDone: () => void }
             <textarea
               value={(answers[q.id] as string) ?? ""}
               onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-              placeholder="Your answer"
+              placeholder={t("yourAnswerPlaceholder")}
               rows={3}
               style={{
                 width: "100%",
@@ -114,13 +116,14 @@ function SurveyForm({ survey, onDone }: { survey: MySurvey; onDone: () => void }
           opacity: !allAnswered || isPending ? 0.5 : 1,
         }}
       >
-        {isPending ? "Submitting…" : "Submit anonymously"}
+        {isPending ? t("submitting") : t("submitAnon")}
       </button>
     </div>
   );
 }
 
 export default function PendingSurveysCard({ surveys: initialSurveys }: { surveys: MySurvey[] }) {
+  const t = useTranslations("pendingSurveysCard");
   const [surveys, setSurveys] = useState(initialSurveys);
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -129,10 +132,10 @@ export default function PendingSurveysCard({ surveys: initialSurveys }: { survey
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        {surveys.length === 1 ? "You have a survey" : `You have ${surveys.length} surveys`}
+        {surveys.length === 1 ? t("titleOne") : t("titleMany", { count: surveys.length })}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-        From your organization — completely anonymous, never tied back to you.
+        {t("subtext")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {surveys.map((s) => (
@@ -144,7 +147,7 @@ export default function PendingSurveysCard({ surveys: initialSurveys }: { survey
                 onClick={() => setOpenId((prev) => (prev === s.id ? null : s.id))}
                 style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "var(--teal)", cursor: "pointer" }}
               >
-                {openId === s.id ? "Close" : "Answer"}
+                {openId === s.id ? t("close") : t("answer")}
               </button>
             </div>
             {openId === s.id && (

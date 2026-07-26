@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { Milestone } from "@/lib/supabase/types";
 
 const WINDOW_DAYS = 7;
@@ -9,6 +10,7 @@ const WINDOW_DAYS = 7;
 // VAPID keys for push; Resend + a verified domain for email) — this covers
 // "don't let me miss something" today without waiting on either.
 export default function UpcomingDeadlinesCard({ milestones }: { milestones: Milestone[] }) {
+  const t = useTranslations("upcomingDeadlinesCard");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const cutoff = new Date(today);
@@ -27,7 +29,7 @@ export default function UpcomingDeadlinesCard({ milestones }: { milestones: Mile
   return (
     <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 16, padding: 20 }}>
       <p style={{ fontSize: 13, fontWeight: 700, color: "#f0b840", marginBottom: 10 }}>
-        🔔 Due in the next {WINDOW_DAYS} days
+        {t("title", { days: WINDOW_DAYS })}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {upcoming.map((m) => (
@@ -38,7 +40,7 @@ export default function UpcomingDeadlinesCard({ milestones }: { milestones: Mile
         ))}
       </div>
       <Link href="/dashboard/tasks" style={{ fontSize: 12, color: "var(--teal)", marginTop: 10, display: "inline-block" }}>
-        Break these into daily tasks →
+        {t("cta")}
       </Link>
     </div>
   );

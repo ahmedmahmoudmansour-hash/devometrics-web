@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 
 type Step = {
   label: string;
@@ -11,6 +12,8 @@ type Step = {
 };
 
 export default function OnboardingChecklist({ steps }: { steps: Step[] }) {
+  const t = useTranslations("onboardingChecklist");
+  const locale = useLocale();
   const [dismissed, setDismissed] = useState(false);
   const doneCount = steps.filter((s) => s.done).length;
 
@@ -29,17 +32,17 @@ export default function OnboardingChecklist({ steps }: { steps: Step[] }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Get started with Devometrics</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
         <button
           type="button"
           onClick={() => setDismissed(true)}
           style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
         >
-          Hide this
+          {t("hide")}
         </button>
       </div>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>
-        Complete these {steps.length} steps to unlock your full AI Career Health Score.
+        {t("progress", { count: steps.length })}
       </p>
 
       <div
@@ -78,7 +81,7 @@ export default function OnboardingChecklist({ steps }: { steps: Step[] }) {
         >
           <span>
             <span style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(10,15,30,0.7)" }}>
-              Start here
+              {t("startHere")}
             </span>
             <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#0A0F1E", marginTop: 2 }}>
               {nextStep.label}
@@ -87,7 +90,7 @@ export default function OnboardingChecklist({ steps }: { steps: Step[] }) {
               {nextStep.description}
             </span>
           </span>
-          <span style={{ fontSize: 22, color: "#0A0F1E", flexShrink: 0 }}>→</span>
+          <span style={{ fontSize: 22, color: "#0A0F1E", flexShrink: 0 }}>{locale === "ar" ? "←" : "→"}</span>
         </Link>
       )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   getPlanOptions,
   generatePlanFromSelections,
@@ -30,6 +31,7 @@ export default function PlanOptionsReview({
   defaultFormat: LearningFormat | null;
   onDone: (planId: string) => void;
 }) {
+  const t = useTranslations("planOptionsReview");
   const [gaps, setGaps] = useState<GapOptions[] | null>(null);
   const [selections, setSelections] = useState<Record<string, LearningFormat>>({});
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export default function PlanOptionsReview({
     });
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
-        <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading options…</p>
+        <p style={{ color: "var(--text-muted)", fontSize: 14 }}>{t("loadingOptions")}</p>
       </div>
     );
   }
@@ -73,10 +75,10 @@ export default function PlanOptionsReview({
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-          Choose how you want to close each gap
+          {t("chooseTitle")}
         </h2>
         <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>
-          Same gap, different path — pick whichever format actually fits how you learn.
+          {t("chooseSubtitle")}
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -85,7 +87,7 @@ export default function PlanOptionsReview({
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{g.dimension}</span>
                 <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                  {g.currentLevel} → {g.targetLevel} · <span style={{ color: "var(--teal)" }}>Impact {g.impact}</span>
+                  {g.currentLevel} → {g.targetLevel} · <span style={{ color: "var(--teal)" }}>{t("impactLabel", { value: g.impact })}</span>
                 </span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
@@ -97,7 +99,7 @@ export default function PlanOptionsReview({
                       type="button"
                       onClick={() => setSelections((prev) => ({ ...prev, [g.dimension]: opt.format }))}
                       style={{
-                        textAlign: "left",
+                        textAlign: "start",
                         padding: 14,
                         borderRadius: 10,
                         cursor: "pointer",
@@ -136,7 +138,7 @@ export default function PlanOptionsReview({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Creating plan…" : "Create my plan"}
+          {isPending ? t("creatingPlan") : t("createMyPlan")}
         </button>
       </div>
     </div>

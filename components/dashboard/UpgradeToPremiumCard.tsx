@@ -1,11 +1,14 @@
+import { useTranslations } from "next-intl";
+
 export default function UpgradeToPremiumCard() {
+  const t = useTranslations("upgradeToPremiumCard");
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
       <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
-        Upgrade to Premium
+        {t("title")}
       </p>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-        Full gap analysis, all assessments, longer plan horizons, and named resources per milestone.
+        {t("subtitle")}
       </p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <a
@@ -21,7 +24,7 @@ export default function UpgradeToPremiumCard() {
             textDecoration: "none",
           }}
         >
-          Monthly
+          {t("monthly")}
         </a>
         <a
           href="/api/billing/checkout?cadence=annual"
@@ -36,7 +39,7 @@ export default function UpgradeToPremiumCard() {
             textDecoration: "none",
           }}
         >
-          Annual — save more
+          {t("annual")}
         </a>
       </div>
     </div>

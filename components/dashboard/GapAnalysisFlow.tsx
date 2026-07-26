@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import CompetencyRadar from "./CompetencyRadar";
 import PlanOptionsReview from "./PlanOptionsReview";
 import FileUploadButton from "@/components/FileUploadButton";
@@ -38,6 +39,7 @@ export default function GapAnalysisFlow({
   latest: GapAnalysis | null;
   personalization: PersonalizationValues;
 }) {
+  const t = useTranslations("gapAnalysisFlow");
   const [analysis, setAnalysis] = useState<GapAnalysis | null>(latest);
   const [showForm, setShowForm] = useState(!latest);
   const [targetRole, setTargetRole] = useState("");
@@ -65,14 +67,14 @@ export default function GapAnalysisFlow({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Something went wrong");
+        throw new Error(body.error || t("errorFallback"));
       }
       const { analysis } = await res.json();
       setAnalysis(analysis);
       setShowForm(false);
       setCreatedPlanId(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("errorFallback"));
     } finally {
       setLoading(false);
     }
@@ -82,62 +84,59 @@ export default function GapAnalysisFlow({
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-          Run a gap analysis
+          {t("formTitle")}
         </h2>
         <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-          Paste your background — a CV if you have one, or coursework/class projects/
-          internships if you don&apos;t — plus the role you&apos;re aiming for. The engine
-          scores you against it across 8 fixed dimensions either way.
+          {t("formSubtitle")}
         </p>
         <form onSubmit={runAnalysis} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <input
             type="text"
             required
-            aria-label="Target role"
+            aria-label={t("targetRoleAria")}
             value={targetRole}
             onChange={(e) => setTargetRole(e.target.value)}
-            placeholder="Target role, e.g. Senior Product Manager"
+            placeholder={t("targetRolePlaceholder")}
             style={inputStyle}
           />
           <div>
             <textarea
-              aria-label="Target job description"
+              aria-label={t("jobDescAria")}
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the target job description if you have one…"
+              placeholder={t("jobDescPlaceholder")}
               rows={5}
               style={{ ...inputStyle, resize: "vertical" }}
             />
             <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
-              No job description handy? Leave this blank — we&apos;ll infer typical responsibilities
-              for the role you named above, and flag that clearly in your results.
+              {t("jobDescHint")}
             </p>
           </div>
           <div>
             <textarea
               required
-              aria-label="Your CV, coursework, or project experience"
+              aria-label={t("cvAria")}
               value={cvText}
               onChange={(e) => setCvText(e.target.value)}
-              placeholder="Paste your CV, coursework, class projects, or internship experience…"
+              placeholder={t("cvPlaceholder")}
               rows={8}
               style={{ ...inputStyle, resize: "vertical" }}
             />
             <div style={{ marginTop: 6 }}>
-              <FileUploadButton onExtracted={(text) => setCvText(text)} label="Or upload a PDF/DOCX instead" />
+              <FileUploadButton onExtracted={(text) => setCvText(text)} label={t("uploadLabel")} />
             </div>
           </div>
           <div>
             <textarea
-              aria-label="Performance review data or objectives (optional)"
+              aria-label={t("perfDataAria")}
               value={performanceData}
               onChange={(e) => setPerformanceData(e.target.value)}
-              placeholder="Optional: paste performance review data or stated objectives — often more specific evidence than a CV, especially if you're an employed professional…"
+              placeholder={t("perfDataPlaceholder")}
               rows={5}
               style={{ ...inputStyle, resize: "vertical" }}
             />
             <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-              Optional — most useful if you have performance review content. Skip it if you don&apos;t.
+              {t("perfDataHint")}
             </p>
           </div>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13, color: "var(--text-muted)", cursor: "pointer" }}>
@@ -148,8 +147,7 @@ export default function GapAnalysisFlow({
               style={{ marginTop: 2, accentColor: "var(--teal)" }}
             />
             <span>
-              I consent to Devometrics using AI to analyze the background material I
-              submit here for the purpose of generating this gap analysis.
+              {t("consentLabel")}
             </span>
           </label>
           {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
@@ -169,7 +167,7 @@ export default function GapAnalysisFlow({
               opacity: loading || !consent ? 0.6 : 1,
             }}
           >
-            {loading ? "Analyzing…" : "Run gap analysis"}
+            {loading ? t("analyzing") : t("runAnalysis")}
           </button>
         </form>
         {analysis && (
@@ -178,7 +176,7 @@ export default function GapAnalysisFlow({
             onClick={() => setShowForm(false)}
             style={{ marginTop: 16, background: "none", border: "none", color: "var(--teal)", fontSize: 13, cursor: "pointer" }}
           >
-            ← Back to last result
+            {t("backToLastResult")}
           </button>
         )}
       </div>
@@ -193,13 +191,13 @@ export default function GapAnalysisFlow({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
           <div>
             <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-              Gap analysis — {analysis.target_role}
+              {t("gapAnalysisLabel", { role: analysis.target_role })}
             </span>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8 }}>
               <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)" }}>
                 {analysis.career_health_score}
               </span>
-              <span style={{ fontSize: 14, color: "var(--text-muted)" }}>Career Health Score</span>
+              <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("careerHealthScoreLabel")}</span>
             </div>
           </div>
           <button
@@ -215,7 +213,7 @@ export default function GapAnalysisFlow({
               cursor: "pointer",
             }}
           >
-            Run new analysis
+            {t("runNewAnalysis")}
           </button>
         </div>
 
@@ -251,18 +249,18 @@ export default function GapAnalysisFlow({
                     textDecoration: "none",
                   }}
                 >
-                  {i === 0 ? "★ Bridge this gap — highest impact →" : "Bridge this gap →"}
+                  {i === 0 ? t("bridgeGapHighest") : t("bridgeGap")}
                 </Link>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 16 }}>
+              <div style={{ textAlign: "end", flexShrink: 0, marginInlineStart: 16 }}>
                 <div style={{ fontSize: 13, color: "var(--text)" }}>
                   {c.currentLevel} → {c.targetLevel}
                 </div>
                 <div style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700 }}>
-                  Impact {c.impact}
+                  {t("impactLabel", { value: c.impact })}
                 </div>
                 <div style={{ fontSize: 11, color: priorityColor[c.priority], fontWeight: 700, textTransform: "uppercase" }}>
-                  {c.priority} · {c.confidence}% confidence
+                  {t("confidenceLabel", { priority: c.priority, confidence: c.confidence })}
                 </div>
               </div>
             </div>
@@ -270,13 +268,10 @@ export default function GapAnalysisFlow({
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 20 }}>
-          Impact Score = gap size × role importance × market demand × confidence.
-          A large gap only ranks high if it also matters for the role, is in demand,
-          and the AI is actually confident about it — ranked highest first.
+          {t("impactExplanation")}
         </p>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-          AI-generated guidance based on the CV and job description you provided — not a
-          certified psychometric evaluation or a guarantee of career outcomes.
+          {t("aiDisclaimer")}
         </p>
       </div>
 
@@ -306,7 +301,7 @@ export default function GapAnalysisFlow({
                   fontWeight: 700,
                 }}
               >
-                Development plan created ✓
+                {t("planCreated")}
               </span>
               <Link
                 href={`/dashboard/plans/${createdPlanId}`}
@@ -320,7 +315,7 @@ export default function GapAnalysisFlow({
                   textDecoration: "none",
                 }}
               >
-                View my plan →
+                {t("viewMyPlan")}
               </Link>
             </div>
           ) : (
@@ -331,7 +326,7 @@ export default function GapAnalysisFlow({
 
               <div style={{ marginBottom: 16 }}>
                 <label htmlFor="plan-horizon" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>
-                  Plan horizon
+                  {t("planHorizonLabel")}
                 </label>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} id="plan-horizon">
                   {HORIZONS.map((h) => (
@@ -382,7 +377,7 @@ export default function GapAnalysisFlow({
                     opacity: isPending ? 0.6 : 1,
                   }}
                 >
-                  {isPending ? "Creating plan…" : "Auto-generate plan"}
+                  {isPending ? t("creatingPlan") : t("autoGeneratePlan")}
                 </button>
                 <button
                   type="button"
@@ -403,7 +398,7 @@ export default function GapAnalysisFlow({
                     cursor: "pointer",
                   }}
                 >
-                  Customize per skill instead
+                  {t("customizePerSkill")}
                 </button>
               </div>
             </>

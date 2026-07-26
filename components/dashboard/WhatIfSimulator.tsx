@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { simulateTargetRoleChange, simulateDimensionImprovement, type WhatIfResult } from "@/lib/careerGps/whatIf";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 
@@ -17,6 +18,7 @@ function inputStyle(): React.CSSProperties {
 }
 
 export default function WhatIfSimulator() {
+  const t = useTranslations("whatIfSimulator");
   const [mode, setMode] = useState<"role" | "dimension">("role");
   const [role, setRole] = useState("");
   const [dimension, setDimension] = useState<CompetencyDimension>(COMPETENCY_DIMENSIONS[0]);
@@ -40,9 +42,9 @@ export default function WhatIfSimulator() {
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>What if?</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("title")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
-        Recalculated from your actual measured competencies — a projection, not a promise.
+        {t("subtitle")}
       </p>
 
       <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, marginBottom: 14, width: "fit-content" }}>
@@ -66,7 +68,7 @@ export default function WhatIfSimulator() {
               cursor: "pointer",
             }}
           >
-            {m === "role" ? "Change target role" : "Improve a skill"}
+            {m === "role" ? t("changeRole") : t("improveSkill")}
           </button>
         ))}
       </div>
@@ -76,7 +78,7 @@ export default function WhatIfSimulator() {
           <input
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            placeholder="e.g. Head of Product, People Manager, relocate to a Product role in the UAE…"
+            placeholder={t("rolePlaceholder")}
             style={{ ...inputStyle(), flex: 1, minWidth: 220 }}
           />
         </div>
@@ -89,9 +91,9 @@ export default function WhatIfSimulator() {
               </option>
             ))}
           </select>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>improve by</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("improveBy")}</span>
           <input type="number" min={1} max={50} value={delta} onChange={(e) => setDelta(Number(e.target.value))} style={{ ...inputStyle(), width: 70 }} />
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>points</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("points")}</span>
         </div>
       )}
 
@@ -111,7 +113,7 @@ export default function WhatIfSimulator() {
           opacity: isPending || (mode === "role" && !role.trim()) ? 0.6 : 1,
         }}
       >
-        {isPending ? "Simulating…" : "Simulate"}
+        {isPending ? t("simulating") : t("simulate")}
       </button>
 
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10 }}>{error}</p>}
@@ -134,7 +136,7 @@ export default function WhatIfSimulator() {
           </div>
           {result.topGapsAfter.length > 0 && (
             <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 8 }}>
-              Biggest remaining gaps after: {result.topGapsAfter.map((g) => g.dimension).join(", ")}
+              {t("biggestRemainingGaps", { list: result.topGapsAfter.map((g) => g.dimension).join(", ") })}
             </p>
           )}
         </div>

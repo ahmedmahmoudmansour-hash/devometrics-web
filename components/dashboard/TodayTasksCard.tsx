@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { PersonalTask } from "@/lib/tasks/types";
 
 // Shows today's progress AND anything incomplete left over from previous
@@ -11,10 +12,11 @@ export default function TodayTasksCard({
   tasks: PersonalTask[];
   overdue?: PersonalTask[];
 }) {
+  const t = useTranslations("todayTasksCard");
   if (tasks.length === 0 && overdue.length === 0) return null;
 
-  const done = tasks.filter((t) => t.completed).length;
-  const pendingToday = tasks.filter((t) => !t.completed);
+  const done = tasks.filter((task) => task.completed).length;
+  const pendingToday = tasks.filter((task) => !task.completed);
 
   return (
     <Link
@@ -30,14 +32,14 @@ export default function TodayTasksCard({
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Your tasks</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("title")}</p>
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {tasks.length > 0
-              ? `${done} of ${tasks.length} done today`
+              ? t("doneToday", { done, total: tasks.length })
               : overdue.length > 0
-              ? `Nothing new today, but ${overdue.length} overdue`
-              : "Nothing scheduled today"}
-            {" — private to you, never visible to anyone else"}
+              ? t("overdueOnly", { count: overdue.length })
+              : t("nothingScheduled")}
+            {" "}{t("privateSuffix")}
           </p>
         </div>
         {tasks.length > 0 && (
@@ -49,13 +51,13 @@ export default function TodayTasksCard({
 
       {pendingToday.length > 0 && (
         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
-          {pendingToday.slice(0, 3).map((t) => (
-            <p key={t.id} style={{ fontSize: 12.5, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              ○ {t.icon ? `${t.icon} ` : ""}{t.title}
+          {pendingToday.slice(0, 3).map((task) => (
+            <p key={task.id} style={{ fontSize: 12.5, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              ○ {task.icon ? `${task.icon} ` : ""}{task.title}
             </p>
           ))}
           {pendingToday.length > 3 && (
-            <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>+ {pendingToday.length - 3} more</p>
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("moreCount", { count: pendingToday.length - 3 })}</p>
           )}
         </div>
       )}
@@ -63,15 +65,15 @@ export default function TodayTasksCard({
       {overdue.length > 0 && (
         <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 4 }}>
-            Overdue ({overdue.length})
+            {t("overdueLabel", { count: overdue.length })}
           </p>
-          {overdue.slice(0, 3).map((t) => (
-            <p key={t.id} style={{ fontSize: 12.5, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              ○ {t.title} <span style={{ fontSize: 11 }}>· {t.date}</span>
+          {overdue.slice(0, 3).map((task) => (
+            <p key={task.id} style={{ fontSize: 12.5, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              ○ {task.title} <span style={{ fontSize: 11 }}>· {task.date}</span>
             </p>
           ))}
           {overdue.length > 3 && (
-            <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>+ {overdue.length - 3} more</p>
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("moreCount", { count: overdue.length - 3 })}</p>
           )}
         </div>
       )}
