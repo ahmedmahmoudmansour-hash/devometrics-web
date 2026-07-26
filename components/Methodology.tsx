@@ -1,39 +1,19 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import CapabilityPyramid from "./CapabilityPyramid";
 
-const pillars = [
-  {
-    label: "Competency science",
-    title: "A structured model, not a checklist",
-    description:
-      "Devometrics scores you against a defined competency taxonomy — technical, leadership, behavioral, strategic — instead of letting you self-report skills. Scoring is grounded in established competency-science frameworks (Boyatzis' behaviorally-anchored competency model, SHL's Universal Competency Framework, O*NET's occupational taxonomy) rather than free-floating judgment — real, named frameworks, not a fabricated citation to a study that doesn't exist.",
-  },
-  {
-    label: "Labor-market signal",
-    title: "The gap moves with the market",
-    description:
-      "\"Important\" skills change. Target-role scoring is weighted against real job-description and market-demand data, so a gap map reflects what employers are asking for now, not a fixed rubric written once and never revisited.",
-  },
-  {
-    label: "Confidence-scored inference",
-    title: "You see what the AI is sure of",
-    description:
-      "Every extracted competency carries a visible Confidence Score alongside its rating. When the model is inferring from limited signal, that's shown — not hidden behind a single clean-looking number.",
-  },
-  {
-    label: "Continuous recalibration",
-    title: "The plan updates as you do",
-    description:
-      "A gap analysis is a snapshot, not a verdict. As you complete milestones and the role or market shifts, your competency scores and plan are designed to be recalculated — not delivered once and left to go stale.",
-  },
-  {
-    label: "Adult learning design",
-    title: "Built for how adults actually learn",
-    description:
-      "Every recommendation is problem-centered and tied to a real situation you're facing, not abstract theory — and paced on your terms, not a fixed syllabus. We deliberately don't rely on \"learning styles\" (visual/auditory/kinesthetic) — that framework hasn't held up under research scrutiny. Your format preference shapes what keeps you motivated and consistent, not a diagnosis of how you supposedly learn best.",
-  },
-];
-
 export default function Methodology() {
+  const t = useTranslations("methodology");
+
+  const pillars = [
+    { label: t("pillar1Label"), title: t("pillar1Title"), description: t("pillar1Description") },
+    { label: t("pillar2Label"), title: t("pillar2Title"), description: t("pillar2Description") },
+    { label: t("pillar3Label"), title: t("pillar3Title"), description: t("pillar3Description") },
+    { label: t("pillar4Label"), title: t("pillar4Title"), description: t("pillar4Description") },
+    { label: t("pillar5Label"), title: t("pillar5Title"), description: t("pillar5Description") },
+  ];
+
   return (
     <section
       id="methodology"
@@ -54,7 +34,7 @@ export default function Methodology() {
             textTransform: "uppercase",
           }}
         >
-          Methodology
+          {t("label")}
         </span>
         <h2
           className="font-display"
@@ -67,7 +47,7 @@ export default function Methodology() {
             color: "var(--text)",
           }}
         >
-          A discipline, <span className="gradient-text">not an opinion</span>
+          {t("headlinePrefix")} <span className="gradient-text">{t("headlineHighlight")}</span>
         </h2>
         <p
           style={{
@@ -79,9 +59,7 @@ export default function Methodology() {
             lineHeight: 1.7,
           }}
         >
-          Devometrics follows the naming convention of econometrics, psychometrics,
-          and biometrics — disciplines that apply rigorous, quantitative measurement
-          to a domain. Here&apos;s what that means for how your score is actually built.
+          {t("subtext")}
         </p>
       </div>
 
@@ -139,7 +117,7 @@ export default function Methodology() {
             textTransform: "uppercase",
           }}
         >
-          Our capability model
+          {t("capabilityLabel")}
         </span>
         <h3
           style={{
@@ -151,7 +129,7 @@ export default function Methodology() {
             marginBottom: 12,
           }}
         >
-          One pyramid, all 8 dimensions
+          {t("capabilityHeadline")}
         </h3>
         <p
           style={{
@@ -162,10 +140,7 @@ export default function Methodology() {
             lineHeight: 1.7,
           }}
         >
-          Every competency we score sits on one of three tiers — personal capability is the
-          foundation, professional and technical execution builds on it, and organizational
-          and leadership impact sits on top. Your own pyramid fills in with color as you complete
-          assessments.
+          {t("capabilityDescription")}
         </p>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <CapabilityPyramid compact />
@@ -179,12 +154,12 @@ export default function Methodology() {
           textAlign: "center",
           marginTop: 40,
           maxWidth: 620,
-          marginLeft: "auto",
-          marginRight: "auto",
+          marginInlineStart: "auto",
+          marginInlineEnd: "auto",
           lineHeight: 1.7,
         }}
       >
-        All scores are guidance, not a guarantee of career outcomes.
+        {t("disclaimer")}
       </p>
     </section>
   );

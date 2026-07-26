@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import {
   PRICING,
@@ -20,88 +21,112 @@ function discountPercent(region: PricingRegion): number {
   return Math.round((1 - annual / (monthly * 12)) * 100);
 }
 
-const PROMO_END_LABEL = PROMO_END_DATE.toLocaleDateString("en-US", {
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
-
-function buildPlans(region: PricingRegion) {
-  const promoActive = isPromoActive();
-  const premiumMonthly = promoActive ? promoPrice(region, "monthly") : PRICING[region].monthly;
-  const premiumAnnual = promoActive ? promoPrice(region, "annual") : PRICING[region].annual;
-  const originalMonthly = promoActive ? PRICING[region].monthly : null;
-  const originalAnnual = promoActive ? PRICING[region].annual : null;
-
-  return [
-    {
-      name: "Free",
-      price: { monthly: 0, annual: 0 },
-      originalPrice: { monthly: null as number | null, annual: null as number | null },
-      perSeat: false,
-      description: "Start mapping your career today.",
-      features: [
-        "Basic competency profile",
-        "AI Discovery interview",
-        "Career Health Score",
-        "Limited AI coaching (10 messages/mo)",
-        "30-day, generic development plan",
-      ],
-      cta: "Get started free",
-      ctaStyle: "outline",
-      popular: false,
-    },
-    {
-      name: "Premium",
-      price: { monthly: premiumMonthly, annual: premiumAnnual },
-      originalPrice: { monthly: originalMonthly, annual: originalAnnual },
-      perSeat: false,
-      description: "The full gap analysis and development engine.",
-      features: [
-        "Everything in Free",
-        "Unlimited AI coaching",
-        "Full competency gap analysis",
-        "CV + job description + target role analysis",
-        `All ${ASSESSMENTS.length} assessments`,
-        "90-day / 12-month / 3-year plans",
-        "Named resources & specific guidance per milestone",
-        "Resume Intelligence",
-        "Interview Simulator (text + voice)",
-        "Priority support",
-      ],
-      cta: "Try it now",
-      ctaStyle: "filled",
-      popular: true,
-    },
-    {
-      name: "Enterprise",
-      price: { monthly: ENTERPRISE_PRICING[region], annual: null },
-      originalPrice: { monthly: null as number | null, annual: null as number | null },
-      perSeat: true,
-      description: "Workforce intelligence for teams and organizations.",
-      features: [
-        "Everything in Premium",
-        "HR dashboard with full employee records",
-        "Workforce skill inventory & talent heatmap",
-        "Leadership readiness signal",
-        "Custom competency framework builder",
-        "Anonymous culture & pulse surveys",
-        "Executive-level assessments",
-        "Bulk employee import + Excel export",
-        "Fully isolated company data",
-      ],
-      cta: "Set up your company workspace",
-      ctaStyle: "filled",
-      popular: false,
-    },
-  ];
-}
+// Translated function names (t) aren't stable identifiers to branch logic
+// on, so plans carry their own ctaType instead of the old
+// `plan.cta === "Contact sales"` string comparison, which was already dead
+// code before this file had any translation (no plan ever set cta to that
+// literal) — preserved as dead, just no longer keyed off display text.
+type Plan = {
+  name: string;
+  price: { monthly: number | null; annual: number | null };
+  originalPrice: { monthly: number | null; annual: number | null };
+  perSeat: boolean;
+  description: string;
+  features: string[];
+  cta: string;
+  ctaType: "signup" | "contact";
+  ctaStyle: "outline" | "filled";
+  popular: boolean;
+};
 
 export default function Pricing({ initialRegion }: { initialRegion: PricingRegion }) {
+  const t = useTranslations("pricing");
+  const locale = useLocale();
   const [annual, setAnnual] = useState(true);
   const region = initialRegion;
 
-  const plans = buildPlans(region);
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
+  const promoEndLabel = PROMO_END_DATE.toLocaleDateString(dateLocale, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  function buildPlans(): Plan[] {
+    const promoActive = isPromoActive();
+    const premiumMonthly = promoActive ? promoPrice(region, "monthly") : PRICING[region].monthly;
+    const premiumAnnual = promoActive ? promoPrice(region, "annual") : PRICING[region].annual;
+    const originalMonthly = promoActive ? PRICING[region].monthly : null;
+    const originalAnnual = promoActive ? PRICING[region].annual : null;
+
+    return [
+      {
+        name: t("planFreeName"),
+        price: { monthly: 0, annual: 0 },
+        originalPrice: { monthly: null, annual: null },
+        perSeat: false,
+        description: t("planFreeDescription"),
+        features: [
+          t("planFreeFeature1"),
+          t("planFreeFeature2"),
+          t("planFreeFeature3"),
+          t("planFreeFeature4"),
+          t("planFreeFeature5"),
+        ],
+        cta: t("planFreeCta"),
+        ctaType: "signup",
+        ctaStyle: "outline",
+        popular: false,
+      },
+      {
+        name: t("planPremiumName"),
+        price: { monthly: premiumMonthly, annual: premiumAnnual },
+        originalPrice: { monthly: originalMonthly, annual: originalAnnual },
+        perSeat: false,
+        description: t("planPremiumDescription"),
+        features: [
+          t("planPremiumFeature1"),
+          t("planPremiumFeature2"),
+          t("planPremiumFeature3"),
+          t("planPremiumFeature4"),
+          t("planPremiumFeature5", { count: ASSESSMENTS.length }),
+          t("planPremiumFeature6"),
+          t("planPremiumFeature7"),
+          t("planPremiumFeature8"),
+          t("planPremiumFeature9"),
+          t("planPremiumFeature10"),
+        ],
+        cta: t("planPremiumCta"),
+        ctaType: "signup",
+        ctaStyle: "filled",
+        popular: true,
+      },
+      {
+        name: t("planEnterpriseName"),
+        price: { monthly: ENTERPRISE_PRICING[region], annual: null },
+        originalPrice: { monthly: null, annual: null },
+        perSeat: true,
+        description: t("planEnterpriseDescription"),
+        features: [
+          t("planEnterpriseFeature1"),
+          t("planEnterpriseFeature2"),
+          t("planEnterpriseFeature3"),
+          t("planEnterpriseFeature4"),
+          t("planEnterpriseFeature5"),
+          t("planEnterpriseFeature6"),
+          t("planEnterpriseFeature7"),
+          t("planEnterpriseFeature8"),
+          t("planEnterpriseFeature9"),
+        ],
+        cta: t("planEnterpriseCta"),
+        ctaType: "signup",
+        ctaStyle: "filled",
+        popular: false,
+      },
+    ];
+  }
+
+  const plans = buildPlans();
   const savePercent = discountPercent(region);
 
   return (
@@ -125,7 +150,7 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             textTransform: "uppercase",
           }}
         >
-          Pricing
+          {t("label")}
         </span>
         <h2
           className="font-display"
@@ -138,10 +163,10 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             color: "var(--text)",
           }}
         >
-          Invest in the gap that matters
+          {t("headline")}
         </h2>
         <p style={{ fontSize: 17, color: "var(--text-muted)", marginTop: 16, lineHeight: 1.7 }}>
-          One salary-band improvement pays for decades of Devometrics.
+          {t("subtext")}
         </p>
         <p
           style={{
@@ -149,21 +174,20 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             color: "var(--teal)",
             marginTop: 12,
             maxWidth: 480,
-            marginLeft: "auto",
-            marginRight: "auto",
+            marginInlineStart: "auto",
+            marginInlineEnd: "auto",
             lineHeight: 1.6,
           }}
         >
-          Pilot phase: every account gets full Premium access right now, free — the tiers below are
-          what launches after the pilot.
+          {t("pilotNote")}
         </p>
 
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-          Pricing shown reflects your region automatically.{" "}
+          {t("regionNote")}{" "}
           <a href="mailto:sales@devometrics.com" style={{ color: "var(--teal)" }}>
-            Student? Email sales@devometrics.com
+            {t("studentNote")}
           </a>{" "}
-          for a {Math.round(STUDENT_DISCOUNT * 100)}% discount.
+          {t("studentDiscount", { percent: Math.round(STUDENT_DISCOUNT * 100) })}
         </p>
 
         {/* Monthly/Annual toggle */}
@@ -176,10 +200,12 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             background: "var(--navy-mid)",
             border: "1px solid var(--border)",
             borderRadius: 100,
-            padding: "4px 4px 4px 16px",
+            paddingInlineStart: 16,
+            paddingInlineEnd: 4,
+            paddingBlock: 4,
           }}
         >
-          <span style={{ fontSize: 14, color: annual ? "var(--text-muted)" : "var(--text)", fontWeight: 500 }}>Monthly</span>
+          <span style={{ fontSize: 14, color: annual ? "var(--text-muted)" : "var(--text)", fontWeight: 500 }}>{t("monthly")}</span>
           <button
             onClick={() => setAnnual(!annual)}
             style={{
@@ -196,17 +222,17 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             <span
               style={{
                 position: "absolute",
-                top: 3,
-                left: annual ? 22 : 3,
+                insetBlockStart: 3,
+                insetInlineStart: annual ? 22 : 3,
                 width: 20,
                 height: 20,
                 background: "var(--teal)",
                 borderRadius: "50%",
-                transition: "left 0.2s ease",
+                transition: "inset-inline-start 0.2s ease",
               }}
             />
           </button>
-          <span style={{ fontSize: 14, color: annual ? "var(--text)" : "var(--text-muted)", fontWeight: 500 }}>Annual</span>
+          <span style={{ fontSize: 14, color: annual ? "var(--text)" : "var(--text-muted)", fontWeight: 500 }}>{t("annual")}</span>
           <span
             style={{
               fontSize: 11,
@@ -215,10 +241,10 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
               background: "rgba(0,201,167,0.1)",
               borderRadius: 100,
               padding: "4px 10px",
-              marginRight: 4,
+              marginInlineEnd: 4,
             }}
           >
-            Save {savePercent}%
+            {t("savePercent", { percent: savePercent })}
           </span>
         </div>
       </div>
@@ -248,8 +274,8 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
               <div
                 style={{
                   position: "absolute",
-                  top: -12,
-                  left: "50%",
+                  insetBlockStart: -12,
+                  insetInlineStart: "50%",
                   transform: "translateX(-50%)",
                   background: "var(--teal)",
                   color: "#0A0F1E",
@@ -262,7 +288,7 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
                   whiteSpace: "nowrap",
                 }}
               >
-                Most popular
+                {t("mostPopular")}
               </div>
             )}
 
@@ -277,32 +303,32 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
                 <>
                   <span className="mono" style={{ fontSize: 34, fontWeight: 700, color: "var(--text)" }}>
                     ${plan.price.monthly}
-                    <span style={{ fontSize: 15, fontWeight: 400, color: "var(--text-muted)" }}>/employee/mo</span>
+                    <span style={{ fontSize: 15, fontWeight: 400, color: "var(--text-muted)" }}>{t("perEmployeeMo")}</span>
                   </span>
                   <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-                    Billed annually · {ENTERPRISE_MIN_SEATS}-employee minimum
+                    {t("billedAnnually", { min: ENTERPRISE_MIN_SEATS })}
                   </p>
                 </>
               ) : plan.price.monthly === null ? (
-                <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>Custom</span>
+                <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>{t("custom")}</span>
               ) : plan.price.monthly === 0 ? (
-                <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>Free</span>
+                <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>{t("free")}</span>
               ) : (
                 <>
                   {(annual ? plan.originalPrice.annual : plan.originalPrice.monthly) !== null && (
-                    <span className="mono" style={{ fontSize: 18, fontWeight: 400, color: "var(--text-muted)", textDecoration: "line-through", marginRight: 8 }}>
+                    <span className="mono" style={{ fontSize: 18, fontWeight: 400, color: "var(--text-muted)", textDecoration: "line-through", marginInlineEnd: 8 }}>
                       ${annual ? plan.originalPrice.annual : plan.originalPrice.monthly}
                     </span>
                   )}
                   <span className="mono" style={{ fontSize: 34, fontWeight: 700, color: "var(--text)" }}>
                     ${annual ? plan.price.annual : plan.price.monthly}
                     <span style={{ fontSize: 15, fontWeight: 400, color: "var(--text-muted)" }}>
-                      {annual ? "/yr" : "/mo"}
+                      {annual ? t("perYear") : t("perMonth")}
                     </span>
                   </span>
                   {(annual ? plan.originalPrice.annual : plan.originalPrice.monthly) !== null && (
                     <p style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, marginTop: 4 }}>
-                      {Math.round(PROMO_DISCOUNT * 100)}% off until {PROMO_END_LABEL}
+                      {t("offUntil", { percent: Math.round(PROMO_DISCOUNT * 100), date: promoEndLabel })}
                     </p>
                   )}
                 </>
@@ -313,7 +339,7 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
               {plan.description}
             </p>
 
-            {plan.cta === "Contact sales" ? (
+            {plan.ctaType === "contact" ? (
               <Link
                 href="/contact?type=sales"
                 style={{
@@ -362,11 +388,11 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
 
             {plan.perSeat && (
               <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", marginTop: -18, marginBottom: 26 }}>
-                50+ employees?{" "}
+                {t("fiftyEmployees")}{" "}
                 <Link href="/contact?type=sales" style={{ color: "var(--teal)", textDecoration: "none" }}>
-                  Talk to sales
+                  {t("talkToSales")}
                 </Link>{" "}
-                about custom terms.
+                {t("aboutCustomTerms")}
               </p>
             )}
 
@@ -397,11 +423,10 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
         }}
       >
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-          In active development — Premium &amp; Enterprise
+          {t("inActiveDevelopment")}
         </span>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.7, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
-          Job recommendations matched to your profile, a fresh assessment every month, curated
-          micro-learning, and peer learning communities — all in progress, rolling out over time.
+        <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.7, maxWidth: 640, marginInlineStart: "auto", marginInlineEnd: "auto" }}>
+          {t("comingSoonDescription")}
         </p>
       </div>
     </section>

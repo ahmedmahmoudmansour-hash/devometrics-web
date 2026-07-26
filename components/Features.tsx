@@ -1,93 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 
-const features: { title: string; description: string; tag?: string; tagColor?: string; href?: string }[] = [
-  {
-    title: "AI Discovery Interview",
-    description:
-      "A short conversational interview that extracts your real capabilities — what you decide, lead, and own — building a richer profile than any checkbox form.",
-  },
-  {
-    title: "Competency Gap Map",
-    description:
-      "Your skills scored across 8 fixed dimensions with Current Level, Target Level, Gap Size, Market Demand, and a Confidence Score. Not guesses — extracted from your actual documents.",
-  },
-  {
-    title: "Development Roadmaps",
-    description:
-      "30-day / 90-day / 12-month / 3-year plans drawing from 9 formats — reading, research, courses, certifications, webinars, hands-on work, mentorship, peer learning, live cohorts — matched to your budget and how you actually learn. Free and low-cost options included at every step, not just the expensive ones.",
-  },
-  {
-    title: "AI Career Coach",
-    description:
-      "Conversational coaching — voice or text — that remembers your full profile and past sessions. Ask anything from \"Am I ready for promotion?\" to \"How do I transition into consulting?\", then get meeting notes and a concrete action plan from every session, with one-click follow-through into your task list.",
-  },
-  {
-    title: "Assessment Center",
-    description:
-      `${ASSESSMENTS.length} assessments across every career level — Leadership, AI Literacy, Emotional Intelligence, Strategic Thinking, and more — each with a scored band, situational case studies, and development actions.`,
-  },
-  {
-    title: "Resume Intelligence",
-    description:
-      "ATS compatibility audit, keyword gap analysis, achievement quality scoring, and visibility recommendations — all in one pass.",
-  },
-  {
-    title: "Interview & Scenario Simulator",
-    description:
-      "Live role-play through real workplace situations — difficult feedback, delegation, conflict, restructuring conversations — organized by career level. The AI plays the other person realistically, then gives direct feedback grounded in what you actually said. Text or free browser voice.",
-  },
-  {
-    title: "Career Paths Map",
-    description:
-      "An AI-generated map of where you can realistically go from here — leadership, deep-expertise, and cross-functional branches, each role with your readiness percentage today, the skills it requires, your specific gaps, and an honest time-to-readiness. Grounded in your own gap analysis, not generic career ladders.",
-    tag: "New",
-    tagColor: "var(--teal)",
-  },
-  {
-    title: "Career GPS",
-    description:
-      "A “you are here” view of your current destination role — Promotion Readiness and Interview Readiness scored from your real measured competencies, the fastest route to close your biggest gap, and a “what if?” simulator that recalculates your readiness instantly if you change your target or improve a skill.",
-    tag: "New",
-    tagColor: "var(--teal)",
-  },
-  {
-    title: "Certifications & Credentials",
-    description:
-      "Track every certification and credential in one place, with expiry reminders so nothing lapses quietly.",
-    tag: "New",
-    tagColor: "var(--teal)",
-  },
-  {
-    title: "Accountability Groups",
-    description:
-      "Small peer groups that keep momentum going — check in on each other's goals without needing a manager or coach in the loop.",
-    tag: "New",
-    tagColor: "var(--teal)",
-  },
-  {
-    title: "Career Profile & Momentum",
-    description:
-      "A LinkedIn-style profile — job history, skills, qualifications, career aspirations — auto-filled from the CV you already uploaded. Your Career Health trend, streaks, and achievements track your progress automatically as you use the platform.",
-  },
-  {
-    title: "Tasks, Calendar & Workspace",
-    description:
-      "Turn any milestone into today's concrete steps with one click of AI, plan your week on a built-in calendar, and subscribe once to see it all inside your own Outlook, Google, or Apple calendar. A private AI Workspace turns your rough notes into summaries and action items. Fully private — never visible to your manager or organization, by design, not just by default.",
-    tag: "New",
-    tagColor: "var(--teal)",
-  },
-  {
-    title: "Corporate Platform",
-    description:
-      "Company workspace with its own admin, full employee records (employee ID, title, department, business unit, manager, location — editable, archivable, exportable to Excel), a real org chart, a workforce skill inventory, a talent heatmap, and a custom competency framework mapped onto the scoring engine. Impact Cycles bring appraisals built on real global standards — past goals, KPI-linked focus areas, competency ratings, development needs, and dual sign-off — with a manager-only view scoped to just their own direct reports. Each company's data stays fully isolated from every other company.",
-    href: "/enterprise",
-  },
-];
-
 export default function Features() {
+  const t = useTranslations("features");
+
+  const features: { title: string; description: string; tag?: string; tagColor?: string; href?: string }[] = [
+    { title: t("f1Title"), description: t("f1Description") },
+    { title: t("f2Title"), description: t("f2Description") },
+    { title: t("f3Title"), description: t("f3Description") },
+    { title: t("f4Title"), description: t("f4Description") },
+    { title: t("f5Title"), description: t("f5Description", { count: ASSESSMENTS.length }) },
+    { title: t("f6Title"), description: t("f6Description") },
+    { title: t("f7Title"), description: t("f7Description") },
+    { title: t("f8Title"), description: t("f8Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f9Title"), description: t("f9Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f10Title"), description: t("f10Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f11Title"), description: t("f11Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f12Title"), description: t("f12Description") },
+    { title: t("f13Title"), description: t("f13Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f14Title"), description: t("f14Description"), href: "/enterprise" },
+  ];
+
   return (
     <section
       id="features"
@@ -111,7 +47,7 @@ export default function Features() {
               textTransform: "uppercase",
             }}
           >
-            Platform features
+            {t("label")}
           </span>
           <h2
             className="font-display"
@@ -124,8 +60,8 @@ export default function Features() {
               color: "var(--text)",
             }}
           >
-            Everything you need to{" "}
-            <span className="gradient-text">close the gap</span>
+            {t("headlinePrefix")}{" "}
+            <span className="gradient-text">{t("headlineHighlight")}</span>
           </h2>
           <p
             style={{
@@ -137,7 +73,7 @@ export default function Features() {
               lineHeight: 1.7,
             }}
           >
-            Everything below is live today.
+            {t("subtext")}
           </p>
         </div>
 
@@ -169,7 +105,7 @@ export default function Features() {
                       color: "var(--text)",
                       letterSpacing: "-0.01em",
                       flex: 1,
-                      paddingRight: 12,
+                      paddingInlineEnd: 12,
                     }}
                   >
                     {f.title}
@@ -197,7 +133,7 @@ export default function Features() {
                   {f.description}
                 </p>
                 {f.href && (
-                  <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600, marginTop: 14 }}>Learn more →</p>
+                  <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600, marginTop: 14 }}>{t("learnMore")}</p>
                 )}
               </div>
             );

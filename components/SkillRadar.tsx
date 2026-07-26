@@ -1,16 +1,23 @@
 "use client";
 
-// Visual demo of the Skill Radar / gap analysis output
-const skills = [
-  { label: "Leadership", current: 65, target: 85 },
-  { label: "Strategic Thinking", current: 55, target: 90 },
-  { label: "AI Fluency", current: 40, target: 80 },
-  { label: "Communication", current: 78, target: 85 },
-  { label: "Project Mgmt", current: 72, target: 88 },
-  { label: "Financial Literacy", current: 45, target: 75 },
-];
+import { useTranslations } from "next-intl";
 
 export default function SkillRadar() {
+  const t = useTranslations("skillRadar");
+
+  // Visual demo of the Skill Radar / gap analysis output — current/target
+  // are illustrative static numbers, not real data, so only the labels
+  // need translation.
+  const skills = [
+    { label: t("skillLeadership"), current: 65, target: 85 },
+    { label: t("skillStrategicThinking"), current: 55, target: 90 },
+    { label: t("skillAiFluency"), current: 40, target: 80 },
+    { label: t("skillCommunication"), current: 78, target: 85 },
+    { label: t("skillProjectMgmt"), current: 72, target: 88 },
+    { label: t("skillFinancialLiteracy"), current: 45, target: 75 },
+  ];
+  const bullets = [t("bullet1"), t("bullet2"), t("bullet3"), t("bullet4")];
+
   return (
     <section
       style={{
@@ -40,7 +47,7 @@ export default function SkillRadar() {
               textTransform: "uppercase",
             }}
           >
-            Gap analysis
+            {t("label")}
           </span>
           <h2
             className="font-display"
@@ -54,22 +61,15 @@ export default function SkillRadar() {
               color: "var(--text)",
             }}
           >
-            See exactly what&apos;s
+            {t("headline1")}
             <br />
-            <span className="gradient-text">holding you back</span>
+            <span className="gradient-text">{t("headline2")}</span>
           </h2>
           <p style={{ fontSize: 16, color: "var(--text-muted)", lineHeight: 1.7, marginBottom: 32 }}>
-            Every competency scored. Every gap quantified. Confidence levels shown so you
-            always know when the AI is inferring versus certain. No vague advice —
-            just the precise delta between where you are and where you need to be.
+            {t("description")}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              "Current level vs. target level per skill",
-              "Market demand signal per competency",
-              "Confidence score surfaced — not hidden",
-              "Priority ranking by impact on your gap",
-            ].map((item) => (
+            {bullets.map((item) => (
               <div key={item} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="7.25" stroke="var(--teal)" strokeWidth="1.5" />
@@ -91,7 +91,7 @@ export default function SkillRadar() {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Competency Gap Map</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("chartTitle")}</span>
             <span
               style={{
                 fontSize: 11,
@@ -103,7 +103,7 @@ export default function SkillRadar() {
                 fontWeight: 600,
               }}
             >
-              Live sample
+              {t("liveSample")}
             </span>
           </div>
 
@@ -111,15 +111,15 @@ export default function SkillRadar() {
           <div style={{ display: "flex", gap: 20, marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgba(0,201,167,0.35)", display: "block" }} />
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Current</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("current")}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 12, height: 12, borderRadius: 3, background: "var(--teal)", display: "block" }} />
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Target</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("target")}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 12, height: 3, background: "rgba(255,100,100,0.5)", display: "block", borderRadius: 2 }} />
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Gap</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("gap")}</span>
             </div>
           </div>
 
@@ -137,8 +137,8 @@ export default function SkillRadar() {
                     <div
                       style={{
                         position: "absolute",
-                        left: 0,
-                        top: 0,
+                        insetInlineStart: 0,
+                        insetBlockStart: 0,
                         height: "100%",
                         width: `${skill.target}%`,
                         background: "rgba(0,201,167,0.15)",
@@ -149,8 +149,8 @@ export default function SkillRadar() {
                     <div
                       style={{
                         position: "absolute",
-                        left: 0,
-                        top: 0,
+                        insetInlineStart: 0,
+                        insetBlockStart: 0,
                         height: "100%",
                         width: `${skill.current}%`,
                         background: "linear-gradient(90deg, #00C9A7, #0891b2)",
@@ -161,7 +161,7 @@ export default function SkillRadar() {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                     <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>{skill.current}/100</span>
-                    <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>Target: {skill.target}</span>
+                    <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("targetValue", { value: skill.target })}</span>
                   </div>
                 </div>
               );
@@ -180,14 +180,14 @@ export default function SkillRadar() {
             }}
           >
             <div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Career Health Score</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>{t("careerHealthScore")}</div>
               <div className="mono" style={{ fontSize: 28, fontWeight: 600, color: "var(--teal)" }}>
                 62<span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 400 }}>/100</span>
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Promotion Readiness</div>
-              <div className="mono" style={{ fontSize: 14, fontWeight: 600, color: "var(--amber)" }}>68% ready</div>
+            <div style={{ textAlign: "end" }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>{t("promotionReadiness")}</div>
+              <div className="mono" style={{ fontSize: 14, fontWeight: 600, color: "var(--amber)" }}>{t("readyPercent", { percent: 68 })}</div>
             </div>
           </div>
         </div>

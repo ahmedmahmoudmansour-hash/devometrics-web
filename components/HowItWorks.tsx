@@ -1,59 +1,37 @@
 "use client";
 
-const steps = [
-  {
-    number: "01",
-    title: "Build your profile",
-    description:
-      "Sign in and complete your professional profile. Then our AI conducts a short conversational interview — not a form — to understand what you actually do, decide, and lead.",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    number: "02",
-    title: "Upload your documents",
-    description:
-      "Drop in your CV (or coursework/projects if you don't have one yet), a target job description, and the role you're aiming for. The engine ingests all three simultaneously to build a competency map you couldn't assemble from any single source.",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
-      </svg>
-    ),
-  },
-  {
-    number: "03",
-    title: "Get your gap analysis",
-    description:
-      "Devometrics extracts your real competencies across 8 fixed dimensions — technical, leadership, communication, strategic thinking, and more — scores each one, and maps the precise gaps between where you are and where the role demands you to be.",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-      </svg>
-    ),
-  },
-  {
-    number: "04",
-    title: "Execute your plan",
-    description:
-      "Receive a prioritized, time-bound development roadmap: 30-day quick wins, 90-day milestones, 12-month targets. Specific courses, certifications, projects, and coaching actions — ranked by impact on your gap, not just popularity.",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="9 11 12 14 22 4" />
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-      </svg>
-    ),
-  },
+import { useTranslations } from "next-intl";
+
+const icons = [
+  <svg key="1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>,
+  <svg key="2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>,
+  <svg key="3" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+  </svg>,
+  <svg key="4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 11 12 14 22 4" />
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+  </svg>,
 ];
 
 export default function HowItWorks() {
+  const t = useTranslations("howItWorks");
+  const steps = [
+    { number: "01", title: t("step1Title"), description: t("step1Description"), icon: icons[0] },
+    { number: "02", title: t("step2Title"), description: t("step2Description"), icon: icons[1] },
+    { number: "03", title: t("step3Title"), description: t("step3Description"), icon: icons[2] },
+    { number: "04", title: t("step4Title"), description: t("step4Description"), icon: icons[3] },
+  ];
+
   return (
     <section
       id="how-it-works"
@@ -75,7 +53,7 @@ export default function HowItWorks() {
             textTransform: "uppercase",
           }}
         >
-          How it works
+          {t("label")}
         </span>
         <h2
           className="font-display"
@@ -88,9 +66,9 @@ export default function HowItWorks() {
             color: "var(--text)",
           }}
         >
-          From documents to direction
+          {t("headline1")}
           <br />
-          <span className="gradient-text">in minutes</span>
+          <span className="gradient-text">{t("headline2")}</span>
         </h2>
         <p
           style={{
@@ -102,7 +80,7 @@ export default function HowItWorks() {
             lineHeight: 1.7,
           }}
         >
-          Most tools polish what you already have. Devometrics tells you what&apos;s actually missing.
+          {t("subtext")}
         </p>
       </div>
 
@@ -125,8 +103,8 @@ export default function HowItWorks() {
             <div
               style={{
                 position: "absolute",
-                top: -10,
-                right: 16,
+                insetBlockStart: -10,
+                insetInlineEnd: 16,
                 fontSize: 72,
                 fontWeight: 900,
                 color: "rgba(255,255,255,0.03)",
@@ -167,7 +145,7 @@ export default function HowItWorks() {
                 textTransform: "uppercase",
               }}
             >
-              Step {step.number}
+              {t("stepLabel", { number: step.number })}
             </div>
 
             <h3
@@ -196,8 +174,8 @@ export default function HowItWorks() {
               <div
                 style={{
                   position: "absolute",
-                  right: -12,
-                  top: "50%",
+                  insetInlineEnd: -12,
+                  insetBlockStart: "50%",
                   transform: "translateY(-50%)",
                   width: 24,
                   height: 24,
