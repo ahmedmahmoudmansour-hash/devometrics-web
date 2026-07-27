@@ -132,6 +132,9 @@ export default function HiringPipelineBoard({
             <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Required competencies
             </p>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4, lineHeight: 1.5 }}>
+              How strongly this role needs each of the 8 fixed dimensions (0–100) — the target every candidate&apos;s CV is scored against below.
+            </p>
             {sortedReqs.map((r) => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{r.dimension}</span>
@@ -196,6 +199,10 @@ export default function HiringPipelineBoard({
           {ranking ? "Comparing…" : "✨ Compare & Rank candidates"}
         </button>
       </div>
+      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: -4 }}>
+        An AI judgment call across every active candidate&apos;s CV score and interview assessment together —
+        decision support for the conversation, not an automated hire/reject decision.
+      </p>
       {rankingError && <p style={{ color: "#f87171", fontSize: 12 }}>{rankingError}</p>}
 
       {showAdd && (

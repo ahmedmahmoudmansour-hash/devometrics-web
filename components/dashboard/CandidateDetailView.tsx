@@ -71,12 +71,16 @@ export default function CandidateDetailView({
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {cvScore && (
         <div style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>CV competency breakdown</h2>
             <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: scoreColor(cvScore.career_health_score) }}>
               {cvScore.career_health_score}
             </span>
           </div>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
+            What their CV demonstrates on each dimension, measured against the posting&apos;s requirements — the score at
+            top is how close their overall CV is to fully meeting them (100 = meets every requirement).
+          </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {[...cvScore.competencies]
               .sort((a, b) => b.currentLevel - a.currentLevel)
@@ -212,6 +216,10 @@ function AssessmentSection({
           {isPending ? "Analyzing…" : assessment ? "Regenerate" : "✨ Generate assessment"}
         </button>
       </div>
+      <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
+        Turns the interview notes below into a structured read — grounded strictly in what&apos;s written, never
+        invented. Decision support for your own judgment, not an automated hire/reject verdict.
+      </p>
       {!hasNotes && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>Add at least one interview note first.</p>}
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       {assessment && (
