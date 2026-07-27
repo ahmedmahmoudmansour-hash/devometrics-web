@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { updateReviewEscalationLevels } from "@/lib/organizations/actions";
 
 export default function EscalationLevelsSetting({ organizationId, initialLevels }: { organizationId: string; initialLevels: number }) {
+  const t = useTranslations("escalationLevelsSetting");
   const router = useRouter();
   const [value, setValue] = useState(String(initialLevels));
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +30,9 @@ export default function EscalationLevelsSetting({ organizationId, initialLevels 
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Review visibility up the Org Chart</h2>
+      <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, marginBottom: 14, lineHeight: 1.6, maxWidth: 640 }}>
-        The direct manager always has full read/write on a review. Raise this to also let managers further
-        up the Org Chart see it and add their own co-sign comment — 1 means direct manager only, 3 means
-        direct manager plus two skip-levels above them, and so on.
+        {t("description")}
       </p>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <input
@@ -54,8 +54,8 @@ export default function EscalationLevelsSetting({ organizationId, initialLevels 
             outline: "none",
           }}
         />
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>levels (1–10)</span>
-        {saved && <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700 }}>Saved</span>}
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("levelsSuffix")}</span>
+        {saved && <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700 }}>{t("saved")}</span>}
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
     </div>

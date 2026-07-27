@@ -13,19 +13,12 @@ export type PerformanceReviewCycle = {
 
 export type ReviewStatus = "not_started" | "self_submitted" | "manager_submitted" | "acknowledged" | "closed";
 
-export function reviewStatusLabel(status: ReviewStatus): string {
-  switch (status) {
-    case "not_started":
-      return "Not started";
-    case "self_submitted":
-      return "Reflection submitted";
-    case "manager_submitted":
-      return "Manager's Perspective shared";
-    case "acknowledged":
-      return "Confirmed";
-    case "closed":
-      return "Closed";
-  }
+// Labels are translated — callers pass their own `useTranslations("performanceReviewLabels")`
+// result so this plain (non-component) module can stay translation-library-agnostic.
+type Translator = (key: string) => string;
+
+export function reviewStatusLabel(t: Translator, status: ReviewStatus): string {
+  return t(`reviewStatus.${status}`);
 }
 
 export type PerformanceReview = {
@@ -75,13 +68,13 @@ export type ReviewGoal = {
 
 // 1-5 with clear labels, not a bare number — matches standard practice
 // (SHRM/industry review templates consistently use a labeled scale).
-export const COMPETENCY_RATING_LABELS: Record<number, string> = {
-  1: "Needs Development",
-  2: "Developing",
-  3: "Meets Expectations",
-  4: "Exceeds Expectations",
-  5: "Outstanding",
-};
+export function competencyRatingLabel(t: Translator, rating: number): string {
+  return t(`competencyRating.${rating}`);
+}
+
+export function goalStatusLabel(t: Translator, status: GoalStatus): string {
+  return t(`goalStatus.${status}`);
+}
 
 export type CompetencyRating = {
   review_id: string;

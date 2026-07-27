@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { listMyDirectReportReviews } from "@/lib/performanceReviews/actions";
 import ImpactCycleReviewRow from "@/components/dashboard/ImpactCycleReviewRow";
 import type { ReviewListItem } from "@/lib/performanceReviews/types";
 
 export default function MyTeamReviews({ initial }: { initial: ReviewListItem[] }) {
+  const t = useTranslations("myTeamReviews");
   const [items, setItems] = useState(initial);
   const [, startTransition] = useTransition();
 
@@ -20,8 +22,7 @@ export default function MyTeamReviews({ initial }: { initial: ReviewListItem[] }
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
         <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
-          None of your direct reports have an active Impact Cycle yet — that starts once your
-          organization&apos;s admin opens a cycle for your team.
+          {t("noneActiveYet")}
         </p>
       </div>
     );

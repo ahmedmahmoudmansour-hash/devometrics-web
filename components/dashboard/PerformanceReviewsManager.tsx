@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { createReviewCycle, updateCycleStatus, listReviewCycles, listReviewsForCycle } from "@/lib/performanceReviews/actions";
 import ImpactCycleReviewRow from "@/components/dashboard/ImpactCycleReviewRow";
 import type { PerformanceReviewCycle, ReviewListItem } from "@/lib/performanceReviews/types";
@@ -25,6 +26,7 @@ function inputStyle(): React.CSSProperties {
 }
 
 function CreateCycleForm({ onCreated }: { onCreated: () => void }) {
+  const t = useTranslations("performanceReviewsManager");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [opensAt, setOpensAt] = useState("");
@@ -55,7 +57,7 @@ function CreateCycleForm({ onCreated }: { onCreated: () => void }) {
         onClick={() => setOpen(true)}
         style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
       >
-        + New Impact Cycle
+        {t("newImpactCycle")}
       </button>
     );
   }
@@ -63,33 +65,38 @@ function CreateCycleForm({ onCreated }: { onCreated: () => void }) {
   return (
     <form onSubmit={submit} style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>Cycle name *</label>
-        <input style={inputStyle()} value={name} onChange={(e) => setName(e.target.value)} required autoFocus placeholder="H1 2026" />
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("cycleNameLabel")}</label>
+        <input style={inputStyle()} value={name} onChange={(e) => setName(e.target.value)} required autoFocus placeholder={t("cycleNamePlaceholder")} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>Opens</label>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("opens")}</label>
           <input type="date" style={inputStyle()} value={opensAt} onChange={(e) => setOpensAt(e.target.value)} />
         </div>
         <div>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>Closes</label>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("closes")}</label>
           <input type="date" style={inputStyle()} value={closesAt} onChange={(e) => setClosesAt(e.target.value)} />
         </div>
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" disabled={isPending} style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}>
-          {isPending ? "Creating…" : "Create"}
+          {isPending ? t("creating") : t("create")}
         </button>
         <button type="button" onClick={() => setOpen(false)} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}>
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </form>
   );
 }
 
+function cycleStatusLabel(t: (key: string) => string, status: "draft" | "open" | "closed"): string {
+  return t(`cycleStatus${status.charAt(0).toUpperCase()}${status.slice(1)}`);
+}
+
 export default function PerformanceReviewsManager({ initialCycles }: { initialCycles: PerformanceReviewCycle[] }) {
+  const t = useTranslations("performanceReviewsManager");
   const [cycles, setCycles] = useState(initialCycles);
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(initialCycles[0]?.id ?? null);
   const [reviews, setReviews] = useState<ReviewListItem[]>([]);
@@ -126,7 +133,7 @@ export default function PerformanceReviewsManager({ initialCycles }: { initialCy
 
       {cycles.length === 0 ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
-          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>No Impact Cycles yet — create one above to start collecting Reflections and Manager&apos;s Perspectives.</p>
+          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("noneYet")}</p>
         </div>
       ) : (
         <>
@@ -150,7 +157,7 @@ export default function PerformanceReviewsManager({ initialCycles }: { initialCy
                     cursor: "pointer",
                   }}
                 >
-                  {c.name} · {c.status}
+                  {c.name} · {cycleStatusLabel(t, c.status)}
                 </button>
               );
             })}
@@ -158,7 +165,7 @@ export default function PerformanceReviewsManager({ initialCycles }: { initialCy
 
           {selectedCycle && (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Cycle status:</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("cycleStatusPrefix")}</span>
               {(["draft", "open", "closed"] as const).map((s) => (
                 <button
                   key={s}
@@ -182,17 +189,17 @@ export default function PerformanceReviewsManager({ initialCycles }: { initialCy
                     opacity: selectedCycle.status === s ? 1 : 0.7,
                   }}
                 >
-                  {s}
+                  {cycleStatusLabel(t, s)}
                 </button>
               ))}
             </div>
           )}
 
           {loadingReviews ? (
-            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Loading…</p>
+            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("loading")}</p>
           ) : reviews.length === 0 ? (
             <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
-              <p style={{ fontSize: 14, color: "var(--text-muted)" }}>No employees in this cycle yet.</p>
+              <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("noEmployeesInCycle")}</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
