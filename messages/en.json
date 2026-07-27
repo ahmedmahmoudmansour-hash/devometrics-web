@@ -1668,5 +1668,56 @@
     "cycleStatusClosed": "closed",
     "loading": "Loading…",
     "noEmployeesInCycle": "No employees in this cycle yet."
+  },
+  "companySurveysPage": {
+    "backToProgress": "← Back to progress",
+    "inviteTeamFirst": "Invite your team from the <profile>Profile</profile> tab before creating a survey — there's no one to assign it to yet.",
+    "yourSurveys": "Your surveys",
+    "noSurveysYet": "No surveys created yet."
+  },
+  "surveyBuilder": {
+    "createASurvey": "Create a survey",
+    "description": "AI drafts a mix of rating, multiple-choice, and open-ended questions from the theme you pick — review and edit them before assigning. Results only ever show as anonymous aggregates once at least 3 people have responded — never who said what.",
+    "successMessage": "Survey created with {count} questions and assigned.",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Q3 Culture Pulse Check",
+    "themeLabel": "Theme",
+    "focusLabel": "Anything specific you want it to probe? (optional)",
+    "focusPlaceholder": "e.g. how the recent reorg has affected morale",
+    "generatingQuestions": "Generating questions…",
+    "regenerateQuestions": "Regenerate questions",
+    "generateQuestions": "Generate questions",
+    "questionsCountHeader": "Questions ({count}) — edit, remove, or add your own",
+    "addYourOwnQuestion": "+ Add your own question",
+    "assignToCount": "Assign to ({count} selected)",
+    "selectAll": "Select all",
+    "publishing": "Publishing…",
+    "publishAndAssign": "Publish & assign",
+    "questionTextPlaceholder": "Question text",
+    "ratingOption": "Rating (1-5)",
+    "multipleChoiceOption": "Multiple choice",
+    "openEndedOption": "Open-ended",
+    "optionPlaceholder": "Option {index}",
+    "addOption": "+ Add option",
+    "removeQuestion": "Remove question"
+  },
+  "surveyThemes": {
+    "culture": "Culture",
+    "changeReadiness": "Change Readiness",
+    "wellbeingWorkload": "Wellbeing & Workload",
+    "managerEffectiveness": "Manager Effectiveness",
+    "psychologicalSafety": "Psychological Safety",
+    "custom": "Custom"
+  },
+  "surveyResultsCard": {
+    "respondedCount": "{responded} of {assigned} responded",
+    "hideResults": "Hide results",
+    "viewResults": "View results",
+    "loading": "Loading…",
+    "insufficientData": "Only {responded} of {assigned} have responded so far — results stay hidden until at least 3 people respond, to keep answers anonymous.",
+    "aggregatedAcross": "Aggregated across {count} anonymous responses.",
+    "avgOutOf5": "/ 5 avg ({count} responses)",
+    "noResponsesYet": "No responses to this question yet.",
+    "randomOrderNote": "Shown in random order, anonymized — but open text can still self-identify someone through its content (e.g. naming a specific person or shift)."
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { listOrgSurveys } from "@/lib/surveys/actions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
@@ -7,6 +8,7 @@ import SurveyBuilder from "@/components/dashboard/SurveyBuilder";
 import SurveyResultsCard from "@/components/dashboard/SurveyResultsCard";
 
 export default async function CompanySurveysPage() {
+  const t = await getTranslations("companySurveysPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -18,7 +20,7 @@ export default async function CompanySurveysPage() {
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
             {data.organizationName}
@@ -31,11 +33,13 @@ export default async function CompanySurveysPage() {
           {employees.length === 0 ? (
             <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
               <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-                Invite your team from the{" "}
-                <Link href="/dashboard/company" style={{ color: "var(--teal)" }}>
-                  Profile
-                </Link>{" "}
-                tab before creating a survey — there&apos;s no one to assign it to yet.
+                {t.rich("inviteTeamFirst", {
+                  profile: (chunks) => (
+                    <Link href="/dashboard/company" style={{ color: "var(--teal)" }}>
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </p>
             </div>
           ) : (
@@ -44,10 +48,10 @@ export default async function CompanySurveysPage() {
 
           <div>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-              Your surveys
+              {t("yourSurveys")}
             </h2>
             {surveys.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No surveys created yet.</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("noSurveysYet")}</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {surveys.map((s) => (

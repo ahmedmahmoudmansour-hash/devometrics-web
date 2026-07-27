@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createSurvey, previewSurveyQuestions } from "@/lib/surveys/actions";
-import { SURVEY_THEMES, type SurveyQuestion, type SurveyQuestionType } from "@/lib/surveys/types";
+import { SURVEY_THEMES, surveyThemeLabel, type SurveyQuestion, type SurveyQuestionType } from "@/lib/surveys/types";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -38,6 +39,8 @@ function QuestionEditor({
   onChange: (q: SurveyQuestion) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("surveyBuilder");
+
   function updateOption(index: number, value: string) {
     const options = [...(question.options ?? [])];
     options[index] = value;
@@ -50,7 +53,7 @@ function QuestionEditor({
         <input
           value={question.text}
           onChange={(e) => onChange({ ...question, text: e.target.value })}
-          placeholder="Question text"
+          placeholder={t("questionTextPlaceholder")}
           style={{ ...inputStyle, flex: "1 1 240px" }}
         />
         <select
@@ -58,9 +61,9 @@ function QuestionEditor({
           onChange={(e) => onChange({ ...question, type: e.target.value as SurveyQuestionType })}
           style={{ ...inputStyle, flex: "0 1 160px", cursor: "pointer" }}
         >
-          <option value="rating">Rating (1-5)</option>
-          <option value="multiple_choice">Multiple choice</option>
-          <option value="qualitative">Open-ended</option>
+          <option value="rating">{t("ratingOption")}</option>
+          <option value="multiple_choice">{t("multipleChoiceOption")}</option>
+          <option value="qualitative">{t("openEndedOption")}</option>
         </select>
       </div>
       {question.type === "multiple_choice" && (
@@ -70,7 +73,7 @@ function QuestionEditor({
               key={i}
               value={opt}
               onChange={(e) => updateOption(i, e.target.value)}
-              placeholder={`Option ${i + 1}`}
+              placeholder={t("optionPlaceholder", { index: i + 1 })}
               style={inputStyle}
             />
           ))}
@@ -79,18 +82,20 @@ function QuestionEditor({
             onClick={() => onChange({ ...question, options: [...(question.options ?? []), ""] })}
             style={{ ...smallButton, alignSelf: "flex-start" }}
           >
-            + Add option
+            {t("addOption")}
           </button>
         </div>
       )}
       <button type="button" onClick={onRemove} style={{ ...smallButton, alignSelf: "flex-start" }}>
-        Remove question
+        {t("removeQuestion")}
       </button>
     </div>
   );
 }
 
 export default function SurveyBuilder({ employees }: { employees: { userId: string; name: string }[] }) {
+  const t = useTranslations("surveyBuilder");
+  const tThemes = useTranslations("surveyThemes");
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState<string>(SURVEY_THEMES[0]);
   const [focus, setFocus] = useState("");
@@ -169,11 +174,9 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Create a survey</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("createASurvey")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.6 }}>
-        AI drafts a mix of rating, multiple-choice, and open-ended questions from the theme you pick —
-        review and edit them before assigning. Results only ever show as anonymous aggregates once at
-        least 3 people have responded — never who said what.
+        {t("description")}
       </p>
 
       {success && (
@@ -188,7 +191,7 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
             color: "var(--teal)",
           }}
         >
-          Survey created with {success.questionCount} questions and assigned.
+          {t("successMessage", { count: success.questionCount })}
         </div>
       )}
       {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{error}</p>}
@@ -196,13 +199,13 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
       <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: questions ? 20 : 0 }}>
         <div>
           <label htmlFor="survey-title" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            Title
+            {t("titleLabel")}
           </label>
           <input
             id="survey-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Q3 Culture Pulse Check"
+            placeholder={t("titlePlaceholder")}
             required
             style={inputStyle}
           />
@@ -210,12 +213,12 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
 
         <div>
           <label htmlFor="survey-theme" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            Theme
+            {t("themeLabel")}
           </label>
           <select id="survey-theme" value={theme} onChange={(e) => setTheme(e.target.value)} style={inputStyle}>
-            {SURVEY_THEMES.map((t) => (
-              <option key={t} value={t} style={{ color: "#000" }}>
-                {t}
+            {SURVEY_THEMES.map((themeOption) => (
+              <option key={themeOption} value={themeOption} style={{ color: "#000" }}>
+                {surveyThemeLabel(tThemes, themeOption)}
               </option>
             ))}
           </select>
@@ -223,13 +226,13 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
 
         <div>
           <label htmlFor="survey-focus" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            Anything specific you want it to probe? (optional)
+            {t("focusLabel")}
           </label>
           <textarea
             id="survey-focus"
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
-            placeholder="e.g. how the recent reorg has affected morale"
+            placeholder={t("focusPlaceholder")}
             rows={2}
             style={{ ...inputStyle, resize: "vertical" }}
           />
@@ -251,7 +254,7 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
             opacity: isGenerating ? 0.6 : 1,
           }}
         >
-          {isGenerating ? "Generating questions…" : questions ? "Regenerate questions" : "Generate questions"}
+          {isGenerating ? t("generatingQuestions") : questions ? t("regenerateQuestions") : t("generateQuestions")}
         </button>
       </form>
 
@@ -259,7 +262,7 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>
-              Questions ({questions.length}) — edit, remove, or add your own
+              {t("questionsCountHeader", { count: questions.length })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {questions.map((q, i) => (
@@ -272,17 +275,17 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
               ))}
             </div>
             <button type="button" onClick={addBlankQuestion} style={{ ...smallButton, marginTop: 10 }}>
-              + Add your own question
+              {t("addYourOwnQuestion")}
             </button>
           </div>
 
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <label style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                Assign to ({selected.size} selected)
+                {t("assignToCount", { count: selected.size })}
               </label>
               <button type="button" onClick={selectAll} style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer" }}>
-                Select all
+                {t("selectAll")}
               </button>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 160, overflowY: "auto" }}>
@@ -329,7 +332,7 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
               opacity: isPublishing ? 0.6 : 1,
             }}
           >
-            {isPublishing ? "Publishing…" : "Publish & assign"}
+            {isPublishing ? t("publishing") : t("publishAndAssign")}
           </button>
         </div>
       )}

@@ -1668,5 +1668,56 @@
     "cycleStatusClosed": "مغلقة",
     "loading": "جارٍ التحميل…",
     "noEmployeesInCycle": "لا يوجد موظفون في هذه الدورة بعد."
+  },
+  "companySurveysPage": {
+    "backToProgress": "← العودة إلى التقدم",
+    "inviteTeamFirst": "ادعُ فريقك من تبويب <profile>الملف الشخصي</profile> قبل إنشاء استبيان — لا يوجد أحد لتعيينه له بعد.",
+    "yourSurveys": "استبياناتك",
+    "noSurveysYet": "لم تُنشأ أي استبيانات بعد."
+  },
+  "surveyBuilder": {
+    "createASurvey": "إنشاء استبيان",
+    "description": "يصوغ الذكاء الاصطناعي مزيجًا من أسئلة التقييم، والاختيار من متعدد، والأسئلة المفتوحة بناءً على الموضوع الذي تختاره — راجعها وعدّلها قبل التعيين. لا تظهر النتائج إلا كمجاميع مجهولة الهوية بمجرد استجابة 3 أشخاص على الأقل — لا تُظهر أبدًا من قال ماذا.",
+    "successMessage": "تم إنشاء الاستبيان بـ{count} سؤالًا وتعيينه.",
+    "titleLabel": "العنوان",
+    "titlePlaceholder": "مثال: استطلاع نبض الثقافة للربع الثالث",
+    "themeLabel": "الموضوع",
+    "focusLabel": "هل هناك شيء محدد تريد استكشافه؟ (اختياري)",
+    "focusPlaceholder": "مثال: كيف أثرت إعادة الهيكلة الأخيرة على الروح المعنوية",
+    "generatingQuestions": "جارٍ توليد الأسئلة…",
+    "regenerateQuestions": "إعادة توليد الأسئلة",
+    "generateQuestions": "توليد الأسئلة",
+    "questionsCountHeader": "الأسئلة ({count}) — عدّل أو احذف أو أضف أسئلتك الخاصة",
+    "addYourOwnQuestion": "+ إضافة سؤالك الخاص",
+    "assignToCount": "التعيين لـ ({count} محدد)",
+    "selectAll": "تحديد الكل",
+    "publishing": "جارٍ النشر…",
+    "publishAndAssign": "نشر وتعيين",
+    "questionTextPlaceholder": "نص السؤال",
+    "ratingOption": "تقييم (1-5)",
+    "multipleChoiceOption": "اختيار من متعدد",
+    "openEndedOption": "سؤال مفتوح",
+    "optionPlaceholder": "الخيار {index}",
+    "addOption": "+ إضافة خيار",
+    "removeQuestion": "حذف السؤال"
+  },
+  "surveyThemes": {
+    "culture": "الثقافة",
+    "changeReadiness": "الاستعداد للتغيير",
+    "wellbeingWorkload": "الرفاهية وعبء العمل",
+    "managerEffectiveness": "فعالية الإدارة",
+    "psychologicalSafety": "الأمان النفسي",
+    "custom": "مخصص"
+  },
+  "surveyResultsCard": {
+    "respondedCount": "{responded} من {assigned} استجابوا",
+    "hideResults": "إخفاء النتائج",
+    "viewResults": "عرض النتائج",
+    "loading": "جارٍ التحميل…",
+    "insufficientData": "استجاب {responded} فقط من أصل {assigned} حتى الآن — تبقى النتائج مخفية حتى يستجيب 3 أشخاص على الأقل، للحفاظ على إخفاء الهوية.",
+    "aggregatedAcross": "مجمّعة من {count} استجابة مجهولة الهوية.",
+    "avgOutOf5": "/ 5 بمتوسط ({count} استجابة)",
+    "noResponsesYet": "لا توجد استجابات على هذا السؤال بعد.",
+    "randomOrderNote": "تُعرض بترتيب عشوائي، مجهولة الهوية — لكن النص المفتوح قد يكشف هوية شخص من خلال محتواه (مثل ذكر اسم شخص أو وردية عمل بعينها)."
   }
 }

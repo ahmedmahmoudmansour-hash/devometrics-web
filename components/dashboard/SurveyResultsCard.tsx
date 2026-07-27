@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { getSurveyResults, type OrgSurveySummary, type SurveyResults } from "@/lib/surveys/actions";
+import { surveyThemeLabel } from "@/lib/surveys/types";
 
 export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary }) {
+  const t = useTranslations("surveyResultsCard");
+  const tThemes = useTranslations("surveyThemes");
   const [expanded, setExpanded] = useState(false);
   const [results, setResults] = useState<SurveyResults | { error: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -23,7 +27,7 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
         <div>
           <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{survey.title}</p>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-            {survey.theme} · {survey.responseCount ?? 0} of {survey.assignedCount} responded
+            {surveyThemeLabel(tThemes, survey.theme)} · {t("respondedCount", { responded: survey.responseCount ?? 0, assigned: survey.assignedCount })}
           </p>
         </div>
         <button
@@ -31,24 +35,23 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
           onClick={toggle}
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "var(--teal)", cursor: "pointer" }}
         >
-          {expanded ? "Hide results" : "View results"}
+          {expanded ? t("hideResults") : t("viewResults")}
         </button>
       </div>
 
       {expanded && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-          {isPending && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Loading…</p>}
+          {isPending && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("loading")}</p>}
           {results && "error" in results && <p style={{ fontSize: 12, color: "#f87171" }}>{results.error}</p>}
           {results && "status" in results && results.status === "insufficient_data" && (
             <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              Only {results.responseCount} of {survey.assignedCount} have responded so far — results stay
-              hidden until at least 3 people respond, to keep answers anonymous.
+              {t("insufficientData", { responded: results.responseCount, assigned: survey.assignedCount })}
             </p>
           )}
           {results && "status" in results && results.status === "ready" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <p style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                Aggregated across {results.responseCount} anonymous responses.
+                {t("aggregatedAcross", { count: results.responseCount })}
               </p>
               {results.aggregates.map((a) => (
                 <div key={a.questionId}>
@@ -56,7 +59,7 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
                   {a.type === "rating" ? (
                     <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)" }}>
                       {a.average}
-                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)" }}> / 5 avg ({a.count} responses)</span>
+                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)" }}> {t("avgOutOf5", { count: a.count })}</span>
                     </p>
                   ) : a.type === "multiple_choice" ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -68,7 +71,7 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
                       ))}
                     </div>
                   ) : a.count === 0 ? (
-                    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>No responses to this question yet.</p>
+                    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("noResponsesYet")}</p>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {a.responses.map((text, idx) => (
@@ -80,8 +83,7 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
                         </p>
                       ))}
                       <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
-                        Shown in random order, anonymized — but open text can still self-identify someone
-                        through its content (e.g. naming a specific person or shift).
+                        {t("randomOrderNote")}
                       </p>
                     </div>
                   )}
