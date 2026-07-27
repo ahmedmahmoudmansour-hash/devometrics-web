@@ -87,6 +87,7 @@ export function DonutChart({
   data: { label: string; value: number }[];
   size?: number;
 }) {
+  const t = useTranslations("chartsCommon");
   const total = data.reduce((a, b) => a + b.value, 0);
   if (total === 0) return null;
   const r = size / 2 - 12;
@@ -120,7 +121,7 @@ export function DonutChart({
           {total}
         </text>
         <text x={cx} y={cy + 16} textAnchor="middle" fontSize="10" fill={MUTED}>
-          total
+          {t("total")}
         </text>
       </svg>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

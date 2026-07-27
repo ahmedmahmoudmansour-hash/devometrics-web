@@ -1719,5 +1719,36 @@
     "avgOutOf5": "/ 5 avg ({count} responses)",
     "noResponsesYet": "No responses to this question yet.",
     "randomOrderNote": "Shown in random order, anonymized — but open text can still self-identify someone through its content (e.g. naming a specific person or shift)."
+  },
+  "companyAnalyticsPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Workforce Analytics",
+    "description": "Your organization's talent picture, computed live from real assessment and gap-analysis data — no survey-of-one guesses.",
+    "noTeamMembersYet": "No team members yet — analytics light up as your people join and complete their gap analyses and assessments.",
+    "activeEmployees": "Active employees",
+    "gapAnalysisCoverage": "Gap Analysis coverage",
+    "assessmentParticipation": "Assessment participation",
+    "companyCareerHealth": "Company Career Health",
+    "avgPerformanceRating": "Avg. performance rating ({rated}/{total} rated)",
+    "dataQualityNote": "Every chart below reflects only measured data — low coverage means the picture is partial, not that the people are. Raising participation is the fastest way to make these analytics decision-grade.",
+    "headcountByDepartment": "Headcount by department",
+    "headcountByDepartmentHint": "Where your people sit.",
+    "headcountByCountry": "Headcount by country",
+    "headcountByCountryHint": "Geographic distribution.",
+    "careerHealthByDepartment": "Career Health by department",
+    "careerHealthByDepartmentHint": "Average Career Health Score of members who've run a Gap Analysis, per department.",
+    "orgCompetencyProfile": "Organizational competency profile",
+    "orgCompetencyProfileHint": "Team-average level per dimension, strongest first — your top 3 are organizational strengths to build on; the bottom 3 are where targeted development moves the whole company.",
+    "talentGrid": "Talent grid (9-box)",
+    "talentGridHint": "The classic succession-planning grid, with honest axes: horizontal is overall measured capability (all dimensions), vertical is leadership growth signal (Leadership, Strategic Thinking, People Management). Top-right are your future leaders; bottom-left needs investment. Hover any dot for the name.",
+    "measuredCapability": "Measured capability",
+    "leadershipGrowthSignal": "Leadership growth signal",
+    "methodologyDisclosure": "Methodology & responsible use",
+    "methodologyP1": "The 9-box layout follows the performance-and-potential tradition popularized in GE/McKinsey-era succession practice, adapted honestly: this platform measures competency levels, not appraisal ratings, so the axes say what they actually contain. The literature on identifying potential (e.g. Silzer & Church, 2009) emphasizes multi-source, structured evidence over single-rater impressions — which is exactly why these charts draw only on measured assessment and gap-analysis data.",
+    "methodologyP2": "Treat every view as decision support: a person low on the grid with 0 assessments is undermeasured, not underperforming. No demographic attributes are used anywhere in these computations.",
+    "unspecified": "Unspecified"
+  },
+  "chartsCommon": {
+    "total": "total"
   }
 }
