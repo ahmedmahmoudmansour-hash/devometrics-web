@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   createSuccessionRole,
   deleteSuccessionRole,
@@ -13,19 +14,21 @@ import { ScoreBar, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/cha
 import type { SuccessionRole, SuccessionNomination } from "@/lib/supabase/types";
 import type { ReadinessForecast } from "@/lib/succession/forecast";
 
-function forecastText(forecast: ReadinessForecast | undefined): string | null {
+type Translator = (key: string, values?: Record<string, string | number>) => string;
+
+function forecastText(t: Translator, forecast: ReadinessForecast | undefined): string | null {
   if (!forecast) return null;
   if (forecast.status === "insufficient_data") {
-    return "Not enough Career Health history yet for a trend forecast.";
+    return t("insufficientForecastData");
   }
   if (forecast.status === "declining") {
-    return "Trending down over time — not currently on pace toward readiness.";
+    return t("trendingDown");
   }
   if (forecast.readyNow) return null; // "Ready now" already says this
   if (forecast.monthsToReady > 36) {
-    return `At the current trend (+${forecast.trendPerMonth} pts/mo), over 3 years out.`;
+    return t("trendOverThreeYears", { trend: forecast.trendPerMonth });
   }
-  return `At the current trend (+${forecast.trendPerMonth} pts/mo), projected ready in ~${forecast.monthsToReady} month${forecast.monthsToReady === 1 ? "" : "s"}.`;
+  return t("trendProjected", { trend: forecast.trendPerMonth, months: forecast.monthsToReady });
 }
 
 function NominationPanel({
@@ -39,6 +42,7 @@ function NominationPanel({
   nominations: SuccessionNomination[];
   excludeUserIds: Set<string>;
 }) {
+  const t = useTranslations("successionBoard");
   const [adding, setAdding] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
   const [note, setNote] = useState("");
@@ -49,7 +53,7 @@ function NominationPanel({
   const available = employees.filter((e) => !excludeUserIds.has(e.userId));
 
   function add() {
-    if (!employeeId) return setError("Pick someone to nominate");
+    if (!employeeId) return setError(t("pickSomeoneToNominate"));
     setError(null);
     startTransition(async () => {
       const result = await nominateForRole(roleId, employeeId, note);
@@ -74,12 +78,11 @@ function NominationPanel({
   return (
     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 12, padding: 14, marginBottom: 14 }}>
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
-        Manually nominated
+        {t("manuallyNominated")}
       </p>
       {nominations.length === 0 && !adding && (
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
-          No one nominated yet — the AI ranking above is fully automatic. Nominate someone to
-          guarantee they&apos;re scored for this role even if the AI wouldn&apos;t have surfaced them.
+          {t("noNominationsYet")}
         </p>
       )}
       {nominations.length > 0 && (
@@ -89,7 +92,7 @@ function NominationPanel({
             return (
               <div key={n.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, fontSize: 12.5 }}>
                 <div>
-                  <span style={{ color: "var(--text)", fontWeight: 700 }}>{person?.name ?? "Former member"}</span>
+                  <span style={{ color: "var(--text)", fontWeight: 700 }}>{person?.name ?? t("formerMember")}</span>
                   {n.note && <span style={{ color: "var(--text-muted)" }}> — {n.note}</span>}
                 </div>
                 <button
@@ -98,7 +101,7 @@ function NominationPanel({
                   disabled={isPending}
                   style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}
                 >
-                  Remove
+                  {t("remove")}
                 </button>
               </div>
             );
@@ -111,10 +114,10 @@ function NominationPanel({
           <select
             value={employeeId}
             onChange={(e) => setEmployeeId(e.target.value)}
-            aria-label="Employee to nominate"
+            aria-label={t("employeeToNominate")}
             style={{ ...fieldStyle, padding: "8px 12px", fontSize: 13 }}
           >
-            <option value="">Choose an employee…</option>
+            <option value="">{t("chooseAnEmployee")}</option>
             {available.map((e) => (
               <option key={e.userId} value={e.userId}>
                 {e.name}
@@ -125,8 +128,8 @@ function NominationPanel({
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Why? (optional — shown to the AI when it scores them)"
-            aria-label="Nomination note"
+            placeholder={t("nominationNotePlaceholder")}
+            aria-label={t("nominationNoteLabel")}
             style={{ ...fieldStyle, padding: "8px 12px", fontSize: 13 }}
           />
           {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
@@ -137,14 +140,14 @@ function NominationPanel({
               disabled={isPending}
               style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
             >
-              {isPending ? "Nominating…" : "Nominate"}
+              {isPending ? t("nominating") : t("nominate")}
             </button>
             <button
               type="button"
               onClick={() => setAdding(false)}
               style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
             >
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         </div>
@@ -155,7 +158,7 @@ function NominationPanel({
           disabled={available.length === 0}
           style={{ background: "none", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: available.length === 0 ? "not-allowed" : "pointer", opacity: available.length === 0 ? 0.5 : 1 }}
         >
-          + Nominate someone
+          {t("nominateSomeone")}
         </button>
       )}
     </div>
@@ -208,6 +211,7 @@ function RoleCard({
   nominations: SuccessionNomination[];
   forecastsByUserId: Record<string, ReadinessForecast>;
 }) {
+  const t = useTranslations("successionBoard");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -261,7 +265,7 @@ function RoleCard({
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            {isPending ? "Analyzing…" : report ? "↻ Re-run analysis" : "▶ Run AI analysis"}
+            {isPending ? t("analyzing") : report ? t("reRunAnalysis") : t("runAiAnalysis")}
           </button>
           <button
             type="button"
@@ -269,7 +273,7 @@ function RoleCard({
             disabled={isPending}
             style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
           >
-            Delete
+            {t("delete")}
           </button>
         </div>
       </div>
@@ -287,7 +291,7 @@ function RoleCard({
 
       {!report && !error && (
         <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 12 }}>
-          No analysis yet — run it to rank your {employeeCount} team member{employeeCount === 1 ? "" : "s"} against this role.
+          {t("noAnalysisYet", { count: employeeCount })}
         </p>
       )}
 
@@ -296,23 +300,23 @@ function RoleCard({
           {/* Bench strength pipeline */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "4px 12px" }}>
-              Ready now: {readyNow}
+              {t("readyNow", { count: readyNow })}
             </span>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--amber)", background: "rgba(240,184,64,0.08)", border: "1px solid rgba(240,184,64,0.3)", borderRadius: 999, padding: "4px 12px" }}>
-              Near-ready: {nearReady}
+              {t("nearReady", { count: nearReady })}
             </span>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--phase2)", background: "rgba(125,211,252,0.08)", border: "1px solid rgba(125,211,252,0.3)", borderRadius: 999, padding: "4px 12px" }}>
-              Developing: {developing}
+              {t("developing", { count: developing })}
             </span>
             {!report.hasStrongSuccessor && (
               <span style={{ fontSize: 11.5, fontWeight: 700, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 999, padding: "4px 12px" }}>
-                ⚠ No strong successor
+                {t("noStrongSuccessor")}
               </span>
             )}
           </div>
 
           {report.riskNote && (
-            <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 14, borderLeft: "2px solid var(--amber)", paddingLeft: 10 }}>
+            <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 14, borderInlineStart: "2px solid var(--amber)", paddingInlineStart: 10 }}>
               {report.riskNote}
             </p>
           )}
@@ -320,12 +324,12 @@ function RoleCard({
           {report.candidates.length > 0 && (
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, marginBottom: 14, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", alignSelf: "flex-start", marginBottom: 8 }}>
-                Fit vs. readiness
+                {t("fitVsReadiness")}
               </p>
               <NineBoxGrid
                 points={report.candidates.map((c) => ({ name: c.name, x: c.fitScore, y: readinessToY(c.readiness) }))}
-                xLabel="Fit for this role"
-                yLabel="Readiness"
+                xLabel={t("fitForThisRole")}
+                yLabel={t("readiness")}
                 size={300}
               />
               <div style={{ alignSelf: "flex-start", width: "100%" }}>
@@ -337,7 +341,7 @@ function RoleCard({
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {report.candidates.length === 0 && (
               <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>
-                No plausible internal candidates identified for this role yet.
+                {t("noPlausibleCandidates")}
               </p>
             )}
             {report.candidates.map((c, i) => (
@@ -347,7 +351,7 @@ function RoleCard({
                     {i + 1}. {c.name}
                     {c.nominated && (
                       <span style={{ fontSize: 9.5, fontWeight: 800, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "3px 9px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        ★ Nominated by you
+                        {t("nominatedByYou")}
                       </span>
                     )}
                   </p>
@@ -359,16 +363,16 @@ function RoleCard({
                   <ScoreBar value={c.fitScore} color={readinessColor(c.readiness)} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: readinessColor(c.readiness) }}>{c.fitScore}</span>
                 </div>
-                {forecastText(forecastsByUserId[c.userId]) && (
+                {forecastText(t, forecastsByUserId[c.userId]) && (
                   <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 6 }}>
-                    ↗ {forecastText(forecastsByUserId[c.userId])}
+                    ↗ {forecastText(t, forecastsByUserId[c.userId])}
                   </p>
                 )}
                 <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6, marginTop: 8 }}>{c.whyRanked}</p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
                   {c.strengths.length > 0 && (
                     <div>
-                      <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 3 }}>Strengths</p>
+                      <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 3 }}>{t("strengths")}</p>
                       {c.strengths.map((s) => (
                         <p key={s} style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.55 }}>+ {s}</p>
                       ))}
@@ -376,7 +380,7 @@ function RoleCard({
                   )}
                   {c.gaps.length > 0 && (
                     <div>
-                      <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 3 }}>Gaps</p>
+                      <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 3 }}>{t("gaps")}</p>
                       {c.gaps.map((g) => (
                         <p key={g} style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.55 }}>− {g}</p>
                       ))}
@@ -384,13 +388,15 @@ function RoleCard({
                   )}
                 </div>
                 <p style={{ fontSize: 12, color: "var(--text)", marginTop: 10 }}>
-                  <strong style={{ color: "var(--teal)" }}>Development focus:</strong> {c.developmentFocus}
+                  <strong style={{ color: "var(--teal)" }}>{t("developmentFocus")}</strong> {c.developmentFocus}
                 </p>
               </div>
             ))}
           </div>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 10 }}>
-            Generated {new Date(report.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} — re-run after new assessments or gap analyses.
+            {t("generatedOn", {
+              date: new Date(report.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
+            })}
           </p>
         </div>
       )}
@@ -411,6 +417,7 @@ export default function SuccessionBoard({
   nominationsByRole: Record<string, SuccessionNomination[]>;
   forecastsByUserId: Record<string, ReadinessForecast>;
 }) {
+  const t = useTranslations("successionBoard");
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -439,22 +446,20 @@ export default function SuccessionBoard({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, maxWidth: 640 }}>
-        Define the roles whose sudden vacancy would hurt most, then run AI analysis on each — it ranks
-        your current team against that specific role using their real measured competency data, so the
-        conversation starts from evidence instead of guesswork.
+        {t("intro")}
       </p>
 
       {roles.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: 999, padding: "5px 14px" }}>
-            {roles.length} critical role{roles.length === 1 ? "" : "s"} defined
+            {t("rolesDefinedCount", { count: roles.length })}
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: 999, padding: "5px 14px" }}>
-            {analyzed.length} analyzed
+            {t("analyzedCount", { count: analyzed.length })}
           </span>
           {needsAttention.length > 0 && (
             <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 999, padding: "5px 14px" }}>
-              ⚠ {needsAttention.length} need{needsAttention.length === 1 ? "s" : ""} attention — no strong successor
+              {t("needsAttentionCount", { count: needsAttention.length })}
             </span>
           )}
         </div>
@@ -466,16 +471,16 @@ export default function SuccessionBoard({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Critical role title — e.g. Head of Operations"
-            aria-label="Role title"
+            placeholder={t("roleTitlePlaceholder")}
+            aria-label={t("roleTitleLabel")}
             style={fieldStyle}
             autoFocus
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What does success in this role require? Key responsibilities, competencies, scope… (the more specific, the better the ranking)"
-            aria-label="Role requirements"
+            placeholder={t("roleRequirementsPlaceholder")}
+            aria-label={t("roleRequirementsLabel")}
             rows={4}
             style={{ ...fieldStyle, resize: "vertical" }}
           />
@@ -487,14 +492,14 @@ export default function SuccessionBoard({
               disabled={isPending}
               style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
             >
-              {isPending ? "Creating…" : "Create role"}
+              {isPending ? t("creating") : t("createRole")}
             </button>
             <button
               type="button"
               onClick={() => setCreating(false)}
               style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
             >
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         </div>
@@ -504,16 +509,14 @@ export default function SuccessionBoard({
           onClick={() => setCreating(true)}
           style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", alignSelf: "flex-start" }}
         >
-          + Define a critical role
+          {t("defineACriticalRole")}
         </button>
       )}
 
       {roles.length === 0 && !creating && (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
           <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-            Start with the role whose sudden vacancy would hurt most. The AI ranks your current
-            people against it using their measured competency data — fit, readiness, gaps, and what
-            to develop — so the succession conversation starts from evidence.
+            {t("emptyState")}
           </p>
         </div>
       )}
@@ -531,23 +534,11 @@ export default function SuccessionBoard({
 
       <details style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px" }}>
         <summary style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer" }}>
-          Methodology &amp; responsible use
+          {t("methodologyDisclosure")}
         </summary>
         <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7, marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-          <p>
-            Rankings are grounded exclusively in each person&apos;s measured competency data on this
-            platform (gap analyses, assessments) — following the selection-science principle that
-            structured, multi-source evidence outperforms unstructured judgment (the meta-analytic
-            tradition of Schmidt &amp; Hunter, 1998). The AI never considers age, gender,
-            nationality, or anything beyond the competency evidence.
-          </p>
-          <p>
-            This is decision support, not a decision. Fit scores reflect data quality: someone who
-            hasn&apos;t run a Gap Analysis can&apos;t rank well, which is a data gap, not a verdict on
-            them — the risk note flags this. Use the ranking to structure a human succession
-            conversation, alongside performance history and context this platform doesn&apos;t
-            capture.
-          </p>
+          <p>{t("methodologyP1")}</p>
+          <p>{t("methodologyP2")}</p>
         </div>
       </details>
     </div>
