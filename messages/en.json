@@ -1312,5 +1312,28 @@
     "verticalOption": "↑ vertical",
     "horizontalOption": "→ horizontal",
     "addPath": "Add path"
+  },
+  "orgChartPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Org Chart",
+    "description": "Corporate view shows real reporting lines — click anyone to reassign who they report to. Function/Department view groups the same roster by team instead of hierarchy. Both read from the same underlying data, so reassigning a manager here is reflected everywhere else this reporting line matters.",
+    "noTeamMembersYet": "No team members yet — invite your team from the Profile tab, then come back to build out the reporting structure."
+  },
+  "orgChartPageClient": {
+    "corporateTab": "Corporate (reporting lines)",
+    "departmentTab": "Function / Department"
+  },
+  "orgChartView": {
+    "separateTreesNote": "{count} separate reporting trees — anyone without a manager assigned starts a new one. Click a person below to give them a manager and connect the trees.",
+    "close": "Close",
+    "reportsTo": "Reports to",
+    "noManagerOption": "— No manager (top of a reporting line) —",
+    "saving": "Saving…",
+    "noTitle": "No title"
+  },
+  "orgChartDepartmentView": {
+    "peopleCount": "{count, plural, one {# person} other {# people}}",
+    "noTitle": "No title",
+    "unassignedDept": "Unassigned"
   }
 }

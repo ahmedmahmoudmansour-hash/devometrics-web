@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { setMemberManager } from "@/lib/orgChart/actions";
 import { buildReportingForest, type OrgChartNode } from "@/lib/orgChart/tree";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
@@ -60,6 +61,7 @@ function initials(name: string): string {
 }
 
 export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
+  const t = useTranslations("orgChartView");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -144,7 +146,7 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
                     {row.name.length > 18 ? row.name.slice(0, 17) + "…" : row.name}
                   </text>
                   <text x={48} y={CARD_H / 2 + 13} fontSize={10.5} fill="var(--text-muted)">
-                    {(row.title ?? "No title").length > 20 ? (row.title ?? "No title").slice(0, 19) + "…" : row.title ?? "No title"}
+                    {(row.title ?? t("noTitle")).length > 20 ? (row.title ?? t("noTitle")).slice(0, 19) + "…" : row.title ?? t("noTitle")}
                   </text>
                 </g>
               );
@@ -155,8 +157,7 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
 
       {laidOutRoots.length > 1 && (
         <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
-          {laidOutRoots.length} separate reporting trees — anyone without a manager assigned starts a new
-          one. Click a person below to give them a manager and connect the trees.
+          {t("separateTreesNote", { count: laidOutRoots.length })}
         </p>
       )}
 
@@ -169,10 +170,10 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
               onClick={() => setSelectedUserId(null)}
               style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
             >
-              Close
+              {t("close")}
             </button>
           </div>
-          <label style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>Reports to</label>
+          <label style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>{t("reportsTo")}</label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <select
               disabled={isPending}
@@ -198,7 +199,7 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
                 minWidth: 220,
               }}
             >
-              <option value="">— No manager (top of a reporting line) —</option>
+              <option value="">{t("noManagerOption")}</option>
               {rows
                 .filter((r) => r.userId !== selectedRow.userId)
                 .map((r) => (
@@ -208,7 +209,7 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
                   </option>
                 ))}
             </select>
-            {isPending && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Saving…</span>}
+            {isPending && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("saving")}</span>}
           </div>
           {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
         </div>

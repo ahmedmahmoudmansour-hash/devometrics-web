@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import Avatar from "@/components/Avatar";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
 
@@ -8,16 +11,18 @@ import type { WorkforceRow } from "@/lib/organizations/aggregate";
 // tool needs to answer, which is exactly why this is a second view rather
 // than a filter bolted onto the reporting tree.
 export default function OrgChartDepartmentView({ rows }: { rows: WorkforceRow[] }) {
+  const t = useTranslations("orgChartDepartmentView");
+  const unassignedLabel = t("unassignedDept");
   const byDept = new Map<string, WorkforceRow[]>();
   for (const r of rows) {
-    const key = r.department ?? "Unassigned";
+    const key = r.department ?? unassignedLabel;
     const list = byDept.get(key) ?? [];
     list.push(r);
     byDept.set(key, list);
   }
   const groups = [...byDept.entries()].sort((a, b) => {
-    if (a[0] === "Unassigned") return 1;
-    if (b[0] === "Unassigned") return -1;
+    if (a[0] === unassignedLabel) return 1;
+    if (b[0] === unassignedLabel) return -1;
     return a[0].localeCompare(b[0]);
   });
 
@@ -27,7 +32,7 @@ export default function OrgChartDepartmentView({ rows }: { rows: WorkforceRow[] 
         <div key={dept} style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 14, padding: 18 }}>
           <h3 style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{dept}</h3>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12 }}>
-            {members.length} {members.length === 1 ? "person" : "people"}
+            {t("peopleCount", { count: members.length })}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {members
@@ -41,7 +46,7 @@ export default function OrgChartDepartmentView({ rows }: { rows: WorkforceRow[] 
                   <Avatar name={m.name} avatarUrl={m.avatarUrl} size={26} />
                   <div style={{ minWidth: 0 }}>
                     <p style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{m.name}</p>
-                    <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{m.title ?? "No title"}</p>
+                    <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{m.title ?? t("noTitle")}</p>
                   </div>
                 </Link>
               ))}

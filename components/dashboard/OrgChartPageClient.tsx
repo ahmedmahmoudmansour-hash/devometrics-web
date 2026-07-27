@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import OrgChartView from "@/components/dashboard/OrgChartView";
 import OrgChartDepartmentView from "@/components/dashboard/OrgChartDepartmentView";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
@@ -8,6 +9,7 @@ import type { WorkforceRow } from "@/lib/organizations/aggregate";
 type ViewMode = "corporate" | "department";
 
 export default function OrgChartPageClient({ rows }: { rows: WorkforceRow[] }) {
+  const t = useTranslations("orgChartPageClient");
   const [mode, setMode] = useState<ViewMode>("corporate");
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
@@ -25,10 +27,10 @@ export default function OrgChartPageClient({ rows }: { rows: WorkforceRow[] }) {
     <div>
       <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, marginBottom: 20, gap: 2 }}>
         <button type="button" onClick={() => setMode("corporate")} style={tabStyle(mode === "corporate")}>
-          Corporate (reporting lines)
+          {t("corporateTab")}
         </button>
         <button type="button" onClick={() => setMode("department")} style={tabStyle(mode === "department")}>
-          Function / Department
+          {t("departmentTab")}
         </button>
       </div>
 
