@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { Fragment, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FileText, PhoneCall, Users, Handshake, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { createCandidate, attachCandidateCv, scoreCandidateCv, moveCandidateStage, deleteCandidate } from "@/lib/hiring/candidateActions";
 import { generateCandidateRanking } from "@/lib/hiring/rankingActions";
@@ -57,6 +58,18 @@ const STAGE_LABEL: Record<HiringStage, string> = {
   offer: "Offer",
   hired: "Hired",
   rejected: "Rejected",
+};
+
+// One icon per stage of the pipeline, so the process reads as a sequence
+// at a glance rather than an unlabeled set of columns — same order as
+// HIRING_STAGES (the fixed applied -> ... -> hired progression).
+const STAGE_ICON: Record<HiringStage, React.ComponentType<{ size?: number }>> = {
+  applied: FileText,
+  phone_screen: PhoneCall,
+  interview: Users,
+  offer: Handshake,
+  hired: CheckCircle2,
+  rejected: XCircle,
 };
 
 type CandidateRow = HiringCandidate & { careerHealthScore: number | null; hasAssessment: boolean };
@@ -234,29 +247,49 @@ export default function HiringPipelineBoard({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-        {columns.map((stage) => (
-          <div key={stage} style={{ ...card, padding: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-              {STAGE_LABEL[stage]} ({candidates.filter((c) => c.stage === stage).length})
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {candidates
-                .filter((c) => c.stage === stage)
-                .sort((a, b) => (b.careerHealthScore ?? -1) - (a.careerHealthScore ?? -1))
-                .map((c) => (
-                  <CandidateCard key={c.id} candidate={c} postingId={posting.id} onChanged={refresh} isPending={isPending} startTransition={startTransition} />
-                ))}
-            </div>
-          </div>
-        ))}
+      {/* Fixed left-to-right order (never a reflowing grid) so the pipeline
+          reads as an actual sequence — applied -> ... -> hired, each stage
+          with its own icon, connected by chevrons. Scrolls horizontally on
+          narrow screens rather than wrapping out of order. */}
+      <div style={{ display: "flex", alignItems: "flex-start", overflowX: "auto", paddingBottom: 8 }}>
+        {columns.map((stage, i) => {
+          const StageIcon = STAGE_ICON[stage];
+          return (
+            <Fragment key={stage}>
+              <div style={{ ...card, padding: 14, width: 240, flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <StageIcon size={14} />
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {STAGE_LABEL[stage]} ({candidates.filter((c) => c.stage === stage).length})
+                  </p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {candidates
+                    .filter((c) => c.stage === stage)
+                    .sort((a, b) => (b.careerHealthScore ?? -1) - (a.careerHealthScore ?? -1))
+                    .map((c) => (
+                      <CandidateCard key={c.id} candidate={c} postingId={posting.id} onChanged={refresh} isPending={isPending} startTransition={startTransition} />
+                    ))}
+                </div>
+              </div>
+              {i < columns.length - 1 && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, flexShrink: 0, color: "var(--text-muted)", alignSelf: "stretch" }}>
+                  <ChevronRight size={16} />
+                </div>
+              )}
+            </Fragment>
+          );
+        })}
       </div>
 
       {rejected.length > 0 && (
         <div style={{ ...card, padding: 14 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-            Rejected ({rejected.length})
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <STAGE_ICON.rejected size={14} />
+            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Rejected ({rejected.length})
+            </p>
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {rejected.map((c) => (
               <CandidateCard key={c.id} candidate={c} postingId={posting.id} onChanged={refresh} isPending={isPending} startTransition={startTransition} />

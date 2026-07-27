@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Briefcase } from "lucide-react";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import HiringPostingsManager from "@/components/dashboard/HiringPostingsManager";
 import { buildHiringOverview } from "@/lib/hiring/aggregate";
@@ -17,7 +18,10 @@ export default async function HiringPage() {
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
             ← Back to progress
           </Link>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>Hiring</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4, display: "flex", alignItems: "center", gap: 10 }}>
+            <Briefcase size={22} style={{ color: "var(--teal)" }} />
+            Hiring
+          </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 680 }}>
             Post a role, let AI propose its required competency profile, then run every candidate&apos;s
             CV through the same scoring engine behind Gap Analysis. Interview notes you write in get

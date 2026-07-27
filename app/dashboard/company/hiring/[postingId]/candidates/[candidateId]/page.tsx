@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { UserSearch } from "lucide-react";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CandidateDetailView from "@/components/dashboard/CandidateDetailView";
 import { buildCandidateDetail } from "@/lib/hiring/aggregate";
@@ -22,7 +23,10 @@ export default async function CandidateDetailPage({
           <Link href={`/dashboard/company/hiring/${postingId}`} style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
             ← Back to pipeline
           </Link>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>{data.candidate.full_name}</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4, display: "flex", alignItems: "center", gap: 10 }}>
+            <UserSearch size={22} style={{ color: "var(--teal)" }} />
+            {data.candidate.full_name}
+          </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             {data.candidate.email}
             {data.posting ? ` · applying for ${data.posting.title}` : ""}
