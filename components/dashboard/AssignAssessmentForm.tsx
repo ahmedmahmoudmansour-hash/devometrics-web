@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { assignAssessment, removeAssignedAssessment } from "@/lib/organizations/actions";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
@@ -35,6 +36,7 @@ export default function AssignAssessmentForm({
   employeeUserId: string;
   assigned: { slug: string; name: string; assignedAt: string; completed: boolean }[];
 }) {
+  const t = useTranslations("assignAssessmentForm");
   const assignedSlugs = new Set(assigned.map((a) => a.slug));
   const available = ASSIGNABLE.filter((a) => !assignedSlugs.has(a.slug));
   const [slug, setSlug] = useState(available[0]?.slug ?? "");
@@ -54,11 +56,10 @@ export default function AssignAssessmentForm({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Assign an assessment
+        {t("title")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
-        Shows up as &quot;assigned to you&quot; in their own Assessment Center — completion is read
-        directly from their real result, not tracked separately.
+        {t("description")}
       </p>
 
       {assigned.length > 0 && (
@@ -68,9 +69,9 @@ export default function AssignAssessmentForm({
               <span style={{ color: "var(--text)" }}>
                 {a.name}{" "}
                 {a.completed ? (
-                  <span style={{ color: "var(--teal)", fontSize: 11, fontWeight: 700 }}>✓ Completed</span>
+                  <span style={{ color: "var(--teal)", fontSize: 11, fontWeight: 700 }}>{t("completed")}</span>
                 ) : (
-                  <span style={{ color: "var(--amber)", fontSize: 11, fontWeight: 700 }}>Pending</span>
+                  <span style={{ color: "var(--amber)", fontSize: 11, fontWeight: 700 }}>{t("pending")}</span>
                 )}
               </span>
               <button
@@ -78,7 +79,7 @@ export default function AssignAssessmentForm({
                 onClick={() => startTransition(() => { void removeAssignedAssessment(employeeUserId, a.slug); })}
                 style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
               >
-                Remove
+                {t("remove")}
               </button>
             </div>
           ))}
@@ -109,11 +110,11 @@ export default function AssignAssessmentForm({
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            Assign
+            {t("assign")}
           </button>
         </form>
       ) : (
-        <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>All assessments are already assigned.</p>
+        <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("allAssigned")}</p>
       )}
 
       {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 10 }}>{error}</p>}

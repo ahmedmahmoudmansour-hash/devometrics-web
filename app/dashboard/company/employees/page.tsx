@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
@@ -10,6 +11,7 @@ import EditEmployeeButton from "@/components/dashboard/EditEmployeeButton";
 import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
+  const t = await getTranslations("companyEmployeesPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -40,13 +42,13 @@ export default async function CompanyEmployeesPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
           <div>
             <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-              ← Back to progress
+              {t("backToProgress")}
             </Link>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
               {data.organizationName}
             </h1>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-              {data.rows.length} team member{data.rows.length === 1 ? "" : "s"}
+              {t("teamMemberCount", { count: data.rows.length })}
             </p>
           </div>
           {data.rows.length > 0 && (
@@ -64,19 +66,19 @@ export default async function CompanyEmployeesPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              Export to Excel
+              {t("exportExcel")}
             </a>
           )}
           {data.companyCareerHealthScore !== null && (
-            <div style={{ textAlign: "right" }}>
+            <div style={{ textAlign: "end" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, justifyContent: "flex-end" }}>
                 <span style={{ fontSize: 32, fontWeight: 800, color: "var(--teal)" }}>
                   {data.companyCareerHealthScore}
                 </span>
-                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Company Career Health Score</span>
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("companyCareerHealthScoreLabel")}</span>
               </div>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                Averaged across everyone who&apos;s run a Gap Analysis.
+                {t("companyCareerHealthScoreCaption")}
               </p>
             </div>
           )}
@@ -87,11 +89,11 @@ export default async function CompanyEmployeesPage() {
         {data.rows.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              No team members yet. Share your invite code from the{" "}
+              {t("noTeamMembersPrefix")}{" "}
               <Link href="/dashboard/company" style={{ color: "var(--teal)" }}>
-                Profile
+                {t("profileLinkLabel")}
               </Link>{" "}
-              tab — anyone who signs up with a Company account and enters it will join your workspace.
+              {t("noTeamMembersSuffix")}
             </p>
           </div>
         ) : (
@@ -99,24 +101,24 @@ export default async function CompanyEmployeesPage() {
             {/* Workforce skill inventory */}
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-                Workforce skill inventory
+                {t("workforceSkillInventory")}
               </h2>
               <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr>
-                        <th style={{ ...headStyle, textAlign: "left" }}>Name</th>
-                        <th style={{ ...headStyle, textAlign: "left" }}>Title</th>
-                        <th style={{ ...headStyle, textAlign: "left" }}>Department</th>
-                        <th style={{ ...headStyle, textAlign: "left" }}>Country</th>
-                        <th style={{ ...headStyle, textAlign: "left" }}>Email</th>
-                        <th style={{ ...headStyle, textAlign: "right" }}>Career Health Score</th>
-                        <th style={{ ...headStyle, textAlign: "right" }} title="Direct management input — optional, not derived from measured data">Rating</th>
-                        <th style={{ ...headStyle, textAlign: "right" }}>Assessments</th>
-                        <th style={{ ...headStyle, textAlign: "right" }}>Plans</th>
-                        <th style={{ ...headStyle, textAlign: "right" }}>Milestones</th>
-                        <th style={{ ...headStyle, textAlign: "right" }} aria-label="Actions" />
+                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableName")}</th>
+                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableTitle")}</th>
+                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableDepartment")}</th>
+                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableCountry")}</th>
+                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableEmail")}</th>
+                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tableCareerHealthScore")}</th>
+                        <th style={{ ...headStyle, textAlign: "end" }} title={t("tableRatingTooltip")}>{t("tableRating")}</th>
+                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tableAssessments")}</th>
+                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tablePlans")}</th>
+                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tableMilestones")}</th>
+                        <th style={{ ...headStyle, textAlign: "end" }} aria-label="Actions" />
                       </tr>
                     </thead>
                     <tbody>
@@ -141,18 +143,18 @@ export default async function CompanyEmployeesPage() {
                             {r.country ?? "—"}
                           </td>
                           <td style={cellStyle}>{r.email}</td>
-                          <td style={{ ...cellStyle, textAlign: "right", color: "var(--teal)", fontWeight: 700 }}>
+                          <td style={{ ...cellStyle, textAlign: "end", color: "var(--teal)", fontWeight: 700 }}>
                             {r.careerHealthScore ?? "—"}
                           </td>
-                          <td style={{ ...cellStyle, textAlign: "right", color: r.performanceRating ? "var(--amber)" : "var(--text-muted)", fontWeight: r.performanceRating ? 700 : 400 }}>
+                          <td style={{ ...cellStyle, textAlign: "end", color: r.performanceRating ? "var(--amber)" : "var(--text-muted)", fontWeight: r.performanceRating ? 700 : 400 }}>
                             {r.performanceRating ? `${r.performanceRating}/5` : "—"}
                           </td>
-                          <td style={{ ...cellStyle, textAlign: "right" }}>{r.assessmentsCompleted}</td>
-                          <td style={{ ...cellStyle, textAlign: "right" }}>{r.plans}</td>
-                          <td style={{ ...cellStyle, textAlign: "right" }}>
+                          <td style={{ ...cellStyle, textAlign: "end" }}>{r.assessmentsCompleted}</td>
+                          <td style={{ ...cellStyle, textAlign: "end" }}>{r.plans}</td>
+                          <td style={{ ...cellStyle, textAlign: "end" }}>
                             {r.milestonesDone}/{r.milestonesTotal}
                           </td>
-                          <td style={{ ...cellStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                          <td style={{ ...cellStyle, textAlign: "end", whiteSpace: "nowrap" }}>
                             <Link
                               href={`/dashboard/company/${r.userId}#assign-task`}
                               style={{
@@ -160,10 +162,10 @@ export default async function CompanyEmployeesPage() {
                                 fontWeight: 700,
                                 color: "var(--teal)",
                                 textDecoration: "none",
-                                marginRight: 14,
+                                marginInlineEnd: 14,
                               }}
                             >
-                              Assign task
+                              {t("assignTaskLink")}
                             </Link>
                             <EditEmployeeButton
                               memberId={r.memberId}
@@ -197,11 +199,10 @@ export default async function CompanyEmployeesPage() {
             {/* Capability pyramid, team average */}
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                Team capability pyramid
+                {t("teamCapabilityPyramid")}
               </h2>
               <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-                The same 8 dimensions from the heatmap below, grouped by tier and averaged
-                across everyone who&apos;s run a Gap Analysis.
+                {t("teamCapabilityPyramidDesc")}
               </p>
               <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, display: "flex", justifyContent: "center" }}>
                 <CapabilityPyramid dimensionLevels={data.dimensionAverages} />
@@ -211,14 +212,14 @@ export default async function CompanyEmployeesPage() {
             {/* Talent heatmap */}
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-                Talent heatmap
+                {t("talentHeatmap")}
               </h2>
               <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr>
-                        <th style={{ ...headStyle, textAlign: "left" }}>Name</th>
+                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableName")}</th>
                         {COMPETENCY_DIMENSIONS.map((d) => (
                           <th key={d} style={{ ...headStyle, textAlign: "center", whiteSpace: "nowrap" }}>
                             {d}
@@ -246,7 +247,7 @@ export default async function CompanyEmployeesPage() {
                         </tr>
                       ))}
                       <tr>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: "var(--text-muted)" }}>Team average</td>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: "var(--text-muted)" }}>{t("teamAverage")}</td>
                         {COMPETENCY_DIMENSIONS.map((d) => (
                           <td key={d} style={{ ...cellStyle, textAlign: "center", fontWeight: 700 }}>
                             {data.dimensionAverages[d] ?? "—"}
@@ -258,25 +259,22 @@ export default async function CompanyEmployeesPage() {
                 </div>
               </div>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-                Blank cells mean that person hasn&apos;t run a Gap Analysis yet — not a zero score.
+                {t("talentHeatmapNote")}
               </p>
             </div>
 
             {/* Leadership readiness signal */}
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
-                Leadership readiness signal
+                {t("leadershipReadinessSignal")}
               </h2>
               <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
-                A directional ranking by Leadership, Strategic Thinking, and People Management
-                scores — not a formal succession plan. A real succession plan needs role
-                criticality, org-chart, and readiness-timeline data this product doesn&apos;t capture
-                yet; treat this as a starting conversation, not a decision.
+                {t("leadershipReadinessDesc")}
               </p>
               {data.leadershipReadiness.length === 0 ? (
                 <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
                   <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    No one has run a Gap Analysis yet, so there&apos;s nothing to rank.
+                    {t("noRankingYet")}
                   </p>
                 </div>
               ) : (

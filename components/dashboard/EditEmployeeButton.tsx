@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   updateMemberDetails,
   setMemberArchived,
@@ -11,18 +12,10 @@ import {
   updateMemberPerformance,
 } from "@/lib/organizations/actions";
 
-const RATING_LABEL: Record<number, string> = {
-  1: "1 — Below expectations",
-  2: "2 — Developing",
-  3: "3 — Meets expectations",
-  4: "4 — Exceeds expectations",
-  5: "5 — Outstanding",
-};
-
 const DELETE_CONFIRM_WORD = "DELETE";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
 const fieldStyle: React.CSSProperties = {
@@ -73,6 +66,15 @@ export default function EditEmployeeButton({
   role: "admin" | "member";
   isSelf?: boolean;
 }) {
+  const t = useTranslations("editEmployeeButton");
+  const locale = useLocale();
+  const RATING_LABEL: Record<number, string> = {
+    1: t("rating1"),
+    2: t("rating2"),
+    3: t("rating3"),
+    4: t("rating4"),
+    5: t("rating5"),
+  };
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initial.title ?? "");
   const [department, setDepartment] = useState(initial.department ?? "");
@@ -178,7 +180,7 @@ export default function EditEmployeeButton({
           whiteSpace: "nowrap",
         }}
       >
-        Edit
+        {t("edit")}
       </button>
 
       {open && (
@@ -211,40 +213,40 @@ export default function EditEmployeeButton({
             }}
           >
             <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--text)", marginBottom: 16 }}>
-              Edit {name}
+              {t("editTitle", { name })}
             </h2>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Employee ID
-                <input type="text" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} style={fieldStyle} placeholder="e.g. badge or payroll number" />
+                {t("employeeIdLabel")}
+                <input type="text" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} style={fieldStyle} placeholder={t("employeeIdPlaceholder")} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Job title
+                {t("jobTitleLabel")}
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Department
+                {t("departmentLabel")}
                 <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Business unit
+                {t("businessUnitLabel")}
                 <input type="text" value={businessUnit} onChange={(e) => setBusinessUnit(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Manager
+                {t("managerLabel")}
                 <input type="text" value={managerName} onChange={(e) => setManagerName(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Manager email
+                {t("managerEmailLabel")}
                 <input type="email" value={managerEmail} onChange={(e) => setManagerEmail(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Country
+                {t("countryLabel")}
                 <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} style={fieldStyle} />
               </label>
               <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-                Location / city
+                {t("locationLabel")}
                 <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} style={fieldStyle} />
               </label>
             </div>
@@ -267,7 +269,7 @@ export default function EditEmployeeButton({
                   cursor: "pointer",
                 }}
               >
-                Archive employee
+                {t("archiveEmployee")}
               </button>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
@@ -276,7 +278,7 @@ export default function EditEmployeeButton({
                   disabled={isPending}
                   style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   type="button"
@@ -284,22 +286,20 @@ export default function EditEmployeeButton({
                   disabled={isPending}
                   style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
                 >
-                  {isPending ? "Saving…" : "Save"}
+                  {isPending ? t("saving") : t("save")}
                 </button>
               </div>
             </div>
             <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12, lineHeight: 1.5 }}>
-              Archiving removes them from workforce views and analytics but keeps their history — it
-              doesn&apos;t delete their account or data.
+              {t("archiveNote")}
             </p>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
-                Role
+                {t("roleLabel")}
               </p>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
-                A company can have more than one admin — everyone with admin access has identical
-                full permissions over this workspace.
+                {t("roleDesc")}
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <span
@@ -309,7 +309,7 @@ export default function EditEmployeeButton({
                     color: currentRole === "admin" ? "var(--amber)" : "var(--text-muted)",
                   }}
                 >
-                  {currentRole === "admin" ? "Admin" : "Member"}
+                  {currentRole === "admin" ? t("roleAdmin") : t("roleMember")}
                 </span>
                 <button
                   type="button"
@@ -327,12 +327,12 @@ export default function EditEmployeeButton({
                     opacity: roleSaving ? 0.6 : 1,
                   }}
                 >
-                  {roleSaving ? "Saving…" : currentRole === "admin" ? "Remove admin access" : "Make admin"}
+                  {roleSaving ? t("saving") : currentRole === "admin" ? t("removeAdminAccess") : t("makeAdmin")}
                 </button>
               </div>
               {isSelf && currentRole === "admin" && (
                 <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
-                  Ask another admin to remove your own admin access.
+                  {t("askAnotherAdmin")}
                 </p>
               )}
               {roleError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{roleError}</p>}
@@ -340,15 +340,14 @@ export default function EditEmployeeButton({
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
-                Performance rating <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>(optional)</span>
+                {t("performanceRatingLabel")} <span style={{ fontWeight: 400, textTransform: "none", color: "var(--text-muted)" }}>{t("optional")}</span>
               </p>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
-                Direct input from you, not derived from any measured data — used only as an optional
-                extra signal alongside the real competency data in reports and succession rankings.
+                {t("performanceRatingDesc")}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...fieldStyle, cursor: "pointer" }}>
-                  <option value={0}>— Not rated —</option>
+                  <option value={0}>{t("notRated")}</option>
                   {[1, 2, 3, 4, 5].map((n) => (
                     <option key={n} value={n}>
                       {RATING_LABEL[n]}
@@ -358,7 +357,7 @@ export default function EditEmployeeButton({
                 <textarea
                   value={ratingNote}
                   onChange={(e) => setRatingNote(e.target.value)}
-                  placeholder="Optional context for this rating"
+                  placeholder={t("ratingNotePlaceholder")}
                   rows={2}
                   style={{ ...fieldStyle, resize: "vertical" }}
                 />
@@ -368,23 +367,22 @@ export default function EditEmployeeButton({
                   disabled={isPending}
                   style={{ alignSelf: "flex-start", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
                 >
-                  {isPending ? "Saving…" : "Save rating"}
+                  {isPending ? t("saving") : t("saveRating")}
                 </button>
               </div>
             </div>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
-                Data deletion
+                {t("dataDeletion")}
               </p>
               {scheduledFor ? (
                 <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10, padding: 14 }}>
                   <p style={{ fontSize: 12.5, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
-                    Scheduled for deletion on {formatDate(scheduledFor)}
+                    {t("scheduledForDeletion", { date: formatDate(scheduledFor, locale) })}
                   </p>
                   <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
-                    Their account still works normally until then. After that date this is permanent
-                    and cannot be recovered.
+                    {t("scheduledForDeletionBody")}
                   </p>
                   <button
                     type="button"
@@ -398,16 +396,13 @@ export default function EditEmployeeButton({
                     }
                     style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
                   >
-                    Cancel deletion
+                    {t("cancelDeletion")}
                   </button>
                 </div>
               ) : confirmingDelete ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                    Schedules {name}&apos;s plans, coach history, assessment results, gap analyses,
-                    resume analysis, and tasks for deletion in 30 days. Employees can&apos;t trigger
-                    this themselves — as their org admin, this is your call. Type{" "}
-                    <strong style={{ color: "var(--text)" }}>{DELETE_CONFIRM_WORD}</strong> to confirm.
+                    {t("deleteConfirmBody", { name, word: DELETE_CONFIRM_WORD })}
                   </p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <input
@@ -415,7 +410,7 @@ export default function EditEmployeeButton({
                       value={confirmText}
                       onChange={(e) => setConfirmText(e.target.value)}
                       placeholder={DELETE_CONFIRM_WORD}
-                      aria-label={`Type ${DELETE_CONFIRM_WORD} to confirm`}
+                      aria-label={t("confirmAria", { word: DELETE_CONFIRM_WORD })}
                       style={{ ...fieldStyle, width: 140 }}
                     />
                     <button
@@ -444,7 +439,7 @@ export default function EditEmployeeButton({
                         opacity: isPending || confirmText !== DELETE_CONFIRM_WORD ? 0.5 : 1,
                       }}
                     >
-                      {isPending ? "Scheduling…" : "Schedule deletion"}
+                      {isPending ? t("scheduling") : t("scheduleDeletion")}
                     </button>
                     <button
                       type="button"
@@ -454,7 +449,7 @@ export default function EditEmployeeButton({
                       }}
                       style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
                     >
-                      Cancel
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>
@@ -464,7 +459,7 @@ export default function EditEmployeeButton({
                   onClick={() => setConfirmingDelete(true)}
                   style={{ background: "transparent", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
                 >
-                  Delete employee data
+                  {t("deleteEmployeeData")}
                 </button>
               )}
             </div>

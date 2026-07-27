@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
@@ -30,6 +31,9 @@ export default async function EmployeeDetailPage({
   params: Promise<{ userId: string }>;
 }) {
   const { userId } = await params;
+  const t = await getTranslations("employeeDetailPage");
+  const locale = await getLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const data = await buildEmployeeDetail(userId);
   if (!data.isAuthorized || !data.profile) redirect("/dashboard/company");
 
@@ -74,7 +78,7 @@ export default async function EmployeeDetailPage({
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div className="no-print">
           <Link href="/dashboard/company/employees" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to employees
+            {t("backToEmployees")}
           </Link>
         </div>
 
@@ -91,7 +95,7 @@ export default async function EmployeeDetailPage({
             Devometrics
           </span>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-            Employee Development Report · Confidential
+            {t("reportSubtitle")}
           </p>
         </div>
 
@@ -104,23 +108,23 @@ export default async function EmployeeDetailPage({
                 {[profile.title, profile.email].filter(Boolean).join(" · ")}
               </p>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-                Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                {t("generatedOn", { date: new Date().toLocaleDateString(dateLocale, { month: "long", day: "numeric", year: "numeric" }) })}
               </p>
             </div>
           </div>
           {gapAnalysis && (
-            <div style={{ textAlign: "right" }}>
+            <div style={{ textAlign: "end" }}>
               <span className="mono print-accent" style={{ fontSize: 30, fontWeight: 800, color: levelText(gapAnalysis.careerHealthScore) }}>
                 {gapAnalysis.careerHealthScore}
               </span>
-              <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Career Health Score</p>
+              <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("careerHealthScoreLabel")}</p>
               {orgCareerHealthScore !== null && (
                 <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>
                   {gapAnalysis.careerHealthScore > orgCareerHealthScore
-                    ? `+${gapAnalysis.careerHealthScore - orgCareerHealthScore} vs team avg (${orgCareerHealthScore})`
+                    ? t("vsTeamAvgHigher", { diff: gapAnalysis.careerHealthScore - orgCareerHealthScore, avg: orgCareerHealthScore })
                     : gapAnalysis.careerHealthScore < orgCareerHealthScore
-                      ? `${gapAnalysis.careerHealthScore - orgCareerHealthScore} vs team avg (${orgCareerHealthScore})`
-                      : `= team avg (${orgCareerHealthScore})`}
+                      ? t("vsTeamAvgLower", { diff: gapAnalysis.careerHealthScore - orgCareerHealthScore, avg: orgCareerHealthScore })
+                      : t("vsTeamAvgEqual", { avg: orgCareerHealthScore })}
                 </p>
               )}
             </div>
@@ -129,16 +133,16 @@ export default async function EmployeeDetailPage({
 
         {performanceRating && (
           <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 20, marginTop: -12 }}>
-            Manager performance rating: <span style={{ color: "var(--amber)", fontWeight: 700 }}>{performanceRating}/5</span>
+            {t("managerRatingPrefix")} <span style={{ color: "var(--amber)", fontWeight: 700 }}>{performanceRating}/5</span>
             {performanceRatingNote && ` — "${performanceRatingNote}"`}
-            <span style={{ marginLeft: 6 }}>(direct management input, not derived from measured data)</span>
+            <span style={{ marginInlineStart: 6 }}>{t("managerRatingSuffix")}</span>
           </p>
         )}
 
         {assessmentSummary && (
-          <div className="print-avoid-break" style={{ ...card, marginBottom: 20, borderLeft: "3px solid var(--teal)" }}>
+          <div className="print-avoid-break" style={{ ...card, marginBottom: 20, borderInlineStart: "3px solid var(--teal)" }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
-              Assessment Summary
+              {t("assessmentSummaryLabel")}
             </p>
             <p style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.7 }}>{assessmentSummary.overallSummary}</p>
 
@@ -146,7 +150,7 @@ export default async function EmployeeDetailPage({
               {assessmentSummary.keyStrengths.length > 0 && (
                 <div>
                   <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 4 }}>
-                    Key strengths
+                    {t("keyStrengths")}
                   </p>
                   {assessmentSummary.keyStrengths.map((s) => (
                     <p key={s} style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>+ {s}</p>
@@ -156,7 +160,7 @@ export default async function EmployeeDetailPage({
               {assessmentSummary.developmentPriorities.length > 0 && (
                 <div>
                   <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 4 }}>
-                    Development priorities
+                    {t("developmentPriorities")}
                   </p>
                   {assessmentSummary.developmentPriorities.map((s) => (
                     <p key={s} style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>− {s}</p>
@@ -167,14 +171,14 @@ export default async function EmployeeDetailPage({
 
             {assessmentSummary.standingNote && (
               <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6, marginTop: 14, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                <strong style={{ color: "var(--text)" }}>Where they stand: </strong>
+                <strong style={{ color: "var(--text)" }}>{t("whereTheyStand")} </strong>
                 {assessmentSummary.standingNote}
               </p>
             )}
 
             {assessmentSummaryGeneratedAt && (
               <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 10 }}>
-                Written {new Date(assessmentSummaryGeneratedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                {t("writtenOn", { date: new Date(assessmentSummaryGeneratedAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" }) })}
               </p>
             )}
           </div>
@@ -182,20 +186,20 @@ export default async function EmployeeDetailPage({
 
         {!gapAnalysis && assessmentResults.length === 0 && resumeScore === null ? (
           <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            {profile.name} hasn&apos;t run a Gap Analysis, taken an assessment, or analyzed a resume
-            yet — there&apos;s no measured data to report on. This isn&apos;t a reflection of them;
-            it just means these tools haven&apos;t been used yet.
+            {t("noDataYet", { name: profile.name })}
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
             {gapAnalysis && (
               <div className="print-avoid-break" style={card}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                  Competency breakdown
+                  {t("competencyBreakdown")}
                 </h2>
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-                  From their most recent Gap Analysis, scored against &quot;{gapAnalysis.targetRole}&quot; on{" "}
-                  {new Date(gapAnalysis.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.
+                  {t("competencyBreakdownDesc", {
+                    role: gapAnalysis.targetRole,
+                    date: new Date(gapAnalysis.generatedAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" }),
+                  })}
                 </p>
                 <HBarChart
                   data={COMPETENCY_DIMENSIONS.filter((d) => dimensionLevels[d] !== undefined).map((d) => ({
@@ -205,7 +209,7 @@ export default async function EmployeeDetailPage({
                     benchmark: orgDimensionAverages[d],
                   }))}
                   maxValue={100}
-                  benchmarkLabel="marks the team average for that competency"
+                  benchmarkLabel={t("benchmarkLabel")}
                 />
                 <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
                   <CapabilityPyramid dimensionLevels={dimensionLevels} compact />
@@ -216,14 +220,12 @@ export default async function EmployeeDetailPage({
             {nineBoxPoint && (
               <div className="print-avoid-break" style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", alignSelf: "flex-start", marginBottom: 4 }}>
-                  Talent grid position
+                  {t("talentGridPosition")}
                 </h2>
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6, alignSelf: "flex-start" }}>
-                  Where {profile.name.split(" ")[0]} sits on the same capability-vs-growth grid used
-                  org-wide — horizontal is overall measured capability, vertical is leadership growth
-                  signal (Leadership, Strategic Thinking, People Management).
+                  {t("talentGridPositionDesc", { firstName: profile.name.split(" ")[0] })}
                 </p>
-                <NineBoxGrid points={[nineBoxPoint]} xLabel="Measured capability" yLabel="Leadership growth signal" size={300} />
+                <NineBoxGrid points={[nineBoxPoint]} xLabel={t("measuredCapabilityAxis")} yLabel={t("leadershipGrowthAxis")} size={300} />
                 <div style={{ alignSelf: "flex-start", width: "100%" }}>
                   <NineBoxLegend forceOpen />
                 </div>
@@ -245,7 +247,7 @@ export default async function EmployeeDetailPage({
                 {resumeScore !== null && (
                   <div className="print-avoid-break" style={card}>
                     <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
-                      Resume Intelligence
+                      {t("resumeIntelligence")}
                     </p>
                     <span className="mono" style={{ fontSize: 26, fontWeight: 800, color: levelText(resumeScore) }}>
                       {resumeScore}
@@ -256,7 +258,7 @@ export default async function EmployeeDetailPage({
                 {assessmentResults.length > 0 && (
                   <div className="print-avoid-break" style={card}>
                     <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-                      Assessments ({assessmentResults.length})
+                      {t("assessmentsCount", { count: assessmentResults.length })}
                     </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {assessmentResults.slice(0, 6).map((a) => (
@@ -277,7 +279,7 @@ export default async function EmployeeDetailPage({
                       ))}
                       {assessmentResults.length > 6 && (
                         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                          + {assessmentResults.length - 6} more
+                          {t("moreCount", { count: assessmentResults.length - 6 })}
                         </p>
                       )}
                     </div>
@@ -289,11 +291,10 @@ export default async function EmployeeDetailPage({
             {bigFive && (
               <div className="print-avoid-break" style={card}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                  Working style (Big Five)
+                  {t("workingStyle")}
                 </h2>
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-                  Self-reported, and shared voluntarily by {profile.name.split(" ")[0]} — a self-awareness
-                  input for development conversations, not a hiring, promotion, or compensation signal.
+                  {t("workingStyleDesc", { firstName: profile.name.split(" ")[0] })}
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {BIG_FIVE_TRAITS.map((trait) => (
@@ -319,10 +320,10 @@ export default async function EmployeeDetailPage({
         )}
 
         <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Development plans</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("developmentPlans")}</h2>
           {plans.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              No development plans yet — assigning a task above will create one.
+              {t("noPlansYet")}
             </p>
           ) : (
             plans.map((plan) => (
@@ -333,7 +334,7 @@ export default async function EmployeeDetailPage({
               >
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{plan.title}</h3>
                 {plan.milestones.length === 0 ? (
-                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No tasks yet.</p>
+                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("noTasksYet")}</p>
                 ) : (
                   plan.milestones
                     .sort((a, b) => a.position - b.position)
@@ -364,7 +365,7 @@ export default async function EmployeeDetailPage({
                                 letterSpacing: "0.04em",
                               }}
                             >
-                              Assigned by you
+                              {t("assignedByYou")}
                             </span>
                           )}
                         </div>
@@ -382,8 +383,7 @@ export default async function EmployeeDetailPage({
         </div>
 
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 32, textAlign: "center" }}>
-          AI-assisted development report generated by Devometrics — a decision-support input, not a
-          certified psychometric evaluation or a guarantee of any career outcome.
+          {t("footerDisclaimer")}
         </p>
         </div>
 
@@ -401,7 +401,7 @@ export default async function EmployeeDetailPage({
               color: "var(--text-muted)",
             }}
           >
-            Manage this employee
+            {t("manageEmployee")}
           </p>
           <GenerateAssessmentSummaryButton
             employeeUserId={userId}

@@ -1,6 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 export default function EmployeeReportExportBar() {
+  const t = useTranslations("employeeReportExportBar");
   return (
     <div className="no-print" style={{ marginBottom: 24 }}>
       <button
@@ -17,7 +20,7 @@ export default function EmployeeReportExportBar() {
           cursor: "pointer",
         }}
       >
-        Download as PDF
+        {t("downloadPdf")}
       </button>
     </div>
   );

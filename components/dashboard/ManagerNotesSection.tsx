@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { addManagerNote, deleteManagerNote } from "@/lib/organizations/actions";
 import type { ManagerNote } from "@/lib/supabase/types";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // A running log of admin/manager notes on an employee — optional, never
@@ -23,6 +24,8 @@ export default function ManagerNotesSection({
   notes: ManagerNote[];
   employeeName: string;
 }) {
+  const t = useTranslations("managerNotesSection");
+  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -51,19 +54,17 @@ export default function ManagerNotesSection({
   return (
     <div className="no-print" style={card}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Manager notes
+        {t("title")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-        Optional, qualitative notes about {employeeName.split(" ")[0]} for you and other admins —
-        visible only here, never AI-generated, never shown to the employee. Used as additional
-        context in AI reports and succession rankings when present.
+        {t("description", { firstName: employeeName.split(" ")[0] })}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Add a note…"
+          placeholder={t("placeholder")}
           rows={3}
           style={{
             width: "100%",
@@ -94,13 +95,13 @@ export default function ManagerNotesSection({
             opacity: isPending || !text.trim() ? 0.5 : 1,
           }}
         >
-          {isPending ? "Saving…" : "Add note"}
+          {isPending ? t("saving") : t("addNote")}
         </button>
         {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       </div>
 
       {notes.length === 0 ? (
-        <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>No notes yet.</p>
+        <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("noNotesYet")}</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {notes.map((n) => (
@@ -108,7 +109,7 @@ export default function ManagerNotesSection({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--text)" }}>{n.authorName}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{formatDate(n.created_at)}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{formatDate(n.created_at, locale)}</span>
                   <button
                     type="button"
                     onClick={() =>
@@ -119,7 +120,7 @@ export default function ManagerNotesSection({
                     }
                     style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer" }}
                   >
-                    Delete
+                    {t("delete")}
                   </button>
                 </div>
               </div>

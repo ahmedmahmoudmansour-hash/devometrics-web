@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { generateEmployeeAssessmentSummary } from "@/lib/organizations/actions";
 
 export default function GenerateAssessmentSummaryButton({
@@ -17,6 +18,7 @@ export default function GenerateAssessmentSummaryButton({
   // just warning after the fact.
   pendingAssignments: string[];
 }) {
+  const t = useTranslations("generateAssessmentSummaryButton");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -49,12 +51,11 @@ export default function GenerateAssessmentSummaryButton({
           opacity: isPending || blocked ? 0.5 : 1,
         }}
       >
-        {isPending ? "Writing…" : hasSummary ? "↻ Regenerate professional summary" : "▶ Generate professional summary"}
+        {isPending ? t("writing") : hasSummary ? t("regenerate") : t("generate")}
       </button>
       {blocked && (
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
-          Waiting on {pendingAssignments.length} assigned assessment{pendingAssignments.length === 1 ? "" : "s"} —{" "}
-          {pendingAssignments.join(", ")}. The summary won&apos;t be accurate until these are complete.
+          {t("waitingOn", { count: pendingAssignments.length, names: pendingAssignments.join(", ") })}
         </p>
       )}
       {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 8 }}>{error}</p>}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { assignTaskToEmployee } from "@/lib/organizations/actions";
 
 const inputStyle: React.CSSProperties = {
@@ -28,6 +29,7 @@ export default function AssignTaskForm({
   employeeUserId: string;
   plans: { id: string; title: string }[];
 }) {
+  const t = useTranslations("assignTaskForm");
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -60,17 +62,15 @@ export default function AssignTaskForm({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Assign a task
+        {t("title")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
-        {plans.length > 0
-          ? "Adds a milestone to one of their existing plans, flagged as assigned by you."
-          : "This employee has no development plan yet — assigning a task creates one for them."}
+        {plans.length > 0 ? t("descHasPlans") : t("descNoPlans")}
       </p>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {plans.length > 0 && (
           <div>
-            <label style={labelStyle}>Plan</label>
+            <label style={labelStyle}>{t("planLabel")}</label>
             <select value={planId} onChange={(e) => setPlanId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -81,18 +81,18 @@ export default function AssignTaskForm({
           </div>
         )}
         <div>
-          <label style={labelStyle}>Task title</label>
+          <label style={labelStyle}>{t("taskTitleLabel")}</label>
           <input
             type="text"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Complete the Strategic Thinking assessment"
+            placeholder={t("taskTitlePlaceholder")}
             style={inputStyle}
           />
         </div>
         <div>
-          <label style={labelStyle}>Description (optional)</label>
+          <label style={labelStyle}>{t("descriptionLabel")}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -101,7 +101,7 @@ export default function AssignTaskForm({
           />
         </div>
         <div>
-          <label style={labelStyle}>Target date (optional)</label>
+          <label style={labelStyle}>{t("targetDateLabel")}</label>
           <input
             type="date"
             lang="en-US"
@@ -129,7 +129,7 @@ export default function AssignTaskForm({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Assigning…" : saved ? "Assigned" : "Assign task"}
+          {isPending ? t("assigning") : saved ? t("assigned") : t("assignTask")}
         </button>
       </form>
     </div>
