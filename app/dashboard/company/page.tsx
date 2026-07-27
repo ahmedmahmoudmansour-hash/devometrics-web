@@ -93,6 +93,16 @@ export default async function CompanyProfilePage() {
         stat: reviewCycleCount !== null ? `${reviewCycleCount} cycle${reviewCycleCount === 1 ? "" : "s"} tracked` : "Reflection, Manager's Perspective, Focus Areas",
       },
       {
+        key: "knowledgeHub",
+        label: "Knowledge Hub",
+        href: "/dashboard/company/knowledge-hub",
+        icon: COMPANY_WIDGET_ICONS.Library,
+        stat:
+          knowledgeHubContentCount !== null
+            ? `${knowledgeHubContentCount} document${knowledgeHubContentCount === 1 ? "" : "s"} uploaded`
+            : "Upload, assign & track training",
+      },
+      {
         key: "highPotential",
         label: "High Potential",
         href: "/dashboard/company/high-potential",
@@ -119,16 +129,6 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/surveys",
         icon: COMPANY_WIDGET_ICONS.MessageSquare,
         stat: surveyCount !== null ? `${surveyCount} survey${surveyCount === 1 ? "" : "s"}` : "Anonymous pulse surveys",
-      },
-      {
-        key: "knowledgeHub",
-        label: "Knowledge Hub",
-        href: "/dashboard/company/knowledge-hub",
-        icon: COMPANY_WIDGET_ICONS.Library,
-        stat:
-          knowledgeHubContentCount !== null
-            ? `${knowledgeHubContentCount} document${knowledgeHubContentCount === 1 ? "" : "s"} uploaded`
-            : "Upload, assign & track training",
       },
       {
         key: "analytics",
