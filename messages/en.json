@@ -109,7 +109,7 @@
     "subtext": "Devometrics follows the naming convention of econometrics, psychometrics, and biometrics — disciplines that apply rigorous, quantitative measurement to a domain. Here's what that means for how your score is actually built.",
     "pillar1Label": "Competency science",
     "pillar1Title": "A structured model, not a checklist",
-    "pillar1Description": "Devometrics scores you against a defined competency taxonomy — technical, leadership, behavioral, strategic — instead of letting you self-report skills. Scoring is grounded in established competency-science frameworks (Boyatzis' behaviorally-anchored competency model, SHL's Universal Competency Framework, O*NET's occupational taxonomy) rather than free-floating judgment — real, named frameworks, not a fabricated citation to a study that doesn't exist.",
+    "pillar1Description": "Devometrics scores you against a defined competency taxonomy — technical, leadership, behavioral, strategic — instead of letting you self-report skills. Scoring is grounded in established, peer-reviewed competency-science research and behaviorally-anchored frameworks, not free-floating judgment or a single self-reported number.",
     "pillar2Label": "Labor-market signal",
     "pillar2Title": "The gap moves with the market",
     "pillar2Description": "\"Important\" skills change. Target-role scoring is weighted against real job-description and market-demand data, so a gap map reflects what employers are asking for now, not a fixed rubric written once and never revisited.",
@@ -125,7 +125,9 @@
     "capabilityLabel": "Our capability model",
     "capabilityHeadline": "One pyramid, all 8 dimensions",
     "capabilityDescription": "Every competency we score sits on one of three tiers — personal capability is the foundation, professional and technical execution builds on it, and organizational and leadership impact sits on top. Your own pyramid fills in with color as you complete assessments.",
-    "disclaimer": "All scores are guidance, not a guarantee of career outcomes."
+    "disclaimer": "All scores are guidance, not a guarantee of career outcomes.",
+    "readMore": "Read more",
+    "readLess": "Read less"
   },
   "pricing": {
     "label": "Pricing",

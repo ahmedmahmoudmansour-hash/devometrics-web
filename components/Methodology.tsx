@@ -1,7 +1,52 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import CapabilityPyramid from "./CapabilityPyramid";
+
+function PillarDescription({ text }: { text: string }) {
+  const t = useTranslations("methodology");
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      <p
+        style={{
+          fontSize: 14,
+          color: "var(--text-muted)",
+          lineHeight: 1.7,
+          ...(expanded
+            ? {}
+            : {
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }),
+        }}
+      >
+        {text}
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="mono"
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          marginTop: 8,
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--teal)",
+          cursor: "pointer",
+        }}
+      >
+        {expanded ? t("readLess") : t("readMore")}
+      </button>
+    </div>
+  );
+}
 
 export default function Methodology() {
   const t = useTranslations("methodology");
@@ -99,9 +144,7 @@ export default function Methodology() {
             >
               {pillar.title}
             </h3>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-              {pillar.description}
-            </p>
+            <PillarDescription text={pillar.description} />
           </div>
         ))}
       </div>
