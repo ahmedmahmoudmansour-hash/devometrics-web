@@ -7,6 +7,17 @@
 -- flow). Every statement is idempotent (IF NOT EXISTS / OR REPLACE /
 -- DROP ... IF EXISTS), so running this more than once is safe.
 --
+-- FIXED 2026-07-27: the first version of this file had the
+-- organization_invites.candidate_id column added AFTER a policy that
+-- references it, which fails at creation time ("column i.candidate_id
+-- does not exist") since Postgres validates a policy's expression against
+-- the schema when the policy is created, not when it's evaluated. That
+-- column-add statement now runs before every policy in this file — if you
+-- hit that exact error before, the whole batch was rolled back (Postgres's
+-- simple query protocol wraps multi-statement pastes in one implicit
+-- transaction), so nothing was left half-applied. Just re-paste and run
+-- this corrected version.
+--
 -- NOTE: everything through 0087 is already applied to production
 -- (confirmed 2026-07-26) — this file now only contains 0088, which has
 -- NOT been run yet. This is a NEW feature branch (feature/smart-hiring),
@@ -163,6 +174,16 @@ create table if not exists public.hiring_candidate_assessments (
   generated_at timestamptz not null default now()
 );
 
+-- Bridges hire conversion to the existing invite flow: markCandidateHired()
+-- inserts an organization_invites row with this set, and
+-- checkAndConsumeInvite() reads it back after the new member row is
+-- inserted to seed a gap_analyses row from hiring_candidate_cv_scores.
+-- Additive, nullable, on delete set null — every existing invite query is
+-- unaffected. Must come before the RLS policy below that references this
+-- column — a policy is validated against the schema at creation time.
+alter table public.organization_invites
+  add column if not exists candidate_id uuid references public.hiring_candidates(id) on delete set null;
+
 alter table public.job_postings enable row level security;
 alter table public.job_posting_competency_requirements enable row level security;
 alter table public.hiring_candidates enable row level security;
@@ -237,15 +258,6 @@ create index if not exists hiring_candidates_posting_idx on public.hiring_candid
 create index if not exists hiring_candidates_org_idx on public.hiring_candidates (organization_id);
 create index if not exists hiring_candidate_stage_history_candidate_idx on public.hiring_candidate_stage_history (candidate_id, created_at);
 create index if not exists hiring_candidate_interview_notes_candidate_idx on public.hiring_candidate_interview_notes (candidate_id, created_at);
-
--- Bridges hire conversion to the existing invite flow: markCandidateHired()
--- inserts an organization_invites row with this set, and
--- checkAndConsumeInvite() reads it back after the new member row is
--- inserted to seed a gap_analyses row from hiring_candidate_cv_scores.
--- Additive, nullable, on delete set null — every existing invite query is
--- unaffected.
-alter table public.organization_invites
-  add column if not exists candidate_id uuid references public.hiring_candidates(id) on delete set null;
 
 -- Private bucket for candidate CVs — same private-bucket-plus-signed-URL
 -- pattern as Knowledge Hub (0084), but with an 8MB cap (matches
