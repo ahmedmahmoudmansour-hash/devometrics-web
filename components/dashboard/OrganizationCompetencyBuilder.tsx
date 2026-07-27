@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   createOrganizationCompetency,
   updateOrganizationCompetency,
@@ -30,12 +31,13 @@ function CompetencyBar({
   competency: OrganizationCompetency;
   score: number | null;
 }) {
+  const t = useTranslations("organizationCompetencyBuilder");
   if (!competency.mapped_dimension) {
     return (
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{competency.name}</span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Not mapped to a scored dimension</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("notMappedToScoredDimension")}</span>
         </div>
         {competency.description && (
           <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{competency.description}</p>
@@ -49,8 +51,8 @@ function CompetencyBar({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
         <div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{competency.name}</span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>
-            → maps to {competency.mapped_dimension}
+          <span style={{ fontSize: 11, color: "var(--text-muted)", marginInlineStart: 8 }}>
+            {t("mapsTo", { dimension: competency.mapped_dimension })}
           </span>
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color: levelText(score) }}>{score ?? "—"}/100</span>
@@ -75,6 +77,7 @@ function CompetencyBar({
 const UNMAPPED = "" as const;
 
 function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
+  const t = useTranslations("organizationCompetencyBuilder");
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(competency.name);
   const [description, setDescription] = useState(competency.description ?? "");
@@ -100,8 +103,8 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
         <div>
           <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{competency.name}</span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 8 }}>
-            ({competency.mapped_dimension ?? "not mapped"})
+          <span style={{ fontSize: 12, color: "var(--text-muted)", marginInlineStart: 8 }}>
+            ({competency.mapped_dimension ?? t("notMapped")})
           </span>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
@@ -110,7 +113,7 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
             onClick={() => setEditing(true)}
             style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
           >
-            Edit
+            {t("edit")}
           </button>
           <button
             type="button"
@@ -118,7 +121,7 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
             onClick={() => startTransition(() => { deleteOrganizationCompetency(competency.id); })}
             style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
           >
-            Delete
+            {t("delete")}
           </button>
         </div>
       </div>
@@ -127,22 +130,22 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
 
   return (
     <div style={{ padding: "12px 0", display: "flex", flexDirection: "column", gap: 8 }}>
-      <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} aria-label="Competency name" />
+      <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} aria-label={t("competencyNameAriaLabel")} />
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows={2}
         style={{ ...inputStyle, resize: "vertical" }}
-        aria-label="Competency description"
+        aria-label={t("competencyDescriptionAriaLabel")}
       />
       <div style={{ display: "flex", gap: 8 }}>
         <select
           value={dimension}
           onChange={(e) => setDimension(e.target.value as CompetencyDimension | typeof UNMAPPED)}
           style={{ ...inputStyle, cursor: "pointer", flex: 1 }}
-          aria-label="Mapped dimension"
+          aria-label={t("mappedDimensionAriaLabel")}
         >
-          <option value={UNMAPPED}>Not mapped (optional)</option>
+          <option value={UNMAPPED}>{t("notMappedOptional")}</option>
           {COMPETENCY_DIMENSIONS.map((d) => (
             <option key={d} value={d}>
               {d}
@@ -155,7 +158,7 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
           disabled={isSuggesting || !name.trim()}
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "0 12px", fontSize: 12, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
         >
-          {isSuggesting ? "Thinking…" : "Suggest with AI"}
+          {isSuggesting ? t("thinking") : t("suggestWithAi")}
         </button>
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
@@ -179,14 +182,14 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
           }
           style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
         >
-          Save
+          {t("save")}
         </button>
         <button
           type="button"
           onClick={() => setEditing(false)}
           style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </div>
@@ -202,6 +205,7 @@ export default function OrganizationCompetencyBuilder({
   competencies: OrganizationCompetency[];
   dimensionAverages: Partial<Record<CompetencyDimension, number>>;
 }) {
+  const t = useTranslations("organizationCompetencyBuilder");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dimension, setDimension] = useState<CompetencyDimension | typeof UNMAPPED>(UNMAPPED);
@@ -243,12 +247,10 @@ export default function OrganizationCompetencyBuilder({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Your competency framework
+        {t("yourCompetencyFramework")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-        Name your own competencies (in your company&apos;s own language) and map each one onto the
-        dimension that actually drives scoring — the chart below translates your framework into real
-        team-average scores from the underlying assessment engine.
+        {t("frameworkDesc")}
       </p>
 
       {competencies.length > 0 && (
@@ -266,7 +268,7 @@ export default function OrganizationCompetencyBuilder({
       {competencies.length > 0 && (
         <div style={{ marginBottom: 20, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>
-            Manage
+            {t("manageLabel")}
           </p>
           {competencies.map((c) => (
             <CompetencyRow key={c.id} competency={c} />
@@ -276,35 +278,35 @@ export default function OrganizationCompetencyBuilder({
 
       <form onSubmit={handleAdd} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
-          <label style={labelStyle}>Competency name</label>
+          <label style={labelStyle}>{t("competencyNameLabel")}</label>
           <input
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Customer Obsession"
+            placeholder={t("competencyNamePlaceholder")}
             style={inputStyle}
           />
         </div>
         <div>
-          <label style={labelStyle}>Description (optional)</label>
+          <label style={labelStyle}>{t("descriptionLabel")}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What this means at your company"
+            placeholder={t("descriptionPlaceholder")}
             rows={2}
             style={{ ...inputStyle, resize: "vertical" }}
           />
         </div>
         <div>
-          <label style={labelStyle}>Maps to (optional)</label>
+          <label style={labelStyle}>{t("mapsToLabel")}</label>
           <div style={{ display: "flex", gap: 8 }}>
             <select
               value={dimension}
               onChange={(e) => setDimension(e.target.value as CompetencyDimension | typeof UNMAPPED)}
               style={{ ...inputStyle, cursor: "pointer", flex: 1 }}
             >
-              <option value={UNMAPPED}>Not mapped (optional)</option>
+              <option value={UNMAPPED}>{t("notMappedOptional")}</option>
               {COMPETENCY_DIMENSIONS.map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -317,7 +319,7 @@ export default function OrganizationCompetencyBuilder({
               disabled={isSuggesting || !name.trim()}
               style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "0 12px", fontSize: 12, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
             >
-              {isSuggesting ? "Thinking…" : "Suggest with AI"}
+              {isSuggesting ? t("thinking") : t("suggestWithAi")}
             </button>
           </div>
         </div>
@@ -338,7 +340,7 @@ export default function OrganizationCompetencyBuilder({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Adding…" : "Add competency"}
+          {isPending ? t("adding") : t("addCompetency")}
         </button>
       </form>
     </div>

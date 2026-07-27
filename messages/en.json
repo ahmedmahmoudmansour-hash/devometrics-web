@@ -1335,5 +1335,33 @@
     "peopleCount": "{count, plural, one {# person} other {# people}}",
     "noTitle": "No title",
     "unassignedDept": "Unassigned"
+  },
+  "companyCompetenciesPage": {
+    "backToProgress": "← Back to progress"
+  },
+  "organizationCompetencyBuilder": {
+    "notMappedToScoredDimension": "Not mapped to a scored dimension",
+    "mapsTo": "→ maps to {dimension}",
+    "notMapped": "not mapped",
+    "edit": "Edit",
+    "delete": "Delete",
+    "competencyNameAriaLabel": "Competency name",
+    "competencyDescriptionAriaLabel": "Competency description",
+    "notMappedOptional": "Not mapped (optional)",
+    "mappedDimensionAriaLabel": "Mapped dimension",
+    "thinking": "Thinking…",
+    "suggestWithAi": "Suggest with AI",
+    "save": "Save",
+    "cancel": "Cancel",
+    "yourCompetencyFramework": "Your competency framework",
+    "frameworkDesc": "Name your own competencies (in your company's own language) and map each one onto the dimension that actually drives scoring — the chart below translates your framework into real team-average scores from the underlying assessment engine.",
+    "manageLabel": "Manage",
+    "competencyNameLabel": "Competency name",
+    "competencyNamePlaceholder": "e.g. Customer Obsession",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "What this means at your company",
+    "mapsToLabel": "Maps to (optional)",
+    "adding": "Adding…",
+    "addCompetency": "Add competency"
   }
 }

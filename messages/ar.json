@@ -1335,5 +1335,33 @@
     "peopleCount": "{count, plural, one {# شخص} other {# أشخاص}}",
     "noTitle": "بلا مسمى وظيفي",
     "unassignedDept": "غير محدد"
+  },
+  "companyCompetenciesPage": {
+    "backToProgress": "← العودة إلى التقدم"
+  },
+  "organizationCompetencyBuilder": {
+    "notMappedToScoredDimension": "غير مرتبطة ببُعد مُقيَّم",
+    "mapsTo": "→ ترتبط بـ {dimension}",
+    "notMapped": "غير مرتبطة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "competencyNameAriaLabel": "اسم الكفاءة",
+    "competencyDescriptionAriaLabel": "وصف الكفاءة",
+    "notMappedOptional": "غير مرتبطة (اختياري)",
+    "mappedDimensionAriaLabel": "البُعد المرتبط",
+    "thinking": "جارٍ التفكير…",
+    "suggestWithAi": "اقتراح بالذكاء الاصطناعي",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "yourCompetencyFramework": "إطار الكفاءات الخاص بك",
+    "frameworkDesc": "سمِّ كفاءاتك الخاصة (بلغة شركتك) واربط كل واحدة منها بالبُعد الذي يحدد التقييم فعليًا — يترجم الرسم البياني أدناه إطارك إلى درجات متوسط فريق حقيقية من محرك التقييم الأساسي.",
+    "manageLabel": "إدارة",
+    "competencyNameLabel": "اسم الكفاءة",
+    "competencyNamePlaceholder": "مثال: هوس العميل",
+    "descriptionLabel": "الوصف (اختياري)",
+    "descriptionPlaceholder": "ما يعنيه هذا في شركتك",
+    "mapsToLabel": "ترتبط بـ (اختياري)",
+    "adding": "جارٍ الإضافة…",
+    "addCompetency": "إضافة كفاءة"
   }
 }
