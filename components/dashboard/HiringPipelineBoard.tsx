@@ -245,19 +245,38 @@ export default function HiringPipelineBoard({
         </div>
       )}
 
-      {/* Fixed left-to-right order (never a reflowing grid) so the pipeline
-          reads as an actual sequence — applied -> ... -> hired, each stage
-          with its own icon, connected by chevrons. Scrolls horizontally on
-          narrow screens rather than wrapping out of order. */}
-      <div style={{ display: "flex", alignItems: "flex-start", overflowX: "auto", paddingBottom: 8 }}>
+      {/* Fixed left-to-right order (never a reflowing/wrapping grid) so the
+          pipeline reads as an actual sequence — applied -> ... -> hired,
+          each stage with its own icon, connected by chevrons. Columns
+          shrink to fit the available width instead of scrolling — an
+          explicit column-count grid (not auto-fit/auto-fill) never
+          reorders or wraps, it just narrows each column. */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: columns.map(() => "minmax(0, 1fr)").join(" 20px "),
+          alignItems: "flex-start",
+        }}
+      >
         {columns.map((stage, i) => {
           const StageIcon = STAGE_ICON[stage];
           return (
             <Fragment key={stage}>
-              <div style={{ ...card, padding: 14, width: 240, flexShrink: 0 }}>
+              <div style={{ ...card, padding: 14, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
                   <StageIcon size={14} />
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "var(--text-muted)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
                     {STAGE_LABEL[stage]} ({candidates.filter((c) => c.stage === stage).length})
                   </p>
                 </div>
@@ -271,7 +290,7 @@ export default function HiringPipelineBoard({
                 </div>
               </div>
               {i < columns.length - 1 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, flexShrink: 0, color: "var(--text-muted)", alignSelf: "stretch" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", alignSelf: "stretch" }}>
                   <ChevronRight size={16} />
                 </div>
               )}
