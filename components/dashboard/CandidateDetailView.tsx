@@ -4,7 +4,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addInterviewNote, deleteInterviewNote, generateCandidateAssessment } from "@/lib/hiring/interviewActions";
 import { markCandidateHired } from "@/lib/hiring/hireActions";
-import type { HiringCandidate, HiringCandidateCvScore, HiringCandidateInterviewNote, HiringCandidateAssessment } from "@/lib/hiring/types";
+import { STAGE_LABEL } from "@/lib/hiring/types";
+import type {
+  HiringCandidate,
+  HiringCandidateCvScore,
+  HiringCandidateInterviewNote,
+  HiringCandidateAssessment,
+  HiringCandidateStageHistoryEntry,
+} from "@/lib/hiring/types";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -56,11 +63,13 @@ export default function CandidateDetailView({
   cvScore,
   notes,
   assessment,
+  stageHistory,
 }: {
   candidate: HiringCandidate;
   cvScore: HiringCandidateCvScore | null;
   notes: (HiringCandidateInterviewNote & { authorName: string })[];
   assessment: HiringCandidateAssessment | null;
+  stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[];
 }) {
   const router = useRouter();
   function refresh() {
@@ -107,6 +116,40 @@ export default function CandidateDetailView({
       <AssessmentSection candidateId={candidate.id} hasNotes={notes.length > 0} assessment={assessment} onChanged={refresh} />
 
       <HireSection candidate={candidate} onChanged={refresh} />
+
+      <StageHistorySection stageHistory={stageHistory} />
+    </div>
+  );
+}
+
+function StageHistorySection({ stageHistory }: { stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[] }) {
+  if (stageHistory.length === 0) return null;
+
+  return (
+    <div style={card}>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>History</h2>
+      <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
+        Every pipeline move for this candidate, oldest first — the reference trail for why a decision was made.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {stageHistory.map((h) => (
+          <div key={h.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <span
+              style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--teal)", flexShrink: 0, marginTop: 6 }}
+            />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12.5, color: "var(--text)" }}>
+                {h.from_stage ? `${STAGE_LABEL[h.from_stage]} → ${STAGE_LABEL[h.to_stage]}` : `Added as ${STAGE_LABEL[h.to_stage]}`}
+                <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>
+                  {" "}
+                  · {h.moverName} · {new Date(h.created_at).toLocaleDateString()}
+                </span>
+              </p>
+              {h.note && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.5 }}>{h.note}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

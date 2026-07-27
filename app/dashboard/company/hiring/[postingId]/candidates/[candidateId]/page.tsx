@@ -35,7 +35,13 @@ export default async function CandidateDetailPage({
 
         <CompanyNavTabs active="hiring" />
 
-        <CandidateDetailView candidate={data.candidate} cvScore={data.cvScore} notes={data.notes} assessment={data.assessment} />
+        <CandidateDetailView
+          candidate={data.candidate}
+          cvScore={data.cvScore}
+          notes={data.notes}
+          assessment={data.assessment}
+          stageHistory={data.stageHistory}
+        />
       </div>
     </div>
   );

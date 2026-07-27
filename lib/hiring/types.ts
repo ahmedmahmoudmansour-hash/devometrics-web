@@ -5,6 +5,17 @@ export type HiringStage = "applied" | "phone_screen" | "interview" | "offer" | "
 
 export const HIRING_STAGES: HiringStage[] = ["applied", "phone_screen", "interview", "offer", "hired", "rejected"];
 
+// Shared between the pipeline board and the candidate detail history view,
+// so the two never drift out of sync on how a stage is labeled.
+export const STAGE_LABEL: Record<HiringStage, string> = {
+  applied: "Applied",
+  phone_screen: "Phone screen",
+  interview: "Interview",
+  offer: "Offer",
+  hired: "Hired",
+  rejected: "Rejected",
+};
+
 export type JobPosting = {
   id: string;
   organization_id: string;
@@ -53,6 +64,17 @@ export type HiringCandidate = {
   created_by: string;
   created_at: string;
   updated_at: string;
+};
+
+export type HiringCandidateStageHistoryEntry = {
+  id: string;
+  candidate_id: string;
+  organization_id: string;
+  from_stage: HiringStage | null;
+  to_stage: HiringStage;
+  moved_by: string | null;
+  note: string;
+  created_at: string;
 };
 
 export type HiringCandidateCvScore = {

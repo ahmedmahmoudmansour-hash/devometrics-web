@@ -9,7 +9,7 @@ import { createCandidate, attachCandidateCv, scoreCandidateCv, moveCandidateStag
 import { generateCandidateRanking } from "@/lib/hiring/rankingActions";
 import { generateInterviewQuestions } from "@/lib/hiring/postingActions";
 import { CANDIDATE_CV_BUCKET, CANDIDATE_CV_MAX_BYTES, CANDIDATE_CV_ALLOWED_MIME_TYPES } from "@/lib/hiring/constants";
-import { HIRING_STAGES } from "@/lib/hiring/types";
+import { HIRING_STAGES, STAGE_LABEL } from "@/lib/hiring/types";
 import type { JobPosting, JobPostingCompetencyRequirement, HiringCandidate, HiringStage } from "@/lib/hiring/types";
 
 const card: React.CSSProperties = {
@@ -49,15 +49,6 @@ const ghostBtn: React.CSSProperties = {
   fontSize: 13,
   color: "var(--text-muted)",
   cursor: "pointer",
-};
-
-const STAGE_LABEL: Record<HiringStage, string> = {
-  applied: "Applied",
-  phone_screen: "Phone screen",
-  interview: "Interview",
-  offer: "Offer",
-  hired: "Hired",
-  rejected: "Rejected",
 };
 
 // One icon per stage of the pipeline, so the process reads as a sequence
@@ -368,6 +359,14 @@ function CandidateCard({
   isPending: boolean;
   startTransition: (fn: () => Promise<void> | void) => void;
 }) {
+  // A move isn't fired the instant the select changes — it's held as
+  // "pending" so an optional one-line reason can be attached first (mainly
+  // for Rejected, but useful for any stage), then confirmed or cancelled.
+  // Cancelling just clears pendingStage, which snaps the select back to
+  // candidate.stage since that's what it's bound to when nothing's pending.
+  const [pendingStage, setPendingStage] = useState<HiringStage | null>(null);
+  const [note, setNote] = useState("");
+
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: "rgba(255,255,255,0.02)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -391,15 +390,18 @@ function CandidateCard({
       </div>
       <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center" }}>
         <select
-          value={candidate.stage}
+          value={pendingStage ?? candidate.stage}
           disabled={isPending}
           style={{ ...input, fontSize: 11, padding: "5px 8px", cursor: "pointer" }}
-          onChange={(e) =>
-            startTransition(async () => {
-              await moveCandidateStage(candidate.id, e.target.value as HiringStage);
-              onChanged();
-            })
-          }
+          onChange={(e) => {
+            const next = e.target.value as HiringStage;
+            if (next === candidate.stage) {
+              setPendingStage(null);
+              return;
+            }
+            setPendingStage(next);
+            setNote("");
+          }}
         >
           {HIRING_STAGES.map((s) => (
             <option key={s} value={s}>
@@ -422,6 +424,41 @@ function CandidateCard({
           Remove
         </button>
       </div>
+      {pendingStage && (
+        <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}>
+          <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginBottom: 6 }}>
+            Move to {STAGE_LABEL[pendingStage]}
+            {pendingStage === "rejected" ? " — why? (optional, but useful for reference later)" : " — add a note? (optional)"}
+          </p>
+          <textarea
+            autoFocus
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={pendingStage === "rejected" ? "e.g. not enough backend depth for this role" : "e.g. strong on system design, moving to interview"}
+            style={{ ...input, fontSize: 11, padding: "6px 8px", resize: "vertical", marginBottom: 6 }}
+          />
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              type="button"
+              disabled={isPending}
+              style={{ ...primaryBtn, fontSize: 11, padding: "5px 12px" }}
+              onClick={() =>
+                startTransition(async () => {
+                  await moveCandidateStage(candidate.id, pendingStage, note);
+                  setPendingStage(null);
+                  onChanged();
+                })
+              }
+            >
+              Confirm move
+            </button>
+            <button type="button" style={{ ...ghostBtn, fontSize: 11, padding: "5px 12px" }} onClick={() => setPendingStage(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

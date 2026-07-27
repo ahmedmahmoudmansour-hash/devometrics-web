@@ -7,6 +7,7 @@ import type {
   HiringCandidateCvScore,
   HiringCandidateInterviewNote,
   HiringCandidateAssessment,
+  HiringCandidateStageHistoryEntry,
 } from "./types";
 
 // A Job Architecture role, offered as an optional link when creating a
@@ -178,6 +179,7 @@ export type CandidateDetail = {
   cvScore: HiringCandidateCvScore | null;
   notes: (HiringCandidateInterviewNote & { authorName: string })[];
   assessment: HiringCandidateAssessment | null;
+  stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[];
 };
 
 // Single-candidate drill-down. Authorization is a direct same-organization
@@ -192,6 +194,7 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
     cvScore: null,
     notes: [],
     assessment: null,
+    stageHistory: [],
   };
 
   const company = await buildCompanyData();
@@ -206,7 +209,7 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
     .maybeSingle<HiringCandidate>();
   if (!candidate) return empty;
 
-  const [{ data: posting }, { data: cvScore }, { data: noteRows }, { data: assessment }] = await Promise.all([
+  const [{ data: posting }, { data: cvScore }, { data: noteRows }, { data: assessment }, { data: historyRows }] = await Promise.all([
     supabase.from("job_postings").select("*").eq("id", candidate.posting_id).maybeSingle<JobPosting>(),
     supabase
       .from("hiring_candidate_cv_scores")
@@ -224,13 +227,24 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
       .select("*")
       .eq("candidate_id", candidateId)
       .maybeSingle<HiringCandidateAssessment>(),
+    supabase
+      .from("hiring_candidate_stage_history")
+      .select("*")
+      .eq("candidate_id", candidateId)
+      .order("created_at", { ascending: true })
+      .returns<HiringCandidateStageHistoryEntry[]>(),
   ]);
 
-  const authorIds = [...new Set((noteRows ?? []).map((n) => n.author_id))];
-  const { data: authorProfiles } = authorIds.length
-    ? await supabase.from("profiles").select("id, full_name").in("id", authorIds).returns<{ id: string; full_name: string | null }[]>()
+  // Author names for both notes and stage-move history resolved in one
+  // batched query rather than two — same "handful of distinct admins"
+  // reasoning as buildEmployeeDetail's manager-notes lookup.
+  const personIds = [
+    ...new Set([...(noteRows ?? []).map((n) => n.author_id), ...(historyRows ?? []).map((h) => h.moved_by).filter((id): id is string => !!id)]),
+  ];
+  const { data: personProfiles } = personIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", personIds).returns<{ id: string; full_name: string | null }[]>()
     : { data: [] as { id: string; full_name: string | null }[] };
-  const authorNameById = new Map((authorProfiles ?? []).map((p) => [p.id, p.full_name ?? "Admin"]));
+  const nameById = new Map((personProfiles ?? []).map((p) => [p.id, p.full_name ?? "Admin"]));
 
   return {
     isAuthorized: true,
@@ -238,7 +252,8 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
     candidate,
     posting: posting ?? null,
     cvScore: cvScore ?? null,
-    notes: (noteRows ?? []).map((n) => ({ ...n, authorName: authorNameById.get(n.author_id) ?? "Admin" })),
+    notes: (noteRows ?? []).map((n) => ({ ...n, authorName: nameById.get(n.author_id) ?? "Admin" })),
     assessment: assessment ?? null,
+    stageHistory: (historyRows ?? []).map((h) => ({ ...h, moverName: (h.moved_by && nameById.get(h.moved_by)) ?? "Admin" })),
   };
 }

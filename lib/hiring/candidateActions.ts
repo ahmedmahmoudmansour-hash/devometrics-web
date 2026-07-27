@@ -194,6 +194,7 @@ export async function moveCandidateStage(candidateId: string, toStage: HiringSta
   });
 
   revalidatePath(`/dashboard/company/hiring/${candidate.posting_id}`);
+  revalidatePath(`/dashboard/company/hiring/${candidate.posting_id}/candidates/${candidateId}`);
   return { success: true };
 }
 
