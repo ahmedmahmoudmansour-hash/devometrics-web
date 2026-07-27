@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import type { KnowledgeHubContent, KnowledgeHubCompletion } from "@/lib/supabase/types";
 
 export default async function KnowledgeHubPage() {
+  const t = await getTranslations("knowledgeHubPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,20 +46,20 @@ export default async function KnowledgeHubPage() {
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ marginBottom: 32 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Knowledge Hub
+            {t("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            Training content your organization has assigned to you.
+            {t("description")}
           </p>
         </div>
 
         {(assignments ?? []).length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              Nothing assigned to you yet.
+              {t("nothingAssigned")}
             </p>
           </div>
         ) : (
@@ -89,8 +91,8 @@ export default async function KnowledgeHubPage() {
                         <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{content.description}</p>
                       )}
                       <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        {content.completion_type === "exam" ? "Exam required" : "Read confirmation"}
-                        {content.due_date && !completion ? ` · due ${content.due_date}` : ""}
+                        {content.completion_type === "exam" ? t("examRequired") : t("readConfirmation")}
+                        {content.due_date && !completion ? t("dueSuffix", { date: content.due_date }) : ""}
                       </p>
                     </div>
                     <span
@@ -107,11 +109,13 @@ export default async function KnowledgeHubPage() {
                     >
                       {completion
                         ? content.completion_type === "exam"
-                          ? `${completion.passed ? "Passed" : "Completed"} — ${completion.score_percent}%`
-                          : "Completed"
+                          ? completion.passed
+                            ? t("passedScore", { percent: completion.score_percent ?? 0 })
+                            : t("completedScore", { percent: completion.score_percent ?? 0 })
+                          : t("completed")
                         : isOverdue
-                          ? "Overdue"
-                          : "Not started"}
+                          ? t("overdue")
+                          : t("notStarted")}
                     </span>
                   </div>
                 </Link>

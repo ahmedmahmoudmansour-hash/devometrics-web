@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { getKnowledgeHubContentReport } from "@/lib/knowledgeHub/actions";
 import AssignKnowledgeHubContentModal from "@/components/dashboard/AssignKnowledgeHubContentModal";
@@ -13,6 +14,7 @@ export default async function KnowledgeHubContentDetailPage({
   params: Promise<{ contentId: string }>;
 }) {
   const { contentId } = await params;
+  const t = await getTranslations("knowledgeHubContentDetailPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -41,7 +43,7 @@ export default async function KnowledgeHubContentDetailPage({
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/company/knowledge-hub" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to Knowledge Hub
+            {t("backToKnowledgeHub")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
             {content.title}
@@ -51,13 +53,16 @@ export default async function KnowledgeHubContentDetailPage({
           )}
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
             {content.completion_type === "exam"
-              ? `Exam — ${content.passing_score_percent}% required to pass · ${content.max_attempts ? `${content.max_attempts} attempt${content.max_attempts === 1 ? "" : "s"} max` : "unlimited attempts"}`
-              : "Completed by confirming they've read it"}
+              ? t("examSummary", {
+                  percent: content.passing_score_percent,
+                  attempts: content.max_attempts ? t("attemptsMax", { count: content.max_attempts }) : t("unlimitedAttempts"),
+                })
+              : t("completedByConfirm")}
             {" · "}
             {content.file_name}
             {content.due_date && (
               <>
-                {" · "}Due {content.due_date}
+                {" · "}{t("dueLabel", { date: content.due_date })}
               </>
             )}
           </p>
@@ -69,11 +74,11 @@ export default async function KnowledgeHubContentDetailPage({
         <div style={{ display: "flex", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 20px" }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{report.assignedCount}</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Assigned</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("assigned")}</div>
           </div>
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 20px" }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "var(--teal)" }}>{report.completionRate}%</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Completion rate</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("completionRate")}</div>
           </div>
           {content.completion_type === "exam" && (
             <>
@@ -81,11 +86,11 @@ export default async function KnowledgeHubContentDetailPage({
                 <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>
                   {report.averageScorePercent ?? "—"}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Average score</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("averageScore")}</div>
               </div>
               <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 20px" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{report.passRate ?? "—"}%</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Pass rate</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("passRate")}</div>
               </div>
             </>
           )}
@@ -101,7 +106,7 @@ export default async function KnowledgeHubContentDetailPage({
 
         {report.rows.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
-            <p style={{ fontSize: 14, color: "var(--text-muted)" }}>Not assigned to anyone yet.</p>
+            <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("notAssignedYet")}</p>
           </div>
         ) : (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
@@ -109,16 +114,16 @@ export default async function KnowledgeHubContentDetailPage({
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Name</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Status</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Completed</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colName")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colStatus")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colCompleted")}</th>
                     {content.completion_type === "exam" && (
                       <>
-                        <th style={{ ...headStyle, textAlign: "right" }}>Score</th>
-                        <th style={{ ...headStyle, textAlign: "right" }}>Attempts</th>
+                        <th style={{ ...headStyle, textAlign: "right" }}>{t("colScore")}</th>
+                        <th style={{ ...headStyle, textAlign: "right" }}>{t("colAttempts")}</th>
                       </>
                     )}
-                    <th style={{ ...headStyle, textAlign: "right" }} aria-label="Actions" />
+                    <th style={{ ...headStyle, textAlign: "right" }} aria-label={t("actionsAriaLabel")} />
                   </tr>
                 </thead>
                 <tbody>
@@ -139,7 +144,7 @@ export default async function KnowledgeHubContentDetailPage({
                             color: r.status === "completed" ? "var(--teal)" : "var(--text-muted)",
                           }}
                         >
-                          {r.status === "completed" ? "Completed" : "Not started"}
+                          {r.status === "completed" ? t("completed") : t("notStarted")}
                         </span>
                       </td>
                       <td style={{ ...cellStyle, color: "var(--text-muted)" }}>

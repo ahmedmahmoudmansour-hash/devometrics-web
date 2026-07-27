@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import KnowledgeHubContentViewer from "@/components/dashboard/KnowledgeHubContentViewer";
 import type { KnowledgeHubContent, KnowledgeHubCompletion } from "@/lib/supabase/types";
@@ -10,6 +11,7 @@ export default async function KnowledgeHubContentPage({
   params: Promise<{ contentId: string }>;
 }) {
   const { contentId } = await params;
+  const t = await getTranslations("knowledgeHubContentPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -46,7 +48,7 @@ export default async function KnowledgeHubContentPage({
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/knowledge-hub" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to Knowledge Hub
+            {t("backToKnowledgeHub")}
           </Link>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
             {content.title}

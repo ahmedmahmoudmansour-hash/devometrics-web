@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
@@ -7,6 +8,7 @@ import KnowledgeHubUploadForm from "@/components/dashboard/KnowledgeHubUploadFor
 import type { KnowledgeHubContent } from "@/lib/supabase/types";
 
 export default async function CompanyKnowledgeHubPage() {
+  const t = await getTranslations("companyKnowledgeHubPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
@@ -71,13 +73,13 @@ export default async function CompanyKnowledgeHubPage() {
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Knowledge Hub
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-            Upload training documents, assign them to your team, and track who&apos;s completed them.
+            {t("description")}
           </p>
         </div>
 
@@ -90,7 +92,7 @@ export default async function CompanyKnowledgeHubPage() {
         {content.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              No content uploaded yet. Use the form above to add your first document.
+              {t("noContentYet")}
             </p>
           </div>
         ) : (
@@ -99,14 +101,14 @@ export default async function CompanyKnowledgeHubPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Title</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Format</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Completion</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Due</th>
-                    <th style={{ ...headStyle, textAlign: "right" }}>Assigned</th>
-                    <th style={{ ...headStyle, textAlign: "right" }}>Completed</th>
-                    <th style={{ ...headStyle, textAlign: "right" }}>Completion rate</th>
-                    <th style={{ ...headStyle, textAlign: "right" }} aria-label="Actions" />
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colTitle")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colFormat")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colCompletion")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colDue")}</th>
+                    <th style={{ ...headStyle, textAlign: "right" }}>{t("colAssigned")}</th>
+                    <th style={{ ...headStyle, textAlign: "right" }}>{t("colCompleted")}</th>
+                    <th style={{ ...headStyle, textAlign: "right" }}>{t("colCompletionRate")}</th>
+                    <th style={{ ...headStyle, textAlign: "right" }} aria-label={t("actionsAriaLabel")} />
                   </tr>
                 </thead>
                 <tbody>
@@ -128,7 +130,7 @@ export default async function CompanyKnowledgeHubPage() {
                           {c.file_name.split(".").pop()?.toUpperCase()}
                         </td>
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>
-                          {c.completion_type === "exam" ? `Exam (${c.passing_score_percent}% to pass)` : "Read confirmation"}
+                          {c.completion_type === "exam" ? t("examWithPassPercent", { percent: c.passing_score_percent }) : t("readConfirmation")}
                         </td>
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>{c.due_date ?? "—"}</td>
                         <td style={{ ...cellStyle, textAlign: "right" }}>{assigned}</td>
@@ -141,7 +143,7 @@ export default async function CompanyKnowledgeHubPage() {
                             href={`/dashboard/company/knowledge-hub/${c.id}`}
                             style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", textDecoration: "none" }}
                           >
-                            Manage →
+                            {t("manage")}
                           </Link>
                         </td>
                       </tr>
@@ -156,7 +158,7 @@ export default async function CompanyKnowledgeHubPage() {
         {archivedContent.length > 0 && (
           <div style={{ marginTop: 24 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
-              Archived ({archivedContent.length})
+              {t("archivedCount", { count: archivedContent.length })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {archivedContent.map((c) => (
@@ -176,7 +178,7 @@ export default async function CompanyKnowledgeHubPage() {
                   }}
                 >
                   <span>{c.title}</span>
-                  <span>Archived {new Date(c.archived_at!).toLocaleDateString()}</span>
+                  <span>{t("archivedOn", { date: new Date(c.archived_at!).toLocaleDateString() })}</span>
                 </Link>
               ))}
             </div>

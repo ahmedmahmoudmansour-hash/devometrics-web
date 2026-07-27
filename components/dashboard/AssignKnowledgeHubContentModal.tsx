@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { assignKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
 
 type Employee = { userId: string; name: string; email: string };
@@ -15,6 +16,7 @@ export default function AssignKnowledgeHubContentModal({
   employees: Employee[];
   alreadyAssignedUserIds: string[];
 }) {
+  const t = useTranslations("assignKnowledgeHubContentModal");
   const [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function AssignKnowledgeHubContentModal({
           opacity: assignable.length === 0 ? 0.5 : 1,
         }}
       >
-        {assignable.length === 0 ? "Everyone is already assigned" : "+ Assign to employees"}
+        {assignable.length === 0 ? t("everyoneAssigned") : t("assignToEmployees")}
       </button>
     );
   }
@@ -75,14 +77,14 @@ export default function AssignKnowledgeHubContentModal({
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
-          Assign to employees ({selected.length} selected)
+          {t("assignToEmployeesCount", { count: selected.length })}
         </p>
         <button
           type="button"
           onClick={toggleAll}
           style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
         >
-          {allSelected ? "Deselect all" : "Select all"}
+          {allSelected ? t("deselectAll") : t("selectAll")}
         </button>
       </div>
 
@@ -123,7 +125,7 @@ export default function AssignKnowledgeHubContentModal({
             opacity: selected.length === 0 || isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Assigning…" : `Assign to ${selected.length || ""}`}
+          {isPending ? t("assigning") : t("assignToCount", { count: selected.length || "" })}
         </button>
         <button
           type="button"
@@ -142,7 +144,7 @@ export default function AssignKnowledgeHubContentModal({
             cursor: "pointer",
           }}
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { getKnowledgeHubEmployeeAttempts, type KnowledgeHubAttempt } from "@/lib/knowledgeHub/actions";
 
 export default function KnowledgeHubAttemptHistory({
@@ -12,6 +13,7 @@ export default function KnowledgeHubAttemptHistory({
   employeeUserId: string;
   attemptCount: number;
 }) {
+  const t = useTranslations("knowledgeHubAttemptHistory");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState<KnowledgeHubAttempt[] | null>(null);
@@ -39,19 +41,19 @@ export default function KnowledgeHubAttemptHistory({
         onClick={toggle}
         style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 11.5, cursor: "pointer", padding: 0 }}
       >
-        {open ? "Hide history" : `History (${attemptCount})`}
+        {open ? t("hideHistory") : t("historyCount", { count: attemptCount })}
       </button>
       {open && (
         <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
           {loading ? (
-            <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Loading…</p>
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("loading")}</p>
           ) : (
             (attempts ?? []).map((a) => (
               <div key={a.id} style={{ fontSize: 11.5, color: "var(--text-muted)", display: "flex", gap: 8 }}>
                 <span>{new Date(a.completedAt).toLocaleString()}</span>
                 {a.scorePercent !== null && (
                   <span style={{ color: a.passed ? "var(--teal)" : "#f87171", fontWeight: 700 }}>
-                    {a.scorePercent}% {a.passed ? "· passed" : "· failed"}
+                    {a.scorePercent}% · {a.passed ? t("passed") : t("failed")}
                   </span>
                 )}
               </div>

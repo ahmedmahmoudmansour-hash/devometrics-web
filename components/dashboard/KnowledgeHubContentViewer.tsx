@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   getSignedKnowledgeHubUrl,
   confirmKnowledgeHubRead,
@@ -35,6 +36,7 @@ export default function KnowledgeHubContentViewer({
   initialLastAttemptAt: string | null;
   initialCompletion: Completion;
 }) {
+  const t = useTranslations("knowledgeHubContentViewer");
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [completion, setCompletion] = useState<Completion>(initialCompletion);
@@ -88,9 +90,9 @@ export default function KnowledgeHubContentViewer({
     const totalMinutes = Math.max(1, Math.ceil(ms / 60_000));
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    if (hours === 0) return `${minutes}m`;
-    if (minutes === 0) return `${hours}h`;
-    return `${hours}h ${minutes}m`;
+    if (hours === 0) return t("cooldownMinutes", { m: minutes });
+    if (minutes === 0) return t("cooldownHours", { h: hours });
+    return t("cooldownHoursMinutes", { h: hours, m: minutes });
   }
 
   async function handleConfirmRead() {
@@ -117,7 +119,7 @@ export default function KnowledgeHubContentViewer({
 
   async function handleSubmitExam() {
     if (Object.keys(answers).length < questions.length) {
-      setExamError("Answer every question before submitting.");
+      setExamError(t("answerEveryQuestion"));
       return;
     }
     setSubmitting(true);
@@ -142,7 +144,7 @@ export default function KnowledgeHubContentViewer({
         {urlError ? (
           <p style={{ fontSize: 13, color: "#f87171" }}>{urlError}</p>
         ) : !signedUrl ? (
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Loading document…</p>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("loadingDocument")}</p>
         ) : isPdf ? (
           <iframe
             src={signedUrl}
@@ -154,7 +156,7 @@ export default function KnowledgeHubContentViewer({
         ) : (
           <div style={{ textAlign: "center", padding: "20px 0" }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
-              {fileName} can&apos;t be previewed in-browser — download it to view.
+              {t("cantPreview", { fileName })}
             </p>
             <a
               href={signedUrl}
@@ -170,7 +172,7 @@ export default function KnowledgeHubContentViewer({
                 textDecoration: "none",
               }}
             >
-              Download {fileName}
+              {t("download", { fileName })}
             </a>
           </div>
         )}
@@ -180,22 +182,22 @@ export default function KnowledgeHubContentViewer({
         {completion && completionType === "exam" && completion.passed === false && !examStarted ? (
           <div>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#f0b840" }}>
-              Scored {completion.scorePercent}% ({passingScorePercent}% required) — not yet passed
+              {t("scoredNotPassed", { score: completion.scorePercent ?? 0, required: passingScorePercent })}
             </p>
             {examError && <p style={{ fontSize: 13, color: "#f87171", marginTop: 8 }}>{examError}</p>}
             {attemptsExhausted ? (
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
-                You&apos;ve used all {maxAttempts} attempt{maxAttempts === 1 ? "" : "s"} for this exam — contact your admin.
+                {t("usedAllAttempts", { count: maxAttempts ?? 0 })}
               </p>
             ) : (
               <>
                 <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
-                  Review the material above again before retrying
-                  {maxAttempts !== null && ` — you have ${maxAttempts - examAttemptCount} attempt${maxAttempts - examAttemptCount === 1 ? "" : "s"} left`}.
+                  {t("reviewBeforeRetry")}
+                  {maxAttempts !== null && t("attemptsLeftSuffix", { count: maxAttempts - examAttemptCount })}.
                 </p>
                 {cooldownActive ? (
                   <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 8 }}>
-                    You can retake this exam in {formatCooldown(cooldownRemainingMs)}.
+                    {t("retakeIn", { time: formatCooldown(cooldownRemainingMs) })}
                   </p>
                 ) : (
                   <button
@@ -215,7 +217,7 @@ export default function KnowledgeHubContentViewer({
                       opacity: examLoading ? 0.6 : 1,
                     }}
                   >
-                    {examLoading ? "Loading…" : "Try again"}
+                    {examLoading ? t("loading") : t("tryAgain")}
                   </button>
                 )}
               </>
@@ -224,13 +226,13 @@ export default function KnowledgeHubContentViewer({
         ) : completion && !examStarted ? (
           <p style={{ fontSize: 14, fontWeight: 700, color: "var(--teal)" }}>
             {completionType === "exam"
-              ? `Passed — ${completion.scorePercent}% (${passingScorePercent}% required)`
-              : "✓ You confirmed you've read this"}
+              ? t("passedRequired", { score: completion.scorePercent ?? 0, required: passingScorePercent })
+              : t("confirmedRead")}
           </p>
         ) : completionType === "attestation" ? (
           <>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
-              Once you&apos;ve read the document above, confirm below.
+              {t("onceReadConfirm")}
             </p>
             {confirmError && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{confirmError}</p>}
             <button
@@ -249,13 +251,13 @@ export default function KnowledgeHubContentViewer({
                 opacity: confirming ? 0.6 : 1,
               }}
             >
-              {confirming ? "Confirming…" : "I confirm I've read this"}
+              {confirming ? t("confirming") : t("iConfirmRead")}
             </button>
           </>
         ) : !examStarted ? (
           <>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
-              This content requires passing an exam ({passingScorePercent}% required).
+              {t("requiresExam", { required: passingScorePercent })}
             </p>
             {examError && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{examError}</p>}
             <button
@@ -274,7 +276,7 @@ export default function KnowledgeHubContentViewer({
                 opacity: examLoading ? 0.6 : 1,
               }}
             >
-              {examLoading ? "Loading…" : "Start exam"}
+              {examLoading ? t("loading") : t("startExam")}
             </button>
           </>
         ) : (
@@ -321,7 +323,7 @@ export default function KnowledgeHubContentViewer({
                 opacity: submitting ? 0.6 : 1,
               }}
             >
-              {submitting ? "Submitting…" : "Submit exam"}
+              {submitting ? t("submitting") : t("submitExam")}
             </button>
           </div>
         )}

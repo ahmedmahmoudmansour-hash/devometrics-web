@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { createKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
 import { KNOWLEDGE_HUB_BUCKET, KNOWLEDGE_HUB_MAX_BYTES, KNOWLEDGE_HUB_ALLOWED_MIME_TYPES } from "@/lib/knowledgeHub/constants";
@@ -29,6 +30,7 @@ function sanitizeFileName(name: string): string {
 }
 
 export default function KnowledgeHubUploadForm({ organizationId }: { organizationId: string }) {
+  const t = useTranslations("knowledgeHubUploadForm");
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -51,11 +53,11 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       return;
     }
     if (!(KNOWLEDGE_HUB_ALLOWED_MIME_TYPES as readonly string[]).includes(f.type)) {
-      setError("Only Word, PDF, Excel, PowerPoint, or video (MP4/WebM/MOV) files are supported.");
+      setError(t("onlyDocsSupported"));
       return;
     }
     if (f.size > KNOWLEDGE_HUB_MAX_BYTES) {
-      setError("File is too large — 50MB max.");
+      setError(t("fileTooLarge"));
       return;
     }
     setFile(f);
@@ -97,12 +99,12 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) return setError("Title is required.");
-    if (!file) return setError("Choose a file to upload.");
+    if (!title.trim()) return setError(t("titleRequired"));
+    if (!file) return setError(t("chooseFile"));
     if (completionType === "exam") {
       for (const q of questions) {
-        if (!q.prompt.trim()) return setError("Every question needs a prompt.");
-        if (q.options.some((o) => !o.trim())) return setError("Every option needs text.");
+        if (!q.prompt.trim()) return setError(t("everyQuestionNeedsPrompt"));
+        if (q.options.some((o) => !o.trim())) return setError(t("everyOptionNeedsText"));
       }
     }
 
@@ -144,7 +146,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
         router.refresh();
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed — try again.");
+      setError(err instanceof Error ? err.message : t("uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -170,7 +172,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           textAlign: "center",
         }}
       >
-        + Upload content
+        {t("uploadContent")}
       </button>
     );
   }
@@ -180,7 +182,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       onSubmit={handleSubmit}
       style={{ background: "var(--navy-mid)", border: "1px dashed var(--border)", borderRadius: 16, padding: 28 }}
     >
-      <p style={{ fontSize: 15, color: "var(--text)", fontWeight: 600, marginBottom: 20 }}>Upload content</p>
+      <p style={{ fontSize: 15, color: "var(--text)", fontWeight: 600, marginBottom: 20 }}>{t("uploadContentHeader")}</p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 560 }}>
         <input
@@ -188,19 +190,19 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title, e.g. Code of Conduct 2026"
+          placeholder={t("titlePlaceholder")}
           style={inputStyle}
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional description"
+          placeholder={t("descriptionPlaceholder")}
           rows={2}
           style={{ ...inputStyle, resize: "vertical" }}
         />
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            File — Word, PDF, Excel, PowerPoint, or video, 50MB max
+            {t("fileLabel")}
           </label>
           <input
             type="file"
@@ -213,7 +215,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
 
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            Due date — optional
+            {t("dueDateLabel")}
           </label>
           <input
             type="date"
@@ -225,26 +227,26 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
 
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            How is this completed?
+            {t("howCompletedLabel")}
           </label>
           <div style={{ display: "flex", gap: 8 }}>
-            {(["attestation", "exam"] as const).map((t) => (
+            {(["attestation", "exam"] as const).map((option) => (
               <button
-                key={t}
+                key={option}
                 type="button"
-                onClick={() => setCompletionType(t)}
+                onClick={() => setCompletionType(option)}
                 style={{
                   padding: "8px 16px",
                   borderRadius: 100,
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  border: completionType === t ? "1px solid var(--teal)" : "1px solid var(--border)",
-                  background: completionType === t ? "rgba(0,201,167,0.1)" : "transparent",
-                  color: completionType === t ? "var(--teal)" : "var(--text-muted)",
+                  border: completionType === option ? "1px solid var(--teal)" : "1px solid var(--border)",
+                  background: completionType === option ? "rgba(0,201,167,0.1)" : "transparent",
+                  color: completionType === option ? "var(--teal)" : "var(--text-muted)",
                 }}
               >
-                {t === "attestation" ? "Confirm they've read it" : "Exam"}
+                {option === "attestation" ? t("confirmReadOption") : t("examOption")}
               </button>
             ))}
           </div>
@@ -254,7 +256,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-                Passing score (%)
+                {t("passingScoreLabel")}
               </label>
               <input
                 type="number"
@@ -268,14 +270,14 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
 
             <div>
               <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-                Max attempts — optional, leave blank for unlimited
+                {t("maxAttemptsLabel")}
               </label>
               <input
                 type="number"
                 min={1}
                 value={maxAttempts}
                 onChange={(e) => setMaxAttempts(e.target.value)}
-                placeholder="Unlimited"
+                placeholder={t("unlimitedPlaceholder")}
                 style={{ ...inputStyle, maxWidth: 120 }}
               />
             </div>
@@ -284,7 +286,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
               <div key={qIndex} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-                    Question {qIndex + 1}
+                    {t("questionN", { number: qIndex + 1 })}
                   </span>
                   {questions.length > 1 && (
                     <button
@@ -292,7 +294,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                       onClick={() => removeQuestion(qIndex)}
                       style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}
                     >
-                      Remove
+                      {t("remove")}
                     </button>
                   )}
                 </div>
@@ -300,7 +302,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                   type="text"
                   value={q.prompt}
                   onChange={(e) => updateQuestion(qIndex, { prompt: e.target.value })}
-                  placeholder="Question prompt"
+                  placeholder={t("questionPromptPlaceholder")}
                   style={{ ...inputStyle, marginBottom: 10 }}
                 />
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -311,21 +313,21 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                         name={`correct-${qIndex}`}
                         checked={q.correctIndex === oIndex}
                         onChange={() => updateQuestion(qIndex, { correctIndex: oIndex })}
-                        aria-label={`Option ${oIndex + 1} is correct`}
+                        aria-label={t("optionIsCorrect", { number: oIndex + 1 })}
                         style={{ accentColor: "var(--teal)" }}
                       />
                       <input
                         type="text"
                         value={opt}
                         onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
-                        placeholder={`Option ${oIndex + 1}`}
+                        placeholder={t("optionPlaceholder", { number: oIndex + 1 })}
                         style={{ ...inputStyle, flex: 1 }}
                       />
                       {q.options.length > 2 && (
                         <button
                           type="button"
                           onClick={() => removeOption(qIndex, oIndex)}
-                          aria-label="Remove option"
+                          aria-label={t("removeOption")}
                           style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 16, cursor: "pointer" }}
                         >
                           ×
@@ -339,7 +341,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                       onClick={() => addOption(qIndex)}
                       style={{ alignSelf: "flex-start", background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer", marginTop: 4 }}
                     >
-                      + Add option
+                      {t("addOption")}
                     </button>
                   )}
                 </div>
@@ -360,7 +362,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                 cursor: "pointer",
               }}
             >
-              + Add question
+              {t("addQuestion")}
             </button>
           </div>
         )}
@@ -383,7 +385,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
               opacity: busy ? 0.6 : 1,
             }}
           >
-            {busy ? "Uploading…" : "Upload"}
+            {busy ? t("uploading") : t("upload")}
           </button>
           <button
             type="button"
@@ -400,7 +402,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
               cursor: "pointer",
             }}
           >
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { updateKnowledgeHubContent, archiveKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
 import type { KnowledgeHubContent } from "@/lib/supabase/types";
 
@@ -17,6 +18,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function EditKnowledgeHubContentForm({ content }: { content: KnowledgeHubContent }) {
+  const t = useTranslations("editKnowledgeHubContentForm");
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState(content.title);
   const [description, setDescription] = useState(content.description ?? "");
@@ -75,7 +77,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
           cursor: "pointer",
         }}
       >
-        Edit
+        {t("edit")}
       </button>
     );
   }
@@ -83,17 +85,17 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }}>
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" style={inputStyle} />
+        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} style={inputStyle} />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
+          placeholder={t("descriptionPlaceholder")}
           rows={2}
           style={{ ...inputStyle, resize: "vertical" }}
         />
         <div style={{ display: "flex", gap: 12 }}>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 6 }}>
-            Due date
+            {t("dueDateLabel")}
             <input
               type="date"
               value={dueDate}
@@ -103,7 +105,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
           </label>
           {content.completion_type === "exam" && (
             <label style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 6 }}>
-              Passing score (%)
+              {t("passingScoreLabel")}
               <input
                 type="number"
                 min={1}
@@ -116,13 +118,13 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
           )}
           {content.completion_type === "exam" && (
             <label style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 6 }}>
-              Max attempts (blank = unlimited)
+              {t("maxAttemptsLabel")}
               <input
                 type="number"
                 min={1}
                 value={maxAttempts}
                 onChange={(e) => setMaxAttempts(e.target.value)}
-                placeholder="Unlimited"
+                placeholder={t("unlimitedPlaceholder")}
                 style={inputStyle}
               />
             </label>
@@ -134,21 +136,21 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           {confirmingArchive ? (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Archive this content?</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("archiveThisContentQuestion")}</span>
               <button
                 type="button"
                 onClick={archive}
                 disabled={isPending}
                 style={{ background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
               >
-                {isPending ? "Archiving…" : "Yes, archive"}
+                {isPending ? t("archiving") : t("yesArchive")}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmingArchive(false)}
                 style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           ) : (
@@ -157,7 +159,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
               onClick={() => setConfirmingArchive(true)}
               style={{ background: "transparent", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
             >
-              Archive this content
+              {t("archiveThisContentButton")}
             </button>
           )}
           <div style={{ display: "flex", gap: 8 }}>
@@ -167,7 +169,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
               disabled={isPending}
               style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="button"
@@ -175,13 +177,12 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
               disabled={isPending}
               style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
             >
-              {isPending ? "Saving…" : "Save"}
+              {isPending ? t("saving") : t("save")}
             </button>
           </div>
         </div>
         <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Archiving hides this from active lists but keeps everyone&apos;s completion history intact —
-          it doesn&apos;t delete anything.
+          {t("archiveNote")}
         </p>
       </div>
     </div>

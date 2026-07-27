@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { removeKnowledgeHubAssignment } from "@/lib/knowledgeHub/actions";
 
 export default function RemoveKnowledgeHubAssignmentButton({
@@ -11,6 +12,7 @@ export default function RemoveKnowledgeHubAssignmentButton({
   assignmentId: string;
   contentId: string;
 }) {
+  const t = useTranslations("removeKnowledgeHubAssignmentButton");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -33,7 +35,7 @@ export default function RemoveKnowledgeHubAssignmentButton({
         opacity: isPending ? 0.5 : 1,
       }}
     >
-      Remove
+      {t("remove")}
     </button>
   );
 }
