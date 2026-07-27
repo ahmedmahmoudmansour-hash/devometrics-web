@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
@@ -9,6 +10,7 @@ import type { JobFamily, JobRole, RoleCompetencyRequirement, RoleTransition } fr
 export const metadata = { title: "Job Architecture — Devometrics" };
 
 export default async function JobArchitecturePage() {
+  const t = await getTranslations("jobArchitecturePage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
@@ -29,17 +31,13 @@ export default async function JobArchitecturePage() {
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Job Architecture
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 680 }}>
-            Define your functional families, the roles within them, and each role&apos;s grade and
-            required competency profile — the structural spine that turns &quot;development needed&quot;
-            into a real gap against a real role, and powers vertical and horizontal career paths. AI
-            can propose a grade and competency profile from a role&apos;s responsibilities; you review
-            and edit before saving.
+            {t("description")}
           </p>
         </div>
 
@@ -48,9 +46,9 @@ export default async function JobArchitecturePage() {
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", padding: 28, borderRadius: 16 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-              Job Architecture isn&apos;t enabled on this database yet — the{" "}
-              <code style={{ color: "var(--teal)" }}>0067_job_architecture.sql</code> migration needs
-              to be run in the Supabase SQL Editor first.
+              {t.rich("migrationNotEnabled", {
+                code: (chunks) => <code style={{ color: "var(--teal)" }}>{chunks}</code>,
+              })}
             </p>
           </div>
         ) : (

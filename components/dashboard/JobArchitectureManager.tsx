@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   createJobFamily,
   deleteJobFamily,
@@ -56,7 +57,9 @@ const ghostBtn: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const TRACK_LABEL: Record<RoleTrack, string> = { ic: "Individual contributor", management: "Management" };
+function trackLabel(t: (key: string) => string, track: RoleTrack): string {
+  return track === "ic" ? t("trackIc") : t("trackManagement");
+}
 
 export default function JobArchitectureManager({
   families,
@@ -69,6 +72,7 @@ export default function JobArchitectureManager({
   requirements: RoleCompetencyRequirement[];
   transitions: RoleTransition[];
 }) {
+  const t = useTranslations("jobArchitectureManager");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -97,10 +101,10 @@ export default function JobArchitectureManager({
       {/* Add family */}
       {showAddFamily ? (
         <div style={card}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>New job family</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("newJobFamily")}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input style={input} placeholder="Family name — e.g. Engineering, Sales, Finance" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
-            <input style={input} placeholder="Short description (optional)" value={familyDesc} onChange={(e) => setFamilyDesc(e.target.value)} />
+            <input style={input} placeholder={t("familyNamePlaceholder")} value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
+            <input style={input} placeholder={t("familyDescPlaceholder")} value={familyDesc} onChange={(e) => setFamilyDesc(e.target.value)} />
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 type="button"
@@ -120,26 +124,24 @@ export default function JobArchitectureManager({
                   })
                 }
               >
-                Create family
+                {t("createFamily")}
               </button>
               <button type="button" style={ghostBtn} onClick={() => setShowAddFamily(false)}>
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           </div>
         </div>
       ) : (
         <button type="button" style={{ ...primaryBtn, alignSelf: "flex-start" }} onClick={() => setShowAddFamily(true)}>
-          + Add job family
+          {t("addJobFamily")}
         </button>
       )}
 
       {families.length === 0 && (
         <div style={card}>
           <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            No families yet. Start with a functional grouping (Engineering, Sales, Finance…), then add
-            roles inside it — the AI can propose each role&apos;s grade and competency profile from its
-            responsibilities.
+            {t("noFamiliesYet")}
           </p>
         </div>
       )}
@@ -163,7 +165,7 @@ export default function JobArchitectureManager({
                   })
                 }
               >
-                Delete family
+                {t("deleteFamily")}
               </button>
             </div>
 
@@ -184,7 +186,7 @@ export default function JobArchitectureManager({
               />
             ) : (
               <button type="button" style={{ ...ghostBtn, marginTop: 14 }} onClick={() => setAddingRoleFor(family.id)}>
-                + Add role to {family.name}
+                {t("addRoleTo", { familyName: family.name })}
               </button>
             )}
           </div>
@@ -207,6 +209,7 @@ function gradeColor(grade: number): string {
 }
 
 function JDBuilder({ role }: { role: JobRole }) {
+  const t = useTranslations("jobArchitectureManager");
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(role.generated_jd ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -253,7 +256,7 @@ function JDBuilder({ role }: { role: JobRole }) {
         onClick={() => setOpen(true)}
         style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 8, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "#a78bfa", cursor: "pointer", flexShrink: 0 }}
       >
-        {role.generated_jd ? "View JD" : "✨ Generate JD"}
+        {role.generated_jd ? t("viewJd") : t("generateJd")}
       </button>
     );
   }
@@ -261,12 +264,12 @@ function JDBuilder({ role }: { role: JobRole }) {
   return (
     <div style={{ marginTop: 12, background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 10, padding: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <p style={{ fontSize: 11.5, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>Job description</p>
+        <p style={{ fontSize: 11.5, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("jobDescriptionLabel")}</p>
         <button type="button" onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer" }}>
-          Close
+          {t("close")}
         </button>
       </div>
-      {!text && !generating && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Nothing generated yet for this role.</p>}
+      {!text && !generating && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{t("nothingGeneratedYet")}</p>}
       {text && (
         <textarea
           value={text}
@@ -277,25 +280,26 @@ function JDBuilder({ role }: { role: JobRole }) {
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
         <button type="button" onClick={generate} disabled={generating} style={{ ...ghostBtn, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", opacity: generating ? 0.6 : 1 }}>
-          {generating ? "Generating…" : text ? "Regenerate" : "Generate from role data"}
+          {generating ? t("generating") : text ? t("regenerate") : t("generateFromRoleData")}
         </button>
         {text && (
           <>
             <button type="button" onClick={save} disabled={isPending} style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }}>
-              {isPending ? "Saving…" : "Save edits"}
+              {isPending ? t("saving") : t("saveEdits")}
             </button>
             <button type="button" onClick={copy} style={ghostBtn}>
-              Copy
+              {t("copy")}
             </button>
           </>
         )}
-        {saved && <span style={{ fontSize: 11.5, color: "var(--teal)", fontWeight: 700, alignSelf: "center" }}>Saved</span>}
+        {saved && <span style={{ fontSize: 11.5, color: "var(--teal)", fontWeight: 700, alignSelf: "center" }}>{t("saved")}</span>}
       </div>
     </div>
   );
 }
 
 function RoleCard({ role, requirements, onChanged }: { role: JobRole; requirements: RoleCompetencyRequirement[]; onChanged: () => void }) {
+  const t = useTranslations("jobArchitectureManager");
   const [isPending, startTransition] = useTransition();
   const sorted = [...requirements].sort((a, b) => b.target_level - a.target_level);
   return (
@@ -316,7 +320,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
             color: "#0A0F1E",
             background: gradeColor(role.grade),
           }}
-          title={`Grade ${role.grade}`}
+          title={t("gradeTooltip", { grade: role.grade })}
         >
           {role.grade}
         </span>
@@ -328,7 +332,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
                 {role.level}
               </span>
             )}
-            <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{TRACK_LABEL[role.track]}</span>
+            <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{trackLabel(t, role.track)}</span>
           </div>
           {role.responsibilities && (
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>{role.responsibilities}</p>
@@ -346,14 +350,14 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
             })
           }
         >
-          Delete
+          {t("delete")}
         </button>
       </div>
 
       {sorted.length > 0 && (
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 5 }}>
           <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Required competencies
+            {t("requiredCompetencies")}
           </p>
           {sorted.map((r) => (
             <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -361,7 +365,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
               <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${r.target_level}%`, height: "100%", background: "var(--teal)" }} />
               </div>
-              <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", width: 28, textAlign: "right" }}>{r.target_level}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", width: 28, textAlign: "end" }}>{r.target_level}</span>
             </div>
           ))}
         </div>
@@ -371,6 +375,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
 }
 
 function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone: () => void; onCancel: () => void }) {
+  const t = useTranslations("jobArchitectureManager");
   const [isPending, startTransition] = useTransition();
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -394,13 +399,13 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
 
   return (
     <div style={{ border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16, marginTop: 14, background: "rgba(0,201,167,0.03)" }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>New role</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("newRole")}</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input style={input} placeholder="Role title — e.g. Senior Backend Engineer" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <input style={input} placeholder={t("roleTitlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
         <textarea
           style={{ ...input, resize: "vertical" }}
           rows={3}
-          placeholder="Key responsibilities (the AI grades from this)"
+          placeholder={t("responsibilitiesPlaceholder")}
           value={responsibilities}
           onChange={(e) => setResponsibilities(e.target.value)}
         />
@@ -420,36 +425,36 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
             });
           }}
         >
-          {suggesting ? "Analyzing…" : "✨ Suggest grade & competencies with AI"}
+          {suggesting ? t("analyzing") : t("suggestWithAi")}
         </button>
 
         {rationale && (
-          <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic", borderLeft: "2px solid var(--teal)", paddingLeft: 10 }}>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic", borderInlineStart: "2px solid var(--teal)", paddingInlineStart: 10 }}>
             {rationale}
           </p>
         )}
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-            Grade (1–10)
+            {t("gradeLabel")}
             <input type="number" min={1} max={10} style={{ ...input, width: 90 }} value={grade} onChange={(e) => setGrade(Number(e.target.value))} />
           </label>
           <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-            Level label
-            <input style={{ ...input, width: 120 }} placeholder="IC3 / M2" value={level} onChange={(e) => setLevel(e.target.value)} />
+            {t("levelLabel")}
+            <input style={{ ...input, width: 120 }} placeholder={t("levelPlaceholder")} value={level} onChange={(e) => setLevel(e.target.value)} />
           </label>
           <label style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-            Track
+            {t("trackLabel")}
             <select style={{ ...input, width: 180, cursor: "pointer" }} value={track} onChange={(e) => setTrack(e.target.value as RoleTrack)}>
-              <option value="ic">Individual contributor</option>
-              <option value="management">Management</option>
+              <option value="ic">{t("trackIc")}</option>
+              <option value="management">{t("trackManagement")}</option>
             </select>
           </label>
         </div>
 
         <div>
           <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-            Required competency levels (0 = not required)
+            {t("requiredCompetencyLevels")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
             {COMPETENCY_DIMENSIONS.map((dim) => (
@@ -487,10 +492,10 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
               })
             }
           >
-            Save role
+            {t("saveRole")}
           </button>
           <button type="button" style={ghostBtn} onClick={onCancel}>
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </div>
@@ -509,6 +514,7 @@ function TransitionsPanel({
   roleById: Map<string, JobRole>;
   onChanged: () => void;
 }) {
+  const t = useTranslations("jobArchitectureManager");
   const [isPending, startTransition] = useTransition();
   const [fromId, setFromId] = useState(roles[0]?.id ?? "");
   const [toId, setToId] = useState(roles[1]?.id ?? "");
@@ -517,37 +523,35 @@ function TransitionsPanel({
 
   return (
     <div style={card}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Career paths</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{t("careerPathsTitle")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, marginBottom: 16, lineHeight: 1.5, maxWidth: 640 }}>
-        Endorsed moves between roles — vertical (promotion) or horizontal (lateral). These are the
-        deliberate paths; the mobility engine will later also surface untapped adjacencies from
-        competency distance.
+        {t("careerPathsDesc")}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
-        {transitions.length === 0 && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>No paths defined yet.</p>}
-        {transitions.map((t) => {
-          const from = roleById.get(t.from_role_id);
-          const to = roleById.get(t.to_role_id);
+        {transitions.length === 0 && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("noPathsYet")}</p>}
+        {transitions.map((transition) => {
+          const from = roleById.get(transition.from_role_id);
+          const to = roleById.get(transition.to_role_id);
           if (!from || !to) return null;
           return (
-            <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+            <div key={transition.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
               <span style={{ color: "var(--text)" }}>{from.title}</span>
-              <span style={{ color: t.transition_type === "vertical" ? "var(--teal)" : "var(--amber)", fontWeight: 700, fontSize: 11 }}>
-                {t.transition_type === "vertical" ? "↑ promotes to" : "→ moves to"}
+              <span style={{ color: transition.transition_type === "vertical" ? "var(--teal)" : "var(--amber)", fontWeight: 700, fontSize: 11 }}>
+                {transition.transition_type === "vertical" ? t("promotesTo") : t("movesTo")}
               </span>
               <span style={{ color: "var(--text)" }}>{to.title}</span>
               <button
                 type="button"
-                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer", marginLeft: "auto" }}
+                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer", marginInlineStart: "auto" }}
                 onClick={() =>
                   startTransition(async () => {
-                    await removeRoleTransition(t.id);
+                    await removeRoleTransition(transition.id);
                     onChanged();
                   })
                 }
               >
-                Remove
+                {t("remove")}
               </button>
             </div>
           );
@@ -563,8 +567,8 @@ function TransitionsPanel({
           ))}
         </select>
         <select style={{ ...input, width: 130, cursor: "pointer" }} value={type} onChange={(e) => setType(e.target.value as "vertical" | "horizontal")}>
-          <option value="vertical">↑ vertical</option>
-          <option value="horizontal">→ horizontal</option>
+          <option value="vertical">{t("verticalOption")}</option>
+          <option value="horizontal">{t("horizontalOption")}</option>
         </select>
         <select style={{ ...input, flex: "1 1 180px", cursor: "pointer" }} value={toId} onChange={(e) => setToId(e.target.value)}>
           {roles.map((r) => (
@@ -586,7 +590,7 @@ function TransitionsPanel({
             })
           }
         >
-          Add path
+          {t("addPath")}
         </button>
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
