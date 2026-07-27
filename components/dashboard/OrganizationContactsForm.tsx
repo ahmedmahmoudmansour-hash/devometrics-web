@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateOrganizationContacts } from "@/lib/organizations/actions";
 
 const inputStyle: React.CSSProperties = {
@@ -33,6 +34,7 @@ export default function OrganizationContactsForm({
     financeContactEmail: string | null;
   };
 }) {
+  const t = useTranslations("organizationContactsForm");
   const [platformContactName, setPlatformContactName] = useState(initial.platformContactName ?? "");
   const [platformContactEmail, setPlatformContactEmail] = useState(initial.platformContactEmail ?? "");
   const [financeContactName, setFinanceContactName] = useState(initial.financeContactName ?? "");
@@ -59,15 +61,15 @@ export default function OrganizationContactsForm({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Company contacts
+        {t("title")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-        Optional — who we (or your team) should reach for day-to-day platform questions vs. billing.
+        {t("description")}
       </p>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           <div>
-            <label style={labelStyle}>Platform contact — name</label>
+            <label style={labelStyle}>{t("platformNameLabel")}</label>
             <input
               type="text"
               value={platformContactName}
@@ -80,7 +82,7 @@ export default function OrganizationContactsForm({
             />
           </div>
           <div>
-            <label style={labelStyle}>Platform contact — email</label>
+            <label style={labelStyle}>{t("platformEmailLabel")}</label>
             <input
               type="email"
               value={platformContactEmail}
@@ -95,7 +97,7 @@ export default function OrganizationContactsForm({
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           <div>
-            <label style={labelStyle}>Finance contact — name</label>
+            <label style={labelStyle}>{t("financeNameLabel")}</label>
             <input
               type="text"
               value={financeContactName}
@@ -108,7 +110,7 @@ export default function OrganizationContactsForm({
             />
           </div>
           <div>
-            <label style={labelStyle}>Finance contact — email</label>
+            <label style={labelStyle}>{t("financeEmailLabel")}</label>
             <input
               type="email"
               value={financeContactEmail}
@@ -140,7 +142,7 @@ export default function OrganizationContactsForm({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {saved ? "Saved" : "Save"}
+          {saved ? t("saved") : t("save")}
         </button>
       </form>
     </div>

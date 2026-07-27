@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateOrganizationBranding } from "@/lib/organizations/actions";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,6 +32,7 @@ export default function OrganizationBrandingForm({
   organizationId: string;
   initial: { logoUrl: string | null; brandColor: string | null };
 }) {
+  const t = useTranslations("organizationBrandingForm");
   const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? "");
   const [brandColor, setBrandColor] = useState(initial.brandColor ?? "#00C9A7");
   const [isPending, startTransition] = useTransition();
@@ -91,15 +93,14 @@ export default function OrganizationBrandingForm({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Brand your workspace
+        {t("title")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-        Optional — your logo and accent color apply across every employee&apos;s dashboard in this
-        workspace, not just this page.
+        {t("description")}
       </p>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
-          <label style={labelStyle}>Logo</label>
+          <label style={labelStyle}>{t("logoLabel")}</label>
           <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
             {logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- user-uploaded or externally-hosted logo, not a static asset next/image can optimize meaningfully
@@ -135,7 +136,7 @@ export default function OrganizationBrandingForm({
                     cursor: "pointer",
                   }}
                 >
-                  {logoUploading ? "Uploading…" : "Or upload an image"}
+                  {logoUploading ? t("uploading") : t("uploadImage")}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -149,7 +150,7 @@ export default function OrganizationBrandingForm({
           </div>
         </div>
         <div>
-          <label style={labelStyle}>Accent color</label>
+          <label style={labelStyle}>{t("accentColorLabel")}</label>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <input
               type="color"
@@ -158,7 +159,7 @@ export default function OrganizationBrandingForm({
                 setBrandColor(e.target.value);
                 setSaved(false);
               }}
-              aria-label="Pick accent color"
+              aria-label={t("pickColorAria")}
               style={{ width: 44, height: 36, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, background: "none", cursor: "pointer", padding: 2 }}
             />
             <input
@@ -192,7 +193,7 @@ export default function OrganizationBrandingForm({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {saved ? "Saved" : "Save"}
+          {saved ? t("saved") : t("save")}
         </button>
       </form>
     </div>

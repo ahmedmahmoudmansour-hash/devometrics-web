@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import * as XLSX from "xlsx";
+import { useTranslations } from "next-intl";
 import { UserPlus, Upload } from "lucide-react";
 import { inviteEmployee, revokeInvite, bulkInviteEmployees, type BulkInviteRow, type BulkInviteResult } from "@/lib/organizations/actions";
 
@@ -102,6 +103,7 @@ export default function InviteEmployeeForm({
   organizationId: string;
   pendingInvites: { id: string; email: string; title: string | null; department: string | null; country: string | null }[];
 }) {
+  const t = useTranslations("inviteEmployeeForm");
   const [mode, setMode] = useState<"single" | "import">("single");
 
   // Single-add fields
@@ -166,17 +168,17 @@ export default function InviteEmployeeForm({
       try {
         const rows = parseWorkbook(reader.result as ArrayBuffer).filter((r) => r.email);
         if (rows.length === 0) {
-          setImportError("No rows with an Email column value were found in that file.");
+          setImportError(t("noValidRowsError"));
           setImportRows([]);
           return;
         }
         setImportRows(rows);
       } catch {
-        setImportError("Could not read that file — make sure it's a .csv or .xlsx export.");
+        setImportError(t("readFileError"));
         setImportRows([]);
       }
     };
-    reader.onerror = () => setImportError("Could not read that file.");
+    reader.onerror = () => setImportError(t("readFileError"));
     reader.readAsArrayBuffer(file);
   }
 
@@ -197,54 +199,53 @@ export default function InviteEmployeeForm({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 4 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Invite employees</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
         <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, gap: 2 }}>
-          <button type="button" onClick={() => setMode("single")} title="Add one employee" aria-label="Add one employee" style={modeButtonStyle(mode === "single")}>
+          <button type="button" onClick={() => setMode("single")} title={t("addOneMode")} aria-label={t("addOneMode")} style={modeButtonStyle(mode === "single")}>
             <UserPlus size={15} />
           </button>
-          <button type="button" onClick={() => setMode("import")} title="Import from file" aria-label="Import from file" style={modeButtonStyle(mode === "import")}>
+          <button type="button" onClick={() => setMode("import")} title={t("importMode")} aria-label={t("importMode")} style={modeButtonStyle(mode === "import")}>
             <Upload size={15} />
           </button>
         </div>
       </div>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
-        They&apos;ll get an email invite and be automatically attached to your company the moment
-        they sign up with that address — no separate invite code needed.
+        {t("description")}
       </p>
 
       {mode === "single" ? (
         <form onSubmit={handleSubmit}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
             <div>
-              <label style={labelStyle}>Email *</label>
+              <label style={labelStyle}>{t("emailLabel")}</label>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="employee@company.com" style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Job title</label>
+              <label style={labelStyle}>{t("jobTitleLabel")}</label>
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Department</label>
+              <label style={labelStyle}>{t("departmentLabel")}</label>
               <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Country</label>
+              <label style={labelStyle}>{t("countryLabel")}</label>
               <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Manager name</label>
+              <label style={labelStyle}>{t("managerNameLabel")}</label>
               <input type="text" value={managerName} onChange={(e) => setManagerName(e.target.value)} style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Manager email</label>
+              <label style={labelStyle}>{t("managerEmailLabel")}</label>
               <input type="email" value={managerEmail} onChange={(e) => setManagerEmail(e.target.value)} style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Business unit</label>
+              <label style={labelStyle}>{t("businessUnitLabel")}</label>
               <input type="text" value={businessUnit} onChange={(e) => setBusinessUnit(e.target.value)} style={fieldStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Location</label>
+              <label style={labelStyle}>{t("locationLabel")}</label>
               <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} style={fieldStyle} />
             </div>
           </div>
@@ -263,7 +264,7 @@ export default function InviteEmployeeForm({
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            {isPending ? "Sending…" : "Send invite"}
+            {isPending ? t("sending") : t("sendInvite")}
           </button>
           {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 10 }}>{error}</p>}
         </form>
@@ -286,14 +287,14 @@ export default function InviteEmployeeForm({
                 cursor: "pointer",
               }}
             >
-              Choose .csv or .xlsx file
+              {t("chooseFile")}
             </label>
             <button
               type="button"
               onClick={downloadTemplate}
               style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
             >
-              Download template
+              {t("downloadTemplate")}
             </button>
           </div>
           {importFileName && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{importFileName}</p>}
@@ -302,16 +303,16 @@ export default function InviteEmployeeForm({
           {importRows.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
-                Found {importRows.length} row{importRows.length === 1 ? "" : "s"} with an email — review before importing:
+                {t("foundRows", { count: importRows.length })}
               </p>
               <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-                      <th style={{ textAlign: "left", padding: "8px 10px", color: "var(--text-muted)" }}>Email</th>
-                      <th style={{ textAlign: "left", padding: "8px 10px", color: "var(--text-muted)" }}>Title</th>
-                      <th style={{ textAlign: "left", padding: "8px 10px", color: "var(--text-muted)" }}>Department</th>
-                      <th style={{ textAlign: "left", padding: "8px 10px", color: "var(--text-muted)" }}>Manager</th>
+                      <th style={{ textAlign: "start", padding: "8px 10px", color: "var(--text-muted)" }}>{t("tableEmail")}</th>
+                      <th style={{ textAlign: "start", padding: "8px 10px", color: "var(--text-muted)" }}>{t("tableTitle")}</th>
+                      <th style={{ textAlign: "start", padding: "8px 10px", color: "var(--text-muted)" }}>{t("tableDepartment")}</th>
+                      <th style={{ textAlign: "start", padding: "8px 10px", color: "var(--text-muted)" }}>{t("tableManager")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -343,7 +344,7 @@ export default function InviteEmployeeForm({
                   opacity: isImporting ? 0.6 : 1,
                 }}
               >
-                {isImporting ? "Importing…" : `Import ${importRows.length} employee${importRows.length === 1 ? "" : "s"}`}
+                {isImporting ? t("importing") : t("importCount", { count: importRows.length })}
               </button>
             </div>
           )}
@@ -351,14 +352,12 @@ export default function InviteEmployeeForm({
           {importResults && (
             <div style={{ fontSize: 13, color: "var(--text)" }}>
               <p style={{ marginBottom: 6 }}>
-                ✓ {importResults.filter((r) => r.status === "invited").length} invited
-                {importResults.some((r) => r.status !== "invited") && (
-                  <>
-                    {" — "}
-                    {importResults.filter((r) => r.status === "duplicate").length} already invited,{" "}
-                    {importResults.filter((r) => r.status === "invalid").length} skipped (no valid email)
-                  </>
-                )}
+                {t("resultsInvited", { count: importResults.filter((r) => r.status === "invited").length })}
+                {importResults.some((r) => r.status !== "invited") &&
+                  t("resultsExtra", {
+                    duplicate: importResults.filter((r) => r.status === "duplicate").length,
+                    invalid: importResults.filter((r) => r.status === "invalid").length,
+                  })}
               </p>
             </div>
           )}
@@ -368,7 +367,7 @@ export default function InviteEmployeeForm({
       {pendingInvites.length > 0 && (
         <div style={{ marginTop: 20 }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-            Pending ({pendingInvites.length})
+            {t("pendingHeading", { count: pendingInvites.length })}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {pendingInvites.map((invite) => (
@@ -387,7 +386,7 @@ export default function InviteEmployeeForm({
                   onClick={() => startTransition(() => revokeInvite(invite.id))}
                   style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
                 >
-                  Revoke
+                  {t("revoke")}
                 </button>
               </div>
             ))}

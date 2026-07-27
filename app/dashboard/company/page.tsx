@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
@@ -28,6 +29,7 @@ async function countOrNull(
 }
 
 export default async function CompanyProfilePage() {
+  const t = await getTranslations("companyProfilePage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -49,93 +51,94 @@ export default async function CompanyProfilePage() {
       return point ? zoneForPoint(point.x, point.y).row === 2 : false;
     }).length;
 
+    const withManager = data.rows.filter((r) => r.managerUserId).length;
     widgets = [
       {
         key: "employees",
-        label: "Employees",
+        label: t("employeesLabel"),
         href: "/dashboard/company/employees",
         icon: COMPANY_WIDGET_ICONS.Users,
-        stat: `${data.rows.length} team member${data.rows.length === 1 ? "" : "s"}`,
+        stat: t("employeesStat", { count: data.rows.length }),
       },
       {
         key: "jobArchitecture",
-        label: "Job Architecture",
+        label: t("jobArchitectureLabel"),
         href: "/dashboard/company/job-architecture",
         icon: COMPANY_WIDGET_ICONS.Network,
-        stat: jobRoleCount !== null ? `${jobRoleCount} role${jobRoleCount === 1 ? "" : "s"} defined` : "Define families & graded roles",
+        stat: jobRoleCount !== null ? t("jobArchitectureStat", { count: jobRoleCount }) : t("jobArchitectureStatEmpty"),
       },
       {
         key: "hiring",
-        label: "Hiring",
+        label: t("hiringLabel"),
         href: "/dashboard/company/hiring",
         icon: COMPANY_WIDGET_ICONS.Briefcase,
-        stat: jobPostingCount !== null ? `${jobPostingCount} posting${jobPostingCount === 1 ? "" : "s"}` : "Post a role & score candidates",
+        stat: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
       },
       {
         key: "orgChart",
-        label: "Org Chart",
+        label: t("orgChartLabel"),
         href: "/dashboard/company/org-chart",
         icon: COMPANY_WIDGET_ICONS.ListTree,
-        stat: `${data.rows.filter((r) => r.managerUserId).length}/${data.rows.length} have a manager set`,
+        stat: t("orgChartStat", { withManager, total: data.rows.length }),
       },
       {
         key: "competencies",
-        label: "Competencies",
+        label: t("competenciesLabel"),
         href: "/dashboard/company/competencies",
         icon: COMPANY_WIDGET_ICONS.SlidersHorizontal,
-        stat: `${data.organizationCompetencies.length} custom competenc${data.organizationCompetencies.length === 1 ? "y" : "ies"}`,
+        stat: t("competenciesStat", { count: data.organizationCompetencies.length }),
       },
       {
         key: "performanceReviews",
-        label: "Impact Cycles",
+        label: t("performanceReviewsLabel"),
         href: "/dashboard/company/impact-cycles",
         icon: COMPANY_WIDGET_ICONS.ClipboardCheck,
-        stat: reviewCycleCount !== null ? `${reviewCycleCount} cycle${reviewCycleCount === 1 ? "" : "s"} tracked` : "Reflection, Manager's Perspective, Focus Areas",
+        stat: reviewCycleCount !== null ? t("performanceReviewsStat", { count: reviewCycleCount }) : t("performanceReviewsStatEmpty"),
       },
       {
         key: "knowledgeHub",
-        label: "Knowledge Hub",
+        label: t("knowledgeHubLabel"),
         href: "/dashboard/company/knowledge-hub",
         icon: COMPANY_WIDGET_ICONS.Library,
         stat:
           knowledgeHubContentCount !== null
-            ? `${knowledgeHubContentCount} document${knowledgeHubContentCount === 1 ? "" : "s"} uploaded`
-            : "Upload, assign & track training",
+            ? t("knowledgeHubStat", { count: knowledgeHubContentCount })
+            : t("knowledgeHubStatEmpty"),
       },
       {
         key: "highPotential",
-        label: "High Potential",
+        label: t("highPotentialLabel"),
         href: "/dashboard/company/high-potential",
         icon: COMPANY_WIDGET_ICONS.Star,
-        stat: `${hipoCount} in the pool`,
+        stat: t("highPotentialStat", { count: hipoCount }),
       },
       {
         key: "succession",
-        label: "Succession",
+        label: t("successionLabel"),
         href: "/dashboard/company/succession",
         icon: COMPANY_WIDGET_ICONS.TrendingUp,
-        stat: successionRoleCount !== null ? `${successionRoleCount} critical role${successionRoleCount === 1 ? "" : "s"} tracked` : "Rank candidates for critical roles",
+        stat: successionRoleCount !== null ? t("successionStat", { count: successionRoleCount }) : t("successionStatEmpty"),
       },
       {
         key: "scorecard",
-        label: "Scorecard",
+        label: t("scorecardLabel"),
         href: "/dashboard/company/scorecard",
         icon: COMPANY_WIDGET_ICONS.Gauge,
-        stat: scorecardKpiCount !== null ? `${scorecardKpiCount} KPI${scorecardKpiCount === 1 ? "" : "s"} tracked` : "Balanced Scorecard, 4 perspectives",
+        stat: scorecardKpiCount !== null ? t("scorecardStat", { count: scorecardKpiCount }) : t("scorecardStatEmpty"),
       },
       {
         key: "surveys",
-        label: "Surveys",
+        label: t("surveysLabel"),
         href: "/dashboard/company/surveys",
         icon: COMPANY_WIDGET_ICONS.MessageSquare,
-        stat: surveyCount !== null ? `${surveyCount} survey${surveyCount === 1 ? "" : "s"}` : "Anonymous pulse surveys",
+        stat: surveyCount !== null ? t("surveysStat", { count: surveyCount }) : t("surveysStatEmpty"),
       },
       {
         key: "analytics",
-        label: "Analytics",
+        label: t("analyticsLabel"),
         href: "/dashboard/company/analytics",
         icon: COMPANY_WIDGET_ICONS.BarChart3,
-        stat: "Workforce skill heatmap & talent grid",
+        stat: t("analyticsStat"),
       },
     ];
   }
@@ -145,7 +148,7 @@ export default async function CompanyProfilePage() {
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
             {data.organizationLogoUrl && (
@@ -166,9 +169,7 @@ export default async function CompanyProfilePage() {
         <CompanyNavTabs active="profile" />
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          Only your own company&apos;s members appear here — this is scoped to your organization, not
-          a shared pilot-wide view. Everyone below uses the exact same individual tools as any other
-          Devometrics account; this dashboard just aggregates what they&apos;ve already done.
+          {t("scopeNote")}
         </p>
 
         {widgets.length > 0 && <CompanyWidgetGrid widgets={widgets} />}

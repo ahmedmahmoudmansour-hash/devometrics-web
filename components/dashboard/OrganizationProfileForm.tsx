@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateOrganizationProfile } from "@/lib/organizations/actions";
 import { EMPLOYEE_COUNT_RANGES, INDUSTRIES } from "@/lib/organizations/constants";
 
@@ -23,6 +24,7 @@ export default function OrganizationProfileForm({
   organizationId: string;
   initial: { website: string | null; employeeCount: string | null; industry: string | null };
 }) {
+  const t = useTranslations("organizationProfileForm");
   const [website, setWebsite] = useState(initial.website ?? "");
   const [employeeCount, setEmployeeCount] = useState(initial.employeeCount ?? "");
   const [industry, setIndustry] = useState(initial.industry ?? "");
@@ -43,14 +45,14 @@ export default function OrganizationProfileForm({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Company profile
+        {t("title")}
       </h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-        Website, size, and industry — set at signup, editable any time.
+        {t("description")}
       </p>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
-          <label style={labelStyle}>Website</label>
+          <label style={labelStyle}>{t("websiteLabel")}</label>
           <input
             type="text"
             value={website}
@@ -64,7 +66,7 @@ export default function OrganizationProfileForm({
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           <div>
-            <label style={labelStyle}>Number of employees</label>
+            <label style={labelStyle}>{t("employeeCountLabel")}</label>
             <select
               value={employeeCount}
               onChange={(e) => {
@@ -73,7 +75,7 @@ export default function OrganizationProfileForm({
               }}
               style={{ ...inputStyle, cursor: "pointer" }}
             >
-              <option value="">Select a range</option>
+              <option value="">{t("selectRange")}</option>
               {EMPLOYEE_COUNT_RANGES.map((r) => (
                 <option key={r} value={r}>
                   {r}
@@ -82,7 +84,7 @@ export default function OrganizationProfileForm({
             </select>
           </div>
           <div>
-            <label style={labelStyle}>Industry</label>
+            <label style={labelStyle}>{t("industryLabel")}</label>
             <select
               value={industry}
               onChange={(e) => {
@@ -91,7 +93,7 @@ export default function OrganizationProfileForm({
               }}
               style={{ ...inputStyle, cursor: "pointer" }}
             >
-              <option value="">Select an industry</option>
+              <option value="">{t("selectIndustry")}</option>
               {INDUSTRIES.map((i) => (
                 <option key={i} value={i}>
                   {i}
@@ -119,7 +121,7 @@ export default function OrganizationProfileForm({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {saved ? "Saved" : "Save"}
+          {saved ? t("saved") : t("save")}
         </button>
       </form>
     </div>

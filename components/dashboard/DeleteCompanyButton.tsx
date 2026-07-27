@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { deleteOrganization, cancelOrganizationDeletion } from "@/lib/organizations/actions";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+// Locale-aware, same ar-u-nu-latn (Western digits, Arabic month name)
+// pattern already used for Pricing/legal-page dates elsewhere in the app.
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
 export default function DeleteCompanyButton({
@@ -16,6 +19,8 @@ export default function DeleteCompanyButton({
   organizationName: string;
   pendingDeletionAt: string | null;
 }) {
+  const t = useTranslations("deleteCompanyButton");
+  const locale = useLocale();
   const [confirming, setConfirming] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +35,10 @@ export default function DeleteCompanyButton({
     return (
       <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 12, padding: 16 }}>
         <p style={{ fontSize: 13, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
-          Scheduled for deletion on {formatDate(scheduledFor)}
+          {t("scheduledTitle", { date: formatDate(scheduledFor, locale) })}
         </p>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-          Everything still works normally until then — cancel any time before that date. Once this
-          date passes, the workspace and every membership in it are permanently removed and cannot
-          be recovered.
+          {t("scheduledBody")}
         </p>
         <button
           type="button"
@@ -58,7 +61,7 @@ export default function DeleteCompanyButton({
             cursor: "pointer",
           }}
         >
-          {isPending ? "Cancelling…" : "Cancel deletion"}
+          {isPending ? t("cancelling") : t("cancelDeletion")}
         </button>
         {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 8 }}>{error}</p>}
       </div>
@@ -81,7 +84,7 @@ export default function DeleteCompanyButton({
           cursor: "pointer",
         }}
       >
-        Delete company workspace
+        {t("deleteButton")}
       </button>
     );
   }
@@ -89,13 +92,7 @@ export default function DeleteCompanyButton({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-start" }}>
       <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-        This schedules the workspace and every membership in it for deletion in 30 days — everything
-        keeps working normally until then, and you can cancel any time before. Employees keep their
-        own individual accounts and data regardless; they just stop being part of this company once
-        it&apos;s actually removed. After 30 days the deletion is permanent and we can no longer
-        retrieve anything — this window exists purely to recover from a mistaken click, not as a
-        general trash bin. Type <strong style={{ color: "var(--text)" }}>{organizationName}</strong>{" "}
-        to confirm.
+        {t("confirmBody", { orgName: organizationName })}
       </p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input
@@ -103,7 +100,7 @@ export default function DeleteCompanyButton({
           value={confirmText}
           onChange={(e) => setConfirmText(e.target.value)}
           placeholder={organizationName}
-          aria-label={`Type ${organizationName} to confirm`}
+          aria-label={t("confirmAria", { orgName: organizationName })}
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(248,113,113,0.3)",
@@ -137,7 +134,7 @@ export default function DeleteCompanyButton({
             opacity: isPending || !matches ? 0.5 : 1,
           }}
         >
-          {isPending ? "Scheduling…" : "Schedule deletion (30-day grace period)"}
+          {isPending ? t("scheduling") : t("scheduleButton")}
         </button>
         <button
           type="button"
@@ -155,7 +152,7 @@ export default function DeleteCompanyButton({
             cursor: "pointer",
           }}
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}

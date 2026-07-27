@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Copy, Check } from "lucide-react";
 
 // Small teams often prefer sharing one code over an admin entering every
 // email individually — but a plain, un-copyable string meant re-typing it
 // by hand into Slack/WhatsApp, real friction for exactly that use case.
 export default function InviteCodeDisplay({ slug }: { slug: string }) {
+  const t = useTranslations("inviteCodeDisplay");
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -22,7 +24,7 @@ export default function InviteCodeDisplay({ slug }: { slug: string }) {
   return (
     <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <span>
-        Invite code:{" "}
+        {t("label")}{" "}
         <code style={{ color: "var(--teal)", background: "rgba(0,201,167,0.08)", padding: "2px 6px", borderRadius: 4 }}>
           {slug}
         </code>
@@ -30,8 +32,8 @@ export default function InviteCodeDisplay({ slug }: { slug: string }) {
       <button
         type="button"
         onClick={copy}
-        title={copied ? "Copied" : "Copy invite code"}
-        aria-label={copied ? "Copied" : "Copy invite code"}
+        title={copied ? t("copied") : t("copyCode")}
+        aria-label={copied ? t("copied") : t("copyCode")}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -48,7 +50,7 @@ export default function InviteCodeDisplay({ slug }: { slug: string }) {
       >
         {copied ? <Check size={13} /> : <Copy size={13} />}
       </button>
-      <span style={{ fontSize: 11 }}>— anyone with this code can join your workspace as a member</span>
+      <span style={{ fontSize: 11 }}>{t("helperText")}</span>
     </p>
   );
 }
