@@ -34,13 +34,14 @@ export default async function CompanyProfilePage() {
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
     const supabase = await createClient();
-    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount] = await Promise.all([
+    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount, jobPostingCount] = await Promise.all([
       countOrNull(supabase, "job_roles", data.organizationId),
       countOrNull(supabase, "succession_roles", data.organizationId),
       countOrNull(supabase, "scorecard_kpis", data.organizationId),
       countOrNull(supabase, "surveys", data.organizationId),
       countOrNull(supabase, "performance_review_cycles", data.organizationId),
       countOrNull(supabase, "knowledge_hub_content", data.organizationId),
+      countOrNull(supabase, "job_postings", data.organizationId),
     ]);
 
     const hipoCount = data.rows.filter((r) => {
@@ -62,6 +63,13 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/job-architecture",
         icon: COMPANY_WIDGET_ICONS.Network,
         stat: jobRoleCount !== null ? `${jobRoleCount} role${jobRoleCount === 1 ? "" : "s"} defined` : "Define families & graded roles",
+      },
+      {
+        key: "hiring",
+        label: "Hiring",
+        href: "/dashboard/company/hiring",
+        icon: COMPANY_WIDGET_ICONS.Briefcase,
+        stat: jobPostingCount !== null ? `${jobPostingCount} posting${jobPostingCount === 1 ? "" : "s"}` : "Post a role & score candidates",
       },
       {
         key: "orgChart",

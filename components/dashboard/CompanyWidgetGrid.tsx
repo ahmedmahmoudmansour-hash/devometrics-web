@@ -11,6 +11,7 @@ import {
   MessageSquare,
   ClipboardCheck,
   Library,
+  Briefcase,
 } from "lucide-react";
 
 export type CompanyWidget = {
@@ -88,4 +89,5 @@ export const COMPANY_WIDGET_ICONS = {
   MessageSquare,
   ClipboardCheck,
   Library,
+  Briefcase,
 };
