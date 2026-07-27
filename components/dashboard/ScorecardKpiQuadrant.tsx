@@ -2,14 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createScorecardKpi, updateScorecardKpi, deleteScorecardKpi } from "@/lib/companyScorecard/actions";
 import type { ScorecardKpi, ScorecardKpiStatus, ScorecardPerspective } from "@/lib/supabase/types";
 
-const STATUS_LABEL: Record<ScorecardKpiStatus, string> = {
-  on_track: "On track",
-  at_risk: "At risk",
-  off_track: "Off track",
-};
+function statusLabel(t: (key: string) => string, status: ScorecardKpiStatus): string {
+  if (status === "on_track") return t("statusOnTrack");
+  if (status === "at_risk") return t("statusAtRisk");
+  return t("statusOffTrack");
+}
 
 const STATUS_COLOR: Record<ScorecardKpiStatus, string> = {
   on_track: "var(--teal)",
@@ -42,23 +43,25 @@ function KpiForm({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const t = useTranslations("scorecardKpiQuadrant");
   const [fields, setFields] = useState<KpiFields>(initial);
+  const statuses: ScorecardKpiStatus[] = ["on_track", "at_risk", "off_track"];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: "rgba(255,255,255,0.02)" }}>
-      <input style={inputStyle} placeholder="KPI name — e.g. Customer Satisfaction (CSAT)" value={fields.name} onChange={(e) => setFields((f) => ({ ...f, name: e.target.value }))} />
+      <input style={inputStyle} placeholder={t("kpiNamePlaceholder")} value={fields.name} onChange={(e) => setFields((f) => ({ ...f, name: e.target.value }))} />
       <div style={{ display: "flex", gap: 8 }}>
-        <input style={inputStyle} placeholder="Target — e.g. 90%" value={fields.target} onChange={(e) => setFields((f) => ({ ...f, target: e.target.value }))} />
-        <input style={inputStyle} placeholder="Actual — e.g. 84%" value={fields.actual} onChange={(e) => setFields((f) => ({ ...f, actual: e.target.value }))} />
+        <input style={inputStyle} placeholder={t("targetPlaceholder")} value={fields.target} onChange={(e) => setFields((f) => ({ ...f, target: e.target.value }))} />
+        <input style={inputStyle} placeholder={t("actualPlaceholder")} value={fields.actual} onChange={(e) => setFields((f) => ({ ...f, actual: e.target.value }))} />
       </div>
       <select style={{ ...inputStyle, cursor: "pointer" }} value={fields.status} onChange={(e) => setFields((f) => ({ ...f, status: e.target.value as ScorecardKpiStatus }))}>
-        {(Object.keys(STATUS_LABEL) as ScorecardKpiStatus[]).map((s) => (
+        {statuses.map((s) => (
           <option key={s} value={s}>
-            {STATUS_LABEL[s]}
+            {statusLabel(t, s)}
           </option>
         ))}
       </select>
-      <textarea style={{ ...inputStyle, resize: "vertical" }} rows={2} placeholder="Note (optional)" value={fields.note} onChange={(e) => setFields((f) => ({ ...f, note: e.target.value }))} />
+      <textarea style={{ ...inputStyle, resize: "vertical" }} rows={2} placeholder={t("notePlaceholder")} value={fields.note} onChange={(e) => setFields((f) => ({ ...f, note: e.target.value }))} />
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
@@ -66,10 +69,10 @@ function KpiForm({
           onClick={() => onSave(fields)}
           style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: isPending || !fields.name.trim() ? 0.5 : 1 }}
         >
-          {isPending ? "Saving…" : "Save"}
+          {isPending ? t("saving") : t("save")}
         </button>
         <button type="button" onClick={onCancel} style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </div>
@@ -77,6 +80,7 @@ function KpiForm({
 }
 
 function KpiCard({ kpi, onChanged }: { kpi: ScorecardKpi; onChanged: () => void }) {
+  const t = useTranslations("scorecardKpiQuadrant");
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,18 +114,18 @@ function KpiCard({ kpi, onChanged }: { kpi: ScorecardKpi; onChanged: () => void 
           className="mono"
           style={{ fontSize: 10.5, fontWeight: 700, color: STATUS_COLOR[kpi.status], background: "rgba(255,255,255,0.04)", border: `1px solid ${STATUS_COLOR[kpi.status]}`, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" }}
         >
-          {STATUS_LABEL[kpi.status]}
+          {statusLabel(t, kpi.status)}
         </span>
       </div>
       {(kpi.target || kpi.actual) && (
         <p className="mono" style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
-          {kpi.actual || "—"} <span style={{ opacity: 0.6 }}>/ target {kpi.target || "—"}</span>
+          {kpi.actual || "—"} <span style={{ opacity: 0.6 }}>/ {t("target")} {kpi.target || "—"}</span>
         </p>
       )}
       {kpi.note && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>{kpi.note}</p>}
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
         <button type="button" onClick={() => setEditing(true)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer" }}>
-          Edit
+          {t("edit")}
         </button>
         <button
           type="button"
@@ -134,7 +138,7 @@ function KpiCard({ kpi, onChanged }: { kpi: ScorecardKpi; onChanged: () => void 
           }
           style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer" }}
         >
-          Delete
+          {t("delete")}
         </button>
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 11, marginTop: 6 }}>{error}</p>}
@@ -155,6 +159,7 @@ export default function ScorecardKpiQuadrant({
   description: string;
   kpis: ScorecardKpi[];
 }) {
+  const t = useTranslations("scorecardKpiQuadrant");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [adding, setAdding] = useState(false);
@@ -170,7 +175,7 @@ export default function ScorecardKpiQuadrant({
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>{description}</p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-        {kpis.length === 0 && !adding && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>No KPIs added yet.</p>}
+        {kpis.length === 0 && !adding && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("noKpisYet")}</p>}
         {kpis.map((kpi) => (
           <KpiCard key={kpi.id} kpi={kpi} onChanged={refresh} />
         ))}
@@ -199,7 +204,7 @@ export default function ScorecardKpiQuadrant({
           onClick={() => setAdding(true)}
           style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: accentColor, cursor: "pointer" }}
         >
-          + Add KPI
+          {t("addKpi")}
         </button>
       )}
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}

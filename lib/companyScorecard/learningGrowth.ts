@@ -16,17 +16,19 @@ export type LearningGrowthMetric = {
   percent: number | null;
 };
 
-export function computeLearningGrowthMetrics(data: CompanyData): LearningGrowthMetric[] {
+type Translator = (key: string, values?: Record<string, string | number>) => string;
+
+export function computeLearningGrowthMetrics(data: CompanyData, t: Translator): LearningGrowthMetric[] {
   const rows = data.rows;
   const total = rows.length;
   if (total === 0) {
     return [
-      { label: "Gap Analysis coverage", value: "—", detail: "No team members yet", percent: null },
-      { label: "Assessment participation", value: "—", detail: "No team members yet", percent: null },
-      { label: "Average Career Health Score", value: "—", detail: "No team members yet", percent: null },
-      { label: "Development plan completion", value: "—", detail: "No milestones yet", percent: null },
-      { label: "High Potential bench strength", value: "—", detail: "No team members yet", percent: null },
-      { label: "Average performance rating", value: "—", detail: "No team members yet", percent: null },
+      { label: t("gapAnalysisCoverage"), value: "—", detail: t("noTeamMembersYet"), percent: null },
+      { label: t("assessmentParticipation"), value: "—", detail: t("noTeamMembersYet"), percent: null },
+      { label: t("averageCareerHealthScore"), value: "—", detail: t("noTeamMembersYet"), percent: null },
+      { label: t("developmentPlanCompletion"), value: "—", detail: t("noMilestonesYet"), percent: null },
+      { label: t("highPotentialBenchStrength"), value: "—", detail: t("noTeamMembersYet"), percent: null },
+      { label: t("averagePerformanceRating"), value: "—", detail: t("noTeamMembersYet"), percent: null },
     ];
   }
 
@@ -58,45 +60,45 @@ export function computeLearningGrowthMetrics(data: CompanyData): LearningGrowthM
 
   return [
     {
-      label: "Gap Analysis coverage",
+      label: t("gapAnalysisCoverage"),
       value: `${coveragePct}%`,
-      detail: `${withGapAnalysis}/${total} employees have measured competency data`,
+      detail: t("gapAnalysisCoverageDetail", { measured: withGapAnalysis, total }),
       percent: coveragePct,
     },
     {
-      label: "Assessment participation",
+      label: t("assessmentParticipation"),
       value: `${assessmentPct}%`,
-      detail: `${withAssessment}/${total} employees have completed at least one assessment`,
+      detail: t("assessmentParticipationDetail", { measured: withAssessment, total }),
       percent: assessmentPct,
     },
     {
-      label: "Average Career Health Score",
+      label: t("averageCareerHealthScore"),
       value: data.companyCareerHealthScore !== null ? `${data.companyCareerHealthScore}` : "—",
-      detail: "Averaged across everyone who's run a Gap Analysis",
+      detail: t("averageCareerHealthScoreDetail"),
       percent: data.companyCareerHealthScore,
     },
     {
-      label: "Development plan completion",
+      label: t("developmentPlanCompletion"),
       value: planCompletionPct !== null ? `${planCompletionPct}%` : "—",
       detail:
         milestonesTotal > 0
-          ? `${milestonesDone}/${milestonesTotal} milestones complete across the org`
-          : "No milestones created yet",
+          ? t("developmentPlanCompletionDetail", { done: milestonesDone, total: milestonesTotal })
+          : t("noMilestonesCreatedYet"),
       percent: planCompletionPct,
     },
     {
-      label: "High Potential bench strength",
+      label: t("highPotentialBenchStrength"),
       value: `${benchCount}`,
-      detail: "Employees in the top growth-signal row of the talent grid — see High Potential Pool",
+      detail: t("highPotentialBenchStrengthDetail"),
       percent: null,
     },
     {
-      label: "Average performance rating",
+      label: t("averagePerformanceRating"),
       value: avgPerformance !== null ? `${avgPerformance.toFixed(1)}/5` : "—",
       detail:
         rated.length > 0
-          ? `${rated.length}/${total} employees have a manager rating — single-source, not independently verified`
-          : "No manager ratings entered yet",
+          ? t("averagePerformanceRatingDetail", { rated: rated.length, total })
+          : t("noManagerRatingsYet"),
       percent: avgPerformance !== null ? Math.round((avgPerformance / 5) * 100) : null,
     },
   ];

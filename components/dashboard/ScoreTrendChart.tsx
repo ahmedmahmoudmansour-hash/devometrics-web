@@ -4,12 +4,12 @@ const WIDTH = 320;
 const HEIGHT = 100;
 const PADDING = 8;
 
-export default function ScoreTrendChart({ points }: { points: TrendPoint[] }) {
+export default function ScoreTrendChart({ points, noDataYetLabel, ariaLabel }: { points: TrendPoint[]; noDataYetLabel: string; ariaLabel: string }) {
   if (points.length < 2) {
     return (
       <div style={{ height: HEIGHT, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          Run this again to start seeing a trend line.
+          {noDataYetLabel}
         </p>
       </div>
     );
@@ -28,7 +28,7 @@ export default function ScoreTrendChart({ points }: { points: TrendPoint[] }) {
   const areaPath = `${linePath} L ${coords[coords.length - 1].x} ${HEIGHT - PADDING} L ${coords[0].x} ${HEIGHT - PADDING} Z`;
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%" height={HEIGHT} role="img" aria-label="Score trend over time">
+    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%" height={HEIGHT} role="img" aria-label={ariaLabel}>
       <path d={areaPath} fill="var(--teal)" fillOpacity={0.12} stroke="none" />
       <path d={linePath} fill="none" stroke="var(--teal)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
       {coords.map((c, i) => (

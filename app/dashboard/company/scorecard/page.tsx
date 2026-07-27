@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { computeLearningGrowthMetrics } from "@/lib/companyScorecard/learningGrowth";
@@ -18,6 +19,8 @@ const card: React.CSSProperties = {
 };
 
 export default async function CompanyScorecardPage() {
+  const t = await getTranslations("companyScorecardPage");
+  const tMetrics = await getTranslations("learningGrowthMetrics");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
@@ -29,7 +32,7 @@ export default async function CompanyScorecardPage() {
     .order("created_at", { ascending: true })
     .returns<ScorecardKpi[]>();
 
-  const learningGrowth = computeLearningGrowthMetrics(data);
+  const learningGrowth = computeLearningGrowthMetrics(data, tMetrics);
 
   const byPerspective = (p: ScorecardPerspective) => (kpiRows ?? []).filter((k) => k.perspective === p);
 
@@ -38,16 +41,13 @@ export default async function CompanyScorecardPage() {
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Company Scorecard
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 680 }}>
-            The classic Balanced Scorecard — Learning &amp; Growth, Customer, Internal Process, and
-            Financial. Learning &amp; Growth is computed live from your real workforce data; the other
-            three are yours to define, since this platform doesn&apos;t hold CRM, operations, or
-            financial data.
+            {t("description")}
           </p>
         </div>
 
@@ -56,10 +56,9 @@ export default async function CompanyScorecardPage() {
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", padding: 28, borderRadius: 16 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-              The Company Scorecard&apos;s Customer/Process/Financial KPIs aren&apos;t enabled on this
-              database yet — the <code style={{ color: "var(--teal)" }}>0070_company_scorecard.sql</code>{" "}
-              migration needs to be run in the Supabase SQL Editor first. Learning &amp; Growth below
-              works regardless, since it&apos;s computed live rather than stored.
+              {t.rich("migrationNotEnabled", {
+                code: (chunks) => <code style={{ color: "var(--teal)" }}>{chunks}</code>,
+              })}
             </p>
           </div>
         ) : null}
@@ -67,10 +66,10 @@ export default async function CompanyScorecardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
           <div style={card}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-              Learning &amp; Growth
+              {t("learningGrowth")}
             </h2>
             <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
-              Computed live from measured workforce data — never manually entered, never stale.
+              {t("learningGrowthSubtitle")}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {learningGrowth.map((m) => (
@@ -92,25 +91,25 @@ export default async function CompanyScorecardPage() {
 
           <ScorecardKpiQuadrant
             perspective="customer"
-            title="Customer"
+            title={t("customer")}
             accentColor="var(--phase2)"
-            description="How customers perceive you — satisfaction, retention, NPS, response time. Define the KPIs that matter for your business."
+            description={t("customerDescription")}
             kpis={byPerspective("customer")}
           />
 
           <ScorecardKpiQuadrant
             perspective="process"
-            title="Internal Process"
+            title={t("process")}
             accentColor="var(--amber)"
-            description="How efficiently the business runs — cycle time, quality, throughput, operational KPIs."
+            description={t("processDescription")}
             kpis={byPerspective("process")}
           />
 
           <ScorecardKpiQuadrant
             perspective="financial"
-            title="Financial"
+            title={t("financial")}
             accentColor="var(--phase3)"
-            description="The bottom line — revenue, margin, cost, cash flow, budget variance."
+            description={t("financialDescription")}
             kpis={byPerspective("financial")}
           />
         </div>

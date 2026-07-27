@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildScorecard } from "@/lib/scorecard/aggregate";
 import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
 import Mascot from "@/components/Mascot";
 
-function DeltaBadge({ delta }: { delta: number | null }) {
+function DeltaBadge({ delta, t }: { delta: number | null; t: (key: string, values?: Record<string, string | number>) => string }) {
   if (delta === null) return null;
   const positive = delta > 0;
   const flat = delta === 0;
@@ -12,13 +13,13 @@ function DeltaBadge({ delta }: { delta: number | null }) {
   const sign = positive ? "+" : "";
   return (
     <span style={{ fontSize: 12, fontWeight: 700, color }}>
-      {sign}
-      {delta} vs. last time
+      {t("vsLastTime", { value: `${sign}${delta}` })}
     </span>
   );
 }
 
 export default async function ScorecardPage() {
+  const t = await getTranslations("scorecardPage");
   const data = await buildScorecard();
   if (!data) redirect("/login");
 
@@ -34,13 +35,13 @@ export default async function ScorecardPage() {
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Your Scorecard
+            {t("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            How your own numbers have moved over time — not a comparison to other people.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -48,8 +49,7 @@ export default async function ScorecardPage() {
           <div style={{ ...cardStyle, textAlign: "center" }}>
             <Mascot size={72} className="float" />
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, marginTop: 12 }}>
-              Nothing to show yet — run a Gap Analysis, take an assessment, or check your resume
-              first, then come back here to see your progress build up over time.
+              {t("emptyState")}
             </p>
           </div>
         ) : (
@@ -65,24 +65,24 @@ export default async function ScorecardPage() {
                 lineHeight: 1.6,
               }}
             >
-              This page benchmarks you against <strong style={{ color: "var(--text)" }}>your own history</strong>,
-              not other users or the market. Our pilot cohort isn&apos;t large enough yet for a peer
-              percentile to mean anything real — that&apos;s a &quot;not yet,&quot; not a &quot;never.&quot;
+              {t.rich("benchmarkNote", {
+                strong: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+              })}
             </div>
 
             {data.careerHealthHistory.length > 0 && (
               <div style={cardStyle}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Career Health Score</h2>
-                  <DeltaBadge delta={data.careerHealthDelta} />
+                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("careerHealthScore")}</h2>
+                  <DeltaBadge delta={data.careerHealthDelta} t={t} />
                 </div>
                 <p style={{ fontSize: 32, fontWeight: 800, color: "var(--teal)", marginBottom: 8 }}>
                   {data.careerHealthHistory[data.careerHealthHistory.length - 1].score}
                   <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 400 }}>/100</span>
                 </p>
-                <ScoreTrendChart points={data.careerHealthHistory} />
+                <ScoreTrendChart points={data.careerHealthHistory} noDataYetLabel={t("noTrendYet")} ariaLabel={t("scoreTrendAriaLabel")} />
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-                  Based on {data.careerHealthHistory.length} Gap Analysis run{data.careerHealthHistory.length === 1 ? "" : "s"}.
+                  {t("basedOnRuns", { count: data.careerHealthHistory.length })}
                 </p>
               </div>
             )}
@@ -90,7 +90,7 @@ export default async function ScorecardPage() {
             {data.dimensionMovement.length > 0 && (
               <div style={cardStyle}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-                  Movement by competency
+                  {t("movementByCompetency")}
                 </h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {data.dimensionMovement.map((d) => (
@@ -98,14 +98,14 @@ export default async function ScorecardPage() {
                       <span style={{ color: "var(--text)" }}>{d.dimension}</span>
                       <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <span style={{ color: "var(--text-muted)" }}>{d.current}/100</span>
-                        {d.delta !== null && <DeltaBadge delta={d.delta} />}
+                        {d.delta !== null && <DeltaBadge delta={d.delta} t={t} />}
                       </span>
                     </div>
                   ))}
                 </div>
                 {data.dimensionMovement.every((d) => d.delta === null) && (
                   <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>
-                    Run another Gap Analysis later to see how each competency moves.
+                    {t("runAnotherGapAnalysis")}
                   </p>
                 )}
               </div>
@@ -114,7 +114,7 @@ export default async function ScorecardPage() {
             {data.assessmentTrends.length > 0 && (
               <div style={cardStyle}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-                  Assessment history
+                  {t("assessmentHistory")}
                 </h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {data.assessmentTrends.map((a) => (
@@ -122,7 +122,7 @@ export default async function ScorecardPage() {
                       <span style={{ color: "var(--text)" }}>{a.name}</span>
                       <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <span style={{ color: "var(--text-muted)" }}>{a.history[a.history.length - 1].score}/100</span>
-                        <DeltaBadge delta={a.delta} />
+                        <DeltaBadge delta={a.delta} t={t} />
                       </span>
                     </div>
                   ))}
@@ -133,25 +133,25 @@ export default async function ScorecardPage() {
             {data.resumeHistory.length > 0 && (
               <div style={cardStyle}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Resume Intelligence</h2>
-                  <DeltaBadge delta={data.resumeDelta} />
+                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("resumeIntelligence")}</h2>
+                  <DeltaBadge delta={data.resumeDelta} t={t} />
                 </div>
                 <p style={{ fontSize: 32, fontWeight: 800, color: "var(--teal)", marginBottom: 8 }}>
                   {data.resumeHistory[data.resumeHistory.length - 1].score}
                   <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 400 }}>/100</span>
                 </p>
-                <ScoreTrendChart points={data.resumeHistory} />
+                <ScoreTrendChart points={data.resumeHistory} noDataYetLabel={t("noTrendYet")} ariaLabel={t("scoreTrendAriaLabel")} />
               </div>
             )}
 
             {data.milestonesTotal > 0 && (
               <div style={cardStyle}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
-                  Plan execution
+                  {t("planExecution")}
                 </h2>
                 <p style={{ fontSize: 32, fontWeight: 800, color: "var(--text)" }}>
                   {data.milestonesDone}
-                  <span style={{ fontSize: 16, color: "var(--text-muted)", fontWeight: 400 }}>/{data.milestonesTotal} milestones done</span>
+                  <span style={{ fontSize: 16, color: "var(--text-muted)", fontWeight: 400 }}>{t("milestonesDoneOf", { total: data.milestonesTotal })}</span>
                 </p>
               </div>
             )}
