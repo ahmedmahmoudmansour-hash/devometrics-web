@@ -72,6 +72,17 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
 
   // Browser SpeechRecognition fallback
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  // True from the moment a fallback engine is spun up until it's genuinely
+  // stopped (not merely restarted after a silence timeout). Speechmatics
+  // failure is reported through two independent paths — the WebSocket's
+  // async "Error" message AND the rejected client.start() promise can both
+  // fire for the very same underlying failure (e.g. quota_exceeded) — and
+  // without this guard both would call startBrowserFallback(), spinning up
+  // two separate SpeechRecognition instances against the same microphone.
+  // Both would then fire onresult for the same speech and both feed the
+  // same onResult callback, which is what produced the doubled/garbled
+  // transcript ("Let Let me me go go") seen in the browser-fallback path.
+  const fallbackActiveRef = useRef(false);
   const browserSupported = useSyncExternalStore(
     noopSubscribe,
     () => getSpeechRecognition() !== null,
@@ -108,12 +119,17 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   }, []);
 
   const startBrowserFallback = useCallback(() => {
+    // Both the Speechmatics socket's "Error" event and a rejected
+    // client.start() promise can independently call this for the same
+    // failure — only the first should actually spin up an engine.
+    if (fallbackActiveRef.current) return;
     const RecognitionCtor = getSpeechRecognition();
     if (!RecognitionCtor) {
       setListening(false);
       setError("Voice input isn't available in this browser — Chrome works best, or type instead.");
       return;
     }
+    fallbackActiveRef.current = true;
     const recognition = new RecognitionCtor();
     // continuous: true — without this, recognition stops after a single
     // utterance and the mic button has to be clicked again before every
@@ -138,6 +154,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       // restart handles them. Everything else is worth telling the user.
       if (code === "no-speech" || code === "aborted") return;
       wantListeningRef.current = false;
+      fallbackActiveRef.current = false;
       setListening(false);
       if (code === "not-allowed" || code === "service-not-allowed") {
         setError("Microphone access is blocked — allow the mic for this site in your browser, then try again.");
@@ -159,6 +176,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
           // fall through to reporting stopped
         }
       }
+      fallbackActiveRef.current = false;
       setListening(false);
     };
     recognitionRef.current = recognition;
