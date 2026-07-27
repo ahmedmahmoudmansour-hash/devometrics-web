@@ -1494,6 +1494,37 @@
     "saving": "Saving…",
     "saveManagersPerspective": "Save Manager's Perspective"
   },
+  "nineBoxZones": {
+    "gridAriaLabel": "Nine-box talent grid",
+    "legendTitle": "9-box zone guide — what each zone needs",
+    "highPotential": { "needs": "Fast-track development and sponsorship — capability is behind, but growth signal is strong." },
+    "futureStar": { "needs": "Accelerated growth plan and visibility — keep them engaged and challenged." },
+    "futureLeader": { "needs": "Succession-ready. Retain deliberately and prepare for the transition." },
+    "roughDiamond": { "needs": "Structured coaching and foundational skill-building before stretching further." },
+    "corePlayer": { "needs": "Steady development and broader exposure — the dependable middle of the org." },
+    "trustedProfessional": { "needs": "Stretch assignments and more visibility so capability keeps compounding." },
+    "needsAttention": { "needs": "Address directly — closer coaching, a performance plan, or a role that fits better." },
+    "inconsistent": { "needs": "Closer management and fundamentals — capability is present but growth has stalled." },
+    "plateaued": { "needs": "New challenges to reignite growth — capable but at risk of disengaging." }
+  },
+  "highPotentialPage": {
+    "backToProgress": "← Back to progress",
+    "title": "High Potential Pool",
+    "description": "A consolidated, cross-role roster of everyone in the top-growth-signal row of your talent grid — not tied to one specific role. Complements Succession Planning: that page answers \"who fits this critical role,\" this one answers \"who across the whole organization deserves deliberate investment right now,\" juniors included.",
+    "noTeamMembersYet": "No team members yet — this pool populates as your people join and complete a Gap Analysis.",
+    "noMeasuredData": "No one on your team has run a Gap Analysis yet, so there's no measured data to place anyone on the grid. This isn't a reflection of your team — the tools just haven't been used yet.",
+    "noOneInTopRow": "No one currently lands in the top growth-signal row of the grid. {measured} of {total} employees have measured data — as more people run a Gap Analysis (and complete assessments in the Leadership-adjacent dimensions), this pool will start to populate honestly rather than by inference.",
+    "inThePool": "In the pool",
+    "zoneSuffixDevelopingCapability": "zone (developing capability)",
+    "zoneSuffixSuccessionReady": "zone (succession-ready)",
+    "measuredNote": "Based only on measured Gap Analysis competency levels — no demographic attributes, tenure, or manager opinion factor into this. Someone missing from this list may simply be undermeasured, not lower-potential; {measured} of {total} employees have run a Gap Analysis so far.",
+    "noTitleOnFile": "No title on file",
+    "growthSignal": "growth signal",
+    "capability": "capability",
+    "futureLeaderBlurb": "High measured capability and strong leadership growth signal — your nearest-term succession bench. These are the people Succession Planning should already be scoring against your critical roles.",
+    "futureStarBlurb": "Solid capability with strong growth signal — engaged and ready to be stretched further with visibility and bigger assignments.",
+    "highPotentialBlurb": "Capability is still developing, but the growth signal is strong — this is typically where early-career and junior employees who are quietly outperforming their tenure show up. The highest-leverage group for deliberate investment: sponsorship, stretch assignments, and structured development, before capability catches up on its own."
+  },
   "performanceReviewsManager": {
     "newImpactCycle": "+ New Impact Cycle",
     "cycleNameLabel": "Cycle name *",

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { buildCompanyData, type WorkforceRow } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import Avatar from "@/components/Avatar";
@@ -24,12 +25,15 @@ const card: React.CSSProperties = {
 // developing, but growth signal strong — which in practice is where
 // early-career and junior employees who are quietly outperforming their
 // tenure tend to land. One roster, two very different action items.
+// Zone names stay untranslated (see ZONE_TRANSLATION_KEY note in
+// charts.tsx) — only the blurb prose below is translated, keyed by the
+// same stable English zone name.
 const ZONE_ORDER = ["Future Leader", "Future Star", "High Potential"] as const;
 
-const ZONE_BLURB: Record<(typeof ZONE_ORDER)[number], string> = {
-  "Future Leader": "High measured capability and strong leadership growth signal — your nearest-term succession bench. These are the people Succession Planning should already be scoring against your critical roles.",
-  "Future Star": "Solid capability with strong growth signal — engaged and ready to be stretched further with visibility and bigger assignments.",
-  "High Potential": "Capability is still developing, but the growth signal is strong — this is typically where early-career and junior employees who are quietly outperforming their tenure show up. The highest-leverage group for deliberate investment: sponsorship, stretch assignments, and structured development, before capability catches up on its own.",
+const ZONE_BLURB_KEY: Record<(typeof ZONE_ORDER)[number], string> = {
+  "Future Leader": "futureLeaderBlurb",
+  "Future Star": "futureStarBlurb",
+  "High Potential": "highPotentialBlurb",
 };
 
 type PoolEntry = {
@@ -40,6 +44,7 @@ type PoolEntry = {
 };
 
 export default async function HighPotentialPoolPage() {
+  const t = await getTranslations("highPotentialPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -68,16 +73,13 @@ export default async function HighPotentialPoolPage() {
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            High Potential Pool
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>
-            A consolidated, cross-role roster of everyone in the top-growth-signal row of your talent
-            grid — not tied to one specific role. Complements Succession Planning: that page answers
-            &quot;who fits this critical role,&quot; this one answers &quot;who across the whole
-            organization deserves deliberate investment right now,&quot; juniors included.
+            {t("description")}
           </p>
         </div>
 
@@ -86,25 +88,19 @@ export default async function HighPotentialPoolPage() {
         {data.rows.length === 0 ? (
           <div style={card}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              No team members yet — this pool populates as your people join and complete a Gap
-              Analysis.
+              {t("noTeamMembersYet")}
             </p>
           </div>
         ) : measuredCount === 0 ? (
           <div style={card}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              No one on your team has run a Gap Analysis yet, so there&apos;s no measured data to
-              place anyone on the grid. This isn&apos;t a reflection of your team — the tools just
-              haven&apos;t been used yet.
+              {t("noMeasuredData")}
             </p>
           </div>
         ) : entries.length === 0 ? (
           <div style={card}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              No one currently lands in the top growth-signal row of the grid.{" "}
-              {measuredCount} of {data.rows.length} employees have measured data — as more people run
-              a Gap Analysis (and complete assessments in the Leadership-adjacent dimensions), this
-              pool will start to populate honestly rather than by inference.
+              {t("noOneInTopRow", { measured: measuredCount, total: data.rows.length })}
             </p>
           </div>
         ) : (
@@ -112,25 +108,22 @@ export default async function HighPotentialPoolPage() {
             <div style={{ ...card, display: "flex", gap: 28, flexWrap: "wrap" }}>
               <div>
                 <p style={{ fontSize: 26, fontWeight: 800, color: "var(--teal)" }}>{entries.length}</p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>In the pool</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("inThePool")}</p>
               </div>
               <div>
                 <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>
                   {byZone.get("High Potential")?.length ?? 0}
                 </p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>High Potential zone (developing capability)</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>High Potential {t("zoneSuffixDevelopingCapability")}</p>
               </div>
               <div>
                 <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>
                   {byZone.get("Future Leader")?.length ?? 0}
                 </p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Future Leader zone (succession-ready)</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Future Leader {t("zoneSuffixSuccessionReady")}</p>
               </div>
               <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6, flexBasis: "100%", marginTop: 4 }}>
-                Based only on measured Gap Analysis competency levels — no demographic attributes,
-                tenure, or manager opinion factor into this. Someone missing from this list may simply
-                be undermeasured, not lower-potential; {measuredCount} of {data.rows.length} employees
-                have run a Gap Analysis so far.
+                {t("measuredNote", { measured: measuredCount, total: data.rows.length })}
               </p>
             </div>
 
@@ -143,7 +136,7 @@ export default async function HighPotentialPoolPage() {
                     {zoneLabel} <span style={{ fontWeight: 500, color: "var(--text-muted)" }}>({list.length})</span>
                   </h2>
                   <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6, maxWidth: 640 }}>
-                    {ZONE_BLURB[zoneLabel]}
+                    {t(ZONE_BLURB_KEY[zoneLabel])}
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {list.map((e) => (
@@ -163,20 +156,20 @@ export default async function HighPotentialPoolPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text)" }}>{e.row.name}</p>
                           <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
-                            {[e.row.title, e.row.department].filter(Boolean).join(" · ") || "No title on file"}
+                            {[e.row.title, e.row.department].filter(Boolean).join(" · ") || t("noTitleOnFile")}
                           </p>
                         </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ textAlign: "end", flexShrink: 0 }}>
                           <p className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--teal)" }}>
                             {Math.round(e.y)}
                           </p>
-                          <p style={{ fontSize: 10, color: "var(--text-muted)" }}>growth signal</p>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)" }}>{t("growthSignal")}</p>
                         </div>
-                        <div style={{ textAlign: "right", flexShrink: 0, width: 70 }}>
+                        <div style={{ textAlign: "end", flexShrink: 0, width: 70 }}>
                           <p className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
                             {Math.round(e.x)}
                           </p>
-                          <p style={{ fontSize: 10, color: "var(--text-muted)" }}>capability</p>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)" }}>{t("capability")}</p>
                         </div>
                       </Link>
                     ))}

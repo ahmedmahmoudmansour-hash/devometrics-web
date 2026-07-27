@@ -1,7 +1,12 @@
+"use client";
+
 // Lightweight themed SVG charts — deliberately no charting library: the
 // bundle stays small, everything inherits the CSS-variable theme (including
 // enterprise brand-color overrides), and each chart renders identically in
-// light/dark mode. Server-component friendly (no hooks, no handlers).
+// light/dark mode.
+
+import { useTranslations } from "next-intl";
+import { NINE_BOX_ZONES, zoneNeeds } from "@/lib/organizations/nineBoxZones";
 
 const TEAL = "var(--teal)";
 const AMBER = "var(--amber)";
@@ -137,23 +142,10 @@ export function DonutChart({
 // succession tradition — axes are labeled by what this platform actually
 // measures, not the classic "performance/potential" wording, because true
 // performance ratings aren't captured here yet and honest axis names beat
-// borrowed ones.
-// The 9 classic performance/potential zones, generalized to whatever
-// "capability-style" x-axis and "growth/readiness-style" y-axis a given
-// grid uses (both callers of NineBoxGrid plot different pairs, but both
-// are 0-100 measured signals, so the same zone semantics apply honestly
-// to either). row/col are 0 = low, 1 = mid, 2 = high.
-export const NINE_BOX_ZONES: { row: 0 | 1 | 2; col: 0 | 1 | 2; label: string; needs: string; tone: "teal" | "amber" | "danger" | "muted" }[] = [
-  { row: 2, col: 0, label: "High Potential", needs: "Fast-track development and sponsorship — capability is behind, but growth signal is strong.", tone: "amber" },
-  { row: 2, col: 1, label: "Future Star", needs: "Accelerated growth plan and visibility — keep them engaged and challenged.", tone: "teal" },
-  { row: 2, col: 2, label: "Future Leader", needs: "Succession-ready. Retain deliberately and prepare for the transition.", tone: "teal" },
-  { row: 1, col: 0, label: "Rough Diamond", needs: "Structured coaching and foundational skill-building before stretching further.", tone: "amber" },
-  { row: 1, col: 1, label: "Core Player", needs: "Steady development and broader exposure — the dependable middle of the org.", tone: "muted" },
-  { row: 1, col: 2, label: "Trusted Professional", needs: "Stretch assignments and more visibility so capability keeps compounding.", tone: "teal" },
-  { row: 0, col: 0, label: "Needs Attention", needs: "Address directly — closer coaching, a performance plan, or a role that fits better.", tone: "danger" },
-  { row: 0, col: 1, label: "Inconsistent", needs: "Closer management and fundamentals — capability is present but growth has stalled.", tone: "amber" },
-  { row: 0, col: 2, label: "Plateaued", needs: "New challenges to reignite growth — capable but at risk of disengaging.", tone: "muted" },
-];
+// borrowed ones. Zone data (NINE_BOX_ZONES, zoneNeeds) lives in
+// lib/organizations/nineBoxZones.ts — a plain, non-"use client" module —
+// so lib/organizations/nineBox.ts (used from many Server Component pages)
+// can import the zone data without crossing this file's client boundary.
 
 const ZONE_TONE_COLOR: Record<string, string> = {
   teal: TEAL,
@@ -180,14 +172,15 @@ const ZONE_TONE_FILL: Record<string, string> = {
 // rendered inside a .print-plan export (see globals.css) must use this,
 // or the zone guide would be silently missing from the exported PDF.
 export function NineBoxLegend({ forceOpen = false }: { forceOpen?: boolean } = {}) {
+  const t = useTranslations("nineBoxZones");
   const items = (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 10 }}>
       {[...NINE_BOX_ZONES]
         .sort((a, b) => b.row - a.row || a.col - b.col)
         .map((z) => (
-          <div key={z.label} style={{ borderLeft: `2px solid ${ZONE_TONE_COLOR[z.tone]}`, paddingLeft: 10 }}>
+          <div key={z.label} style={{ borderInlineStart: `2px solid ${ZONE_TONE_COLOR[z.tone]}`, paddingInlineStart: 10 }}>
             <p style={{ fontSize: 11.5, fontWeight: 700, color: ZONE_TONE_COLOR[z.tone] }}>{z.label}</p>
-            <p style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>{z.needs}</p>
+            <p style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>{zoneNeeds(t, z.label)}</p>
           </div>
         ))}
     </div>
@@ -196,7 +189,7 @@ export function NineBoxLegend({ forceOpen = false }: { forceOpen?: boolean } = {
   if (forceOpen) {
     return (
       <div style={{ marginTop: 12 }}>
-        <p style={{ fontSize: 11.5, fontWeight: 700, color: MUTED }}>9-box zone guide — what each zone needs</p>
+        <p style={{ fontSize: 11.5, fontWeight: 700, color: MUTED }}>{t("legendTitle")}</p>
         {items}
       </div>
     );
@@ -205,7 +198,7 @@ export function NineBoxLegend({ forceOpen = false }: { forceOpen?: boolean } = {
   return (
     <details style={{ marginTop: 12 }}>
       <summary style={{ fontSize: 11.5, fontWeight: 700, color: MUTED, cursor: "pointer" }}>
-        9-box zone guide — what each zone needs
+        {t("legendTitle")}
       </summary>
       {items}
     </details>
@@ -223,6 +216,7 @@ export function NineBoxGrid({
   yLabel: string;
   size?: number;
 }) {
+  const t = useTranslations("nineBoxZones");
   const pad = 34;
   const plot = size - pad * 2;
   const cell = plot / 3;
@@ -237,7 +231,7 @@ export function NineBoxGrid({
   const zoneAt = (row: number, col: number) => NINE_BOX_ZONES.find((z) => z.row === row && z.col === col)!;
 
   return (
-    <svg width="100%" viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Nine-box talent grid" style={{ maxWidth: 420 }}>
+    <svg width="100%" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t("gridAriaLabel")} style={{ maxWidth: 420 }}>
       {/* zone shading + short label for all 9 cells */}
       {[0, 1, 2].map((row) =>
         [0, 1, 2].map((col) => {

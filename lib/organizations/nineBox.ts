@@ -4,7 +4,7 @@
 // doesn't become a fourth copy of the same formula, and so all three stay
 // honest about using the exact same capability/growth-signal definition.
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
-import { NINE_BOX_ZONES } from "@/components/dashboard/charts";
+import { NINE_BOX_ZONES } from "@/lib/organizations/nineBoxZones";
 
 export const NINE_BOX_LEADERSHIP_DIMENSIONS: CompetencyDimension[] = [
   "Leadership",
