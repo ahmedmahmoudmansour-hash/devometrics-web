@@ -1,12 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import { suggestRoleGrading, type RoleGradingSuggestion } from "@/lib/jobArchitecture/actions";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "@/lib/limits";
-import type { JobPostingStatus } from "./types";
+import type { JobPostingStatus, InterviewQuestion } from "./types";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_TITLE = 120;
 const MAX_DEPARTMENT = 120;
@@ -23,12 +26,31 @@ async function requireAdmin() {
   return { supabase, user, organizationId: data.organizationId };
 }
 
-export async function createJobPosting(input: { title: string; department?: string; jobDescription?: string; responsibilities?: string }) {
+export async function createJobPosting(input: {
+  title: string;
+  department?: string;
+  jobDescription?: string;
+  responsibilities?: string;
+  linkedRoleId?: string | null;
+}) {
   const { supabase, user, organizationId } = await requireAdmin();
   if (!user || !organizationId) return { error: "Not authorized" };
 
   const title = input.title.trim().slice(0, MAX_TITLE);
   if (!title) return { error: "Give the posting a title" };
+
+  // If a Job Architecture role is given, confirm it actually belongs to
+  // this admin's own org before linking — defense in depth on top of RLS.
+  let linkedRoleId: string | null = null;
+  if (input.linkedRoleId) {
+    const { data: role } = await supabase
+      .from("job_roles")
+      .select("id")
+      .eq("id", input.linkedRoleId)
+      .eq("organization_id", organizationId)
+      .maybeSingle<{ id: string }>();
+    if (role) linkedRoleId = role.id;
+  }
 
   const { data: posting, error } = await supabase
     .from("job_postings")
@@ -38,6 +60,7 @@ export async function createJobPosting(input: { title: string; department?: stri
       department: (input.department ?? "").trim().slice(0, MAX_DEPARTMENT),
       job_description: (input.jobDescription ?? "").trim().slice(0, MAX_JOB_DESCRIPTION_LENGTH),
       responsibilities: (input.responsibilities ?? "").trim().slice(0, MAX_RESPONSIBILITIES),
+      linked_role_id: linkedRoleId,
       created_by: user.id,
     })
     .select("id")
@@ -152,6 +175,104 @@ export async function saveJobPostingRequirements(postingId: string, requirements
       console.error("saveJobPostingRequirements failed:", error);
       return { error: "Could not save requirements — try again." };
     }
+  }
+
+  revalidatePath(`/dashboard/company/hiring/${postingId}`);
+  return { success: true };
+}
+
+const INTERVIEW_QUESTIONS_TOOL = {
+  name: "record_interview_questions",
+  description: "Draft a competency-based interview question set for a job posting, grounded in its required competency profile.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      questions: {
+        type: "array" as const,
+        minItems: 1,
+        maxItems: 10,
+        items: {
+          type: "object" as const,
+          properties: {
+            dimension: { type: "string", enum: [...COMPETENCY_DIMENSIONS], description: "Which required competency this question probes." },
+            question: {
+              type: "string",
+              description: "One behavioral, open-ended question (e.g. 'Tell me about a time you...') that surfaces real evidence for this dimension. No yes/no questions.",
+            },
+            whatToListenFor: {
+              type: "string",
+              description: "1 sentence: what a strong answer actually demonstrates, to help the interviewer judge the response — not a script, just a calibration hint.",
+            },
+          },
+          required: ["dimension", "question", "whatToListenFor"],
+        },
+      },
+    },
+    required: ["questions"],
+  },
+};
+
+// One question set per posting (not per candidate), so every candidate for
+// the same role gets asked from the same baseline — closes the gap between
+// "CV scored" and "manager writes free-text notes" with nothing in between
+// to guide what's actually asked. Decision support only: a reference for
+// the interviewer, never shown to or answered by a candidate directly, and
+// never a script that must be followed verbatim.
+export async function generateInterviewQuestions(postingId: string): Promise<{ error: string } | { success: true }> {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { data: posting } = await supabase
+    .from("job_postings")
+    .select("title, job_description")
+    .eq("id", postingId)
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ title: string; job_description: string }>();
+  if (!posting) return { error: "Posting not found" };
+
+  const { data: requirements } = await supabase
+    .from("job_posting_competency_requirements")
+    .select("dimension, target_level")
+    .eq("posting_id", postingId)
+    .gt("target_level", 0)
+    .order("target_level", { ascending: false })
+    .returns<{ dimension: string; target_level: number }[]>();
+  if (!requirements || requirements.length === 0) {
+    return { error: "Set the posting's required competencies first (use \"Suggest requirements with AI\" or link a Job Architecture role)." };
+  }
+
+  const reqLines = requirements.map((r) => `${r.dimension}: target ${r.target_level}/100`).join("\n");
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 1500,
+      system:
+        "You write behavioral, competency-based interview questions for Devometrics' Smart Hiring feature. This is decision support for the interviewer, never a script to read verbatim or an automated evaluation. Write one open-ended question per required competency (STAR-style: 'tell me about a time...', 'walk me through...') that would actually surface real evidence, not a hypothetical or a yes/no question. Ask the same core questions of every candidate for a given posting — consistency across candidates is what makes notes comparable and fair. Never invent facts about the role beyond what's given.",
+      tools: [INTERVIEW_QUESTIONS_TOOL],
+      tool_choice: { type: "tool", name: "record_interview_questions" },
+      messages: [
+        {
+          role: "user",
+          content: `ROLE: ${posting.title}\n\nJOB DESCRIPTION:\n${posting.job_description || "(none provided)"}\n\nREQUIRED COMPETENCIES:\n${reqLines}`,
+        },
+      ],
+    });
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
+    const raw = toolUse.input as { questions: InterviewQuestion[] };
+    const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
+    const questions = (raw.questions ?? []).filter((q) => validDims.has(q.dimension) && q.question?.trim());
+    if (questions.length === 0) throw new Error("Model returned no usable questions");
+
+    const { error } = await supabase
+      .from("job_postings")
+      .update({ interview_questions: questions, interview_questions_generated_at: new Date().toISOString() })
+      .eq("id", postingId);
+    if (error) return { error: "Generated, but could not save the questions — try again." };
+  } catch (err) {
+    console.error("generateInterviewQuestions failed:", err);
+    return { error: "Couldn't generate interview questions right now — try again in a moment." };
   }
 
   revalidatePath(`/dashboard/company/hiring/${postingId}`);

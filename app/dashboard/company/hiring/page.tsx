@@ -29,7 +29,7 @@ export default async function HiringPage() {
 
         <CompanyNavTabs active="hiring" />
 
-        <HiringPostingsManager postings={data.postings} />
+        <HiringPostingsManager postings={data.postings} linkableRoles={data.linkableRoles} />
       </div>
     </div>
   );

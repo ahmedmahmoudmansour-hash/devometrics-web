@@ -7,6 +7,7 @@ import { createJobPosting, suggestPostingRequirements, saveJobPostingRequirement
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import type { RoleGradingSuggestion } from "@/lib/jobArchitecture/actions";
 import type { JobPosting, JobPostingStatus } from "@/lib/hiring/types";
+import type { LinkableJobRole } from "@/lib/hiring/aggregate";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -55,7 +56,7 @@ const STATUS_COLOR: Record<JobPostingStatus, string> = {
 
 type PostingRow = JobPosting & { candidateCount: number; hiredCount: number };
 
-export default function HiringPostingsManager({ postings }: { postings: PostingRow[] }) {
+export default function HiringPostingsManager({ postings, linkableRoles }: { postings: PostingRow[]; linkableRoles: LinkableJobRole[] }) {
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -68,6 +69,7 @@ export default function HiringPostingsManager({ postings }: { postings: PostingR
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {showAdd ? (
         <NewPostingForm
+          linkableRoles={linkableRoles}
           onDone={() => {
             setShowAdd(false);
             refresh();
@@ -113,6 +115,11 @@ export default function HiringPostingsManager({ postings }: { postings: PostingR
                 </span>
               </div>
               {posting.department && <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4 }}>{posting.department}</p>}
+              {posting.linked_role_id && (
+                <p style={{ fontSize: 11, color: "var(--teal)", marginTop: 4 }}>
+                  ↳ linked to {linkableRoles.find((r) => r.id === posting.linked_role_id)?.title ?? "a Job Architecture role"}
+                </p>
+              )}
               <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
                 {posting.candidateCount} candidate{posting.candidateCount === 1 ? "" : "s"}
                 {posting.hiredCount > 0 ? ` · ${posting.hiredCount} hired` : ""}
@@ -158,7 +165,15 @@ export default function HiringPostingsManager({ postings }: { postings: PostingR
   );
 }
 
-function NewPostingForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+function NewPostingForm({
+  linkableRoles,
+  onDone,
+  onCancel,
+}: {
+  linkableRoles: LinkableJobRole[];
+  onDone: () => void;
+  onCancel: () => void;
+}) {
   const [isPending, startTransition] = useTransition();
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +183,7 @@ function NewPostingForm({ onDone, onCancel }: { onDone: () => void; onCancel: ()
   const [responsibilities, setResponsibilities] = useState("");
   const [rationale, setRationale] = useState("");
   const [reqs, setReqs] = useState<Record<string, number>>({});
+  const [linkedRoleId, setLinkedRoleId] = useState<string>("");
 
   function applySuggestion(s: RoleGradingSuggestion) {
     setRationale(s.rationale);
@@ -176,10 +192,43 @@ function NewPostingForm({ onDone, onCancel }: { onDone: () => void; onCancel: ()
     setReqs(next);
   }
 
+  // Carries over what Job Architecture already has for this role — the JD
+  // (if one was generated there) or a plain fallback built from its
+  // responsibilities, plus its required competency levels — instead of
+  // making the admin re-write a JD that already exists.
+  function applyLinkedRole(roleId: string) {
+    setLinkedRoleId(roleId);
+    if (!roleId) return;
+    const role = linkableRoles.find((r) => r.id === roleId);
+    if (!role) return;
+    if (!title.trim()) setTitle(role.title);
+    if (role.generatedJd) setJobDescription(role.generatedJd);
+    if (role.responsibilities) setResponsibilities(role.responsibilities);
+    if (role.requirements.length > 0) {
+      const next: Record<string, number> = {};
+      for (const r of role.requirements) next[r.dimension] = r.targetLevel;
+      setReqs(next);
+    }
+  }
+
   return (
     <div style={{ ...card, border: "1px solid rgba(0,201,167,0.3)", background: "rgba(0,201,167,0.03)" }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>New job posting</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {linkableRoles.length > 0 && (
+          <label style={{ fontSize: 11.5, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
+            Link to an existing Job Architecture role (optional) — carries over its JD and required competencies
+            <select style={{ ...input, cursor: "pointer" }} value={linkedRoleId} onChange={(e) => applyLinkedRole(e.target.value)}>
+              <option value="">— None, start from scratch —</option>
+              {linkableRoles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                  {r.level ? ` (${r.level})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <input style={input} placeholder="Job title — e.g. Senior Backend Engineer" value={title} onChange={(e) => setTitle(e.target.value)} />
         <input style={input} placeholder="Department (optional)" value={department} onChange={(e) => setDepartment(e.target.value)} />
         <textarea
@@ -254,7 +303,7 @@ function NewPostingForm({ onDone, onCancel }: { onDone: () => void; onCancel: ()
             onClick={() =>
               startTransition(async () => {
                 setError(null);
-                const created = await createJobPosting({ title, department, jobDescription, responsibilities });
+                const created = await createJobPosting({ title, department, jobDescription, responsibilities, linkedRoleId: linkedRoleId || null });
                 if (created.error || !created.postingId) {
                   setError(created.error ?? "Could not create the posting");
                   return;

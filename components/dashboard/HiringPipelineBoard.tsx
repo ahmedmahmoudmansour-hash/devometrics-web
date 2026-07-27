@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createCandidate, attachCandidateCv, scoreCandidateCv, moveCandidateStage, deleteCandidate } from "@/lib/hiring/candidateActions";
 import { generateCandidateRanking } from "@/lib/hiring/rankingActions";
+import { generateInterviewQuestions } from "@/lib/hiring/postingActions";
 import { CANDIDATE_CV_BUCKET, CANDIDATE_CV_MAX_BYTES, CANDIDATE_CV_ALLOWED_MIME_TYPES } from "@/lib/hiring/constants";
 import { HIRING_STAGES } from "@/lib/hiring/types";
 import type { JobPosting, JobPostingCompetencyRequirement, HiringCandidate, HiringStage } from "@/lib/hiring/types";
@@ -95,6 +96,15 @@ export default function HiringPipelineBoard({
   const columns = HIRING_STAGES.filter((s) => s !== "rejected");
   const rejected = candidates.filter((c) => c.stage === "rejected");
 
+  // Free, instant CV-score sort — no AI call, just what's already fetched.
+  // Separate from "Compare & Rank" below, which is a deliberate AI judgment
+  // call across CV + interview data and costs a real request; this is just
+  // "who's leading on CV score right now."
+  const topByCvScore = candidates
+    .filter((c) => c.stage !== "rejected" && c.careerHealthScore !== null)
+    .sort((a, b) => (b.careerHealthScore ?? 0) - (a.careerHealthScore ?? 0))
+    .slice(0, 5);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={card}>
@@ -121,6 +131,33 @@ export default function HiringPipelineBoard({
           </div>
         )}
       </div>
+
+      <InterviewQuestionsSection posting={posting} hasRequirements={sortedReqs.length > 0} />
+
+      {topByCvScore.length > 0 && (
+        <div style={card}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Top candidates by CV score</h2>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12 }}>
+            Ranked instantly from CV scoring, no AI comparison call — run &quot;Compare &amp; Rank&quot; below for a fuller judgment across CV and interview data.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {topByCvScore.map((c, i) => (
+              <Link
+                key={c.id}
+                href={`/dashboard/company/hiring/${posting.id}/candidates/${c.id}`}
+                style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
+              >
+                <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", width: 14 }}>{i + 1}</span>
+                <span style={{ flex: 1, fontSize: 13, color: "var(--text)" }}>{c.full_name}</span>
+                <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{STAGE_LABEL[c.stage]}</span>
+                <span className="mono" style={{ fontSize: 13, fontWeight: 800, color: scoreColor(c.careerHealthScore ?? 0), width: 28, textAlign: "right" }}>
+                  {c.careerHealthScore}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {showAdd ? null : (
@@ -206,6 +243,7 @@ export default function HiringPipelineBoard({
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {candidates
                 .filter((c) => c.stage === stage)
+                .sort((a, b) => (b.careerHealthScore ?? -1) - (a.careerHealthScore ?? -1))
                 .map((c) => (
                   <CandidateCard key={c.id} candidate={c} postingId={posting.id} onChanged={refresh} isPending={isPending} startTransition={startTransition} />
                 ))}
@@ -224,6 +262,53 @@ export default function HiringPipelineBoard({
               <CandidateCard key={c.id} candidate={c} postingId={posting.id} onChanged={refresh} isPending={isPending} startTransition={startTransition} />
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobPosting; hasRequirements: boolean }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const questions = posting.interview_questions ?? [];
+
+  return (
+    <div style={{ ...card, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.03)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flexWrap: "wrap", gap: 8 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Interview questions</h2>
+        <button
+          type="button"
+          disabled={isPending || !hasRequirements}
+          style={{ ...ghostBtn, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", opacity: isPending || !hasRequirements ? 0.5 : 1 }}
+          onClick={() =>
+            startTransition(async () => {
+              setError(null);
+              const result = await generateInterviewQuestions(posting.id);
+              if ("error" in result) setError(result.error);
+              else router.refresh();
+            })
+          }
+        >
+          {isPending ? "Drafting…" : questions.length > 0 ? "Regenerate" : "✨ Generate questions"}
+        </button>
+      </div>
+      <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
+        A reference for whoever conducts the interview — same baseline questions for every candidate on this
+        posting, so notes stay comparable. Not a script; adapt as the conversation goes.
+      </p>
+      {!hasRequirements && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>Set required competencies above first.</p>}
+      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {questions.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {questions.map((q, i) => (
+            <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: "rgba(255,255,255,0.02)" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{q.dimension}</span>
+              <p style={{ fontSize: 13.5, color: "var(--text)", marginTop: 4, lineHeight: 1.5 }}>{q.question}</p>
+              <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5, fontStyle: "italic" }}>{q.whatToListenFor}</p>
+            </div>
+          ))}
         </div>
       )}
     </div>

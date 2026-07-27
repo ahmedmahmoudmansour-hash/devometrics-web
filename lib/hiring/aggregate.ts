@@ -9,23 +9,37 @@ import type {
   HiringCandidateAssessment,
 } from "./types";
 
+// A Job Architecture role, offered as an optional link when creating a
+// posting so its JD/requirements can carry over instead of being
+// re-written from scratch. Job Architecture is entirely optional (an org
+// may have zero roles defined), so this list can legitimately be empty.
+export type LinkableJobRole = {
+  id: string;
+  title: string;
+  level: string;
+  generatedJd: string | null;
+  responsibilities: string;
+  requirements: { dimension: string; targetLevel: number }[];
+};
+
 export type HiringOverview = {
   isOrgAdmin: boolean;
   organizationId: string | null;
   postings: (JobPosting & { candidateCount: number; hiredCount: number })[];
+  linkableRoles: LinkableJobRole[];
 };
 
 // Read-side aggregation, mirrors buildCompanyData()'s isolated-query
 // pattern: a query error on a table this admin's org hasn't populated yet
 // just yields an empty list here rather than breaking the page.
 export async function buildHiringOverview(): Promise<HiringOverview> {
-  const empty: HiringOverview = { isOrgAdmin: false, organizationId: null, postings: [] };
+  const empty: HiringOverview = { isOrgAdmin: false, organizationId: null, postings: [], linkableRoles: [] };
 
   const company = await buildCompanyData();
   if (!company.isOrgAdmin || !company.organizationId) return empty;
 
   const supabase = await createClient();
-  const [{ data: postings }, { data: candidates }] = await Promise.all([
+  const [{ data: postings }, { data: candidates }, { data: roles }, { data: roleRequirements }] = await Promise.all([
     supabase
       .from("job_postings")
       .select("*")
@@ -37,6 +51,20 @@ export async function buildHiringOverview(): Promise<HiringOverview> {
       .select("posting_id, stage")
       .eq("organization_id", company.organizationId)
       .returns<{ posting_id: string; stage: string }[]>(),
+    // Job Architecture (migration 0067) is optional and may not be set up —
+    // an error here (or before that migration runs) just yields no
+    // linkable roles rather than breaking the Hiring page.
+    supabase
+      .from("job_roles")
+      .select("id, title, level, generated_jd, responsibilities")
+      .eq("organization_id", company.organizationId)
+      .order("title")
+      .returns<{ id: string; title: string; level: string; generated_jd: string | null; responsibilities: string }[]>(),
+    supabase
+      .from("role_competency_requirements")
+      .select("role_id, dimension, target_level")
+      .eq("organization_id", company.organizationId)
+      .returns<{ role_id: string; dimension: string; target_level: number }[]>(),
   ]);
 
   const countByPosting = new Map<string, { total: number; hired: number }>();
@@ -47,9 +75,24 @@ export async function buildHiringOverview(): Promise<HiringOverview> {
     countByPosting.set(c.posting_id, stats);
   }
 
+  const requirementsByRole = new Map<string, { dimension: string; targetLevel: number }[]>();
+  for (const r of roleRequirements ?? []) {
+    const list = requirementsByRole.get(r.role_id) ?? [];
+    list.push({ dimension: r.dimension, targetLevel: r.target_level });
+    requirementsByRole.set(r.role_id, list);
+  }
+
   return {
     isOrgAdmin: true,
     organizationId: company.organizationId,
+    linkableRoles: (roles ?? []).map((r) => ({
+      id: r.id,
+      title: r.title,
+      level: r.level,
+      generatedJd: r.generated_jd,
+      responsibilities: r.responsibilities,
+      requirements: requirementsByRole.get(r.id) ?? [],
+    })),
     postings: (postings ?? []).map((p) => ({
       ...p,
       candidateCount: countByPosting.get(p.id)?.total ?? 0,

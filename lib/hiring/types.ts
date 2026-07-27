@@ -16,9 +16,18 @@ export type JobPosting = {
   linked_role_id: string | null;
   ranking_report: CandidateRankingReport | null;
   ranking_generated_at: string | null;
+  // Added in migration 0089 — may be absent until that's run.
+  interview_questions?: InterviewQuestion[] | null;
+  interview_questions_generated_at?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
+};
+
+export type InterviewQuestion = {
+  dimension: string;
+  question: string;
+  whatToListenFor: string;
 };
 
 export type JobPostingCompetencyRequirement = {
