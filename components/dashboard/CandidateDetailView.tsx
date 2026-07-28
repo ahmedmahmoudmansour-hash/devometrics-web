@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { addInterviewNote, deleteInterviewNote, generateCandidateAssessment } from "@/lib/hiring/interviewActions";
 import { markCandidateHired } from "@/lib/hiring/hireActions";
-import { STAGE_LABEL } from "@/lib/hiring/types";
+import { stageLabel } from "@/lib/hiring/types";
 import type {
   HiringCandidate,
   HiringCandidateCvScore,
@@ -71,6 +72,7 @@ export default function CandidateDetailView({
   assessment: HiringCandidateAssessment | null;
   stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[];
 }) {
+  const t = useTranslations("candidateDetailView");
   const router = useRouter();
   function refresh() {
     router.refresh();
@@ -81,14 +83,13 @@ export default function CandidateDetailView({
       {cvScore && (
         <div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>CV competency breakdown</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("cvCompetencyBreakdown")}</h2>
             <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: scoreColor(cvScore.career_health_score) }}>
               {cvScore.career_health_score}
             </span>
           </div>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
-            What their CV demonstrates on each dimension, measured against the posting&apos;s requirements — the score at
-            top is how close their overall CV is to fully meeting them (100 = meets every requirement).
+            {t("cvBreakdownDescription")}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {[...cvScore.competencies]
@@ -107,7 +108,7 @@ export default function CandidateDetailView({
       )}
       {!cvScore && !candidate.cv_storage_path && (
         <div style={card}>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No CV attached yet — add one from the pipeline board.</p>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("noCvYet")}</p>
         </div>
       )}
 
@@ -123,13 +124,15 @@ export default function CandidateDetailView({
 }
 
 function StageHistorySection({ stageHistory }: { stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[] }) {
+  const t = useTranslations("candidateDetailView");
+  const tStage = useTranslations("hiringStages");
   if (stageHistory.length === 0) return null;
 
   return (
     <div style={card}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>History</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("history")}</h2>
       <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
-        Every pipeline move for this candidate, oldest first — the reference trail for why a decision was made.
+        {t("historyDescription")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {stageHistory.map((h) => (
@@ -139,7 +142,9 @@ function StageHistorySection({ stageHistory }: { stageHistory: (HiringCandidateS
             />
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 12.5, color: "var(--text)" }}>
-                {h.from_stage ? `${STAGE_LABEL[h.from_stage]} → ${STAGE_LABEL[h.to_stage]}` : `Added as ${STAGE_LABEL[h.to_stage]}`}
+                {h.from_stage
+                  ? t("stageTransition", { from: stageLabel(tStage, h.from_stage), to: stageLabel(tStage, h.to_stage) })
+                  : t("addedAs", { stage: stageLabel(tStage, h.to_stage) })}
                 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>
                   {" "}
                   · {h.moverName} · {new Date(h.created_at).toLocaleDateString()}
@@ -163,14 +168,15 @@ function InterviewNotesSection({
   notes: (HiringCandidateInterviewNote & { authorName: string })[];
   onChanged: () => void;
 }) {
+  const t = useTranslations("candidateDetailView");
   const [isPending, startTransition] = useTransition();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   return (
     <div style={card}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>Interview notes</h2>
-      {notes.length === 0 && <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>No notes yet.</p>}
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("interviewNotes")}</h2>
+      {notes.length === 0 && <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>{t("noNotesYet")}</p>}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
         {notes.map((n) => (
           <div key={n.id} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: "rgba(255,255,255,0.02)" }}>
@@ -188,7 +194,7 @@ function InterviewNotesSection({
                   })
                 }
               >
-                Delete
+                {t("delete")}
               </button>
             </div>
             <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{n.note}</p>
@@ -198,7 +204,7 @@ function InterviewNotesSection({
       <textarea
         style={{ ...input, resize: "vertical" }}
         rows={4}
-        placeholder="Type in what the candidate said, how they answered, and your observations…"
+        placeholder={t("notesPlaceholder")}
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
@@ -219,7 +225,7 @@ function InterviewNotesSection({
           })
         }
       >
-        {isPending ? "Saving…" : "Add note"}
+        {isPending ? t("saving") : t("addNote")}
       </button>
     </div>
   );
@@ -236,13 +242,14 @@ function AssessmentSection({
   assessment: HiringCandidateAssessment | null;
   onChanged: () => void;
 }) {
+  const t = useTranslations("candidateDetailView");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   return (
     <div style={{ ...card, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.03)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>AI assessment</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("aiAssessment")}</h2>
         <button
           type="button"
           disabled={isPending || !hasNotes}
@@ -256,14 +263,13 @@ function AssessmentSection({
             })
           }
         >
-          {isPending ? "Analyzing…" : assessment ? "Regenerate" : "✨ Generate assessment"}
+          {isPending ? t("analyzing") : assessment ? t("regenerate") : t("generateAssessment")}
         </button>
       </div>
       <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
-        Turns the interview notes below into a structured read — grounded strictly in what&apos;s written, never
-        invented. Decision support for your own judgment, not an automated hire/reject verdict.
+        {t("assessmentDescription")}
       </p>
-      {!hasNotes && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>Add at least one interview note first.</p>}
+      {!hasNotes && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("addNoteFirst")}</p>}
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       {assessment && (
         <div>
@@ -272,7 +278,7 @@ function AssessmentSection({
               {assessment.assessment.overallScore}
             </span>
             <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
-              based on {assessment.based_on_note_count} note{assessment.based_on_note_count === 1 ? "" : "s"}
+              {t("basedOnNotes", { count: assessment.based_on_note_count })}
             </span>
           </div>
           {assessment.assessment.strengths.length > 0 && (
@@ -289,6 +295,7 @@ function AssessmentSection({
 }
 
 function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onChanged: () => void }) {
+  const t = useTranslations("candidateDetailView");
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -299,9 +306,9 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
   if (candidate.stage === "hired") {
     return (
       <div style={card}>
-        <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>✓ Hired</p>
+        <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>{t("hiredLabel")}</p>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-          {candidate.email} has been invited to your workspace and will be attached automatically once they sign up.
+          {t("hiredDescription", { email: candidate.email })}
         </p>
       </div>
     );
@@ -310,10 +317,9 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
   if (success) {
     return (
       <div style={card}>
-        <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>✓ Invite sent</p>
+        <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>{t("inviteSentLabel")}</p>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-          {candidate.email} can now sign up with that email to join your workspace — their competency profile
-          from this CV score will carry over automatically.
+          {t("inviteSentDescription", { email: candidate.email })}
         </p>
       </div>
     );
@@ -321,19 +327,18 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
 
   return (
     <div style={card}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>Hire this candidate</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("hireThisCandidate")}</h2>
       {!showForm ? (
         <button type="button" style={primaryBtn} onClick={() => setShowForm(true)}>
-          Mark as hired
+          {t("markAsHired")}
         </button>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-            Sends an invite to {candidate.email} — they sign up themselves and are attached to your workspace
-            automatically, with their CV competency score carried over as their first Gap Analysis.
+            {t("sendInviteDescription", { email: candidate.email })}
           </p>
-          <input style={input} placeholder="Job title (optional)" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <input style={input} placeholder="Department (optional)" value={department} onChange={(e) => setDepartment(e.target.value)} />
+          <input style={input} placeholder={t("jobTitleOptional")} value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input style={input} placeholder={t("departmentOptional")} value={department} onChange={(e) => setDepartment(e.target.value)} />
           {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -352,10 +357,10 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
                 })
               }
             >
-              {isPending ? "Sending invite…" : "Send invite"}
+              {isPending ? t("sendingInvite") : t("sendInvite")}
             </button>
             <button type="button" style={ghostBtn} onClick={() => setShowForm(false)}>
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         </div>

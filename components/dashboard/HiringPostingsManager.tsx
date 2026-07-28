@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createJobPosting, suggestPostingRequirements, saveJobPostingRequirements, setJobPostingStatus, deleteJobPosting } from "@/lib/hiring/postingActions";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import type { RoleGradingSuggestion } from "@/lib/jobArchitecture/actions";
+import { postingStatusLabel } from "@/lib/hiring/types";
 import type { JobPosting, JobPostingStatus } from "@/lib/hiring/types";
 import type { LinkableJobRole } from "@/lib/hiring/aggregate";
 
@@ -57,6 +59,8 @@ const STATUS_COLOR: Record<JobPostingStatus, string> = {
 type PostingRow = JobPosting & { candidateCount: number; hiredCount: number };
 
 export default function HiringPostingsManager({ postings, linkableRoles }: { postings: PostingRow[]; linkableRoles: LinkableJobRole[] }) {
+  const t = useTranslations("hiringPostingsManager");
+  const tStatus = useTranslations("postingStatus");
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -78,15 +82,14 @@ export default function HiringPostingsManager({ postings, linkableRoles }: { pos
         />
       ) : (
         <button type="button" style={{ ...primaryBtn, alignSelf: "flex-start" }} onClick={() => setShowAdd(true)}>
-          + New job posting
+          {t("newJobPosting")}
         </button>
       )}
 
       {postings.length === 0 && !showAdd && (
         <div style={card}>
           <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            No job postings yet. Create one, write or paste the job description, and let AI propose the
-            competency profile it requires — the same 8-dimension engine that powers Gap Analysis.
+            {t("noPostingsYet")}
           </p>
         </div>
       )}
@@ -111,18 +114,20 @@ export default function HiringPostingsManager({ postings, linkableRoles }: { pos
                     padding: "2px 8px",
                   }}
                 >
-                  {posting.status}
+                  {postingStatusLabel(tStatus, posting.status)}
                 </span>
               </div>
               {posting.department && <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4 }}>{posting.department}</p>}
               {posting.linked_role_id && (
                 <p style={{ fontSize: 11, color: "var(--teal)", marginTop: 4 }}>
-                  ↳ linked to {linkableRoles.find((r) => r.id === posting.linked_role_id)?.title ?? "a Job Architecture role"}
+                  {t("linkedToRole", {
+                    role: linkableRoles.find((r) => r.id === posting.linked_role_id)?.title ?? t("jobArchitectureRoleFallback"),
+                  })}
                 </p>
               )}
               <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
-                {posting.candidateCount} candidate{posting.candidateCount === 1 ? "" : "s"}
-                {posting.hiredCount > 0 ? ` · ${posting.hiredCount} hired` : ""}
+                {t("candidateCount", { count: posting.candidateCount })}
+                {posting.hiredCount > 0 ? t("hiredSuffix", { count: posting.hiredCount }) : ""}
               </p>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -136,12 +141,12 @@ export default function HiringPostingsManager({ postings, linkableRoles }: { pos
                   })
                 }
               >
-                <option value="draft">Draft</option>
-                <option value="open">Open</option>
-                <option value="closed">Closed</option>
+                <option value="draft">{tStatus("draft")}</option>
+                <option value="open">{tStatus("open")}</option>
+                <option value="closed">{tStatus("closed")}</option>
               </select>
               <Link href={`/dashboard/company/hiring/${posting.id}`} style={{ ...ghostBtn, textDecoration: "none", display: "inline-block" }}>
-                Open pipeline →
+                {t("openPipeline")}
               </Link>
               <button
                 type="button"
@@ -149,13 +154,13 @@ export default function HiringPostingsManager({ postings, linkableRoles }: { pos
                 style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
                 onClick={() =>
                   startTransition(async () => {
-                    if (!confirm(`Delete "${posting.title}" and all its candidates? This can't be undone.`)) return;
+                    if (!confirm(t("deleteConfirm", { title: posting.title }))) return;
                     await deleteJobPosting(posting.id);
                     refresh();
                   })
                 }
               >
-                Delete
+                {t("delete")}
               </button>
             </div>
           </div>
@@ -174,6 +179,7 @@ function NewPostingForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("hiringPostingsManager");
   const [isPending, startTransition] = useTransition();
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -213,13 +219,13 @@ function NewPostingForm({
 
   return (
     <div style={{ ...card, border: "1px solid rgba(0,201,167,0.3)", background: "rgba(0,201,167,0.03)" }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>New job posting</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("newPostingTitle")}</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {linkableRoles.length > 0 && (
           <label style={{ fontSize: 11.5, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
-            Link to an existing Job Architecture role (optional) — carries over its JD and required competencies
+            {t("linkExistingRole")}
             <select style={{ ...input, cursor: "pointer" }} value={linkedRoleId} onChange={(e) => applyLinkedRole(e.target.value)}>
-              <option value="">— None, start from scratch —</option>
+              <option value="">{t("noneStartFromScratch")}</option>
               {linkableRoles.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.title}
@@ -229,19 +235,19 @@ function NewPostingForm({
             </select>
           </label>
         )}
-        <input style={input} placeholder="Job title — e.g. Senior Backend Engineer" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input style={input} placeholder="Department (optional)" value={department} onChange={(e) => setDepartment(e.target.value)} />
+        <input style={input} placeholder={t("jobTitlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <input style={input} placeholder={t("departmentPlaceholder")} value={department} onChange={(e) => setDepartment(e.target.value)} />
         <textarea
           style={{ ...input, resize: "vertical" }}
           rows={4}
-          placeholder="Job description — pasted or written here, used to score candidate CVs against"
+          placeholder={t("jobDescriptionPlaceholder")}
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
         />
         <textarea
           style={{ ...input, resize: "vertical" }}
           rows={3}
-          placeholder="Key responsibilities (the AI proposes required competencies from this)"
+          placeholder={t("responsibilitiesPlaceholder")}
           value={responsibilities}
           onChange={(e) => setResponsibilities(e.target.value)}
         />
@@ -261,7 +267,7 @@ function NewPostingForm({
             });
           }}
         >
-          {suggesting ? "Analyzing…" : "✨ Suggest requirements with AI"}
+          {suggesting ? t("analyzing") : t("suggestRequirements")}
         </button>
 
         {rationale && (
@@ -273,7 +279,7 @@ function NewPostingForm({
         {Object.keys(reqs).length > 0 && (
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-              Required competency levels (0 = not required) — review and edit before saving
+              {t("requiredCompetencyLevels")}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
               {COMPETENCY_DIMENSIONS.map((dim) => (
@@ -305,7 +311,7 @@ function NewPostingForm({
                 setError(null);
                 const created = await createJobPosting({ title, department, jobDescription, responsibilities, linkedRoleId: linkedRoleId || null });
                 if (created.error || !created.postingId) {
-                  setError(created.error ?? "Could not create the posting");
+                  setError(created.error ?? t("couldNotCreatePosting"));
                   return;
                 }
                 const requirements = COMPETENCY_DIMENSIONS.map((dim) => ({ dimension: dim, targetLevel: reqs[dim] ?? 0 })).filter(
@@ -316,10 +322,10 @@ function NewPostingForm({
               })
             }
           >
-            {isPending ? "Creating…" : "Create posting"}
+            {isPending ? t("creating") : t("createPosting")}
           </button>
           <button type="button" style={ghostBtn} onClick={onCancel}>
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </div>

@@ -3,13 +3,14 @@
 import { Fragment, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { FileText, PhoneCall, Users, Handshake, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { createCandidate, attachCandidateCv, scoreCandidateCv, moveCandidateStage, deleteCandidate } from "@/lib/hiring/candidateActions";
 import { generateCandidateRanking } from "@/lib/hiring/rankingActions";
 import { generateInterviewQuestions } from "@/lib/hiring/postingActions";
 import { CANDIDATE_CV_BUCKET, CANDIDATE_CV_MAX_BYTES, CANDIDATE_CV_ALLOWED_MIME_TYPES } from "@/lib/hiring/constants";
-import { HIRING_STAGES, STAGE_LABEL } from "@/lib/hiring/types";
+import { HIRING_STAGES, stageLabel } from "@/lib/hiring/types";
 import type { JobPosting, JobPostingCompetencyRequirement, HiringCandidate, HiringStage } from "@/lib/hiring/types";
 
 const card: React.CSSProperties = {
@@ -86,6 +87,8 @@ export default function HiringPipelineBoard({
   requirements: JobPostingCompetencyRequirement[];
   candidates: CandidateRow[];
 }) {
+  const t = useTranslations("hiringPipelineBoard");
+  const tStage = useTranslations("hiringStages");
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [ranking, setRanking] = useState(false);
@@ -121,10 +124,10 @@ export default function HiringPipelineBoard({
         {sortedReqs.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Required competencies
+              {t("requiredCompetencies")}
             </p>
             <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4, lineHeight: 1.5 }}>
-              How strongly this role needs each of the 8 fixed dimensions (0–100) — the target every candidate&apos;s CV is scored against below.
+              {t("requiredCompetenciesDescription")}
             </p>
             {sortedReqs.map((r) => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -143,9 +146,9 @@ export default function HiringPipelineBoard({
 
       {topByCvScore.length > 0 && (
         <div style={card}>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Top candidates by CV score</h2>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("topCandidatesByCvScore")}</h2>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 12 }}>
-            Ranked instantly from CV scoring, no AI comparison call — run &quot;Compare &amp; Rank&quot; below for a fuller judgment across CV and interview data.
+            {t("topCandidatesDescription")}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {topByCvScore.map((c, i) => (
@@ -156,7 +159,7 @@ export default function HiringPipelineBoard({
               >
                 <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", width: 14 }}>{i + 1}</span>
                 <span style={{ flex: 1, fontSize: 13, color: "var(--text)" }}>{c.full_name}</span>
-                <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{STAGE_LABEL[c.stage]}</span>
+                <span style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{stageLabel(tStage, c.stage)}</span>
                 <span className="mono" style={{ fontSize: 13, fontWeight: 800, color: scoreColor(c.careerHealthScore ?? 0), width: 28, textAlign: "right" }}>
                   {c.careerHealthScore}
                 </span>
@@ -169,7 +172,7 @@ export default function HiringPipelineBoard({
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {showAdd ? null : (
           <button type="button" style={primaryBtn} onClick={() => setShowAdd(true)}>
-            + Add candidate
+            {t("addCandidate")}
           </button>
         )}
         <button
@@ -187,12 +190,11 @@ export default function HiringPipelineBoard({
             });
           }}
         >
-          {ranking ? "Comparing…" : "✨ Compare & Rank candidates"}
+          {ranking ? t("comparing") : t("compareAndRank")}
         </button>
       </div>
       <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: -4 }}>
-        An AI judgment call across every active candidate&apos;s CV score and interview assessment together —
-        decision support for the conversation, not an automated hire/reject decision.
+        {t("compareDescription")}
       </p>
       {rankingError && <p style={{ color: "#f87171", fontSize: 12 }}>{rankingError}</p>}
 
@@ -210,7 +212,7 @@ export default function HiringPipelineBoard({
 
       {posting.ranking_report && posting.ranking_report.candidates.length > 0 && (
         <div style={{ ...card, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.03)" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Candidate comparison</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("candidateComparison")}</h2>
           <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 14 }}>{posting.ranking_report.riskNote}</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[...posting.ranking_report.candidates]
@@ -229,7 +231,7 @@ export default function HiringPipelineBoard({
                       <span className="mono" style={{ fontSize: 15, fontWeight: 800, color: scoreColor(c.fitScore) }}>{c.fitScore}</span>
                     </div>
                     {candidate && (
-                      <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>{STAGE_LABEL[candidate.stage]}</p>
+                      <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>{stageLabel(tStage, candidate.stage)}</p>
                     )}
                     <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>{c.whyRanked}</p>
                     {c.strengths.length > 0 && (
@@ -277,7 +279,7 @@ export default function HiringPipelineBoard({
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {STAGE_LABEL[stage]} ({candidates.filter((c) => c.stage === stage).length})
+                    {t("stageColumnHeader", { stage: stageLabel(tStage, stage), count: candidates.filter((c) => c.stage === stage).length })}
                   </p>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -304,7 +306,7 @@ export default function HiringPipelineBoard({
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
             <STAGE_ICON.rejected size={14} />
             <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Rejected ({rejected.length})
+              {t("rejectedHeader", { count: rejected.length })}
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -319,6 +321,7 @@ export default function HiringPipelineBoard({
 }
 
 function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobPosting; hasRequirements: boolean }) {
+  const t = useTranslations("hiringPipelineBoard");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -327,7 +330,7 @@ function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobP
   return (
     <div style={{ ...card, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.03)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Interview questions</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("interviewQuestions")}</h2>
         <button
           type="button"
           disabled={isPending || !hasRequirements}
@@ -341,14 +344,13 @@ function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobP
             })
           }
         >
-          {isPending ? "Drafting…" : questions.length > 0 ? "Regenerate" : "✨ Generate questions"}
+          {isPending ? t("drafting") : questions.length > 0 ? t("regenerate") : t("generateQuestions")}
         </button>
       </div>
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-        A reference for whoever conducts the interview — same baseline questions for every candidate on this
-        posting, so notes stay comparable. Not a script; adapt as the conversation goes.
+        {t("interviewQuestionsDescription")}
       </p>
-      {!hasRequirements && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>Set required competencies above first.</p>}
+      {!hasRequirements && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("setRequirementsFirst")}</p>}
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       {questions.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -378,6 +380,8 @@ function CandidateCard({
   isPending: boolean;
   startTransition: (fn: () => Promise<void> | void) => void;
 }) {
+  const t = useTranslations("hiringPipelineBoard");
+  const tStage = useTranslations("hiringStages");
   // A move isn't fired the instant the select changes — it's held as
   // "pending" so an optional one-line reason can be attached first (mainly
   // for Rejected, but useful for any stage), then confirmed or cancelled.
@@ -424,7 +428,7 @@ function CandidateCard({
         >
           {HIRING_STAGES.map((s) => (
             <option key={s} value={s}>
-              {STAGE_LABEL[s]}
+              {stageLabel(tStage, s)}
             </option>
           ))}
         </select>
@@ -434,27 +438,27 @@ function CandidateCard({
           style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer", marginLeft: "auto" }}
           onClick={() =>
             startTransition(async () => {
-              if (!confirm(`Remove ${candidate.full_name} from this pipeline?`)) return;
+              if (!confirm(t("removeConfirm", { name: candidate.full_name }))) return;
               await deleteCandidate(candidate.id);
               onChanged();
             })
           }
         >
-          Remove
+          {t("remove")}
         </button>
       </div>
       {pendingStage && (
         <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}>
           <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginBottom: 6 }}>
-            Move to {STAGE_LABEL[pendingStage]}
-            {pendingStage === "rejected" ? " — why? (optional, but useful for reference later)" : " — add a note? (optional)"}
+            {t("moveToStage", { stage: stageLabel(tStage, pendingStage) })}
+            {pendingStage === "rejected" ? t("moveRejectedSuffix") : t("moveNoteSuffix")}
           </p>
           <textarea
             autoFocus
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder={pendingStage === "rejected" ? "e.g. not enough backend depth for this role" : "e.g. strong on system design, moving to interview"}
+            placeholder={pendingStage === "rejected" ? t("rejectedNotePlaceholder") : t("moveNotePlaceholder")}
             style={{ ...input, fontSize: 11, padding: "6px 8px", resize: "vertical", marginBottom: 6 }}
           />
           <div style={{ display: "flex", gap: 6 }}>
@@ -470,10 +474,10 @@ function CandidateCard({
                 })
               }
             >
-              Confirm move
+              {t("confirmMove")}
             </button>
             <button type="button" style={{ ...ghostBtn, fontSize: 11, padding: "5px 12px" }} onClick={() => setPendingStage(null)}>
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         </div>
@@ -493,6 +497,7 @@ function AddCandidateForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("hiringPipelineBoard");
   const fileRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [fullName, setFullName] = useState("");
@@ -511,11 +516,11 @@ function AddCandidateForm({
       return;
     }
     if (!(CANDIDATE_CV_ALLOWED_MIME_TYPES as readonly string[]).includes(f.type)) {
-      setFileError("Only PDF, DOC, or DOCX files are supported.");
+      setFileError(t("onlyPdfDocSupported"));
       return;
     }
     if (f.size > CANDIDATE_CV_MAX_BYTES) {
-      setFileError("File is too large — 8MB max.");
+      setFileError(t("fileTooLarge"));
       return;
     }
     setFile(f);
@@ -524,30 +529,30 @@ function AddCandidateForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!fullName.trim()) return setError("Give the candidate a name");
-    if (!email.trim().includes("@")) return setError("A valid email is required");
+    if (!fullName.trim()) return setError(t("giveCandidateName"));
+    if (!email.trim().includes("@")) return setError(t("validEmailRequired"));
 
     startTransition(async () => {
       const created = await createCandidate(postingId, { fullName, email, phone });
       if (created.error || !created.candidateId) {
-        setError(created.error ?? "Could not add the candidate");
+        setError(created.error ?? t("couldNotAddCandidate"));
         return;
       }
       const candidateId = created.candidateId;
 
       if (file) {
         try {
-          setStatus("Reading CV…");
+          setStatus(t("readingCv"));
           const formData = new FormData();
           formData.append("file", file);
           const res = await fetch("/api/extract-text", { method: "POST", body: formData });
           if (!res.ok) {
             const body = await res.json().catch(() => ({}));
-            throw new Error(body.error || "Failed to read the CV file");
+            throw new Error(body.error || t("failedToReadCv"));
           }
           const { text } = await res.json();
 
-          setStatus("Uploading CV…");
+          setStatus(t("uploadingCv"));
           const storagePath = `${organizationId}/${candidateId}/${sanitizeFileName(file.name)}`;
           const supabase = createClient();
           const { error: uploadError } = await supabase.storage.from(CANDIDATE_CV_BUCKET).upload(storagePath, file);
@@ -560,11 +565,11 @@ function AddCandidateForm({
             mimeType: file.type,
           });
 
-          setStatus("Scoring CV…");
+          setStatus(t("scoringCv"));
           const scored = await scoreCandidateCv(candidateId, text);
           if ("error" in scored) setError(scored.error);
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Candidate added, but the CV could not be processed");
+          setError(err instanceof Error ? err.message : t("candidateAddedCvFailed"));
         }
       }
 
@@ -575,16 +580,16 @@ function AddCandidateForm({
 
   return (
     <form onSubmit={handleSubmit} style={{ ...card, border: "1px solid rgba(0,201,167,0.3)", background: "rgba(0,201,167,0.03)" }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>Add candidate</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("addCandidateTitle")}</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input style={input} placeholder="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        <input style={input} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input style={input} placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input style={input} placeholder={t("fullNamePlaceholder")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <input style={input} type="email" placeholder={t("emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input style={input} placeholder={t("phonePlaceholder")} value={phone} onChange={(e) => setPhone(e.target.value)} />
 
         <div>
           <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} id="candidate-cv-upload" style={{ display: "none" }} />
           <label htmlFor="candidate-cv-upload" style={{ fontSize: 12, color: "var(--teal)", cursor: "pointer", textDecoration: "underline" }}>
-            {file ? `CV: ${file.name}` : "Attach CV (PDF, DOC, or DOCX)"}
+            {file ? t("cvFileLabel", { fileName: file.name }) : t("attachCv")}
           </label>
           {fileError && <p style={{ color: "#f87171", fontSize: 11, marginTop: 4 }}>{fileError}</p>}
         </div>
@@ -594,10 +599,10 @@ function AddCandidateForm({
 
         <div style={{ display: "flex", gap: 8 }}>
           <button type="submit" disabled={isPending} style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }}>
-            {isPending ? "Adding…" : "Add candidate"}
+            {isPending ? t("adding") : t("addCandidateTitle")}
           </button>
           <button type="button" style={ghostBtn} onClick={onCancel}>
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </div>

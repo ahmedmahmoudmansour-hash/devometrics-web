@@ -16,6 +16,24 @@ export const STAGE_LABEL: Record<HiringStage, string> = {
   rejected: "Rejected",
 };
 
+const STAGE_TRANSLATION_KEY: Record<HiringStage, string> = {
+  applied: "applied",
+  phone_screen: "phoneScreen",
+  interview: "interview",
+  offer: "offer",
+  hired: "hired",
+  rejected: "rejected",
+};
+
+// t must come from useTranslations("hiringStages") / useTranslations("postingStatus").
+export function stageLabel(t: (key: string) => string, stage: HiringStage): string {
+  return t(STAGE_TRANSLATION_KEY[stage]);
+}
+
+export function postingStatusLabel(t: (key: string) => string, status: JobPostingStatus): string {
+  return t(status);
+}
+
 export type JobPosting = {
   id: string;
   organization_id: string;
