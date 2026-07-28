@@ -55,6 +55,30 @@ export const BRIDGE_CONTENT_RATE_LIMIT_MAX_RUNS = 10;
 // lib/succession (a length cap, not a request-count throttle).
 export const MAX_INTERVIEW_NOTE_LENGTH = 4000;
 
+// CV scoring is admin-gated but, unlike interview notes above, IS a
+// bulk-shaped action — an admin can add many candidates to one posting in a
+// sitting, and nothing else stands between that and a burst of Claude calls
+// (e.g. a careless bulk upload, or a retry loop on a flaky network). Window
+// is daily rather than hourly like most other limits here, since reviewing a
+// real applicant stack in one afternoon is normal, expected usage.
+//
+// The limit scales with headcount rather than being a flat number: a real
+// enterprise account can legitimately need well over 100 scores/day during
+// an active hiring push, and a flat cap would either block that (lost
+// revenue, false-positive abuse signal) or — at a company small enough for
+// 100/day to be generous — do nothing to bound cost. BASE is the floor for
+// small accounts; PER_EMPLOYEE lets larger accounts scale up from there.
+export const HIRING_CV_SCORE_RATE_LIMIT_WINDOW_MINUTES = 1440;
+export const HIRING_CV_SCORE_RATE_LIMIT_BASE_RUNS = 100;
+export const HIRING_CV_SCORE_RATE_LIMIT_PER_EMPLOYEE = 0.5;
+
+export function hiringCvScoreDailyLimit(employeeCount: number): number {
+  return Math.max(
+    HIRING_CV_SCORE_RATE_LIMIT_BASE_RUNS,
+    Math.ceil(employeeCount * HIRING_CV_SCORE_RATE_LIMIT_PER_EMPLOYEE)
+  );
+}
+
 export const MAX_ROLEPLAY_MESSAGE_LENGTH = 2000;
 // Roleplay sessions store the whole conversation as one row (jsonb array),
 // so per-message rate limiting doesn't map to a row count the way other

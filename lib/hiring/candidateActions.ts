@@ -5,7 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { extractCompetencies } from "@/lib/gap-analysis/extract";
 import { sanitizeCompetencyScores, careerHealthScore } from "@/lib/gap-analysis/dimensions";
-import { MAX_CV_LENGTH, MAX_JOB_DESCRIPTION_LENGTH, MAX_TARGET_ROLE_LENGTH } from "@/lib/limits";
+import {
+  MAX_CV_LENGTH,
+  MAX_JOB_DESCRIPTION_LENGTH,
+  MAX_TARGET_ROLE_LENGTH,
+  HIRING_CV_SCORE_RATE_LIMIT_WINDOW_MINUTES,
+  hiringCvScoreDailyLimit,
+} from "@/lib/limits";
 import { CANDIDATE_CV_BUCKET } from "./constants";
 import type { HiringStage } from "./types";
 import { HIRING_STAGES } from "./types";
@@ -109,6 +115,26 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
 
   const trimmedCv = cvText.trim().slice(0, MAX_CV_LENGTH);
   if (!trimmedCv) return { error: "No CV text to score" };
+
+  const { count: employeeCount } = await supabase
+    .from("organization_members")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId);
+  const dailyLimit = hiringCvScoreDailyLimit(employeeCount ?? 0);
+
+  const windowStart = new Date(
+    Date.now() - HIRING_CV_SCORE_RATE_LIMIT_WINDOW_MINUTES * 60 * 1000
+  ).toISOString();
+  const { count: recentScoreCount } = await supabase
+    .from("hiring_candidate_cv_scores")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .gte("updated_at", windowStart);
+  if ((recentScoreCount ?? 0) >= dailyLimit) {
+    return {
+      error: `Your organization has scored ${dailyLimit} CVs in the last 24 hours — the limit resets on a rolling basis. Contact support if you need this raised for a large hiring push.`,
+    };
+  }
 
   const { data: candidate } = await supabase
     .from("hiring_candidates")

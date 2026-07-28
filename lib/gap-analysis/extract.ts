@@ -91,7 +91,11 @@ export async function extractCompetencies({
   performanceData?: string | null;
 }): Promise<CompetencyScore[]> {
   const response = await anthropic.messages.create({
-    model: "claude-fable-5",
+    // Sonnet 5 handles this well for the vast majority of CVs. Escalate to
+    // claude-fable-5 only if real-world evaluation shows Sonnet's scores are
+    // unreliable on specific CV types — Fable costs ~5-7x more per call, so
+    // that escalation needs evidence, not a default.
+    model: "claude-sonnet-5",
     max_tokens: 4096,
     system: `You are the Devometrics competency extraction engine. Score the candidate against the target role across exactly these ${COMPETENCY_DIMENSIONS.length} fixed dimensions: ${COMPETENCY_DIMENSIONS.join(", ")}.
 
@@ -99,7 +103,9 @@ FRAMEWORK: Ground your scoring approach in established competency-science, not f
 
 The candidate's background material may be a formal CV, or it may be a student's coursework, class projects, internships, or extracurricular experience — treat all of these as legitimate evidence, not just paid work history. If performance review data or stated objectives are also provided, treat that as a distinct, often more current and specific evidence source than the CV — performance reviews frequently describe actual demonstrated behavior with more precision than a resume bullet does, so weigh it accordingly rather than treating it as secondary.
 
-Ground every score in specific evidence from the background material provided. Do not invent accomplishments or skills that aren't supported by the text. When the material gives little or no signal for a dimension — which is expected and normal for students or early-career candidates — say so plainly in the rationale and lower the confidence score accordingly rather than guessing a mid-range number to look complete. A low score from thin evidence is not a judgment on the person; it reflects what's currently demonstrable, and confidence should say that. This confidence score is shown directly to the user, so it must be honest.`,
+Ground every score in specific evidence from the background material provided. Do not invent accomplishments or skills that aren't supported by the text. When the material gives little or no signal for a dimension — which is expected and normal for students or early-career candidates — say so plainly in the rationale and lower the confidence score accordingly rather than guessing a mid-range number to look complete. A low score from thin evidence is not a judgment on the person; it reflects what's currently demonstrable, and confidence should say that. This confidence score is shown directly to the user, so it must be honest.
+
+CONFIDENCE CALIBRATION: 1-2 clear, specific examples of a dimension (a named tool, a described outcome, a concrete responsibility) should read as reasonably confident — 65-85. A single example with some ambiguity about scope is still meaningful signal — 50-70. Only drop below 40 when there is truly no evidence at all for a dimension, not merely thin evidence. Don't under-score confidence just because evidence isn't exhaustive — real CVs rarely list 3+ examples per dimension, and that shouldn't by itself cap confidence in the middle of the range.`,
     tools: [RECORD_TOOL],
     tool_choice: { type: "tool", name: "record_gap_analysis" },
     messages: [
