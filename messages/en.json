@@ -1500,31 +1500,40 @@
     "gridAriaLabel": "Nine-box talent grid",
     "legendTitle": "9-box zone guide — what each zone needs",
     "highPotential": {
-      "needs": "Fast-track development and sponsorship — capability is behind, but growth signal is strong."
+      "needs": "Fast-track development and sponsorship — capability is behind, but growth signal is strong.",
+      "label": "High Potential"
     },
     "futureStar": {
-      "needs": "Accelerated growth plan and visibility — keep them engaged and challenged."
+      "needs": "Accelerated growth plan and visibility — keep them engaged and challenged.",
+      "label": "Future Star"
     },
     "futureLeader": {
-      "needs": "Succession-ready. Retain deliberately and prepare for the transition."
+      "needs": "Succession-ready. Retain deliberately and prepare for the transition.",
+      "label": "Future Leader"
     },
     "roughDiamond": {
-      "needs": "Structured coaching and foundational skill-building before stretching further."
+      "needs": "Structured coaching and foundational skill-building before stretching further.",
+      "label": "Rough Diamond"
     },
     "corePlayer": {
-      "needs": "Steady development and broader exposure — the dependable middle of the org."
+      "needs": "Steady development and broader exposure — the dependable middle of the org.",
+      "label": "Core Player"
     },
     "trustedProfessional": {
-      "needs": "Stretch assignments and more visibility so capability keeps compounding."
+      "needs": "Stretch assignments and more visibility so capability keeps compounding.",
+      "label": "Trusted Professional"
     },
     "needsAttention": {
-      "needs": "Address directly — closer coaching, a performance plan, or a role that fits better."
+      "needs": "Address directly — closer coaching, a performance plan, or a role that fits better.",
+      "label": "Needs Attention"
     },
     "inconsistent": {
-      "needs": "Closer management and fundamentals — capability is present but growth has stalled."
+      "needs": "Closer management and fundamentals — capability is present but growth has stalled.",
+      "label": "Inconsistent"
     },
     "plateaued": {
-      "needs": "New challenges to reignite growth — capable but at risk of disengaging."
+      "needs": "New challenges to reignite growth — capable but at risk of disengaging.",
+      "label": "Plateaued"
     }
   },
   "highPotentialPage": {

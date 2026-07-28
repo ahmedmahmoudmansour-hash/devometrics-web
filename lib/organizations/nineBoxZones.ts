@@ -18,9 +18,9 @@ export const NINE_BOX_ZONES: { row: 0 | 1 | 2; col: 0 | 1 | 2; label: string; ne
 
 // Zone `label` stays the stable English identifier used for keying/lookup
 // throughout the codebase (high-potential/page.tsx's ZONE_ORDER + byZone Map,
-// SuccessionBoard.tsx) — the zone NAME itself is deliberately left
-// untranslated (jargon closer to "OKR" than to prose; "Rough Diamond" loses
-// its idiom in Arabic). Only the "needs" explanation is translated.
+// SuccessionBoard.tsx) — data/lookup logic always keys off this fixed
+// English string. Both the zone name and its "needs" explanation are
+// translated for display via zoneLabel()/zoneNeeds() below.
 export const ZONE_TRANSLATION_KEY: Record<string, string> = {
   "High Potential": "highPotential",
   "Future Star": "futureStar",
@@ -35,4 +35,8 @@ export const ZONE_TRANSLATION_KEY: Record<string, string> = {
 
 export function zoneNeeds(t: (key: string) => string, label: string): string {
   return t(`${ZONE_TRANSLATION_KEY[label]}.needs`);
+}
+
+export function zoneLabel(t: (key: string) => string, label: string): string {
+  return t(`${ZONE_TRANSLATION_KEY[label]}.label`);
 }

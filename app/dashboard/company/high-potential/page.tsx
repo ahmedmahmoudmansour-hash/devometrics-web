@@ -5,6 +5,7 @@ import { buildCompanyData, type WorkforceRow } from "@/lib/organizations/aggrega
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import Avatar from "@/components/Avatar";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
+import { zoneLabel as translatedZoneLabel } from "@/lib/organizations/nineBoxZones";
 import { NineBoxLegend } from "@/components/dashboard/charts";
 
 export const metadata = { title: "High Potential Pool — Devometrics" };
@@ -25,9 +26,9 @@ const card: React.CSSProperties = {
 // developing, but growth signal strong — which in practice is where
 // early-career and junior employees who are quietly outperforming their
 // tenure tend to land. One roster, two very different action items.
-// Zone names stay untranslated (see ZONE_TRANSLATION_KEY note in
-// charts.tsx) — only the blurb prose below is translated, keyed by the
-// same stable English zone name.
+// Zone names and the blurb prose below are both translated via
+// ZONE_TRANSLATION_KEY (lib/organizations/nineBoxZones.ts), keyed by the
+// same stable English zone name used for lookup/grouping throughout.
 const ZONE_ORDER = ["Future Leader", "Future Star", "High Potential"] as const;
 
 const ZONE_BLURB_KEY: Record<(typeof ZONE_ORDER)[number], string> = {
@@ -45,6 +46,7 @@ type PoolEntry = {
 
 export default async function HighPotentialPoolPage() {
   const t = await getTranslations("highPotentialPage");
+  const tZones = await getTranslations("nineBoxZones");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -133,7 +135,7 @@ export default async function HighPotentialPoolPage() {
               return (
                 <div key={zoneLabel} style={card}>
                   <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                    {zoneLabel} <span style={{ fontWeight: 500, color: "var(--text-muted)" }}>({list.length})</span>
+                    {translatedZoneLabel(tZones, zoneLabel)} <span style={{ fontWeight: 500, color: "var(--text-muted)" }}>({list.length})</span>
                   </h2>
                   <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6, maxWidth: 640 }}>
                     {t(ZONE_BLURB_KEY[zoneLabel])}

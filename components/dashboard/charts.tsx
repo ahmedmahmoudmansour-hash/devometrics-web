@@ -6,7 +6,7 @@
 // light/dark mode.
 
 import { useTranslations } from "next-intl";
-import { NINE_BOX_ZONES, zoneNeeds } from "@/lib/organizations/nineBoxZones";
+import { NINE_BOX_ZONES, zoneNeeds, zoneLabel } from "@/lib/organizations/nineBoxZones";
 
 const TEAL = "var(--teal)";
 const AMBER = "var(--amber)";
@@ -180,7 +180,7 @@ export function NineBoxLegend({ forceOpen = false }: { forceOpen?: boolean } = {
         .sort((a, b) => b.row - a.row || a.col - b.col)
         .map((z) => (
           <div key={z.label} style={{ borderInlineStart: `2px solid ${ZONE_TONE_COLOR[z.tone]}`, paddingInlineStart: 10 }}>
-            <p style={{ fontSize: 11.5, fontWeight: 700, color: ZONE_TONE_COLOR[z.tone] }}>{z.label}</p>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: ZONE_TONE_COLOR[z.tone] }}>{zoneLabel(t, z.label)}</p>
             <p style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>{zoneNeeds(t, z.label)}</p>
           </div>
         ))}
@@ -251,7 +251,7 @@ export function NineBoxGrid({
                 fill={ZONE_TONE_COLOR[zone.tone]}
                 style={{ textTransform: "uppercase", letterSpacing: "0.02em" }}
               >
-                {zone.label}
+                {zoneLabel(t, zone.label)}
               </text>
             </g>
           );
@@ -277,7 +277,7 @@ export function NineBoxGrid({
             <text x={px} y={py + 3.5} textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--text)">
               {initials(p.name)}
             </text>
-            <title>{`${p.name} — ${xLabel.toLowerCase()} ${Math.round(p.x)}, ${yLabel.toLowerCase()} ${Math.round(p.y)} — zone: ${zone.label}`}</title>
+            <title>{`${p.name} — ${xLabel.toLowerCase()} ${Math.round(p.x)}, ${yLabel.toLowerCase()} ${Math.round(p.y)} — zone: ${zoneLabel(t, zone.label)}`}</title>
           </g>
         );
       })}
