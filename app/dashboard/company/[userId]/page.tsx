@@ -15,6 +15,7 @@ import { levelText } from "@/lib/ui/levelColor";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretationDisplay, bigFiveTraitLabel } from "@/lib/personality/bigFive";
+import { resolveAssessmentDisplayName } from "@/lib/assessments/catalog";
 import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection";
 import ManagerNotesSection from "@/components/dashboard/ManagerNotesSection";
 
@@ -36,6 +37,7 @@ export default async function EmployeeDetailPage({
   const tTraits = await getTranslations("bigFiveTraits");
   const tInterp = await getTranslations("bigFiveInterpretations");
   const tBands = await getTranslations("scoreBands");
+  const tCatalog = await getTranslations("assessmentCatalog");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const data = await buildEmployeeDetail(userId);
@@ -267,7 +269,7 @@ export default async function EmployeeDetailPage({
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {assessmentResults.slice(0, 6).map((a) => (
                         <div key={a.slug} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
-                          <span style={{ color: "var(--text)" }}>{a.name}</span>
+                          <span style={{ color: "var(--text)" }}>{resolveAssessmentDisplayName(tCatalog, a.slug)}</span>
                           {a.slug === ENGLISH_PROFICIENCY_SLUG ? (
                             <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>
                               {cefrLevelFromScore(a.score)} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({a.score})</span>
@@ -410,7 +412,7 @@ export default async function EmployeeDetailPage({
           <GenerateAssessmentSummaryButton
             employeeUserId={userId}
             hasSummary={!!assessmentSummary}
-            pendingAssignments={assignedAssessments.filter((a) => !a.completed).map((a) => a.name)}
+            pendingAssignments={assignedAssessments.filter((a) => !a.completed).map((a) => resolveAssessmentDisplayName(tCatalog, a.slug))}
           />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />

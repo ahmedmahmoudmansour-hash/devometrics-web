@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildJourney, type JourneyEvent } from "@/lib/journey/aggregate";
 import Mascot from "@/components/Mascot";
@@ -14,8 +15,11 @@ const TYPE_ICON: Record<JourneyEvent["type"], string> = {
   milestone: "✓",
 };
 
-function monthLabel(date: string): string {
-  return new Date(date).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+function monthLabel(date: string, locale: string): string {
+  return new Date(date).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export default async function JourneyPage() {
@@ -25,11 +29,19 @@ export default async function JourneyPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const events = await buildJourney();
+  const locale = await getLocale();
+  const [t, tPage, tCatalog, tBands, tScenarios] = await Promise.all([
+    getTranslations("journeyEvents"),
+    getTranslations("journeyPage"),
+    getTranslations("assessmentCatalog"),
+    getTranslations("scoreBands"),
+    getTranslations("roleplayScenarios"),
+  ]);
+  const events = await buildJourney(t, tCatalog, tBands, tScenarios);
 
   const groups = new Map<string, JourneyEvent[]>();
   for (const e of events) {
-    const key = monthLabel(e.date);
+    const key = monthLabel(e.date, locale);
     const list = groups.get(key) ?? [];
     list.push(e);
     groups.set(key, list);
@@ -40,14 +52,13 @@ export default async function JourneyPage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {tPage("back")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Your Journey
+            {tPage("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            Everything you&apos;ve actually done on Devometrics, in order — not a new data source,
-            just your existing activity laid out as a story.
+            {tPage("description")}
           </p>
         </div>
 
@@ -55,8 +66,7 @@ export default async function JourneyPage() {
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
             <Mascot size={72} className="float" />
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, marginTop: 12 }}>
-              Nothing here yet beyond joining — run a Gap Analysis, take an assessment, or complete
-              a milestone, and it&apos;ll show up here.
+              {tPage("empty")}
             </p>
           </div>
         ) : (
@@ -115,7 +125,10 @@ export default async function JourneyPage() {
                             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{e.description}</p>
                           )}
                           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-                            {new Date(e.date).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                            {new Date(e.date).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
+                              day: "numeric",
+                              month: "short",
+                            })}
                           </p>
                         </div>
                       </div>

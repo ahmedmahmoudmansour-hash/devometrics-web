@@ -648,6 +648,17 @@ export function assessmentDisplayName(t: AssessmentTranslator, slug: string): st
   return t(`${slug}.name`);
 }
 
+// Roleplay scenarios' competencyFocus stores assessment *names* (not slugs —
+// it's matched against ASSESSMENTS by name in app/api/roleplay/route.ts), so
+// displaying it translated needs a name -> slug reverse lookup first. Falls
+// back to the raw English name for any string that isn't a catalog
+// assessment name (shouldn't happen given how competencyFocus is authored,
+// but a silent fallback is safer than a thrown error over display text).
+export function assessmentDisplayNameByName(t: AssessmentTranslator, name: string): string {
+  const found = ASSESSMENTS.find((a) => a.name === name);
+  return found ? assessmentDisplayName(t, found.slug) : name;
+}
+
 export function assessmentDisplayDescription(t: AssessmentTranslator, slug: string): string {
   return t(`${slug}.description`);
 }

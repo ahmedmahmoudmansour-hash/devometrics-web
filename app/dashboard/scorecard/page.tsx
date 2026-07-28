@@ -5,6 +5,7 @@ import { buildScorecard } from "@/lib/scorecard/aggregate";
 import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
 import Mascot from "@/components/Mascot";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
+import { resolveAssessmentDisplayName } from "@/lib/assessments/catalog";
 
 function DeltaBadge({ delta, t }: { delta: number | null; t: (key: string, values?: Record<string, string | number>) => string }) {
   if (delta === null) return null;
@@ -22,6 +23,7 @@ function DeltaBadge({ delta, t }: { delta: number | null; t: (key: string, value
 export default async function ScorecardPage() {
   const t = await getTranslations("scorecardPage");
   const tDim = await getTranslations("competencyDimensions");
+  const tCatalog = await getTranslations("assessmentCatalog");
   const data = await buildScorecard();
   if (!data) redirect("/login");
 
@@ -121,7 +123,7 @@ export default async function ScorecardPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {data.assessmentTrends.map((a) => (
                     <div key={a.slug} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
-                      <span style={{ color: "var(--text)" }}>{a.name}</span>
+                      <span style={{ color: "var(--text)" }}>{resolveAssessmentDisplayName(tCatalog, a.slug)}</span>
                       <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <span style={{ color: "var(--text-muted)" }}>{a.history[a.history.length - 1].score}/100</span>
                         <DeltaBadge delta={a.delta} t={t} />

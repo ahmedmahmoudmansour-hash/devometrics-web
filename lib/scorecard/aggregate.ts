@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { AssessmentResult, GapAnalysis, Milestone, ResumeAnalysis } from "@/lib/supabase/types";
 
@@ -12,9 +11,11 @@ export type DimensionMovement = {
   delta: number | null;
 };
 
+// No display "name" field here — the caller resolves the translated name
+// from `slug` via resolveAssessmentDisplayName(), same as everywhere else
+// this pattern is used (this is a lib/ pure function; it has no translator).
 export type AssessmentTrend = {
   slug: string;
-  name: string;
   history: TrendPoint[];
   delta: number | null;
 };
@@ -111,7 +112,6 @@ export async function buildScorecard(): Promise<ScorecardData | null> {
   }
   const assessmentTrends: AssessmentTrend[] = Array.from(bySlug.entries()).map(([slug, history]) => ({
     slug,
-    name: resolveAssessmentName(slug),
     history,
     delta: history.length >= 2 ? history[history.length - 1].score - history[history.length - 2].score : null,
   }));

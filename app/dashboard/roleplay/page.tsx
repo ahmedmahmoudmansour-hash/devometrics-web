@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ROLEPLAY_SCENARIOS, localizeScenario } from "@/lib/roleplay/scenarios";
-import { LEVEL_SECTIONS, type LevelSection } from "@/lib/assessments/catalog";
+import { LEVEL_SECTIONS, type LevelSection, assessmentDisplayNameByName } from "@/lib/assessments/catalog";
 import DeleteScenarioButton from "@/components/dashboard/DeleteScenarioButton";
 import type { CustomScenario, RoleplaySession } from "@/lib/supabase/types";
 
@@ -17,6 +17,14 @@ const SECTION_ICON: Record<LevelSection, string> = {
 export default async function RoleplayListPage() {
   const t = await getTranslations("roleplayListPage");
   const tScenario = await getTranslations("roleplayScenarios");
+  const tSections = await getTranslations("assessmentsPage");
+  const tCatalog = await getTranslations("assessmentCatalog");
+  const SECTION_LABEL: Record<LevelSection, string> = {
+    Foundational: tSections("sectionFoundationalLabel"),
+    Professional: tSections("sectionProfessionalLabel"),
+    Leadership: tSections("sectionLeadershipLabel"),
+    Executive: tSections("sectionExecutiveLabel"),
+  };
   const supabase = await createClient();
   const {
     data: { user },
@@ -143,7 +151,7 @@ export default async function RoleplayListPage() {
                 >
                   {SECTION_ICON[section.key]}
                 </span>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{section.label}</h2>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{SECTION_LABEL[section.key]}</h2>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
@@ -164,7 +172,7 @@ export default async function RoleplayListPage() {
                       }}
                     >
                       <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-                        {s.competencyFocus.join(" · ")}
+                        {s.competencyFocus.map((c) => assessmentDisplayNameByName(tCatalog, c)).join(" · ")}
                       </span>
                       <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
                         {s.title}

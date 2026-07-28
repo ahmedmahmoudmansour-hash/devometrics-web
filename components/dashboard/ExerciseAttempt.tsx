@@ -108,7 +108,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
   );
 }
 
-export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExercise }) {
+export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: CaseStudyExercise; levelLabel: string }) {
   const t = useTranslations("exerciseAttempt");
   const tDim = useTranslations("competencyDimensions");
   const totalSeconds = exercise.timeLimitMinutes * 60;
@@ -218,7 +218,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
         <div>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-            {dimensionLabel(tDim, exercise.dimension)} · {exercise.level}
+            {dimensionLabel(tDim, exercise.dimension)} · {levelLabel}
           </span>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", marginTop: 6 }}>{exercise.title}</h1>
         </div>

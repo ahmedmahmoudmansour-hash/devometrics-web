@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { resolveAssessmentName, scoreToBand } from "@/lib/assessments/catalog";
-import { getRoleplayScenario } from "@/lib/roleplay/scenarios";
+import {
+  type AssessmentTranslator,
+  resolveAssessmentDisplayName,
+  scoreBandLabel,
+  scoreToBand,
+} from "@/lib/assessments/catalog";
+import { getRoleplayScenario, localizeScenario } from "@/lib/roleplay/scenarios";
 import type {
   AssessmentResult,
   DevelopmentPlan,
@@ -20,13 +25,27 @@ export type JourneyEvent = {
   href?: string;
 };
 
+// t: scoped to "journeyEvents". tCatalog/tBands/tScenarios are passed through
+// unchanged to the already-built display helpers (resolveAssessmentDisplayName,
+// scoreBandLabel, localizeScenario) rather than this function defining its own
+// translation logic for assessment names, score bands, or scenario titles.
+export type JourneyTranslator = {
+  (key: string, values?: Record<string, string | number>): string;
+  raw: (key: string) => unknown;
+};
+
 // A single reverse-chronological feed of real, already-stored accomplishments
 // — not a new data source. Deliberately excludes raw coach_messages: showing
 // every chat turn would make this a noisy activity log instead of a
 // meaningful "here's your progress" narrative. If coach usage ever needs to
 // show up here, it should be as a rolled-up "N conversations this month"
 // summary, not per-message.
-export async function buildJourney(): Promise<JourneyEvent[]> {
+export async function buildJourney(
+  t: JourneyTranslator,
+  tCatalog: AssessmentTranslator,
+  tBands: AssessmentTranslator,
+  tScenarios: (key: string) => string
+): Promise<JourneyEvent[]> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -59,14 +78,14 @@ export async function buildJourney(): Promise<JourneyEvent[]> {
   const events: JourneyEvent[] = [];
 
   if (profile) {
-    events.push({ date: profile.created_at, type: "joined", title: "Joined Devometrics" });
+    events.push({ date: profile.created_at, type: "joined", title: t("joined") });
   }
 
   for (const d of discovery ?? []) {
     events.push({
       date: d.created_at,
       type: "discovery",
-      title: "Completed the AI Discovery Interview",
+      title: t("discovery"),
       href: "/dashboard/discovery",
     });
   }
@@ -75,8 +94,8 @@ export async function buildJourney(): Promise<JourneyEvent[]> {
     events.push({
       date: a.created_at,
       type: "gap-analysis",
-      title: `Ran a Gap Analysis for ${a.target_role}`,
-      description: `Career Health Score: ${a.career_health_score}/100`,
+      title: t("gapAnalysisTitle", { role: a.target_role }),
+      description: t("gapAnalysisDescription", { score: a.career_health_score }),
       href: "/dashboard/gap-analysis",
     });
   }
@@ -86,8 +105,8 @@ export async function buildJourney(): Promise<JourneyEvent[]> {
     events.push({
       date: r.completed_at,
       type: "assessment",
-      title: `Completed ${resolveAssessmentName(r.assessment_slug)}`,
-      description: `${r.score}/100 — ${band.label}`,
+      title: t("assessmentTitle", { name: resolveAssessmentDisplayName(tCatalog, r.assessment_slug) }),
+      description: t("assessmentDescription", { score: r.score, band: scoreBandLabel(tBands, band) }),
       href: "/dashboard/assessments",
     });
   }
@@ -96,19 +115,20 @@ export async function buildJourney(): Promise<JourneyEvent[]> {
     events.push({
       date: r.created_at,
       type: "resume",
-      title: "Ran Resume Intelligence",
-      description: `Overall score: ${r.overall_score}/100`,
+      title: t("resumeTitle"),
+      description: t("resumeDescription", { score: r.overall_score }),
       href: "/dashboard/resume",
     });
   }
 
   for (const s of sessions ?? []) {
-    const scenario = getRoleplayScenario(s.scenario_slug);
+    const rawScenario = getRoleplayScenario(s.scenario_slug);
+    const scenario = rawScenario ? localizeScenario(rawScenario, tScenarios) : null;
     events.push({
       date: s.updated_at,
       type: "roleplay",
-      title: `Completed the "${scenario?.title ?? s.scenario_slug}" scenario`,
-      description: "Feedback available in Scenarios",
+      title: t("roleplayTitle", { scenario: scenario?.title ?? s.scenario_slug }),
+      description: t("roleplayDescription"),
       href: "/dashboard/roleplay",
     });
   }
@@ -118,7 +138,7 @@ export async function buildJourney(): Promise<JourneyEvent[]> {
     events.push({
       date: m.completed_at,
       type: "milestone",
-      title: `Completed a milestone: ${m.title}`,
+      title: t("milestoneTitle", { title: m.title }),
       description: planTitleById.get(m.plan_id),
       href: "/dashboard",
     });

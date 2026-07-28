@@ -55,3 +55,22 @@ export const CASE_STUDY_EXERCISES: CaseStudyExercise[] = [
 export function getCaseStudyExercise(slug: string): CaseStudyExercise | null {
   return CASE_STUDY_EXERCISES.find((c) => c.slug === slug) ?? null;
 }
+
+// t must come from useTranslations("caseStudyExercises") /
+// getTranslations("caseStudyExercises"). Only overrides the display-facing
+// fields (title/context/prompt) — slug/dimension/level/timeLimitMinutes stay
+// as-is since they're stable identifiers, not display text. The raw English
+// exercise (from getCaseStudyExercise) is still what's sent to
+// scoreCaseStudyExercise for AI scoring, same "translate for display only"
+// split used by localizeScenario for roleplay.
+export function localizeCaseStudyExercise(
+  exercise: CaseStudyExercise,
+  t: (key: string) => string
+): CaseStudyExercise {
+  return {
+    ...exercise,
+    title: t(`${exercise.slug}.title`),
+    context: t(`${exercise.slug}.context`),
+    prompt: t(`${exercise.slug}.prompt`),
+  };
+}

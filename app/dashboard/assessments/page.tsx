@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ASSESSMENTS, LEVEL_SECTIONS, type LevelSection } from "@/lib/assessments/catalog";
-import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
+import { CASE_STUDY_EXERCISES, localizeCaseStudyExercise } from "@/lib/assessments/caseStudyExercises";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { rankByImpact, dimensionLabel } from "@/lib/gap-analysis/dimensions";
@@ -33,6 +33,7 @@ export default async function AssessmentsPage() {
   const tCatalog = await getTranslations("assessmentCatalog");
   const tCategories = await getTranslations("assessmentCategories");
   const tBands = await getTranslations("scoreBands");
+  const tExercise = await getTranslations("caseStudyExercises");
   const supabase = await createClient();
   const {
     data: { user },
@@ -260,7 +261,8 @@ export default async function AssessmentsPage() {
             {t("caseStudiesBlurb")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
-            {CASE_STUDY_EXERCISES.map((ex) => {
+            {CASE_STUDY_EXERCISES.map((rawEx) => {
+              const ex = localizeCaseStudyExercise(rawEx, tExercise);
               const attempt = latestAttemptBySlug.get(ex.slug);
               const isRecommended = ex.slug === recommendedExerciseSlug;
               return (
@@ -278,7 +280,7 @@ export default async function AssessmentsPage() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-                      {dimensionLabel(tDim, ex.dimension)} · {ex.level}
+                      {dimensionLabel(tDim, ex.dimension)} · {SECTION_LABEL[ex.level]}
                     </span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "var(--amber)", whiteSpace: "nowrap" }}>
                       {t("minutesSuffix", { count: ex.timeLimitMinutes })}
