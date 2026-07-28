@@ -11,6 +11,8 @@ export type AdminOrganizationRow = {
   name: string;
   memberCount: number;
   seatLimit: number | null;
+  monthlyAiBudgetUsd: number | null;
+  spendThisMonthUsd: number;
 };
 
 // Platform-admin-only: how many seats each company has, and how many
@@ -48,11 +50,40 @@ export async function buildAdminOrganizations(): Promise<{ isAdmin: boolean; row
   const countByOrg = new Map<string, number>();
   for (const m of members ?? []) countByOrg.set(m.organization_id, (countByOrg.get(m.organization_id) ?? 0) + 1);
 
+  // Isolated defensive query (migration 0090 may not have run yet) — kept
+  // separate from the base org query above so a missing column/table only
+  // costs this one field (budgets show as unlimited/$0 until the migration
+  // runs) instead of blanking the entire admin org table.
+  const budgetByOrg = new Map<string, number | null>();
+  const { data: budgets, error: budgetsError } = await supabase
+    .from("organizations")
+    .select("id, monthly_ai_budget_usd")
+    .in("id", orgs.map((o) => o.id))
+    .returns<{ id: string; monthly_ai_budget_usd: number | null }[]>();
+  if (budgetsError) {
+    console.error("Could not read monthly_ai_budget_usd — migration 0090 may not be run yet:", budgetsError);
+  }
+  for (const b of budgets ?? []) budgetByOrg.set(b.id, b.monthly_ai_budget_usd);
+
+  // One RPC call per org (this app has no service-role key, so there's no
+  // single aggregate query across orgs here either — same posture as the
+  // per-org member count above). Isolated per-org so one org's spend query
+  // failing (e.g. migration 0090 not yet run) doesn't blank the whole table.
+  const spendByOrg = new Map<string, number>();
+  await Promise.all(
+    orgs.map(async (o) => {
+      const { data } = await supabase.rpc("org_ai_spend_this_month", { target_org_id: o.id });
+      spendByOrg.set(o.id, data == null ? 0 : Number(data));
+    })
+  );
+
   const rows: AdminOrganizationRow[] = orgs.map((o) => ({
     id: o.id,
     name: o.name,
     memberCount: countByOrg.get(o.id) ?? 0,
     seatLimit: o.seat_limit,
+    monthlyAiBudgetUsd: budgetByOrg.get(o.id) ?? null,
+    spendThisMonthUsd: spendByOrg.get(o.id) ?? 0,
   }));
 
   return { isAdmin: true, rows };
@@ -84,6 +115,40 @@ export async function updateOrgSeatLimit(organizationId: string, seatLimit: numb
   if (error) {
     console.error("updateOrgSeatLimit failed:", error);
     return { error: "Could not update — the database may need migration 0079 run first." };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true };
+}
+
+// null clears the budget back to unlimited. Raising it is exactly how a
+// platform admin "adds more credits" to a client mid-month — there's no
+// separate top-up action, just a new number.
+export async function updateOrgAiBudget(organizationId: string, budgetUsd: number | null) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: ownProfile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single<{ is_admin: boolean }>();
+  if (!ownProfile?.is_admin) return { error: "Not authorized" };
+
+  if (budgetUsd !== null && (!Number.isFinite(budgetUsd) || budgetUsd < 0)) {
+    return { error: "Budget must be a non-negative number, or blank for unlimited" };
+  }
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({ monthly_ai_budget_usd: budgetUsd })
+    .eq("id", organizationId);
+  if (error) {
+    console.error("updateOrgAiBudget failed:", error);
+    return { error: "Could not update — the database may need migration 0090 run first." };
   }
 
   revalidatePath("/dashboard/admin");

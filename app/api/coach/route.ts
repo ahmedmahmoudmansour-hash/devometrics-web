@@ -11,6 +11,8 @@ import {
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertOrgAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type {
   AssessmentResult,
   CoachGrowMemory,
@@ -138,6 +140,13 @@ export async function POST(request: Request) {
     }
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertOrgAiBudgetOk(supabase, organizationId);
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 403 });
+  }
+
   const planIds = (plans ?? []).map((p) => p.id);
   const { data: milestones } = planIds.length
     ? await supabase
@@ -224,6 +233,22 @@ export async function POST(request: Request) {
         role: "assistant",
         content: reply,
       });
+
+      // Best-effort — usage logging must never affect the reply already
+      // delivered to the user.
+      try {
+        const finalMessage = await stream.finalMessage();
+        await recordAiUsage(supabase, {
+          organizationId,
+          userId: user.id,
+          feature: "coach",
+          model: finalMessage.model,
+          inputTokens: finalMessage.usage.input_tokens,
+          outputTokens: finalMessage.usage.output_tokens,
+        });
+      } catch (err) {
+        console.error("coach usage recording failed (non-fatal):", err);
+      }
 
       // Best-effort — a failure here shouldn't fail the reply the user
       // already received, it just means the running GROW summary doesn't

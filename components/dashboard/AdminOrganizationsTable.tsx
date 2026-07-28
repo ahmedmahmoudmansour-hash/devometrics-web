@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateOrgSeatLimit } from "@/lib/admin/organizations";
+import { updateOrgSeatLimit, updateOrgAiBudget } from "@/lib/admin/organizations";
 import type { AdminOrganizationRow } from "@/lib/admin/organizations";
 
 const cellStyle: React.CSSProperties = {
@@ -68,6 +68,52 @@ function SeatLimitCell({ org }: { org: AdminOrganizationRow }) {
   );
 }
 
+function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
+  const router = useRouter();
+  const [value, setValue] = useState(org.monthlyAiBudgetUsd === null ? "" : String(org.monthlyAiBudgetUsd));
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function save() {
+    setError(null);
+    const trimmed = value.trim();
+    const parsed = trimmed === "" ? null : Number(trimmed);
+    if (parsed === org.monthlyAiBudgetUsd) return;
+    startTransition(async () => {
+      const result = await updateOrgAiBudget(org.id, parsed);
+      if (result?.error) setError(result.error);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>$</span>
+      <input
+        type="number"
+        min={0}
+        step={0.01}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        placeholder="Unlimited"
+        disabled={isPending}
+        style={{
+          width: 90,
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid var(--border)",
+          borderRadius: 6,
+          padding: "5px 8px",
+          fontSize: 12,
+          color: "var(--text)",
+          outline: "none",
+        }}
+      />
+      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+    </div>
+  );
+}
+
 export default function AdminOrganizationsTable({ initial }: { initial: AdminOrganizationRow[] }) {
   if (initial.length === 0) {
     return (
@@ -93,18 +139,29 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
               <th style={{ ...headStyle, textAlign: "left" }}>Organization</th>
               <th style={{ ...headStyle, textAlign: "right" }}>Members</th>
               <th style={{ ...headStyle, textAlign: "left" }}>Seat limit</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>AI spend this month</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>Monthly AI budget</th>
             </tr>
           </thead>
           <tbody>
-            {initial.map((org) => (
-              <tr key={org.id}>
-                <td style={cellStyle}>{org.name}</td>
-                <td style={{ ...cellStyle, textAlign: "right" }}>{org.memberCount}</td>
-                <td style={cellStyle}>
-                  <SeatLimitCell org={org} />
-                </td>
-              </tr>
-            ))}
+            {initial.map((org) => {
+              const overBudget = org.monthlyAiBudgetUsd !== null && org.spendThisMonthUsd >= org.monthlyAiBudgetUsd;
+              return (
+                <tr key={org.id}>
+                  <td style={cellStyle}>{org.name}</td>
+                  <td style={{ ...cellStyle, textAlign: "right" }}>{org.memberCount}</td>
+                  <td style={cellStyle}>
+                    <SeatLimitCell org={org} />
+                  </td>
+                  <td style={{ ...cellStyle, textAlign: "right", color: overBudget ? "#f87171" : "var(--text)", fontWeight: overBudget ? 700 : 400 }}>
+                    ${org.spendThisMonthUsd.toFixed(2)}
+                  </td>
+                  <td style={cellStyle}>
+                    <AiBudgetCell org={org} />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

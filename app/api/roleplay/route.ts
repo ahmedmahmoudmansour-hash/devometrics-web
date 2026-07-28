@@ -13,6 +13,8 @@ import {
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertOrgAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { AssessmentResult, Profile, RoleplayMessage, RoleplaySession } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -107,6 +109,13 @@ export async function POST(request: Request) {
     );
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertOrgAiBudgetOk(supabase, organizationId);
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 403 });
+  }
+
   const relevantSlugs = ASSESSMENTS.filter((a) => scenario.competencyFocus.includes(a.name)).map(
     (a) => a.slug
   );
@@ -189,6 +198,22 @@ export async function POST(request: Request) {
           ...(endScenario ? { completed: true, feedback: reply } : {}),
         })
         .eq("id", session.id);
+
+      // Best-effort — usage logging must never affect the reply already
+      // delivered to the user.
+      try {
+        const finalMessage = await stream.finalMessage();
+        await recordAiUsage(supabase, {
+          organizationId,
+          userId: user.id,
+          feature: "roleplay",
+          model: finalMessage.model,
+          inputTokens: finalMessage.usage.input_tokens,
+          outputTokens: finalMessage.usage.output_tokens,
+        });
+      } catch (err) {
+        console.error("roleplay usage recording failed (non-fatal):", err);
+      }
     },
   });
 

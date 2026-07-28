@@ -84,11 +84,17 @@ export async function extractCompetencies({
   jobDescription,
   targetRole,
   performanceData,
+  onUsage,
 }: {
   cvText: string;
   jobDescription: string;
   targetRole: string;
   performanceData?: string | null;
+  // Optional — lets a caller that needs cost tracking (e.g. Smart Hiring's
+  // per-org budget enforcement) observe real token usage without changing
+  // this function's return type for its other two callers (personal Gap
+  // Analysis), which don't need it.
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
 }): Promise<CompetencyScore[]> {
   const response = await anthropic.messages.create({
     // Sonnet 5 handles this well for the vast majority of CVs. Escalate to
@@ -116,6 +122,12 @@ CONFIDENCE CALIBRATION: 1-2 clear, specific examples of a dimension (a named too
         }`,
       },
     ],
+  });
+
+  onUsage?.({
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

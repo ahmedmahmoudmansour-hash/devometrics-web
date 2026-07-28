@@ -15,6 +15,7 @@ import {
 import { CANDIDATE_CV_BUCKET } from "./constants";
 import type { HiringStage } from "./types";
 import { HIRING_STAGES } from "./types";
+import { assertOrgAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 const MAX_NAME = 120;
 const MAX_PHONE = 40;
@@ -151,12 +152,31 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
     .maybeSingle<{ title: string; job_description: string }>();
   if (!posting) return { error: "Posting not found" };
 
+  const budgetCheck = await assertOrgAiBudgetOk(supabase, organizationId);
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   const targetRole = posting.title.slice(0, MAX_TARGET_ROLE_LENGTH);
   const jobDescription = posting.job_description.slice(0, MAX_JOB_DESCRIPTION_LENGTH);
 
   try {
     const competencies = sanitizeCompetencyScores(
-      await extractCompetencies({ cvText: trimmedCv, jobDescription, targetRole })
+      await extractCompetencies({
+        cvText: trimmedCv,
+        jobDescription,
+        targetRole,
+        onUsage: (usage) => {
+          // Fire-and-forget — never let usage logging block or fail the
+          // actual CV scoring result.
+          void recordAiUsage(supabase, {
+            organizationId,
+            userId: user.id,
+            feature: "hiring_cv_score",
+            model: usage.model,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+          });
+        },
+      })
     );
     const score = careerHealthScore(competencies);
 
