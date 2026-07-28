@@ -2031,6 +2031,24 @@
     "sendInvite": "Send invite",
     "cancel": "Cancel"
   },
+  "careerPathsPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Career Paths",
+    "description": "Where you can realistically go from here — mapped from your actual profile, gap analysis, and stated ambitions. Each role shows how ready you are today, what it requires, and what would close the distance. A decision aid, not a verdict.",
+    "migrationNotice": "Career Paths isn't enabled on this database yet — the <code>0049_notes_career_paths_hr_fields.sql</code> migration needs to be run in the Supabase SQL Editor first."
+  },
+  "careerPathsView": {
+    "readinessToday": "Readiness today",
+    "yourGapsForThisRole": "Your gaps for this role",
+    "notGeneratedYet": "Your map hasn't been generated yet. It works best after you've run a Gap Analysis and filled in your career profile — the more real signal, the more honest the map.",
+    "mappingYourPaths": "Mapping your paths…",
+    "generateMyCareerMap": "🗺 Generate my career map",
+    "youAreHere": "You are here",
+    "regenerating": "Regenerating…",
+    "regenerate": "↻ Regenerate",
+    "generatedOn": "Generated {date}",
+    "footerNote": "AI-generated from your own data — a starting point for a career conversation, not a guarantee or a prescription. Readiness reflects your latest Gap Analysis; re-run it as you grow and regenerate the map."
+  },
   "speechErrors": {
     "voiceInputUnavailable": "Voice input isn't available in this browser — Chrome works best, or type instead.",
     "micBlocked": "Microphone access is blocked — allow the mic for this site in your browser, then try again.",

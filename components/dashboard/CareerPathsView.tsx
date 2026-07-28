@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { generateCareerPaths } from "@/lib/career-paths/actions";
 import type { CareerPathNode, CareerPaths } from "@/lib/supabase/types";
 
@@ -12,6 +13,7 @@ function readinessColor(percent: number): string {
 }
 
 function NodeCard({ node, isFirst }: { node: CareerPathNode; isFirst: boolean }) {
+  const t = useTranslations("careerPathsView");
   return (
     <div
       style={{
@@ -28,7 +30,7 @@ function NodeCard({ node, isFirst }: { node: CareerPathNode; isFirst: boolean })
 
       <div style={{ marginTop: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>
-          <span>Readiness today</span>
+          <span>{t("readinessToday")}</span>
           <span style={{ color: readinessColor(node.readinessPercent), fontWeight: 700 }}>{node.readinessPercent}%</span>
         </div>
         <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
@@ -68,7 +70,7 @@ function NodeCard({ node, isFirst }: { node: CareerPathNode; isFirst: boolean })
       {node.gaps.length > 0 && (
         <div style={{ marginTop: 10 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", color: "var(--amber)", textTransform: "uppercase", marginBottom: 4 }}>
-            Your gaps for this role
+            {t("yourGapsForThisRole")}
           </p>
           {node.gaps.map((g) => (
             <p key={g} style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
@@ -82,6 +84,8 @@ function NodeCard({ node, isFirst }: { node: CareerPathNode; isFirst: boolean })
 }
 
 export default function CareerPathsView({ saved }: { saved: CareerPaths | null }) {
+  const t = useTranslations("careerPathsView");
+  const locale = useLocale();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -99,8 +103,7 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, textAlign: "center" }}>
         <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7, maxWidth: 480, margin: "0 auto" }}>
-          Your map hasn&apos;t been generated yet. It works best after you&apos;ve run a Gap Analysis
-          and filled in your career profile — the more real signal, the more honest the map.
+          {t("notGeneratedYet")}
         </p>
         <button
           type="button"
@@ -119,7 +122,7 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Mapping your paths…" : "🗺 Generate my career map"}
+          {isPending ? t("mappingYourPaths") : t("generateMyCareerMap")}
         </button>
         {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 12 }}>{error}</p>}
       </div>
@@ -140,7 +143,7 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
           }}
         >
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase" }}>
-            You are here
+            {t("youAreHere")}
           </span>
           <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{currentRole}</p>
         </div>
@@ -161,10 +164,15 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            {isPending ? "Regenerating…" : "↻ Regenerate"}
+            {isPending ? t("regenerating") : t("regenerate")}
           </button>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-            Generated {new Date(saved.generated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            {t("generatedOn", {
+              date: new Date(saved.generated_at).toLocaleDateString(locale === "ar" ? "ar-u-nu-latn" : "en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+            })}
           </p>
         </div>
       </div>
@@ -199,9 +207,7 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
       </div>
 
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
-        AI-generated from your own data — a starting point for a career conversation, not a
-        guarantee or a prescription. Readiness reflects your latest Gap Analysis; re-run it as you
-        grow and regenerate the map.
+        {t("footerNote")}
       </p>
     </div>
   );
