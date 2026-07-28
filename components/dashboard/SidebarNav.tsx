@@ -29,6 +29,7 @@ import {
   Library,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import LocaleToggle from "@/components/LocaleToggle";
 import { signOut } from "@/app/dashboard/actions";
 import { OPEN_PALETTE_EVENT } from "@/components/dashboard/CommandPalette";
 
@@ -282,6 +283,7 @@ export default function SidebarNav({
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
         <ThemeToggle savedTheme={savedTheme} />
+        <LocaleToggle />
         <form action={signOut} style={{ flex: 1 }}>
           <button
             type="submit"

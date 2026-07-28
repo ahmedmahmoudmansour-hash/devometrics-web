@@ -8,13 +8,9 @@ import { updateLanguage } from "@/app/dashboard/actions";
 // Must match LOCALE_COOKIE in lib/i18n/request.ts.
 const LOCALE_COOKIE = "devometrics-locale";
 
-// Not rendered anywhere yet — deliberately. Arabic translation is still
-// in progress (only the homepage's Navbar/Hero/Footer are converted so
-// far), so this isn't wired into the public Navbar/Footer or the
-// dashboard sidebar until there's enough translated content that a real
-// visitor switching languages doesn't immediately hit untranslated
-// English mixed into an Arabic page. Verified manually during development
-// by setting the devometrics-locale cookie directly.
+// Rendered in the dashboard sidebar (components/dashboard/SidebarNav.tsx).
+// Not yet added to the public marketing Navbar/Footer — those still need a
+// full i18n pass before a logged-out visitor can safely switch there.
 //
 // Unlike ThemeToggle (a pure client-side CSS-variable flip, no reload
 // needed), switching locale changes server-rendered translated content,
