@@ -35,6 +35,33 @@ export type CognitiveQuestion = {
   correctIndex: number;
 };
 
+// Minimal translator shape this file needs — same pattern as
+// AssessmentTranslator in lib/assessments/catalog.ts. Scoring is against
+// correctIndex only (never the option text), so translating the displayed
+// question/options has no effect on scoring.
+export type CognitiveTranslator = {
+  (key: string, values?: Record<string, string | number>): string;
+  raw: (key: string) => unknown;
+};
+
+// t must come from useTranslations("cognitiveQuestions") / getTranslations("cognitiveQuestions").
+export function cognitiveDisplayPrompt(t: CognitiveTranslator, questionId: string): string {
+  return t(`${questionId}.prompt`);
+}
+
+export function cognitiveDisplayPassage(t: CognitiveTranslator, questionId: string): string | null {
+  const raw = t.raw(`${questionId}.passage`);
+  return typeof raw === "string" ? raw : null;
+}
+
+export function cognitiveDisplayOptions(t: CognitiveTranslator, questionId: string): string[] {
+  return t.raw(`${questionId}.options`) as string[];
+}
+
+export function cognitiveDomainLabel(t: (key: string) => string, domain: CognitiveDomain): string {
+  return t(domain);
+}
+
 // 18 questions per domain (54 total) — original content, workplace-relevant
 // scenarios rather than trivia or specialized knowledge (avoids favoring
 // people with a particular educational or cultural background, one of the

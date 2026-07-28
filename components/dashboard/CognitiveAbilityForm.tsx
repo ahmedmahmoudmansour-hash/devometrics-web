@@ -7,14 +7,22 @@ import { submitCognitiveAbility } from "@/app/dashboard/assessments/cognitiveAbi
 import {
   COGNITIVE_QUESTIONS,
   COGNITIVE_DOMAINS,
-  COGNITIVE_DISCLAIMER,
   cognitiveBandFromScore,
   domainBreakdown,
+  cognitiveDisplayPrompt,
+  cognitiveDisplayPassage,
+  cognitiveDisplayOptions,
+  cognitiveDomainLabel,
   type CognitiveDomain,
 } from "@/lib/assessments/cognitiveAbility";
 
 export default function CognitiveAbilityForm() {
   const t = useTranslations("cognitiveAbilityForm");
+  const tQuestions = useTranslations("cognitiveQuestions");
+  const tDomains = useTranslations("cognitiveDomains");
+  const tBands = useTranslations("scoreBands");
+  const tDisclaimer = useTranslations();
+  const disclaimer = tDisclaimer("cognitiveDisclaimer");
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -43,7 +51,7 @@ export default function CognitiveAbilityForm() {
           {t("resultLabel")}
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 12 }}>
-          <span style={{ fontSize: 44, fontWeight: 800, color: "var(--text)" }}>{band}</span>
+          <span style={{ fontSize: 44, fontWeight: 800, color: "var(--text)" }}>{tBands(`${band.toLowerCase()}.label`)}</span>
           <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("scoreCorrect", { score: result.score })}</span>
         </div>
 
@@ -53,7 +61,7 @@ export default function CognitiveAbilityForm() {
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {breakdown.map((b) => (
             <div key={b.domain} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 130, fontSize: 12.5, fontWeight: 700, color: "var(--text-muted)" }}>{b.domain}</span>
+              <span style={{ width: 130, fontSize: 12.5, fontWeight: 700, color: "var(--text-muted)" }}>{cognitiveDomainLabel(tDomains, b.domain)}</span>
               <div style={{ flex: 1, height: 8, borderRadius: 4, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                 <div
                   style={{
@@ -71,7 +79,7 @@ export default function CognitiveAbilityForm() {
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 24, lineHeight: 1.6 }}>
-          {t("resultFooter", { disclaimer: COGNITIVE_DISCLAIMER })}
+          {t("resultFooter", { disclaimer })}
         </p>
         <Link
           href="/dashboard/assessments"
@@ -91,7 +99,7 @@ export default function CognitiveAbilityForm() {
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
       <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <p style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>{COGNITIVE_DISCLAIMER}</p>
+        <p style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>{disclaimer}</p>
       </div>
 
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
@@ -104,39 +112,48 @@ export default function CognitiveAbilityForm() {
           return (
             <div key={domain}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 14 }}>
-                {domain}
+                {cognitiveDomainLabel(tDomains, domain)}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                {questions.map((q) => (
-                  <div key={q.id}>
-                    {q.passage && (
-                      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.6, fontStyle: "italic" }}>
-                        {q.passage}
-                      </p>
-                    )}
-                    <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 10, lineHeight: 1.6 }}>{q.prompt}</p>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {q.options.map((opt, i) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setSelections((prev) => ({ ...prev, [q.id]: i }))}
-                          style={{
-                            fontSize: 13,
-                            padding: "8px 14px",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            border: selections[q.id] === i ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                            background: selections[q.id] === i ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
-                            color: selections[q.id] === i ? "var(--teal)" : "var(--text-muted)",
-                          }}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+                {questions.map((q) => {
+                  // Only look up a translated passage when the source
+                  // question actually has one — calling t.raw() on a path
+                  // that was never in the JSON (numerical/logical questions
+                  // have no passage) returns next-intl's missing-key
+                  // fallback string instead of undefined.
+                  const passage = q.passage ? cognitiveDisplayPassage(tQuestions, q.id) : null;
+                  const options = cognitiveDisplayOptions(tQuestions, q.id);
+                  return (
+                    <div key={q.id}>
+                      {passage && (
+                        <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.6, fontStyle: "italic" }}>
+                          {passage}
+                        </p>
+                      )}
+                      <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 10, lineHeight: 1.6 }}>{cognitiveDisplayPrompt(tQuestions, q.id)}</p>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {options.map((opt, i) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setSelections((prev) => ({ ...prev, [q.id]: i }))}
+                            style={{
+                              fontSize: 13,
+                              padding: "8px 14px",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              border: selections[q.id] === i ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
+                              background: selections[q.id] === i ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                              color: selections[q.id] === i ? "var(--teal)" : "var(--text-muted)",
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );

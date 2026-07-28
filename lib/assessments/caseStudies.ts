@@ -30,6 +30,28 @@ export type OpenCaseStudy = {
 
 export type CaseStudy = MCQCaseStudy | OpenCaseStudy;
 
+// Minimal translator shape this file needs — same pattern as
+// AssessmentTranslator in lib/assessments/catalog.ts. Case studies are
+// deterministic/pre-scored (mcq) or AI-scored on the raw open-text answer
+// (open) — never on the scenario/prompt text itself, so translating the
+// displayed copy has no effect on scoring.
+export type CaseStudyTranslator = {
+  (key: string, values?: Record<string, string | number>): string;
+  raw: (key: string) => unknown;
+};
+
+export function caseStudyDisplayScenario(t: CaseStudyTranslator, caseStudyId: string): string {
+  return t(`${caseStudyId}.scenario`);
+}
+
+export function caseStudyDisplayPrompt(t: CaseStudyTranslator, caseStudyId: string): string {
+  return t(`${caseStudyId}.prompt`);
+}
+
+export function caseStudyDisplayOptions(t: CaseStudyTranslator, caseStudyId: string): string[] {
+  return t.raw(`${caseStudyId}.options`) as string[];
+}
+
 export type CareerStageTier = "foundational" | "established" | "senior";
 
 const FOUNDATIONAL_STAGES = ["Student", "Job seeker", "Early-career professional"];
@@ -71,8 +93,14 @@ export type CaseStudyAnswer = {
 // Synthesizes the case study layer into one short narrative, kept separate
 // from the Likert score/band rather than folded into it — this is meant to
 // be additional color on thinking/behavior, not a recalculation of the
-// self-report result.
-export function buildCaseStudyInsight(assessmentName: string, answers: CaseStudyAnswer[]): string | null {
+// self-report result. tInsight must come from useTranslations/getTranslations
+// scoped to the "caseStudyInsight" namespace (same convention as
+// scoreBandLabel/etc in lib/assessments/catalog.ts).
+export function buildCaseStudyInsight(
+  tInsight: (key: string, values?: Record<string, string | number>) => string,
+  assessmentName: string,
+  answers: CaseStudyAnswer[]
+): string | null {
   if (answers.length === 0) return null;
 
   const mcqScores = answers.filter((a) => a.type === "mcq" && typeof a.optionScore === "number").map((a) => a.optionScore as number);
@@ -80,19 +108,8 @@ export function buildCaseStudyInsight(assessmentName: string, answers: CaseStudy
 
   if (mcqScores.length > 0) {
     const avg = mcqScores.reduce((a, b) => a + b, 0) / mcqScores.length;
-    if (avg >= 80) {
-      parts.push(
-        `In the ${assessmentName} case studies, your choices consistently matched the most effective response in each scenario — practical judgment that backs up the self-report score.`
-      );
-    } else if (avg >= 55) {
-      parts.push(
-        `In the ${assessmentName} case studies, your choices were reasonable but inconsistent — effective in some scenarios, less so in others. Worth noticing which situations trip you up.`
-      );
-    } else {
-      parts.push(
-        `In the ${assessmentName} case studies, your choices suggest this competency may show up less reliably in real situations than the self-report score implies — a concrete area to practice, not just rate yourself on.`
-      );
-    }
+    const band = avg >= 80 ? "high" : avg >= 55 ? "mid" : "low";
+    parts.push(tInsight(band, { name: assessmentName }));
   }
 
   const openInsights = answers.filter((a) => a.type === "open" && a.aiInsight).map((a) => a.aiInsight as string);

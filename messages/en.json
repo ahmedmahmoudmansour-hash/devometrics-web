@@ -2984,5 +2984,826 @@
     "Self-Awareness": "Self-Awareness",
     "Self-Management": "Self-Management",
     "Strategy": "Strategy"
-  }
+  },
+  "caseStudies": {
+    "leadership-mcq-1": {
+      "scenario": "A project you're leading is behind schedule. One teammate has quietly been picking up the slack for another who's been underperforming for weeks, but hasn't said anything to you.",
+      "options": [
+        "Wait and see if performance improves on its own before intervening.",
+        "Have a private, direct conversation with the underperforming teammate to understand what's going on, then agree on a specific plan.",
+        "Remind the whole team of deadlines in the next meeting without naming anyone."
+      ]
+    },
+    "leadership-mcq-2": {
+      "scenario": "You disagree with a decision your own manager made and believe it will hurt your team's morale.",
+      "options": [
+        "Implement it without comment — it's not your call.",
+        "Voice your specific concerns privately to your manager with a proposed alternative, then support whatever is finally decided.",
+        "Express your disagreement openly to your team so they know it wasn't your idea."
+      ]
+    },
+    "ai-literacy-mcq-1": {
+      "scenario": "An AI tool gives you a polished-looking answer to a work question you need for a client deliverable.",
+      "options": [
+        "Use it as-is since it reads well.",
+        "Verify the key facts against a source you trust before using it.",
+        "Rewrite it in your own words without checking the facts."
+      ]
+    },
+    "ai-literacy-mcq-2": {
+      "scenario": "Your team is deciding whether to adopt a new AI tool for a recurring task.",
+      "options": [
+        "Wait for someone else to test it first.",
+        "Run a small pilot yourself on a low-stakes version of the task and share what you learn.",
+        "Adopt it immediately for all use cases since it's new."
+      ]
+    },
+    "digital-skills-mcq-1": {
+      "scenario": "You're handed a new software tool with no formal training and a deadline in two days.",
+      "options": [
+        "Ask someone else to do the parts that require the tool.",
+        "Spend an hour exploring it, find one tutorial, and try the real task early to surface problems fast.",
+        "Wait for official training to be scheduled."
+      ]
+    },
+    "digital-skills-mcq-2": {
+      "scenario": "You notice a repetitive manual task your team does every week that could likely be automated.",
+      "options": [
+        "Keep doing it manually since it works.",
+        "Spend some time investigating a simple automation and propose it if it holds up.",
+        "Mention it once in passing and drop it if no one responds."
+      ]
+    },
+    "emotional-intelligence-mcq-1": {
+      "scenario": "A colleague snaps at you in a meeting in a way that seems out of character.",
+      "options": [
+        "Snap back to match their energy.",
+        "Stay calm in the moment, then check in with them privately afterward.",
+        "Say nothing and quietly avoid them going forward."
+      ]
+    },
+    "emotional-intelligence-mcq-2": {
+      "scenario": "You're giving feedback to someone who becomes visibly upset partway through.",
+      "options": [
+        "Push through and finish delivering all the feedback as planned.",
+        "Pause, acknowledge how they're feeling, and adjust the pace or continue another time.",
+        "Stop immediately and never bring it up again."
+      ]
+    },
+    "personality-mcq-1": {
+      "scenario": "You're assigned to a new project with an unusually loose brief and no clear process.",
+      "options": [
+        "Feel energized by the openness and start defining your own structure.",
+        "Feel uneasy and ask for more structure before starting.",
+        "Wait for someone else to define the process before doing anything."
+      ]
+    },
+    "personality-mcq-2": {
+      "scenario": "Plans for a project change suddenly and with little warning.",
+      "options": [
+        "Feel frustrated and need time to adjust before re-engaging.",
+        "Adapt quickly and start working within the new plan.",
+        "Push to revert to the original plan."
+      ]
+    },
+    "communication-mcq-1": {
+      "scenario": "You need to explain a complex technical issue to a non-technical stakeholder who's under time pressure.",
+      "options": [
+        "Give the full technical explanation so nothing is left out.",
+        "Lead with the practical implication, then offer more detail if they want it.",
+        "Simplify so much that key context is lost."
+      ]
+    },
+    "communication-mcq-2": {
+      "scenario": "You're presenting an idea and get pushback you didn't anticipate.",
+      "options": [
+        "Defend your original point without acknowledging the pushback.",
+        "Genuinely engage with the objection, then respond to the substance of it.",
+        "Concede immediately to avoid conflict."
+      ]
+    },
+    "learning-agility-mcq-1": {
+      "scenario": "You're assigned to a task completely outside your current expertise.",
+      "options": [
+        "Ask to be reassigned to something more familiar.",
+        "Take it on, and actively figure out who or what can help you get up to speed fast.",
+        "Do your best without asking for help, to avoid looking unprepared."
+      ]
+    },
+    "learning-agility-mcq-2": {
+      "scenario": "A project you worked hard on fails to achieve its goal.",
+      "options": [
+        "Move on quickly without examining what happened.",
+        "Do a real analysis of what went wrong and change your approach next time.",
+        "Attribute it mostly to factors outside your control."
+      ]
+    },
+    "strategic-thinking-mcq-1": {
+      "scenario": "You're given two competing priorities with limited time for both.",
+      "options": [
+        "Split your time evenly between them.",
+        "Assess which has higher long-term leverage, then make a deliberate tradeoff and explain your reasoning.",
+        "Default to whichever was assigned most recently."
+      ]
+    },
+    "strategic-thinking-mcq-2": {
+      "scenario": "A short-term win is available that would look good immediately but may create problems in 6 months.",
+      "options": [
+        "Take the short-term win — long-term is someone else's problem.",
+        "Weigh both explicitly and choose based on genuine long-term impact, even if it's less visible now.",
+        "Avoid deciding and let it resolve itself."
+      ]
+    },
+    "problem-solving-mcq-1": {
+      "scenario": "You're facing a problem with no obvious solution and a tight deadline.",
+      "options": [
+        "Go with the first workable idea to save time.",
+        "Quickly break it into smaller pieces, generate a couple of options, and test the most promising one first.",
+        "Escalate immediately without attempting it yourself."
+      ]
+    },
+    "problem-solving-mcq-2": {
+      "scenario": "A recurring issue keeps resurfacing despite repeated fixes.",
+      "options": [
+        "Keep applying the same fix each time it happens.",
+        "Investigate the underlying root cause instead of the symptom.",
+        "Accept it as just part of how things work."
+      ]
+    },
+    "critical-thinking-mcq-1": {
+      "scenario": "You read a compelling argument that confirms what you already believed.",
+      "options": [
+        "Accept it since it matches your existing view.",
+        "Check the evidence and reasoning before accepting it, same as you would for a claim you disagreed with.",
+        "Share it further without checking, since it feels obviously true."
+      ]
+    },
+    "critical-thinking-mcq-2": {
+      "scenario": "A team decision was made based on a data point you suspect might be flawed.",
+      "options": [
+        "Say nothing since the decision is already made.",
+        "Raise the specific concern and ask for the data to be verified before proceeding further.",
+        "Quietly proceed with your own version instead."
+      ]
+    },
+    "creativity-mcq-1": {
+      "scenario": "You're stuck on a problem using your usual approach.",
+      "options": [
+        "Keep refining the same approach until it works.",
+        "Deliberately look outside your usual field or method for a different angle.",
+        "Move to a different task and hope for inspiration later."
+      ]
+    },
+    "creativity-mcq-2": {
+      "scenario": "You have an unconventional idea that might not work.",
+      "options": [
+        "Keep it to yourself unless you're certain it'll succeed.",
+        "Propose it, clearly framed as an experiment, and see where the discussion goes.",
+        "Wait for someone senior to suggest something similar first."
+      ]
+    },
+    "time-management-mcq-1": {
+      "scenario": "Your day fills up with urgent requests that aren't actually your highest-priority work.",
+      "options": [
+        "Handle everything as it arrives, in the order it comes in.",
+        "Protect time for the high-impact work and push back on or reschedule the lower-value urgent requests.",
+        "Focus only on urgent items and let the important work slip."
+      ]
+    },
+    "time-management-mcq-2": {
+      "scenario": "You're asked to take on an additional task that would compromise an existing deadline.",
+      "options": [
+        "Say yes without flagging the conflict.",
+        "Flag the conflict clearly and negotiate what should actually take priority.",
+        "Say no without offering any alternative."
+      ]
+    },
+    "resilience-mcq-1": {
+      "scenario": "You receive harsh, unexpected criticism of work you were proud of.",
+      "options": [
+        "Dismiss the criticism to protect how you feel about the work.",
+        "Sit with it, separate the useful signal from the delivery, and use what's genuinely useful.",
+        "Accept it entirely and lose confidence in the work overall."
+      ]
+    },
+    "resilience-mcq-2": {
+      "scenario": "A high-pressure period is stretching on longer than expected.",
+      "options": [
+        "Push through without changing anything, even as quality slips.",
+        "Use a specific habit or routine to sustain your performance and recognize when you need a break.",
+        "Disengage from the work until the pressure passes."
+      ]
+    },
+    "change-readiness-mcq-1": {
+      "scenario": "Your team's tools or process change with little warning and no clear rationale given.",
+      "options": [
+        "Resist and keep using the old way as long as possible.",
+        "Adapt quickly, and ask questions to understand the rationale if it's unclear.",
+        "Comply passively without engaging with the reasoning."
+      ]
+    },
+    "change-readiness-mcq-2": {
+      "scenario": "A colleague is struggling to adjust to a recent organizational change.",
+      "options": [
+        "Let them work through it on their own.",
+        "Proactively help them adjust, sharing what's worked for you.",
+        "Point out that the change was inevitable and they should just accept it."
+      ]
+    },
+    "career-readiness-mcq-1": {
+      "scenario": "You're offered a stretch opportunity outside your comfort zone with real risk of struggling publicly.",
+      "options": [
+        "Decline to avoid the risk of visible failure.",
+        "Take it, and be deliberate about closing the specific gaps it will expose.",
+        "Take it without any specific preparation."
+      ]
+    },
+    "career-readiness-mcq-2": {
+      "scenario": "You realize your current skill set may not support the role you actually want in two years.",
+      "options": [
+        "Assume it will work itself out over time.",
+        "Identify the specific gap now and start closing it deliberately.",
+        "Wait until a performance review flags it."
+      ]
+    },
+    "executive-readiness-mcq-1": {
+      "scenario": "A decision you need to make will negatively affect one team while benefiting the organization overall.",
+      "options": [
+        "Avoid making the call and let it resolve itself.",
+        "Make the call, and communicate the tradeoff and reasoning directly to the affected team.",
+        "Make the call without addressing it with the affected team."
+      ]
+    },
+    "executive-readiness-mcq-2": {
+      "scenario": "You need buy-in from a peer group you have no formal authority over.",
+      "options": [
+        "Escalate to get authority to force the decision.",
+        "Build the case and relationships needed to influence the outcome without formal authority.",
+        "Give up on getting buy-in and act unilaterally within your own scope."
+      ]
+    },
+    "leadership-open-1": {
+      "scenario": "Every leader eventually has to make a call that isn't popular.",
+      "prompt": "Describe a real or hypothetical situation where you had to make an unpopular decision you believed was right. What did you do, and how did you handle the reaction from others?"
+    },
+    "ai-literacy-open-1": {
+      "scenario": "Working fluency with AI shows up in the judgment calls around using it, not just knowing it exists.",
+      "prompt": "Describe a specific time you used an AI tool for real work. What did it get right, what did you have to fix or verify yourself, and how did you decide when to trust it?"
+    },
+    "digital-skills-open-1": {
+      "scenario": "New tools show up faster than formal training ever will.",
+      "prompt": "Describe a time you had to learn a new tool or technology quickly for work. What was your approach, and how did you know when you were ready to rely on it?"
+    },
+    "emotional-intelligence-open-1": {
+      "scenario": "Reading a room often matters more than what's actually said in it.",
+      "prompt": "Describe a situation where you had to read an emotional dynamic that wasn't being said out loud. What did you notice, and how did you respond?"
+    },
+    "personality-open-1": {
+      "scenario": "Working style isn't right or wrong, but it is worth knowing about yourself.",
+      "prompt": "Describe your natural working style in a fast-changing environment — what energizes you, and what tends to drain you?"
+    },
+    "communication-open-1": {
+      "scenario": "Explaining something well means adjusting to the listener, not just the content.",
+      "prompt": "Describe a time you had to explain something complicated to someone with very different context than you. How did you adjust your explanation, and how did you know it landed?"
+    },
+    "learning-agility-open-1": {
+      "scenario": "How you handle unfamiliar territory is a better signal than what you already know.",
+      "prompt": "Describe a time you had to pick up a new skill or domain quickly. What was your process, and what did you do differently the next time you faced something unfamiliar?"
+    },
+    "strategic-thinking-open-1": {
+      "scenario": "Strategic tradeoffs rarely have a clean answer.",
+      "prompt": "Describe a decision you made that required weighing a short-term benefit against a longer-term consequence. What factors did you weigh, and what did you decide?"
+    },
+    "problem-solving-open-1": {
+      "scenario": "The difference between a real fix and a surface fix usually shows up later.",
+      "prompt": "Walk through a genuinely hard problem you solved. How did you break it down, and how did you know you'd found the real cause rather than a surface fix?"
+    },
+    "critical-thinking-open-1": {
+      "scenario": "Changing your mind under evidence is harder than it sounds.",
+      "prompt": "Describe a time you changed your mind about something important after encountering evidence that contradicted your initial view. What made you reconsider?"
+    },
+    "creativity-open-1": {
+      "scenario": "Original ideas usually come from somewhere specific, not out of nowhere.",
+      "prompt": "Describe an original idea you generated that others found unexpected or useful. Where did the idea actually come from?"
+    },
+    "time-management-open-1": {
+      "scenario": "A demanding week reveals what someone actually prioritizes, not what they say they prioritize.",
+      "prompt": "Describe how you planned a particularly demanding week. What got prioritized, what got cut or delayed, and why?"
+    },
+    "resilience-open-1": {
+      "scenario": "Recovery from a setback says more than the setback itself.",
+      "prompt": "Describe a real setback you experienced at work. How did you recover, and what changed in how you approached things afterward?"
+    },
+    "change-readiness-open-1": {
+      "scenario": "The first few weeks of an unwanted change usually show the most.",
+      "prompt": "Describe a significant change at work that you didn't choose. How did you respond in the first few weeks, and how did that response evolve?"
+    },
+    "career-readiness-open-1": {
+      "scenario": "Intentional career planning starts with naming the actual gap.",
+      "prompt": "Describe where you want to be in your career in a few years, and the single biggest gap standing between where you are now and that goal."
+    },
+    "executive-readiness-open-1": {
+      "scenario": "Organization-wide impact means competing interests rarely all win.",
+      "prompt": "Describe a decision you made or contributed to that affected people or outcomes beyond your immediate team. How did you weigh the competing interests involved?"
+    }
+  },
+  "caseStudyInsight": {
+    "high": "In the {name} case studies, your choices consistently matched the most effective response in each scenario — practical judgment that backs up the self-report score.",
+    "mid": "In the {name} case studies, your choices were reasonable but inconsistent — effective in some scenarios, less so in others. Worth noticing which situations trip you up.",
+    "low": "In the {name} case studies, your choices suggest this competency may show up less reliably in real situations than the self-report score implies — a concrete area to practice, not just rate yourself on."
+  },
+  "cognitiveQuestions": {
+    "num-1": {
+      "prompt": "A product's quarterly revenue grew from $80,000 to $100,000. What was the percentage increase?",
+      "options": [
+        "20%",
+        "25%",
+        "15%",
+        "30%"
+      ]
+    },
+    "num-2": {
+      "prompt": "A team completes 45 tasks in 3 weeks at a steady rate. At the same rate, how many tasks would they complete in 5 weeks?",
+      "options": [
+        "60",
+        "75",
+        "90",
+        "65"
+      ]
+    },
+    "num-3": {
+      "prompt": "A budget of $120,000 is split across three departments in the ratio 2:3:1. How much does the department with the largest share receive?",
+      "options": [
+        "$40,000",
+        "$60,000",
+        "$50,000",
+        "$30,000"
+      ]
+    },
+    "num-4": {
+      "prompt": "Sales were $50,000 in Q1 and dropped by 10% in Q2. What were Q2 sales?",
+      "options": [
+        "$40,000",
+        "$45,000",
+        "$48,000",
+        "$55,000"
+      ]
+    },
+    "num-5": {
+      "prompt": "A company's revenue was $80,000 and expenses were $60,000. What was the profit margin (profit as a percentage of revenue)?",
+      "options": [
+        "20%",
+        "25%",
+        "30%",
+        "33%"
+      ]
+    },
+    "num-6": {
+      "prompt": "A warehouse holds 400 units. If 25% are shipped out, how many units remain?",
+      "options": [
+        "250",
+        "275",
+        "300",
+        "325"
+      ]
+    },
+    "num-7": {
+      "prompt": "An employee's salary increased from $45,000 to $54,000. What was the percentage increase?",
+      "options": [
+        "15%",
+        "18%",
+        "20%",
+        "22%"
+      ]
+    },
+    "num-8": {
+      "prompt": "A marketing budget of $15,000 is split evenly across 5 campaigns. One campaign is cancelled and the budget is redistributed evenly across the remaining 4. How much does each now receive?",
+      "options": [
+        "$3,000",
+        "$3,250",
+        "$3,750",
+        "$3,900"
+      ]
+    },
+    "num-9": {
+      "prompt": "A company's headcount grows from 50 to 65 employees. What is the percentage growth?",
+      "options": [
+        "20%",
+        "25%",
+        "30%",
+        "35%"
+      ]
+    },
+    "num-10": {
+      "prompt": "A product costs $40 to make and sells for $64. What is the markup as a percentage of the cost?",
+      "options": [
+        "40%",
+        "50%",
+        "60%",
+        "70%"
+      ]
+    },
+    "num-11": {
+      "prompt": "Monthly sales over 4 months were $12,000, $15,000, $9,000, and $16,000. What was the average monthly sales figure?",
+      "options": [
+        "$12,000",
+        "$12,500",
+        "$13,000",
+        "$13,500"
+      ]
+    },
+    "num-12": {
+      "prompt": "A project is 60% complete after 9 weeks, progressing at a steady rate. Approximately how many total weeks will the project take?",
+      "options": [
+        "12",
+        "13",
+        "15",
+        "18"
+      ]
+    },
+    "num-13": {
+      "prompt": "Vendor A charges $2,400 for 60 units. Vendor B charges $3,000 for 80 units. Which vendor offers the lower price per unit?",
+      "options": [
+        "Vendor A",
+        "Vendor B",
+        "Both are equal",
+        "Cannot be determined"
+      ]
+    },
+    "num-14": {
+      "prompt": "A team's error rate dropped from 8% to 5% over a quarter. By how many percentage points did it drop?",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "5"
+      ]
+    },
+    "num-15": {
+      "prompt": "A subscription costs $20/month, or $200/year. How much is saved per year by choosing the annual plan?",
+      "options": [
+        "$20",
+        "$40",
+        "$60",
+        "$80"
+      ]
+    },
+    "num-16": {
+      "prompt": "If inflation runs at 4% per year, approximately how much will a $50,000 salary need to be to keep the same purchasing power after one year?",
+      "options": [
+        "$50,400",
+        "$51,000",
+        "$52,000",
+        "$54,000"
+      ]
+    },
+    "num-17": {
+      "prompt": "A department's budget of $200,000 is cut by 15%. What is the new budget?",
+      "options": [
+        "$165,000",
+        "$170,000",
+        "$175,000",
+        "$180,000"
+      ]
+    },
+    "num-18": {
+      "prompt": "A survey of 240 employees found that 3 out of every 8 prefer remote work. How many employees is that?",
+      "options": [
+        "80",
+        "90",
+        "100",
+        "120"
+      ]
+    },
+    "verb-1": {
+      "passage": "The company's new remote work policy allows employees to work from home up to three days per week, provided their manager approves the schedule in advance. Employees in customer-facing roles are required to be in the office at least four days per week regardless of the policy.",
+      "prompt": "All employees can work from home up to three days a week.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-2": {
+      "passage": "The company's new remote work policy allows employees to work from home up to three days per week, provided their manager approves the schedule in advance. Employees in customer-facing roles are required to be in the office at least four days per week regardless of the policy.",
+      "prompt": "Manager approval is required before an eligible employee works from home.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-3": {
+      "passage": "The company's new remote work policy allows employees to work from home up to three days per week, provided their manager approves the schedule in advance. Employees in customer-facing roles are required to be in the office at least four days per week regardless of the policy.",
+      "prompt": "The policy was introduced because employees requested more flexibility.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-4": {
+      "passage": "The company's new remote work policy allows employees to work from home up to three days per week, provided their manager approves the schedule in advance. Employees in customer-facing roles are required to be in the office at least four days per week regardless of the policy.",
+      "prompt": "Customer-facing employees must be in the office at least four days a week regardless of the general policy.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-5": {
+      "passage": "The company offers an annual performance bonus to all employees who have completed at least six months of continuous service by the end of the fiscal year. The bonus amount is calculated as a percentage of base salary, determined by the employee's individual performance rating and the company's overall financial results for the year. Employees on approved leave for more than three months during the fiscal year are evaluated on a pro-rated basis.",
+      "prompt": "All employees receive the same bonus amount.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-6": {
+      "passage": "The company offers an annual performance bonus to all employees who have completed at least six months of continuous service by the end of the fiscal year. The bonus amount is calculated as a percentage of base salary, determined by the employee's individual performance rating and the company's overall financial results for the year. Employees on approved leave for more than three months during the fiscal year are evaluated on a pro-rated basis.",
+      "prompt": "An employee must have at least six months of continuous service to qualify for the bonus.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-7": {
+      "passage": "The company offers an annual performance bonus to all employees who have completed at least six months of continuous service by the end of the fiscal year. The bonus amount is calculated as a percentage of base salary, determined by the employee's individual performance rating and the company's overall financial results for the year. Employees on approved leave for more than three months during the fiscal year are evaluated on a pro-rated basis.",
+      "prompt": "The bonus is paid out quarterly.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-8": {
+      "passage": "The company offers an annual performance bonus to all employees who have completed at least six months of continuous service by the end of the fiscal year. The bonus amount is calculated as a percentage of base salary, determined by the employee's individual performance rating and the company's overall financial results for the year. Employees on approved leave for more than three months during the fiscal year are evaluated on a pro-rated basis.",
+      "prompt": "An employee on four months of approved leave during the year would be evaluated on a pro-rated basis.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-9": {
+      "passage": "The IT department requires all employees to change their network password every 90 days. Passwords must be at least twelve characters long and include a mix of letters, numbers, and symbols. Employees who fail to update their password before the deadline will have their account temporarily locked until the password is reset with IT's assistance.",
+      "prompt": "Passwords must be changed every 90 days.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-10": {
+      "passage": "The IT department requires all employees to change their network password every 90 days. Passwords must be at least twelve characters long and include a mix of letters, numbers, and symbols. Employees who fail to update their password before the deadline will have their account temporarily locked until the password is reset with IT's assistance.",
+      "prompt": "A locked account can only be unlocked by the employee themselves.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-11": {
+      "passage": "The IT department requires all employees to change their network password every 90 days. Passwords must be at least twelve characters long and include a mix of letters, numbers, and symbols. Employees who fail to update their password before the deadline will have their account temporarily locked until the password is reset with IT's assistance.",
+      "prompt": "The password policy was introduced after a security breach.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-12": {
+      "passage": "The IT department requires all employees to change their network password every 90 days. Passwords must be at least twelve characters long and include a mix of letters, numbers, and symbols. Employees who fail to update their password before the deadline will have their account temporarily locked until the password is reset with IT's assistance.",
+      "prompt": "A password of ten characters would meet the minimum length requirement.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-13": {
+      "passage": "The company's expense reimbursement policy requires employees to submit receipts for any expense over $25 within 30 days of the purchase. Expenses submitted after 30 days require additional written justification and manager approval before they can be processed. Travel expenses are reimbursed at a fixed per-diem rate rather than itemized receipts.",
+      "prompt": "An expense of $20 requires a receipt under this policy.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-14": {
+      "passage": "The company's expense reimbursement policy requires employees to submit receipts for any expense over $25 within 30 days of the purchase. Expenses submitted after 30 days require additional written justification and manager approval before they can be processed. Travel expenses are reimbursed at a fixed per-diem rate rather than itemized receipts.",
+      "prompt": "An expense submitted 45 days after purchase can still potentially be processed.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-15": {
+      "passage": "The company's expense reimbursement policy requires employees to submit receipts for any expense over $25 within 30 days of the purchase. Expenses submitted after 30 days require additional written justification and manager approval before they can be processed. Travel expenses are reimbursed at a fixed per-diem rate rather than itemized receipts.",
+      "prompt": "Travel expenses are reimbursed based on itemized receipts.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-16": {
+      "passage": "The company's expense reimbursement policy requires employees to submit receipts for any expense over $25 within 30 days of the purchase. Expenses submitted after 30 days require additional written justification and manager approval before they can be processed. Travel expenses are reimbursed at a fixed per-diem rate rather than itemized receipts.",
+      "prompt": "The manager approval requirement was added to reduce fraud.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-17": {
+      "passage": "The company's parental leave policy provides 16 weeks of fully paid leave for the primary caregiver and 6 weeks of fully paid leave for the secondary caregiver, regardless of gender. Employees must have completed one year of service to be eligible, and leave must be taken within twelve months of the birth or adoption.",
+      "prompt": "The amount of leave depends on whether the employee is male or female.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "verb-18": {
+      "passage": "The company's parental leave policy provides 16 weeks of fully paid leave for the primary caregiver and 6 weeks of fully paid leave for the secondary caregiver, regardless of gender. Employees must have completed one year of service to be eligible, and leave must be taken within twelve months of the birth or adoption.",
+      "prompt": "An employee with eight months of service is immediately eligible for parental leave.",
+      "options": [
+        "True",
+        "False",
+        "Cannot say"
+      ]
+    },
+    "log-1": {
+      "prompt": "What number comes next in the sequence: 2, 6, 12, 20, 30, ?",
+      "options": [
+        "36",
+        "40",
+        "42",
+        "44"
+      ]
+    },
+    "log-2": {
+      "prompt": "All managers at the company attend the annual leadership offsite. Sarah is attending the leadership offsite this year. What can you validly conclude?",
+      "options": [
+        "Sarah is definitely a manager",
+        "Sarah may or may not be a manager — attending the offsite doesn't guarantee she's a manager",
+        "Sarah is definitely not a manager",
+        "Everyone who attends the offsite is a manager"
+      ]
+    },
+    "log-3": {
+      "prompt": "What letter comes next in the sequence: A, C, F, J, O, ?",
+      "options": [
+        "T",
+        "U",
+        "V",
+        "S"
+      ]
+    },
+    "log-4": {
+      "prompt": "If it rains, the outdoor event is cancelled. The outdoor event was NOT cancelled. What can you conclude?",
+      "options": [
+        "It rained",
+        "It did not rain",
+        "It might have rained",
+        "Cannot be determined"
+      ]
+    },
+    "log-5": {
+      "prompt": "What number comes next in the sequence: 3, 8, 15, 24, 35, ?",
+      "options": [
+        "46",
+        "47",
+        "48",
+        "50"
+      ]
+    },
+    "log-6": {
+      "prompt": "All senior consultants have completed the leadership certification. James has completed the leadership certification. What can you validly conclude?",
+      "options": [
+        "James is definitely a senior consultant",
+        "James may or may not be a senior consultant — completing the certification doesn't guarantee it",
+        "James is definitely not a senior consultant",
+        "Everyone who completes the certification is a senior consultant"
+      ]
+    },
+    "log-7": {
+      "prompt": "What letter comes next in the sequence: Z, X, U, Q, ?",
+      "options": [
+        "K",
+        "L",
+        "M",
+        "N"
+      ]
+    },
+    "log-8": {
+      "prompt": "If the budget is approved, the project starts in January. The project did NOT start in January. What can you conclude?",
+      "options": [
+        "The budget was approved",
+        "The budget was not approved",
+        "The budget might have been approved",
+        "Cannot be determined"
+      ]
+    },
+    "log-9": {
+      "prompt": "Every certified auditor has passed the compliance exam. Fatima has passed the compliance exam. What can you validly conclude?",
+      "options": [
+        "Fatima is definitely a certified auditor",
+        "Fatima may or may not be a certified auditor — passing the exam doesn't guarantee it",
+        "Fatima is definitely not a certified auditor",
+        "Everyone who passes the exam is a certified auditor"
+      ]
+    },
+    "log-10": {
+      "prompt": "What number comes next in the sequence: 1, 4, 9, 16, 25, ?",
+      "options": [
+        "30",
+        "32",
+        "34",
+        "36"
+      ]
+    },
+    "log-11": {
+      "prompt": "If a supplier misses a delivery deadline, the production line is delayed. The production line was NOT delayed. What can you conclude?",
+      "options": [
+        "The supplier missed the deadline",
+        "The supplier did not miss the deadline",
+        "The supplier might have missed the deadline",
+        "Cannot be determined"
+      ]
+    },
+    "log-12": {
+      "prompt": "No interns are authorized to approve invoices. Sam is authorized to approve invoices. What can you validly conclude?",
+      "options": [
+        "Sam is definitely an intern",
+        "Sam is not an intern",
+        "Sam might be an intern",
+        "Cannot be determined"
+      ]
+    },
+    "log-13": {
+      "prompt": "What number comes next in the sequence: 2, 5, 11, 23, 47, ?",
+      "options": [
+        "90",
+        "93",
+        "94",
+        "95"
+      ]
+    },
+    "log-14": {
+      "prompt": "All the reports in the archive from before 2020 have been digitized. This report has not been digitized. What can you validly conclude?",
+      "options": [
+        "The report is from before 2020",
+        "The report is not from before 2020",
+        "The report might be from before 2020",
+        "Cannot be determined"
+      ]
+    },
+    "log-15": {
+      "prompt": "What letter comes next in the sequence: B, D, G, K, P, ?",
+      "options": [
+        "T",
+        "U",
+        "V",
+        "W"
+      ]
+    },
+    "log-16": {
+      "prompt": "If a machine is due for maintenance, it is taken offline for inspection. This machine was NOT taken offline for inspection. What can you conclude?",
+      "options": [
+        "The machine was due for maintenance",
+        "The machine was not due for maintenance",
+        "The machine might have been due for maintenance",
+        "Cannot be determined"
+      ]
+    },
+    "log-17": {
+      "prompt": "What number comes next in the sequence: 100, 95, 85, 70, 50, ?",
+      "options": [
+        "20",
+        "25",
+        "30",
+        "35"
+      ]
+    },
+    "log-18": {
+      "prompt": "Every valid invoice number begins with the letter 'V'. This number does not begin with the letter 'V'. What can you validly conclude?",
+      "options": [
+        "It is a valid invoice number",
+        "It is not a valid invoice number",
+        "It might be a valid invoice number",
+        "Cannot be determined"
+      ]
+    }
+  },
+  "cognitiveDomains": {
+    "Numerical Reasoning": "Numerical Reasoning",
+    "Verbal Reasoning": "Verbal Reasoning",
+    "Logical Reasoning": "Logical Reasoning"
+  },
+  "cognitiveDisclaimer": "This is guidance for your own development — not a validated employment-selection instrument. Research shows cognitive ability tests can produce larger group differences than other valid predictors of job performance when used for hiring or promotion. This assessment isn't designed, validated, or intended for hiring, promotion, or any other personnel decision — use it only to understand your own reasoning strengths, never as the basis for a decision about you or anyone else."
 }

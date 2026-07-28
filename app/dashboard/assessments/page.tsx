@@ -32,6 +32,7 @@ export default async function AssessmentsPage() {
   const tDim = await getTranslations("competencyDimensions");
   const tCatalog = await getTranslations("assessmentCatalog");
   const tCategories = await getTranslations("assessmentCategories");
+  const tBands = await getTranslations("scoreBands");
   const supabase = await createClient();
   const {
     data: { user },
@@ -242,7 +243,7 @@ export default async function AssessmentsPage() {
               const result = latestBySlug.get(COGNITIVE_ABILITY_SLUG);
               return result ? (
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>
-                  {t("completedBand", { band: cognitiveBandFromScore(result.score) })}
+                  {t("completedBand", { band: tBands(`${cognitiveBandFromScore(result.score).toLowerCase()}.label`) })}
                 </span>
               ) : (
                 <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>

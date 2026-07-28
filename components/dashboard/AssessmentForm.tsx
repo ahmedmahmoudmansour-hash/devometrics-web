@@ -13,7 +13,14 @@ import {
   scoreBandDevelopmentAreas,
   type Assessment,
 } from "@/lib/assessments/catalog";
-import { caseStudiesForAssessment, buildCaseStudyInsight, type CaseStudyAnswer } from "@/lib/assessments/caseStudies";
+import {
+  caseStudiesForAssessment,
+  buildCaseStudyInsight,
+  caseStudyDisplayScenario,
+  caseStudyDisplayPrompt,
+  caseStudyDisplayOptions,
+  type CaseStudyAnswer,
+} from "@/lib/assessments/caseStudies";
 import type { CaseStudyResponse } from "@/lib/supabase/types";
 
 const inputStyle: React.CSSProperties = {
@@ -39,6 +46,8 @@ export default function AssessmentForm({
   const t = useTranslations("assessmentForm");
   const tCatalog = useTranslations("assessmentCatalog");
   const tBands = useTranslations("scoreBands");
+  const tCaseStudies = useTranslations("caseStudies");
+  const tCaseStudyInsight = useTranslations("caseStudyInsight");
   const displayName = assessmentDisplayName(tCatalog, assessment.slug);
   const displayQuestions = assessmentDisplayQuestions(tCatalog, assessment.slug);
   const LIKERT = [
@@ -138,7 +147,7 @@ export default function AssessmentForm({
       }
     }
 
-    const insight = buildCaseStudyInsight(assessment.name, answers);
+    const insight = buildCaseStudyInsight(tCaseStudyInsight, displayName, answers);
     finalize(likertScore, answers, insight);
   }
 
@@ -217,11 +226,11 @@ export default function AssessmentForm({
           {caseStudies.map((c, i) => (
             <div key={c.id}>
               <p style={{ fontSize: 15, color: "var(--text)", marginBottom: 12, lineHeight: 1.6 }}>
-                {i + 1}. {c.scenario}
+                {i + 1}. {caseStudyDisplayScenario(tCaseStudies, c.id)}
               </p>
               {c.type === "mcq" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {c.options.map((opt) => (
+                  {c.options.map((opt, optIndex) => (
                     <button
                       key={opt.id}
                       type="button"
@@ -237,13 +246,13 @@ export default function AssessmentForm({
                         color: mcqSelections[c.id] === opt.id ? "var(--teal)" : "var(--text)",
                       }}
                     >
-                      {opt.text}
+                      {caseStudyDisplayOptions(tCaseStudies, c.id)[optIndex]}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>{c.prompt}</p>
+                  <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>{caseStudyDisplayPrompt(tCaseStudies, c.id)}</p>
                   <textarea
                     value={openText[c.id] ?? ""}
                     onChange={(e) => setOpenText((prev) => ({ ...prev, [c.id]: e.target.value }))}

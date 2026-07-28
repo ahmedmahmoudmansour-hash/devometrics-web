@@ -35,6 +35,7 @@ export default async function EmployeeDetailPage({
   const tDim = await getTranslations("competencyDimensions");
   const tTraits = await getTranslations("bigFiveTraits");
   const tInterp = await getTranslations("bigFiveInterpretations");
+  const tBands = await getTranslations("scoreBands");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const data = await buildEmployeeDetail(userId);
@@ -273,7 +274,7 @@ export default async function EmployeeDetailPage({
                             </span>
                           ) : a.slug === COGNITIVE_ABILITY_SLUG ? (
                             <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>
-                              {cognitiveBandFromScore(a.score)} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({a.score})</span>
+                              {tBands(`${cognitiveBandFromScore(a.score).toLowerCase()}.label`)} <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>({a.score})</span>
                             </span>
                           ) : (
                             <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>{a.score}</span>
