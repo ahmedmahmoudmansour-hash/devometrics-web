@@ -8,7 +8,7 @@ import {
   deleteOrganizationCompetency,
   suggestDimensionForCompetency,
 } from "@/lib/organizations/competencies";
-import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import { levelText } from "@/lib/ui/levelColor";
 import type { OrganizationCompetency } from "@/lib/supabase/types";
 
@@ -32,6 +32,7 @@ function CompetencyBar({
   score: number | null;
 }) {
   const t = useTranslations("organizationCompetencyBuilder");
+  const tDim = useTranslations("competencyDimensions");
   if (!competency.mapped_dimension) {
     return (
       <div style={{ marginBottom: 16 }}>
@@ -52,7 +53,7 @@ function CompetencyBar({
         <div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{competency.name}</span>
           <span style={{ fontSize: 11, color: "var(--text-muted)", marginInlineStart: 8 }}>
-            {t("mapsTo", { dimension: competency.mapped_dimension })}
+            {t("mapsTo", { dimension: dimensionLabel(tDim, competency.mapped_dimension) })}
           </span>
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color: levelText(score) }}>{score ?? "—"}/100</span>
@@ -78,6 +79,7 @@ const UNMAPPED = "" as const;
 
 function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
   const t = useTranslations("organizationCompetencyBuilder");
+  const tDim = useTranslations("competencyDimensions");
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(competency.name);
   const [description, setDescription] = useState(competency.description ?? "");
@@ -148,7 +150,7 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
           <option value={UNMAPPED}>{t("notMappedOptional")}</option>
           {COMPETENCY_DIMENSIONS.map((d) => (
             <option key={d} value={d}>
-              {d}
+              {dimensionLabel(tDim, d)}
             </option>
           ))}
         </select>
@@ -206,6 +208,7 @@ export default function OrganizationCompetencyBuilder({
   dimensionAverages: Partial<Record<CompetencyDimension, number>>;
 }) {
   const t = useTranslations("organizationCompetencyBuilder");
+  const tDim = useTranslations("competencyDimensions");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dimension, setDimension] = useState<CompetencyDimension | typeof UNMAPPED>(UNMAPPED);
@@ -309,7 +312,7 @@ export default function OrganizationCompetencyBuilder({
               <option value={UNMAPPED}>{t("notMappedOptional")}</option>
               {COMPETENCY_DIMENSIONS.map((d) => (
                 <option key={d} value={d}>
-                  {d}
+                  {dimensionLabel(tDim, d)}
                 </option>
               ))}
             </select>

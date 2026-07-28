@@ -14,6 +14,26 @@ export const COMPETENCY_DIMENSIONS = [
 
 export type CompetencyDimension = (typeof COMPETENCY_DIMENSIONS)[number];
 
+// Stable English identifier -> translated display label, same pattern as
+// stageLabel/postingStatusLabel in lib/hiring/types.ts. The dimension value
+// itself stays fixed English everywhere it's stored, scored, or sent to the
+// AI (extract.ts, jobArchitecture, performanceReviews, etc.) — only rendering
+// it to a user goes through this.
+const DIMENSION_TRANSLATION_KEY: Record<CompetencyDimension, string> = {
+  "Technical Skills": "technicalSkills",
+  Leadership: "leadership",
+  "Strategic Thinking": "strategicThinking",
+  Communication: "communication",
+  "AI & Digital Skills": "aiDigitalSkills",
+  "Critical Thinking": "criticalThinking",
+  "People Management": "peopleManagement",
+  "Financial Literacy": "financialLiteracy",
+};
+
+export function dimensionLabel(t: (key: string) => string, dimension: CompetencyDimension): string {
+  return t(DIMENSION_TRANSLATION_KEY[dimension]);
+}
+
 export type CompetencyScore = {
   dimension: CompetencyDimension;
   currentLevel: number; // 0-100

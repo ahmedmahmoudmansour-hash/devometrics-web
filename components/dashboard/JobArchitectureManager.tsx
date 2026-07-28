@@ -15,7 +15,7 @@ import {
   saveJobDescription,
   type RoleGradingSuggestion,
 } from "@/lib/jobArchitecture/actions";
-import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { JobFamily, JobRole, RoleCompetencyRequirement, RoleTransition, RoleTrack } from "@/lib/supabase/types";
 
 const card: React.CSSProperties = {
@@ -300,6 +300,7 @@ function JDBuilder({ role }: { role: JobRole }) {
 
 function RoleCard({ role, requirements, onChanged }: { role: JobRole; requirements: RoleCompetencyRequirement[]; onChanged: () => void }) {
   const t = useTranslations("jobArchitectureManager");
+  const tDim = useTranslations("competencyDimensions");
   const [isPending, startTransition] = useTransition();
   const sorted = [...requirements].sort((a, b) => b.target_level - a.target_level);
   return (
@@ -361,7 +362,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
           </p>
           {sorted.map((r) => (
             <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{r.dimension}</span>
+              <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, r.dimension as CompetencyDimension)}</span>
               <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${r.target_level}%`, height: "100%", background: "var(--teal)" }} />
               </div>
@@ -376,6 +377,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
 
 function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone: () => void; onCancel: () => void }) {
   const t = useTranslations("jobArchitectureManager");
+  const tDim = useTranslations("competencyDimensions");
   const [isPending, startTransition] = useTransition();
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -459,7 +461,7 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
             {COMPETENCY_DIMENSIONS.map((dim) => (
               <div key={dim} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ flex: 1, fontSize: 11.5, color: "var(--text-muted)" }}>{dim}</span>
+                <span style={{ flex: 1, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, dim)}</span>
                 <input
                   type="number"
                   min={0}

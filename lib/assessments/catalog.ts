@@ -631,6 +631,38 @@ export function getAssessment(slug: string) {
   return ASSESSMENTS.find((a) => a.slug === slug) ?? null;
 }
 
+// Minimal shape of the next-intl translator this file needs — a plain call
+// for interpolated strings, plus .raw() for the question arrays (next-intl
+// resolves arrays/objects through .raw() rather than the interpolating call
+// signature). ASSESSMENTS itself stays fixed English (slug/category/
+// dimension/level are logic, and the English name/description/questions
+// here are never sent anywhere — scoring is pure arithmetic on the Likert
+// answer index, verified in AssessmentForm.tsx, so translating the
+// displayed statement text has zero effect on how an assessment is scored).
+export type AssessmentTranslator = {
+  (key: string, values?: Record<string, string | number>): string;
+  raw: (key: string) => unknown;
+};
+
+export function assessmentDisplayName(t: AssessmentTranslator, slug: string): string {
+  return t(`${slug}.name`);
+}
+
+export function assessmentDisplayDescription(t: AssessmentTranslator, slug: string): string {
+  return t(`${slug}.description`);
+}
+
+export function assessmentDisplayQuestions(t: AssessmentTranslator, slug: string): string[] {
+  return t.raw(`${slug}.questions`) as string[];
+}
+
+// Category names are their own flat translation namespace ("assessmentCategories")
+// keyed directly by the English category string (next-intl keys don't need
+// to be identifiers — "Digital & AI Skills" works as a plain object key).
+export function assessmentCategoryLabel(t: (key: string) => string, category: string): string {
+  return t(category);
+}
+
 // English Proficiency and Cognitive Reasoning aren't in ASSESSMENTS (they're
 // objective tests, not the self-report catalog — see englishProficiency.ts
 // and cognitiveAbility.ts), so a plain getAssessment(slug)?.name lookup
@@ -643,7 +675,17 @@ export function resolveAssessmentName(slug: string): string {
   return getAssessment(slug)?.name ?? slug;
 }
 
+// Translated sibling of resolveAssessmentName, for direct UI rendering only
+// — resolveAssessmentName itself must stay English (AI-context callers like
+// lib/gap-analysis/backgroundContext.ts read its output).
+export function resolveAssessmentDisplayName(t: AssessmentTranslator, slug: string): string {
+  if (slug === ENGLISH_PROFICIENCY_SLUG) return t("_englishProficiency");
+  if (slug === COGNITIVE_ABILITY_SLUG) return t("_cognitiveReasoning");
+  return getAssessment(slug) ? assessmentDisplayName(t, slug) : slug;
+}
+
 export type ScoreBand = {
+  key: "developing" | "emerging" | "proficient" | "advanced";
   min: number;
   max: number;
   label: string;
@@ -651,8 +693,26 @@ export type ScoreBand = {
   developmentAreas: string[];
 };
 
+// Translated counterparts of label/interpretation/developmentAreas, for
+// direct UI rendering — band.label/interpretation/developmentAreas
+// themselves stay English (interpretation is a template fn, not sent to any
+// AI, but kept as the stable fallback/reference copy other code may still
+// read against).
+export function scoreBandLabel(t: AssessmentTranslator, band: ScoreBand): string {
+  return t(`${band.key}.label`);
+}
+
+export function scoreBandInterpretation(t: AssessmentTranslator, band: ScoreBand, name: string): string {
+  return t(`${band.key}.interpretation`, { name });
+}
+
+export function scoreBandDevelopmentAreas(t: AssessmentTranslator, band: ScoreBand): string[] {
+  return t.raw(`${band.key}.developmentAreas`) as string[];
+}
+
 export const SCORE_BANDS: ScoreBand[] = [
   {
+    key: "developing",
     min: 0,
     max: 40,
     label: "Developing",
@@ -665,6 +725,7 @@ export const SCORE_BANDS: ScoreBand[] = [
     ],
   },
   {
+    key: "emerging",
     min: 41,
     max: 60,
     label: "Emerging",
@@ -677,6 +738,7 @@ export const SCORE_BANDS: ScoreBand[] = [
     ],
   },
   {
+    key: "proficient",
     min: 61,
     max: 80,
     label: "Proficient",
@@ -689,6 +751,7 @@ export const SCORE_BANDS: ScoreBand[] = [
     ],
   },
   {
+    key: "advanced",
     min: 81,
     max: 100,
     label: "Advanced",

@@ -6,7 +6,8 @@ import { ASSESSMENTS, LEVEL_SECTIONS, type LevelSection } from "@/lib/assessment
 import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
-import { rankByImpact } from "@/lib/gap-analysis/dimensions";
+import { rankByImpact, dimensionLabel } from "@/lib/gap-analysis/dimensions";
+import { assessmentDisplayName, assessmentDisplayDescription, assessmentCategoryLabel } from "@/lib/assessments/catalog";
 import AssessmentPlanGenerator from "@/components/dashboard/AssessmentPlanGenerator";
 import type { AssessmentResult, CaseStudyExerciseAttempt, GapAnalysis, Profile } from "@/lib/supabase/types";
 
@@ -28,6 +29,9 @@ function sectionForCareerStage(careerStage: string | null): LevelSection | null 
 
 export default async function AssessmentsPage() {
   const t = await getTranslations("assessmentsPage");
+  const tDim = await getTranslations("competencyDimensions");
+  const tCatalog = await getTranslations("assessmentCatalog");
+  const tCategories = await getTranslations("assessmentCategories");
   const supabase = await createClient();
   const {
     data: { user },
@@ -151,7 +155,7 @@ export default async function AssessmentsPage() {
                   href={`/dashboard/assessments/${a.slug}`}
                   style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}
                 >
-                  <span style={{ color: "var(--text)" }}>{a.name}</span>
+                  <span style={{ color: "var(--text)" }}>{assessmentDisplayName(tCatalog, a.slug)}</span>
                   <span style={{ color: "#f0b840", fontWeight: 600 }}>{t("start")}</span>
                 </Link>
               ))}
@@ -273,7 +277,7 @@ export default async function AssessmentsPage() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-                      {ex.dimension} · {ex.level}
+                      {dimensionLabel(tDim, ex.dimension)} · {ex.level}
                     </span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "var(--amber)", whiteSpace: "nowrap" }}>
                       {t("minutesSuffix", { count: ex.timeLimitMinutes })}
@@ -402,13 +406,13 @@ export default async function AssessmentsPage() {
                       }}
                     >
                       <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-                        {a.category}
+                        {assessmentCategoryLabel(tCategories, a.category)}
                       </span>
                       <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 6 }}>
-                        {a.name}
+                        {assessmentDisplayName(tCatalog, a.slug)}
                       </h3>
                       <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 14 }}>
-                        {a.description}
+                        {assessmentDisplayDescription(tCatalog, a.slug)}
                       </p>
                       {result ? (
                         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>

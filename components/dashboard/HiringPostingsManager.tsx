@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createJobPosting, suggestPostingRequirements, saveJobPostingRequirements, setJobPostingStatus, deleteJobPosting } from "@/lib/hiring/postingActions";
-import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import type { RoleGradingSuggestion } from "@/lib/jobArchitecture/actions";
 import { postingStatusLabel } from "@/lib/hiring/types";
 import type { JobPosting, JobPostingStatus } from "@/lib/hiring/types";
@@ -180,6 +180,7 @@ function NewPostingForm({
   onCancel: () => void;
 }) {
   const t = useTranslations("hiringPostingsManager");
+  const tDim = useTranslations("competencyDimensions");
   const [isPending, startTransition] = useTransition();
   const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +285,7 @@ function NewPostingForm({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
               {COMPETENCY_DIMENSIONS.map((dim) => (
                 <div key={dim} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ flex: 1, fontSize: 11.5, color: "var(--text-muted)" }}>{dim}</span>
+                  <span style={{ flex: 1, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, dim)}</span>
                   <input
                     type="number"
                     min={0}

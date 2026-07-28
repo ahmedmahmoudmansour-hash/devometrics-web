@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import BridgeContentView from "@/components/dashboard/BridgeContentView";
+import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { BridgeContent } from "@/lib/learning/bridgeContent";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
@@ -14,6 +15,8 @@ export default async function BridgeGapPage({
   const { dimension: encodedDimension } = await params;
   const dimension = decodeURIComponent(encodedDimension);
   const t = await getTranslations("bridgeGapPage");
+  const tDim = await getTranslations("competencyDimensions");
+  const dimensionDisplay = dimensionLabel(tDim, dimension as CompetencyDimension);
 
   const supabase = await createClient();
   const {
@@ -48,7 +51,7 @@ export default async function BridgeGapPage({
             {t("backToGapAnalysis")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            {t("title", { dimension })}
+            {t("title", { dimension: dimensionDisplay })}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
             {t("subtitle")}
@@ -68,6 +71,7 @@ export default async function BridgeGapPage({
         ) : (
           <BridgeContentView
             dimension={dimension}
+            dimensionDisplay={dimensionDisplay}
             currentLevel={competency.currentLevel}
             targetLevel={competency.targetLevel}
             cached={cached?.content ?? null}

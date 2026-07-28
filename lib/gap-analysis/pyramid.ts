@@ -33,6 +33,27 @@ export const PYRAMID_TIERS: PyramidTier[] = [
   },
 ];
 
+// Stable tier key -> translated label/subtitle, same pattern as
+// dimensionLabel above. CapabilityPyramid.tsx is the only renderer.
+const TIER_LABEL_KEY: Record<PyramidTier["key"], string> = {
+  organizational: "organizationalLabel",
+  professional: "professionalLabel",
+  personal: "personalLabel",
+};
+const TIER_SUBTITLE_KEY: Record<PyramidTier["key"], string> = {
+  organizational: "organizationalSubtitle",
+  professional: "professionalSubtitle",
+  personal: "personalSubtitle",
+};
+
+export function tierLabel(t: (key: string) => string, tier: PyramidTier): string {
+  return t(TIER_LABEL_KEY[tier.key]);
+}
+
+export function tierSubtitle(t: (key: string) => string, tier: PyramidTier): string {
+  return t(TIER_SUBTITLE_KEY[tier.key]);
+}
+
 export function tierAverage(
   tier: PyramidTier,
   dimensionLevels: Partial<Record<CompetencyDimension, number>>

@@ -112,12 +112,14 @@ function KnowledgeCheck({ questions }: { questions: BridgeContent["microLesson"]
 
 export default function BridgeContentView({
   dimension,
+  dimensionDisplay,
   currentLevel,
   targetLevel,
   cached,
   generatedAt,
 }: {
   dimension: string;
+  dimensionDisplay: string;
   currentLevel: number;
   targetLevel: number;
   cached: BridgeContent | null;
@@ -204,7 +206,7 @@ export default function BridgeContentView({
             Devometrics
           </span>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-            {t("bridgingLabel", { dimension, current: currentLevel, target: targetLevel })}
+            {t("bridgingLabel", { dimension: dimensionDisplay, current: currentLevel, target: targetLevel })}
           </p>
           {generatedAt && (
             <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>

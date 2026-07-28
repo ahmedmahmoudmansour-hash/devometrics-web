@@ -8,7 +8,7 @@ import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
 import Reveal from "@/components/Reveal";
 import { levelBg, levelText } from "@/lib/ui/levelColor";
-import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import {
   LayoutList,
   Grid3x3,
@@ -122,6 +122,7 @@ const sampleHeadStyle: React.CSSProperties = {
 
 export default async function EnterprisePage() {
   const t = await getTranslations("enterprisePage");
+  const tDim = await getTranslations("competencyDimensions");
 
   const capabilityTitles = [t("cap1Title"), t("cap2Title"), t("cap3Title"), t("cap4Title"), t("cap5Title"), t("cap6Title"), t("cap7Title"), t("cap8Title"), t("cap9Title"), t("cap10Title"), t("cap11Title"), t("cap12Title"), t("cap13Title"), t("cap14Title"), t("cap15Title")];
   const capabilityDescriptions = [t("cap1Description"), t("cap2Description"), t("cap3Description"), t("cap4Description"), t("cap5Description"), t("cap6Description"), t("cap7Description"), t("cap8Description"), t("cap9Description"), t("cap10Description"), t("cap11Description"), t("cap12Description"), t("cap13Description"), t("cap14Description"), t("cap15Description")];
@@ -264,7 +265,7 @@ export default async function EnterprisePage() {
                     <th style={{ ...sampleHeadStyle, textAlign: "start" }}>{t("tableNameHeader")}</th>
                     {COMPETENCY_DIMENSIONS.map((d) => (
                       <th key={d} style={{ ...sampleHeadStyle, textAlign: "center", whiteSpace: "nowrap" }}>
-                        {d}
+                        {dimensionLabel(tDim, d)}
                       </th>
                     ))}
                   </tr>

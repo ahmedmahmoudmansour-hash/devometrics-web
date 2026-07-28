@@ -27,7 +27,7 @@ import {
   type FocusAreaSuggestion,
   type CompetencyRatingSuggestion,
 } from "@/lib/performanceReviews/ai";
-import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import {
   reviewStatusLabel,
   competencyRatingLabel,
@@ -259,6 +259,7 @@ function CompetencyRatingsEditor({
 }) {
   const t = useTranslations("impactCycleReviewRow");
   const tLabels = useTranslations("performanceReviewLabels");
+  const tDim = useTranslations("competencyDimensions");
   const [suggestions, setSuggestions] = useState<CompetencyRatingSuggestion[] | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -320,7 +321,7 @@ function CompetencyRatingsEditor({
             <div key={dim} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "6px 10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div>
-                  <span style={{ fontSize: 12, color: "var(--text)" }}>{dim}</span>
+                  <span style={{ fontSize: 12, color: "var(--text)" }}>{dimensionLabel(tDim, dim)}</span>
                   {ctx && (ctx.roleTarget !== null || ctx.measuredCurrent !== null) && (
                     <span style={{ fontSize: 10.5, color: "var(--text-muted)", marginInlineStart: 6 }}>
                       {ctx.measuredCurrent !== null ? t("measured", { value: ctx.measuredCurrent }) : ""}

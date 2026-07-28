@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { assignAssessment, removeAssignedAssessment } from "@/lib/organizations/actions";
-import { ASSESSMENTS } from "@/lib/assessments/catalog";
+import { ASSESSMENTS, resolveAssessmentDisplayName, type AssessmentTranslator } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
 
@@ -13,11 +13,13 @@ import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
 // admins should still be able to push them to someone the same way as any
 // other assessment, so they're added here rather than to the catalog
 // itself (which would wrongly route them through the Likert AssessmentForm).
-const ASSIGNABLE = [
-  ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: a.name, level: a.level as string })),
-  { slug: ENGLISH_PROFICIENCY_SLUG, name: "English Proficiency", level: "A1–C2" },
-  { slug: COGNITIVE_ABILITY_SLUG, name: "Cognitive Reasoning", level: "Numerical/Verbal/Logical" },
-];
+function buildAssignable(t: AssessmentTranslator) {
+  return [
+    ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: resolveAssessmentDisplayName(t, a.slug), level: a.level as string })),
+    { slug: ENGLISH_PROFICIENCY_SLUG, name: resolveAssessmentDisplayName(t, ENGLISH_PROFICIENCY_SLUG), level: "A1–C2" },
+    { slug: COGNITIVE_ABILITY_SLUG, name: resolveAssessmentDisplayName(t, COGNITIVE_ABILITY_SLUG), level: "Numerical/Verbal/Logical" },
+  ];
+}
 
 const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -37,8 +39,10 @@ export default function AssignAssessmentForm({
   assigned: { slug: string; name: string; assignedAt: string; completed: boolean }[];
 }) {
   const t = useTranslations("assignAssessmentForm");
+  const tCatalog = useTranslations("assessmentCatalog");
+  const assignable = buildAssignable(tCatalog);
   const assignedSlugs = new Set(assigned.map((a) => a.slug));
-  const available = ASSIGNABLE.filter((a) => !assignedSlugs.has(a.slug));
+  const available = assignable.filter((a) => !assignedSlugs.has(a.slug));
   const [slug, setSlug] = useState(available[0]?.slug ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -67,7 +71,7 @@ export default function AssignAssessmentForm({
           {assigned.map((a) => (
             <div key={a.slug} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
               <span style={{ color: "var(--text)" }}>
-                {a.name}{" "}
+                {resolveAssessmentDisplayName(tCatalog, a.slug)}{" "}
                 {a.completed ? (
                   <span style={{ color: "var(--teal)", fontSize: 11, fontWeight: 700 }}>{t("completed")}</span>
                 ) : (

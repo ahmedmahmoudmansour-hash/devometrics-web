@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { submitSelfAssessment, acknowledgeReview } from "@/lib/performanceReviews/actions";
 import { helpDraftReflection } from "@/lib/performanceReviews/ai";
 import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail } from "@/lib/performanceReviews/types";
+import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 
 const GOAL_STATUS_COLOR: Record<string, string> = {
   not_started: "148,163,184",
@@ -44,6 +45,7 @@ function aiButtonStyle(): React.CSSProperties {
 export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }) {
   const t = useTranslations("myPerformanceReview");
   const tLabels = useTranslations("performanceReviewLabels");
+  const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
   const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs } = detail;
 
@@ -209,7 +211,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {competencyRatings.map((r) => (
               <div key={r.dimension} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12.5, color: "var(--text)" }}>{r.dimension}</span>
+                <span style={{ fontSize: 12.5, color: "var(--text)" }}>{dimensionLabel(tDim, r.dimension as CompetencyDimension)}</span>
                 <span style={{ fontSize: 11.5, color: "var(--teal)", fontWeight: 700 }}>{competencyRatingLabel(tLabels, r.rating)}</span>
               </div>
             ))}

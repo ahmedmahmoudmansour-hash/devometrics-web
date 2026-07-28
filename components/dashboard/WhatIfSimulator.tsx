@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { simulateTargetRoleChange, simulateDimensionImprovement, type WhatIfResult } from "@/lib/careerGps/whatIf";
-import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 
 function inputStyle(): React.CSSProperties {
   return {
@@ -19,6 +19,7 @@ function inputStyle(): React.CSSProperties {
 
 export default function WhatIfSimulator() {
   const t = useTranslations("whatIfSimulator");
+  const tDim = useTranslations("competencyDimensions");
   const [mode, setMode] = useState<"role" | "dimension">("role");
   const [role, setRole] = useState("");
   const [dimension, setDimension] = useState<CompetencyDimension>(COMPETENCY_DIMENSIONS[0]);
@@ -87,7 +88,7 @@ export default function WhatIfSimulator() {
           <select value={dimension} onChange={(e) => setDimension(e.target.value as CompetencyDimension)} style={{ ...inputStyle(), cursor: "pointer" }}>
             {COMPETENCY_DIMENSIONS.map((d) => (
               <option key={d} value={d}>
-                {d}
+                {dimensionLabel(tDim, d)}
               </option>
             ))}
           </select>
@@ -136,7 +137,7 @@ export default function WhatIfSimulator() {
           </div>
           {result.topGapsAfter.length > 0 && (
             <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 8 }}>
-              {t("biggestRemainingGaps", { list: result.topGapsAfter.map((g) => g.dimension).join(", ") })}
+              {t("biggestRemainingGaps", { list: result.topGapsAfter.map((g) => dimensionLabel(tDim, g.dimension as CompetencyDimension)).join(", ") })}
             </p>
           )}
         </div>

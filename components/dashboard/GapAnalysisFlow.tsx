@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import CompetencyRadar from "./CompetencyRadar";
 import PlanOptionsReview from "./PlanOptionsReview";
 import FileUploadButton from "@/components/FileUploadButton";
@@ -40,6 +41,7 @@ export default function GapAnalysisFlow({
   personalization: PersonalizationValues;
 }) {
   const t = useTranslations("gapAnalysisFlow");
+  const tDim = useTranslations("competencyDimensions");
   const [analysis, setAnalysis] = useState<GapAnalysis | null>(latest);
   const [showForm, setShowForm] = useState(!latest);
   const [targetRole, setTargetRole] = useState("");
@@ -236,7 +238,7 @@ export default function GapAnalysisFlow({
               }}
             >
               <div>
-                <div style={{ fontSize: 14, color: "var(--text)", fontWeight: 600 }}>{c.dimension}</div>
+                <div style={{ fontSize: 14, color: "var(--text)", fontWeight: 600 }}>{dimensionLabel(tDim, c.dimension)}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{c.rationale}</div>
                 <Link
                   href={`/dashboard/gap-analysis/bridge/${encodeURIComponent(c.dimension)}`}

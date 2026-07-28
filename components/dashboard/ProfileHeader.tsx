@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { updateAvatarUrl } from "@/app/dashboard/actions";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/Avatar";
@@ -22,6 +23,7 @@ export default function ProfileHeader({
   membershipTitle?: string | null;
   organizationName?: string | null;
 }) {
+  const t = useTranslations("profileHeader");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -33,11 +35,11 @@ export default function ProfileHeader({
     const file = e.target.files?.[0];
     if (!file || !profile) return;
     if (!file.type.startsWith("image/")) {
-      setAvatarError("Please choose an image file");
+      setAvatarError(t("chooseImageFileError"));
       return;
     }
     if (file.size > MAX_AVATAR_BYTES) {
-      setAvatarError("Image must be under 3MB");
+      setAvatarError(t("imageSizeError"));
       return;
     }
 
@@ -58,7 +60,7 @@ export default function ProfileHeader({
       if (result?.error) throw new Error(result.error);
       setAvatarUrl(publicUrl);
     } catch (err) {
-      setAvatarError(err instanceof Error ? err.message : "Could not upload image");
+      setAvatarError(err instanceof Error ? err.message : t("uploadError"));
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -73,7 +75,7 @@ export default function ProfileHeader({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={avatarUploading}
-          aria-label="Change profile picture"
+          aria-label={t("changeProfilePictureAriaLabel")}
           style={{
             position: "absolute",
             bottom: -2,
@@ -104,16 +106,15 @@ export default function ProfileHeader({
       </div>
       <div>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "var(--text)" }}>
-          {name ? `Welcome back, ${name}` : "Welcome back"}
+          {name ? t("welcomeBackNamed", { name }) : t("welcomeBack")}
         </h1>
         {membershipTitle && (
           <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600, marginTop: 4 }}>
-            {membershipTitle}
-            {organizationName ? ` at ${organizationName}` : ""}
+            {organizationName ? t("titleAtOrganization", { title: membershipTitle, organization: organizationName }) : membershipTitle}
           </p>
         )}
         <p style={{ fontSize: 12, color: "var(--teal)", marginTop: 4 }}>
-          {avatarUploading ? "Uploading…" : "Click the + to change your profile picture"}
+          {avatarUploading ? t("uploading") : t("clickToChangePicture")}
         </p>
         {avatarError && <p style={{ fontSize: 12, color: "#f87171", marginTop: 4 }}>{avatarError}</p>}
       </div>

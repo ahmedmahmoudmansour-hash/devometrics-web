@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
-import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import { DonutChart, HBarChart, NineBoxGrid, NineBoxLegend } from "@/components/dashboard/charts";
 import { computeNineBoxPoint } from "@/lib/organizations/nineBox";
@@ -41,6 +41,7 @@ function groupCount<T>(rows: T[], key: (r: T) => string | null, unspecifiedLabel
 
 export default async function CompanyAnalyticsPage() {
   const t = await getTranslations("companyAnalyticsPage");
+  const tDim = await getTranslations("competencyDimensions");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -66,7 +67,7 @@ export default async function CompanyAnalyticsPage() {
 
   // Org-wide dimension averages, sorted — top = strengths, bottom = gaps
   const dimensionBars = COMPETENCY_DIMENSIONS.map((dim) => ({
-    label: dim,
+    label: dimensionLabel(tDim, dim),
     value: data.dimensionAverages[dim] ?? 0,
     measured: data.dimensionAverages[dim] !== undefined,
   }))

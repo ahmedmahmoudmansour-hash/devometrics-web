@@ -3,7 +3,14 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { saveBigFiveProfile } from "@/app/dashboard/personality/actions";
-import { BIG_FIVE_ITEMS, BIG_FIVE_TRAITS, bigFiveInterpretation, type BigFiveTrait } from "@/lib/personality/bigFive";
+import {
+  BIG_FIVE_ITEMS,
+  BIG_FIVE_TRAITS,
+  bigFiveInterpretationDisplay,
+  bigFiveTraitLabel,
+  bigFiveItemLabel,
+  type BigFiveTrait,
+} from "@/lib/personality/bigFive";
 import type { BigFiveProfile } from "@/lib/supabase/types";
 
 function barColor(score: number): string {
@@ -13,19 +20,21 @@ function barColor(score: number): string {
 }
 
 function ScoreBars({ scores }: { scores: Record<BigFiveTrait, number> }) {
+  const tTraits = useTranslations("bigFiveTraits");
+  const tInterp = useTranslations("bigFiveInterpretations");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {BIG_FIVE_TRAITS.map((trait) => (
         <div key={trait}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{trait}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{bigFiveTraitLabel(tTraits, trait)}</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: barColor(scores[trait]) }}>{scores[trait]}</span>
           </div>
           <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, marginBottom: 6 }}>
             <div style={{ width: `${scores[trait]}%`, height: "100%", background: barColor(scores[trait]), borderRadius: 3 }} />
           </div>
           <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            {bigFiveInterpretation(trait, scores[trait])}
+            {bigFiveInterpretationDisplay(tInterp, trait, scores[trait])}
           </p>
         </div>
       ))}
@@ -36,6 +45,7 @@ function ScoreBars({ scores }: { scores: Record<BigFiveTrait, number> }) {
 export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile | null }) {
   const t = useTranslations("bigFiveAssessment");
   const tLikert = useTranslations("assessmentForm");
+  const tItems = useTranslations("bigFiveItems");
   const LIKERT = [
     { value: 1, label: tLikert("likertStronglyDisagree") },
     { value: 2, label: tLikert("likertDisagree") },
@@ -112,7 +122,7 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
         {BIG_FIVE_ITEMS.map((item, i) => (
           <div key={item.id}>
             <p style={{ fontSize: 14, color: "var(--text)", marginBottom: 10, lineHeight: 1.5 }}>
-              {i + 1}. {item.text}
+              {i + 1}. {bigFiveItemLabel(tItems, item)}
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {LIKERT.map((opt) => (

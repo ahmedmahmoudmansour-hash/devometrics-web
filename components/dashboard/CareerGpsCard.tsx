@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
+import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { CareerGpsSnapshot } from "@/lib/careerGps/gps";
 
 function scoreColor(score: number): string {
@@ -10,6 +11,7 @@ function scoreColor(score: number): string {
 
 export default function CareerGpsCard({ snapshot }: { snapshot: CareerGpsSnapshot }) {
   const t = useTranslations("careerGpsCard");
+  const tDim = useTranslations("competencyDimensions");
   const locale = useLocale();
   const { destination, promotionReadiness, interviewReadiness, topGaps, fastestRoute, estimatedReadinessAfter } = snapshot;
 
@@ -55,7 +57,7 @@ export default function CareerGpsCard({ snapshot }: { snapshot: CareerGpsSnapsho
                 key={g.dimension}
                 style={{ fontSize: 12, background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 12px", color: "var(--text)" }}
               >
-                {g.dimension}
+                {dimensionLabel(tDim, g.dimension as CompetencyDimension)}
               </span>
             ))}
           </div>

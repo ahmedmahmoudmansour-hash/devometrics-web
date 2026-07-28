@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
-import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
@@ -12,6 +12,7 @@ import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
   const t = await getTranslations("companyEmployeesPage");
+  const tDim = await getTranslations("competencyDimensions");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
@@ -222,7 +223,7 @@ export default async function CompanyEmployeesPage() {
                         <th style={{ ...headStyle, textAlign: "start" }}>{t("tableName")}</th>
                         {COMPETENCY_DIMENSIONS.map((d) => (
                           <th key={d} style={{ ...headStyle, textAlign: "center", whiteSpace: "nowrap" }}>
-                            {d}
+                            {dimensionLabel(tDim, d)}
                           </th>
                         ))}
                       </tr>

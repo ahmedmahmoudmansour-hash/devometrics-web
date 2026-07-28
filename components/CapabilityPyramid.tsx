@@ -1,5 +1,8 @@
-import { PYRAMID_TIERS, tierAverage } from "@/lib/gap-analysis/pyramid";
-import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+"use client";
+
+import { useTranslations } from "next-intl";
+import { PYRAMID_TIERS, tierAverage, tierLabel, tierSubtitle } from "@/lib/gap-analysis/pyramid";
+import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import { levelBg, levelText } from "@/lib/ui/levelColor";
 
 const TIER_WIDTH: Record<string, number> = {
@@ -15,6 +18,8 @@ export default function CapabilityPyramid({
   dimensionLevels?: Partial<Record<CompetencyDimension, number>>;
   compact?: boolean;
 }) {
+  const t = useTranslations("capabilityPyramid");
+  const tDim = useTranslations("competencyDimensions");
   const showLevels = !!dimensionLevels;
 
   return (
@@ -46,16 +51,16 @@ export default function CapabilityPyramid({
                   color: "var(--text)",
                 }}
               >
-                {tier.label}
+                {tierLabel(t, tier)}
               </span>
               {showLevels && (
                 <span style={{ fontSize: 11, fontWeight: 700, color: levelText(avg) }}>
-                  {avg ?? "—"} avg
+                  {t("avgLabel", { value: avg ?? "—" })}
                 </span>
               )}
             </div>
             {!compact && (
-              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, marginBottom: 10 }}>{tier.subtitle}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, marginBottom: 10 }}>{tierSubtitle(t, tier)}</div>
             )}
             <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", marginTop: compact ? 8 : 0 }}>
               {tier.dimensions.map((d) => {
@@ -73,7 +78,7 @@ export default function CapabilityPyramid({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {d}
+                    {dimensionLabel(tDim, d)}
                     {showLevels && ` · ${level ?? "—"}`}
                   </span>
                 );

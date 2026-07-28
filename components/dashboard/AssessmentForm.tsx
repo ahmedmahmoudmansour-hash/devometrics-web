@@ -4,7 +4,15 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { saveAssessmentResult } from "@/app/dashboard/assessments/actions";
-import { scoreToBand, type Assessment } from "@/lib/assessments/catalog";
+import {
+  scoreToBand,
+  assessmentDisplayName,
+  assessmentDisplayQuestions,
+  scoreBandLabel,
+  scoreBandInterpretation,
+  scoreBandDevelopmentAreas,
+  type Assessment,
+} from "@/lib/assessments/catalog";
 import { caseStudiesForAssessment, buildCaseStudyInsight, type CaseStudyAnswer } from "@/lib/assessments/caseStudies";
 import type { CaseStudyResponse } from "@/lib/supabase/types";
 
@@ -29,6 +37,10 @@ export default function AssessmentForm({
   careerStage: string | null;
 }) {
   const t = useTranslations("assessmentForm");
+  const tCatalog = useTranslations("assessmentCatalog");
+  const tBands = useTranslations("scoreBands");
+  const displayName = assessmentDisplayName(tCatalog, assessment.slug);
+  const displayQuestions = assessmentDisplayQuestions(tCatalog, assessment.slug);
   const LIKERT = [
     { value: 1, label: t("likertStronglyDisagree") },
     { value: 2, label: t("likertDisagree") },
@@ -146,14 +158,14 @@ export default function AssessmentForm({
         }}
       >
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-          {t("resultLabel", { name: assessment.name })}
+          {t("resultLabel", { name: displayName })}
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 12 }}>
           <span style={{ fontSize: 44, fontWeight: 800, color: "var(--text)" }}>{result.score}</span>
-          <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("outOf100", { band: band.label })}</span>
+          <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("outOf100", { band: scoreBandLabel(tBands, band) })}</span>
         </div>
         <p style={{ fontSize: 14, color: "var(--text)", marginTop: 16, lineHeight: 1.7 }}>
-          {band.interpretation(assessment.name)}
+          {scoreBandInterpretation(tBands, band, displayName)}
         </p>
 
         {result.insight && (
@@ -169,7 +181,7 @@ export default function AssessmentForm({
           {t("suggestedNextSteps")}
         </h3>
         <ul style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {band.developmentAreas.map((d) => (
+          {scoreBandDevelopmentAreas(tBands, band).map((d) => (
             <li key={d} style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
               — {d}
             </li>
@@ -301,7 +313,7 @@ export default function AssessmentForm({
         {t("likertIntro")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-        {assessment.questions.map((q, i) => (
+        {displayQuestions.map((q, i) => (
           <div key={i}>
             <p style={{ fontSize: 15, color: "var(--text)", marginBottom: 12, lineHeight: 1.6 }}>
               {i + 1}. {q}

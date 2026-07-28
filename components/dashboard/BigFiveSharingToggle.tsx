@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateBigFiveSharing } from "@/app/dashboard/personality/actions";
 
 export default function BigFiveSharingToggle({
@@ -10,6 +11,7 @@ export default function BigFiveSharingToggle({
   organizationName: string;
   initialShared: boolean;
 }) {
+  const t = useTranslations("bigFiveSharingToggle");
   const [shared, setShared] = useState(initialShared);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -64,12 +66,10 @@ export default function BigFiveSharingToggle({
         </button>
         <div>
           <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-            Share with {organizationName}&apos;s admin
+            {t("shareWithAdmin", { organization: organizationName })}
           </p>
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.55 }}>
-            Off by default. Your Big Five results are always private to you unless you turn this on —
-            and it&apos;s for development conversations only. Devometrics doesn&apos;t use personality
-            data for hiring, promotion, or compensation decisions, and neither should your admin.
+            {t("description")}
           </p>
         </div>
       </div>

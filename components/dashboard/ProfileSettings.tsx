@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateProfile } from "@/app/dashboard/actions";
 import PersonalizationFields, { type PersonalizationValues } from "@/components/dashboard/PersonalizationFields";
 import type { Profile } from "@/lib/supabase/types";
 
 export default function ProfileSettings({ profile }: { profile: Profile | null }) {
+  const t = useTranslations("profileSettings");
   const [values, setValues] = useState<PersonalizationValues>({
     location: profile?.location ?? "",
     learningPreferences: profile?.learning_preferences ?? [],
@@ -31,14 +33,10 @@ export default function ProfileSettings({ profile }: { profile: Profile | null }
       }}
     >
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-        Personalize your plans &amp; coach
+        {t("title")}
       </h2>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-        This drives more than the chat — your Development Plans, Assessment plans, and
-        AI Coach all use where you are in your career, how you actually like to learn,
-        and what budget you&apos;re working with. All fields here are optional and
-        self-disclosed. You can also set your learning preference inline the next time
-        you generate a plan.
+        {t("description")}
       </p>
 
       <form
@@ -69,7 +67,7 @@ export default function ProfileSettings({ profile }: { profile: Profile | null }
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {saved ? "Saved" : "Save"}
+          {saved ? t("saved") : t("save")}
         </button>
       </form>
     </div>

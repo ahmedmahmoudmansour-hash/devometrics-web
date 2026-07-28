@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
-import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
 import AssignAssessmentForm from "@/components/dashboard/AssignAssessmentForm";
 import EmployeeReportExportBar from "@/components/dashboard/EmployeeReportExportBar";
@@ -14,7 +14,7 @@ import { computeNineBoxPoint } from "@/lib/organizations/nineBox";
 import { levelText } from "@/lib/ui/levelColor";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
-import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
+import { BIG_FIVE_TRAITS, bigFiveInterpretationDisplay, bigFiveTraitLabel } from "@/lib/personality/bigFive";
 import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection";
 import ManagerNotesSection from "@/components/dashboard/ManagerNotesSection";
 
@@ -32,6 +32,9 @@ export default async function EmployeeDetailPage({
 }) {
   const { userId } = await params;
   const t = await getTranslations("employeeDetailPage");
+  const tDim = await getTranslations("competencyDimensions");
+  const tTraits = await getTranslations("bigFiveTraits");
+  const tInterp = await getTranslations("bigFiveInterpretations");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const data = await buildEmployeeDetail(userId);
@@ -203,7 +206,7 @@ export default async function EmployeeDetailPage({
                 </p>
                 <HBarChart
                   data={COMPETENCY_DIMENSIONS.filter((d) => dimensionLevels[d] !== undefined).map((d) => ({
-                    label: d,
+                    label: dimensionLabel(tDim, d),
                     value: dimensionLevels[d] as number,
                     color: levelText(dimensionLevels[d] as number),
                     benchmark: orgDimensionAverages[d],
@@ -300,7 +303,7 @@ export default async function EmployeeDetailPage({
                   {BIG_FIVE_TRAITS.map((trait) => (
                     <div key={trait}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{trait}</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{bigFiveTraitLabel(tTraits, trait)}</span>
                         <span className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: levelText(bigFive.scores[trait]) }}>
                           {bigFive.scores[trait]}
                         </span>
@@ -309,7 +312,7 @@ export default async function EmployeeDetailPage({
                         <div style={{ width: `${bigFive.scores[trait]}%`, height: "100%", background: levelText(bigFive.scores[trait]), borderRadius: 3 }} />
                       </div>
                       <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>
-                        {bigFiveInterpretation(trait, bigFive.scores[trait])}
+                        {bigFiveInterpretationDisplay(tInterp, trait, bigFive.scores[trait])}
                       </p>
                     </div>
                   ))}

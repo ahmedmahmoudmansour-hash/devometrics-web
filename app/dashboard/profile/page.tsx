@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
@@ -12,6 +13,7 @@ import type { BigFiveProfile, GapAnalysis, Profile } from "@/lib/supabase/types"
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 
 export default async function ProfilePage() {
+  const t = await getTranslations("profilePage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -47,7 +49,7 @@ export default async function ProfilePage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 8 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
         </div>
 
@@ -60,10 +62,10 @@ export default async function ProfilePage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
-              Your capability pyramid
+              {t("capabilityPyramidTitle")}
             </h2>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-              Your 8 competency dimensions grouped by how they build on each other.
+              {t("capabilityPyramidSubtitle")}
             </p>
             <CapabilityPyramid
               dimensionLevels={
@@ -88,7 +90,7 @@ export default async function ProfilePage() {
             <BigFiveAssessment latest={latestBigFive} />
             {latestBigFive && membership && (
               <BigFiveSharingToggle
-                organizationName={membership.organization_name ?? "your company"}
+                organizationName={membership.organization_name ?? t("yourCompanyFallback")}
                 initialShared={profile?.share_big_five_with_admin ?? false}
               />
             )}
@@ -96,7 +98,7 @@ export default async function ProfilePage() {
 
           <div>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 14 }}>
-              Your preferences
+              {t("yourPreferences")}
             </h2>
             <ProfileSettings profile={profile} />
           </div>

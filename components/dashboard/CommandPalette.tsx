@@ -2,18 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export const OPEN_PALETTE_EVENT = "devometrics:open-palette";
 
 type Entry = {
-  label: string;
+  labelKey: string;
   href: string;
-  hint?: string;
+  hintKey?: string;
   keywords: string;
 };
 
 // Everything reachable in two keystrokes: Ctrl+K, type, Enter. The list is
 // static and instant on purpose — no fetch, no spinner, no index to build.
+// Keywords stay fixed English (the underlying fuzzy-match index), matching
+// the same stable-identifier pattern as stageLabel/dimensionLabel — only the
+// displayed labelKey/hintKey are translated.
 function buildEntries(
   isCompanyAdmin: boolean,
   isPlatformAdmin: boolean,
@@ -22,45 +26,45 @@ function buildEntries(
   hasOrgMembership: boolean
 ): Entry[] {
   const entries: Entry[] = [
-    { label: "Progress", href: "/dashboard", keywords: "home overview dashboard start" },
-    { label: "AI Coach", href: "/dashboard/coach", hint: "Talk it through", keywords: "chat talk mentor advice session" },
-    { label: "Book coaching sessions", href: "/dashboard/coach/book", hint: "Schedule a cadence", keywords: "schedule appointment calendar reminder book" },
-    { label: "Gap Analysis", href: "/dashboard/gap-analysis", hint: "CV vs target role", keywords: "cv resume job description competency gap" },
-    { label: "Assessments", href: "/dashboard/assessments", keywords: "test quiz evaluate skills big five personality" },
-    { label: "Practice Scenarios", href: "/dashboard/roleplay", hint: "Interview & hard conversations", keywords: "roleplay interview practice negotiation feedback" },
-    { label: "Career Paths", href: "/dashboard/career-paths", hint: "Where you can go next", keywords: "map future promotion readiness next role" },
-    { label: "Tasks & Calendar", href: "/dashboard/tasks", keywords: "todo task calendar day week plan sync outlook google" },
-    { label: "Workspace", href: "/dashboard/notes", hint: "Private notes + AI", keywords: "notes ideas write second brain action items" },
-    { label: "Certifications", href: "/dashboard/certifications", hint: "Expiry reminders", keywords: "certification credential license expiry renew badge" },
-    { label: "Accountability Groups", href: "/dashboard/accountability", hint: "Peer check-ins", keywords: "accountability study group peer partner checkin progress" },
-    { label: "Discovery", href: "/dashboard/discovery", hint: "AI interview about you", keywords: "interview questions profile onboarding" },
-    { label: "Resume Intelligence", href: "/dashboard/resume", keywords: "cv ats score keywords bullets" },
-    { label: "Scorecard", href: "/dashboard/scorecard", keywords: "score career health momentum badges" },
-    { label: "My Development", href: "/dashboard/plans", hint: "All your plans and milestones", keywords: "plans milestones status in progress completed deferred track" },
-    { label: "My Journey", href: "/dashboard/journey", hint: "Your story so far", keywords: "history timeline progress log" },
-    { label: "Profile", href: "/dashboard/profile", keywords: "account avatar settings preferences experience education" },
+    { labelKey: "progress", href: "/dashboard", keywords: "home overview dashboard start" },
+    { labelKey: "aiCoach", href: "/dashboard/coach", hintKey: "aiCoachHint", keywords: "chat talk mentor advice session" },
+    { labelKey: "bookCoaching", href: "/dashboard/coach/book", hintKey: "bookCoachingHint", keywords: "schedule appointment calendar reminder book" },
+    { labelKey: "gapAnalysis", href: "/dashboard/gap-analysis", hintKey: "gapAnalysisHint", keywords: "cv resume job description competency gap" },
+    { labelKey: "assessments", href: "/dashboard/assessments", keywords: "test quiz evaluate skills big five personality" },
+    { labelKey: "practiceScenarios", href: "/dashboard/roleplay", hintKey: "practiceScenariosHint", keywords: "roleplay interview practice negotiation feedback" },
+    { labelKey: "careerPaths", href: "/dashboard/career-paths", hintKey: "careerPathsHint", keywords: "map future promotion readiness next role" },
+    { labelKey: "tasksCalendar", href: "/dashboard/tasks", keywords: "todo task calendar day week plan sync outlook google" },
+    { labelKey: "workspace", href: "/dashboard/notes", hintKey: "workspaceHint", keywords: "notes ideas write second brain action items" },
+    { labelKey: "certifications", href: "/dashboard/certifications", hintKey: "certificationsHint", keywords: "certification credential license expiry renew badge" },
+    { labelKey: "accountabilityGroups", href: "/dashboard/accountability", hintKey: "accountabilityGroupsHint", keywords: "accountability study group peer partner checkin progress" },
+    { labelKey: "discovery", href: "/dashboard/discovery", hintKey: "discoveryHint", keywords: "interview questions profile onboarding" },
+    { labelKey: "resumeIntelligence", href: "/dashboard/resume", keywords: "cv ats score keywords bullets" },
+    { labelKey: "scorecard", href: "/dashboard/scorecard", keywords: "score career health momentum badges" },
+    { labelKey: "myDevelopment", href: "/dashboard/plans", hintKey: "myDevelopmentHint", keywords: "plans milestones status in progress completed deferred track" },
+    { labelKey: "myJourney", href: "/dashboard/journey", hintKey: "myJourneyHint", keywords: "history timeline progress log" },
+    { labelKey: "profile", href: "/dashboard/profile", keywords: "account avatar settings preferences experience education" },
   ];
   if (hasManager) {
-    entries.push({ label: "Impact Cycle", href: "/dashboard/impact-cycle", hint: "Your Reflection + Manager's Perspective", keywords: "performance review appraisal rating goals focus areas cycle confirm feedback impact" });
+    entries.push({ labelKey: "impactCycle", href: "/dashboard/impact-cycle", hintKey: "impactCycleHint", keywords: "performance review appraisal rating goals focus areas cycle confirm feedback impact" });
   }
   if (hasOrgMembership) {
-    entries.push({ label: "Knowledge Hub", href: "/dashboard/knowledge-hub", hint: "Training assigned to you", keywords: "training document exam attestation library course learning assigned" });
+    entries.push({ labelKey: "knowledgeHub", href: "/dashboard/knowledge-hub", hintKey: "knowledgeHubHint", keywords: "training document exam attestation library course learning assigned" });
   }
   if (hasDirectReports) {
-    entries.push({ label: "My Team", href: "/dashboard/my-team", hint: "Your direct reports' Impact Cycles", keywords: "team manager reports review appraisal perspective" });
+    entries.push({ labelKey: "myTeam", href: "/dashboard/my-team", hintKey: "myTeamHint", keywords: "team manager reports review appraisal perspective" });
   }
   if (isCompanyAdmin) {
     entries.push(
-      { label: "Company", href: "/dashboard/company", keywords: "organization workspace admin hr" },
-      { label: "Employees", href: "/dashboard/company/employees", hint: "Workforce & heatmap", keywords: "team workforce heatmap staff hr edit archive" },
-      { label: "Impact Cycles (admin)", href: "/dashboard/company/impact-cycles", hint: "Cycles, Manager's Perspective & Focus Areas", keywords: "performance review cycle appraisal manager assessment goals impact" },
-      { label: "Knowledge Hub (admin)", href: "/dashboard/company/knowledge-hub", hint: "Upload, assign & track training", keywords: "training document exam attestation library course upload assign lms" }
+      { labelKey: "company", href: "/dashboard/company", keywords: "organization workspace admin hr" },
+      { labelKey: "employees", href: "/dashboard/company/employees", hintKey: "employeesHint", keywords: "team workforce heatmap staff hr edit archive" },
+      { labelKey: "impactCyclesAdmin", href: "/dashboard/company/impact-cycles", hintKey: "impactCyclesAdminHint", keywords: "performance review cycle appraisal manager assessment goals impact" },
+      { labelKey: "knowledgeHubAdmin", href: "/dashboard/company/knowledge-hub", hintKey: "knowledgeHubAdminHint", keywords: "training document exam attestation library course upload assign lms" }
     );
   }
   if (isPlatformAdmin) {
     entries.push(
-      { label: "Admin", href: "/dashboard/admin", keywords: "platform pilot tracking" },
-      { label: "Contact inquiries", href: "/dashboard/admin/inquiries", hint: "Sales/support/careers messages", keywords: "contact form messages sales support careers inbox" }
+      { labelKey: "admin", href: "/dashboard/admin", keywords: "platform pilot tracking" },
+      { labelKey: "contactInquiries", href: "/dashboard/admin/inquiries", hintKey: "contactInquiriesHint", keywords: "contact form messages sales support careers inbox" }
     );
   }
   return entries;
@@ -79,6 +83,7 @@ export default function CommandPalette({
   hasManager: boolean;
   hasOrgMembership: boolean;
 }) {
+  const t = useTranslations("commandPalette");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
@@ -99,12 +104,12 @@ export default function CommandPalette({
     const prefix: Entry[] = [];
     const rest: Entry[] = [];
     for (const e of entries) {
-      const label = e.label.toLowerCase();
+      const label = t(e.labelKey).toLowerCase();
       if (label.startsWith(q) || label.split(" ").some((w) => w.startsWith(q))) prefix.push(e);
       else if (label.includes(q) || e.keywords.includes(q)) rest.push(e);
     }
     return [...prefix, ...rest];
-  }, [entries, query]);
+  }, [entries, query, t]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -179,7 +184,7 @@ export default function CommandPalette({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Quick navigation"
+        aria-label={t("dialogLabel")}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(560px, calc(100vw - 32px))",
@@ -199,8 +204,8 @@ export default function CommandPalette({
             setSelected(0);
           }}
           onKeyDown={handleInputKeyDown}
-          placeholder="Jump to… (type to search)"
-          aria-label="Search pages and actions"
+          placeholder={t("placeholder")}
+          aria-label={t("searchAriaLabel")}
           style={{
             width: "100%",
             background: "transparent",
@@ -215,7 +220,7 @@ export default function CommandPalette({
         <div style={{ maxHeight: "46vh", overflowY: "auto", padding: 6 }}>
           {results.length === 0 && (
             <p style={{ padding: "14px 12px", fontSize: 13, color: "var(--text-muted)" }}>
-              Nothing matches &quot;{query}&quot;
+              {t("nothingMatches", { query })}
             </p>
           )}
           {results.map((entry, i) => (
@@ -238,9 +243,9 @@ export default function CommandPalette({
               }}
             >
               <span style={{ fontSize: 14, fontWeight: 600, color: i === activeIndex ? "var(--teal)" : "var(--text)" }}>
-                {entry.label}
+                {t(entry.labelKey)}
               </span>
-              {entry.hint && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{entry.hint}</span>}
+              {entry.hintKey && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t(entry.hintKey)}</span>}
               {i === activeIndex && (
                 <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-muted)" }}>↵</span>
               )}
@@ -248,9 +253,9 @@ export default function CommandPalette({
           ))}
         </div>
         <div style={{ borderTop: "1px solid var(--border)", padding: "8px 14px", display: "flex", gap: 14 }}>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>↑↓ navigate</span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>↵ open</span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>esc close</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("navigate")}</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("open")}</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("close")}</span>
         </div>
       </div>
     </div>

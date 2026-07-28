@@ -1,4 +1,7 @@
-import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
+"use client";
+
+import { useTranslations } from "next-intl";
+import { dimensionLabel, type CompetencyScore } from "@/lib/gap-analysis/dimensions";
 
 const CENTER = 150;
 const RADIUS = 110;
@@ -19,6 +22,7 @@ function polygonPoints(fractions: number[]) {
 }
 
 export default function CompetencyRadar({ competencies }: { competencies: CompetencyScore[] }) {
+  const t = useTranslations("competencyDimensions");
   if (competencies.length === 0) return null;
 
   const rings = [0.25, 0.5, 0.75, 1];
@@ -54,7 +58,7 @@ export default function CompetencyRadar({ competencies }: { competencies: Compet
             textAnchor="middle"
             dominantBaseline="middle"
           >
-            {c.dimension}
+            {dimensionLabel(t, c.dimension)}
           </text>
         );
       })}

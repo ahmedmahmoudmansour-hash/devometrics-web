@@ -13,12 +13,37 @@ export const BIG_FIVE_TRAITS = [
 
 export type BigFiveTrait = (typeof BIG_FIVE_TRAITS)[number];
 
+// Stable trait -> translated label, same pattern as dimensionLabel in
+// lib/gap-analysis/dimensions.ts. BIG_FIVE_TRAITS itself stays fixed English
+// everywhere it's used for AI context (backgroundContext.ts,
+// organizations/actions.ts performance-review drafting) — only direct UI
+// rendering (BigFiveAssessment.tsx, admin employee detail page) goes through
+// this.
+const TRAIT_TRANSLATION_KEY: Record<BigFiveTrait, string> = {
+  Openness: "openness",
+  Conscientiousness: "conscientiousness",
+  Extraversion: "extraversion",
+  Agreeableness: "agreeableness",
+  "Emotional Stability": "emotionalStability",
+};
+
+export function bigFiveTraitLabel(t: (key: string) => string, trait: BigFiveTrait): string {
+  return t(TRAIT_TRANSLATION_KEY[trait]);
+}
+
 export type BigFiveItem = {
   id: string;
   trait: BigFiveTrait;
   text: string;
   reverse: boolean; // true when agreement counts against the trait
 };
+
+// item.id (o1, c1, ...) is already a stable per-item key, so the
+// "bigFiveItems" translation namespace is keyed directly by it — no separate
+// mapping table needed like TRAIT_TRANSLATION_KEY above.
+export function bigFiveItemLabel(t: (key: string) => string, item: BigFiveItem): string {
+  return t(item.id);
+}
 
 // 4 items per trait, interleaved so no two consecutive items share a trait —
 // reduces the pattern-matching/straight-lining response bias a blocked
@@ -63,7 +88,7 @@ export function scoreBigFive(answers: Record<string, number>): Record<BigFiveTra
   return scores;
 }
 
-const BAND = (score: number): "low" | "mid" | "high" => (score >= 70 ? "high" : score >= 40 ? "mid" : "low");
+export const BAND = (score: number): "low" | "mid" | "high" => (score >= 70 ? "high" : score >= 40 ? "mid" : "low");
 
 export const BIG_FIVE_INTERPRETATIONS: Record<BigFiveTrait, Record<"low" | "mid" | "high", string>> = {
   Openness: {
@@ -95,4 +120,15 @@ export const BIG_FIVE_INTERPRETATIONS: Record<BigFiveTrait, Record<"low" | "mid"
 
 export function bigFiveInterpretation(trait: BigFiveTrait, score: number): string {
   return BIG_FIVE_INTERPRETATIONS[trait][BAND(score)];
+}
+
+// Translated counterpart of bigFiveInterpretation, for direct UI rendering
+// only. bigFiveInterpretation itself must stay English — its output feeds AI
+// context in backgroundContext.ts and organizations/actions.ts.
+export function bigFiveInterpretationDisplay(
+  t: (key: string) => string,
+  trait: BigFiveTrait,
+  score: number
+): string {
+  return t(`${TRAIT_TRANSLATION_KEY[trait]}.${BAND(score)}`);
 }

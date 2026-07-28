@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import MemberRoleSelector from "@/components/dashboard/MemberRoleSelector";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import type { JobRole } from "@/lib/supabase/types";
 import type { Mobility, MoveOption, UntappedRole, DevelopmentGap } from "@/lib/jobArchitecture/mobility";
 
@@ -18,7 +19,7 @@ function readinessColor(pct: number): string {
   return "var(--text-muted)";
 }
 
-function GapList({ gaps, t }: { gaps: DevelopmentGap[]; t: Translator }) {
+function GapList({ gaps, t, tDim }: { gaps: DevelopmentGap[]; t: Translator; tDim: Translator }) {
   if (gaps.length === 0) {
     return <p style={{ fontSize: 11.5, color: "var(--teal)", marginTop: 4 }}>{t("readyNow")}</p>;
   }
@@ -36,14 +37,14 @@ function GapList({ gaps, t }: { gaps: DevelopmentGap[]; t: Translator }) {
             padding: "2px 8px",
           }}
         >
-          {g.dimension} <span className="mono" style={{ color: "var(--text)" }}>{g.current}→{g.required}</span>
+          {dimensionLabel(tDim, g.dimension)} <span className="mono" style={{ color: "var(--text)" }}>{g.current}→{g.required}</span>
         </span>
       ))}
     </div>
   );
 }
 
-function MoveCard({ move, kind, t }: { move: MoveOption; kind: "vertical" | "horizontal"; t: Translator }) {
+function MoveCard({ move, kind, t, tDim }: { move: MoveOption; kind: "vertical" | "horizontal"; t: Translator; tDim: Translator }) {
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 14, background: "rgba(255,255,255,0.02)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -58,19 +59,19 @@ function MoveCard({ move, kind, t }: { move: MoveOption; kind: "vertical" | "hor
       <div style={{ marginTop: 6, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
         <div style={{ width: `${move.readinessPercent}%`, height: "100%", background: readinessColor(move.readinessPercent) }} />
       </div>
-      <GapList gaps={move.developmentGaps} t={t} />
+      <GapList gaps={move.developmentGaps} t={t} tDim={tDim} />
     </div>
   );
 }
 
-function UntappedCard({ item, t }: { item: UntappedRole; t: Translator }) {
+function UntappedCard({ item, t, tDim }: { item: UntappedRole; t: Translator; tDim: Translator }) {
   return (
     <div style={{ border: "1px solid rgba(125,211,252,0.25)", borderRadius: 12, padding: 14, background: "rgba(125,211,252,0.04)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{item.role.title}</span>
         <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--phase2)" }}>{t("matchPercent", { percent: item.matchPercent })}</span>
       </div>
-      <GapList gaps={item.topGaps} t={t} />
+      <GapList gaps={item.topGaps} t={t} tDim={tDim} />
     </div>
   );
 }
@@ -89,6 +90,7 @@ export default async function CareerMobilitySection({
   employeeName: string;
 }) {
   const t = await getTranslations("careerMobilitySection");
+  const tDim = await getTranslations("competencyDimensions");
   const firstName = employeeName.split(" ")[0];
 
   return (
@@ -135,7 +137,7 @@ export default async function CareerMobilitySection({
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {mobility.vertical.map((m) => (
-                    <MoveCard key={m.role.id} move={m} kind="vertical" t={t} />
+                    <MoveCard key={m.role.id} move={m} kind="vertical" t={t} tDim={tDim} />
                   ))}
                 </div>
               )}
@@ -147,7 +149,7 @@ export default async function CareerMobilitySection({
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {mobility.horizontal.map((m) => (
-                    <MoveCard key={m.role.id} move={m} kind="horizontal" t={t} />
+                    <MoveCard key={m.role.id} move={m} kind="horizontal" t={t} tDim={tDim} />
                   ))}
                 </div>
               )}
@@ -164,7 +166,7 @@ export default async function CareerMobilitySection({
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
                 {mobility.untapped.map((u) => (
-                  <UntappedCard key={u.role.id} item={u} t={t} />
+                  <UntappedCard key={u.role.id} item={u} t={t} tDim={tDim} />
                 ))}
               </div>
             </div>

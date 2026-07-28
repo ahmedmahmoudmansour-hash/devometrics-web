@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   ListChecks,
@@ -33,7 +34,7 @@ import { OPEN_PALETTE_EVENT } from "@/components/dashboard/CommandPalette";
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ size?: number }>;
   accent?: "teal" | "amber";
   premium?: boolean;
@@ -47,50 +48,50 @@ function buildSections(
   hasDirectReports: boolean,
   hasManager: boolean,
   hasOrgMembership: boolean
-): { label: string | null; items: NavItem[] }[] {
+): { labelKey: string | null; items: NavItem[] }[] {
   return [
     {
-      label: null,
-      items: [{ href: "/dashboard", label: "Progress", icon: LayoutDashboard }],
+      labelKey: null,
+      items: [{ href: "/dashboard", labelKey: "progress", icon: LayoutDashboard }],
     },
     {
-      label: "Understand",
+      labelKey: "understandSection",
       items: [
-        { href: "/dashboard/discovery", label: "Discovery", icon: Compass },
-        { href: "/dashboard/gap-analysis", label: "Gap Analysis", icon: Target },
-        { href: "/dashboard/assessments", label: "Assessments", icon: ClipboardList },
-        { href: "/dashboard/resume", label: "Resume", icon: FileText, premium: true },
-        { href: "/dashboard/scorecard", label: "Scorecard", icon: LineChart },
+        { href: "/dashboard/discovery", labelKey: "discovery", icon: Compass },
+        { href: "/dashboard/gap-analysis", labelKey: "gapAnalysis", icon: Target },
+        { href: "/dashboard/assessments", labelKey: "assessments", icon: ClipboardList },
+        { href: "/dashboard/resume", labelKey: "resume", icon: FileText, premium: true },
+        { href: "/dashboard/scorecard", labelKey: "scorecard", icon: LineChart },
         // Only shown to someone with an actual manager assigned in the Org
         // Chart — with no manager, this page can never have anything on it
         // (no one to give a Manager's Perspective), so the link is just
         // permanent clutter otherwise, not a real feature they can use.
-        ...(hasManager ? [{ href: "/dashboard/impact-cycle", label: "Impact Cycle", icon: ClipboardCheck }] : []),
+        ...(hasManager ? [{ href: "/dashboard/impact-cycle", labelKey: "impactCycle", icon: ClipboardCheck }] : []),
         // Only shown to a real reporting-line manager (migration 0078) —
         // an individual contributor with no reports has nothing to do here.
-        ...(hasDirectReports ? [{ href: "/dashboard/my-team", label: "My Team", icon: Users }] : []),
+        ...(hasDirectReports ? [{ href: "/dashboard/my-team", labelKey: "myTeam", icon: Users }] : []),
       ],
     },
     {
-      label: "Grow",
+      labelKey: "growSection",
       items: [
-        { href: "/dashboard/coach", label: "AI Coach", icon: Sparkles },
-        { href: "/dashboard/roleplay", label: "Practice Scenarios", icon: Drama, premium: true },
-        { href: "/dashboard/career-paths", label: "Career Paths", icon: Route },
-        { href: "/dashboard/plans", label: "My Development", icon: MilestoneIcon },
-        { href: "/dashboard/journey", label: "My Journey", icon: History },
+        { href: "/dashboard/coach", labelKey: "aiCoach", icon: Sparkles },
+        { href: "/dashboard/roleplay", labelKey: "practiceScenarios", icon: Drama, premium: true },
+        { href: "/dashboard/career-paths", labelKey: "careerPaths", icon: Route },
+        { href: "/dashboard/plans", labelKey: "myDevelopment", icon: MilestoneIcon },
+        { href: "/dashboard/journey", labelKey: "myJourney", icon: History },
       ],
     },
     {
-      label: "Organize",
+      labelKey: "organizeSection",
       items: [
-        { href: "/dashboard/tasks", label: "Tasks & Calendar", icon: ListChecks },
-        { href: "/dashboard/notes", label: "Workspace", icon: NotebookPen },
-        { href: "/dashboard/certifications", label: "Certifications", icon: BadgeCheck },
-        { href: "/dashboard/accountability", label: "Accountability Groups", icon: Users },
+        { href: "/dashboard/tasks", labelKey: "tasksCalendar", icon: ListChecks },
+        { href: "/dashboard/notes", labelKey: "workspace", icon: NotebookPen },
+        { href: "/dashboard/certifications", labelKey: "certifications", icon: BadgeCheck },
+        { href: "/dashboard/accountability", labelKey: "accountabilityGroups", icon: Users },
         // Only relevant to someone actually part of a company workspace —
         // an individual account will never have anything assigned here.
-        ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", label: "Knowledge Hub", icon: Library }] : []),
+        ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library }] : []),
       ],
     },
   ];
@@ -113,6 +114,7 @@ export default function SidebarNav({
   hasManager: boolean;
   hasOrgMembership: boolean;
 }) {
+  const t = useTranslations("sidebarNav");
   const pathname = usePathname();
   const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership);
 
@@ -201,7 +203,7 @@ export default function SidebarNav({
         }}
       >
         <Search size={15} />
-        <span className="dashboard-sidebar-label" style={{ flex: 1, textAlign: "left" }}>Search</span>
+        <span className="dashboard-sidebar-label" style={{ flex: 1, textAlign: "left" }}>{t("search")}</span>
         <kbd
           className="dashboard-sidebar-label"
           style={{
@@ -219,8 +221,8 @@ export default function SidebarNav({
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
         {sections.map((section, i) => (
-          <div key={section.label ?? `section-${i}`} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {section.label && (
+          <div key={section.labelKey ?? `section-${i}`} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {section.labelKey && (
               <p
                 className="dashboard-sidebar-label"
                 style={{
@@ -232,13 +234,13 @@ export default function SidebarNav({
                   padding: "12px 14px 2px",
                 }}
               >
-                {section.label}
+                {t(section.labelKey)}
               </p>
             )}
             {section.items.map((item) => (
-              <Link key={item.href} href={item.href} title={item.label} style={itemStyle(isActive(item.href))}>
+              <Link key={item.href} href={item.href} title={t(item.labelKey)} style={itemStyle(isActive(item.href))}>
                 <item.icon size={16} />
-                <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{item.label}</span>
+                <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{t(item.labelKey)}</span>
                 {item.premium && isFreeTier && (
                   <Lock size={12} className="dashboard-sidebar-label" style={{ color: "var(--amber)", flexShrink: 0 }} />
                 )}
@@ -258,22 +260,22 @@ export default function SidebarNav({
             padding: "12px 14px 2px",
           }}
         >
-          Account
+          {t("accountSection")}
         </p>
         <Link href="/dashboard/profile" style={itemStyle(isActive("/dashboard/profile"))}>
           <UserCircle size={16} />
-          <span className="dashboard-sidebar-label">Profile</span>
+          <span className="dashboard-sidebar-label">{t("profile")}</span>
         </Link>
         {isCompanyAdmin && (
           <Link href="/dashboard/company" style={itemStyle(isActive("/dashboard/company"), "amber")}>
             <Building2 size={16} />
-            <span className="dashboard-sidebar-label">Company</span>
+            <span className="dashboard-sidebar-label">{t("company")}</span>
           </Link>
         )}
         {isPlatformAdmin && (
           <Link href="/dashboard/admin" style={itemStyle(isActive("/dashboard/admin"), "amber")}>
             <ShieldCheck size={16} />
-            <span className="dashboard-sidebar-label">Admin</span>
+            <span className="dashboard-sidebar-label">{t("admin")}</span>
           </Link>
         )}
       </nav>
@@ -298,7 +300,7 @@ export default function SidebarNav({
               cursor: "pointer",
             }}
           >
-            <LogOut size={14} /> Log out
+            <LogOut size={14} /> {t("logOut")}
           </button>
         </form>
       </div>

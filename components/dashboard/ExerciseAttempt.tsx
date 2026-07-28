@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { startExerciseAttempt, submitExerciseAttempt } from "@/app/dashboard/assessments/exerciseActions";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import type { CaseStudyExercise } from "@/lib/assessments/caseStudyExercises";
 import type { ExerciseReport } from "@/lib/assessments/scoreCaseStudyExercise";
 
@@ -55,6 +56,7 @@ function TimerRing({ secondsLeft, totalSeconds }: { secondsLeft: number; totalSe
 
 function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report: ExerciseReport }) {
   const t = useTranslations("exerciseAttempt");
+  const tDim = useTranslations("competencyDimensions");
   const color = report.score >= 70 ? "#00C9A7" : report.score >= 40 ? "#f0b840" : "#f87171";
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
@@ -63,7 +65,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
       </span>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 12 }}>
         <span style={{ fontSize: 48, fontWeight: 800, color }}>{report.score}</span>
-        <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("outOf100", { dimension: exercise.dimension })}</span>
+        <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{t("outOf100", { dimension: dimensionLabel(tDim, exercise.dimension) })}</span>
       </div>
 
       <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
@@ -108,6 +110,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
 
 export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExercise }) {
   const t = useTranslations("exerciseAttempt");
+  const tDim = useTranslations("competencyDimensions");
   const totalSeconds = exercise.timeLimitMinutes * 60;
   const [phase, setPhase] = useState<"intro" | "active" | "done">("intro");
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -161,7 +164,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-          {exercise.dimension} · {exercise.level}
+          {dimensionLabel(tDim, exercise.dimension)} · {exercise.level}
         </span>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginTop: 8, marginBottom: 16 }}>
           {exercise.title}
@@ -215,7 +218,7 @@ export default function ExerciseAttempt({ exercise }: { exercise: CaseStudyExerc
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
         <div>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-            {exercise.dimension} · {exercise.level}
+            {dimensionLabel(tDim, exercise.dimension)} · {exercise.level}
           </span>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", marginTop: 6 }}>{exercise.title}</h1>
         </div>

@@ -20,6 +20,12 @@ const inputStyle: React.CSSProperties = {
 
 export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile | null }) {
   const t = useTranslations("discoveryWizard");
+  // Displayed question text is translated; the payload sent to /api/discovery
+  // (and on to the AI synthesizer) always uses the stable English text in
+  // DISCOVERY_QUESTIONS — AI-facing content isn't localized anywhere in this
+  // app, consistent with Coach/Roleplay.
+  const tQ = useTranslations("discoveryQuestions");
+  const questionLabels = [tQ("q1"), tQ("q2"), tQ("q3"), tQ("q4"), tQ("q5")];
   const [profile, setProfile] = useState<DiscoveryProfile | null>(latest);
   const [retaking, setRetaking] = useState(!latest);
   const [step, setStep] = useState(0);
@@ -111,11 +117,11 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
       </div>
 
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>
-        {DISCOVERY_QUESTIONS[step]}
+        {questionLabels[step]}
       </h2>
 
       <textarea
-        aria-label={DISCOVERY_QUESTIONS[step]}
+        aria-label={questionLabels[step]}
         value={currentAnswer}
         onChange={(e) => {
           const next = [...answers];

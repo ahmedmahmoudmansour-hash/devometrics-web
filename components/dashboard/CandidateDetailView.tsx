@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { addInterviewNote, deleteInterviewNote, generateCandidateAssessment } from "@/lib/hiring/interviewActions";
 import { markCandidateHired } from "@/lib/hiring/hireActions";
 import { stageLabel } from "@/lib/hiring/types";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import type {
   HiringCandidate,
   HiringCandidateCvScore,
@@ -73,6 +74,7 @@ export default function CandidateDetailView({
   stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[];
 }) {
   const t = useTranslations("candidateDetailView");
+  const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
   function refresh() {
     router.refresh();
@@ -96,7 +98,7 @@ export default function CandidateDetailView({
               .sort((a, b) => b.currentLevel - a.currentLevel)
               .map((c) => (
                 <div key={c.dimension} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{c.dimension}</span>
+                  <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, c.dimension)}</span>
                   <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                     <div style={{ width: `${c.currentLevel}%`, height: "100%", background: scoreColor(c.currentLevel) }} />
                   </div>

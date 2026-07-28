@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { importCareerProfileFromCV, updateCareerProfile } from "@/lib/profile/actions";
 import type { JobHistoryEntry, QualificationEntry } from "@/lib/profile/extractCareerProfile";
 
@@ -44,6 +45,7 @@ export default function CareerProfileForm({
   initialQualifications: QualificationEntry[];
   initialCareerAspirations: string;
 }) {
+  const t = useTranslations("careerProfileForm");
   const [jobHistory, setJobHistory] = useState<JobHistoryEntry[]>(initialJobHistory);
   const [skills, setSkills] = useState<string[]>(initialSkills);
   const [qualifications, setQualifications] = useState<QualificationEntry[]>(initialQualifications);
@@ -100,21 +102,20 @@ export default function CareerProfileForm({
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Career profile</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
         <button type="button" onClick={handleImport} disabled={isImporting} style={smallButton}>
-          {isImporting ? "Reading your CV…" : "Import from CV"}
+          {isImporting ? t("readingCv") : t("importFromCv")}
         </button>
       </div>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-        Job history, skills, and qualifications — auto-filled from the CV you uploaded for Gap
-        Analysis, editable below.
+        {t("description")}
       </p>
       {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 16 }}>{error}</p>}
 
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>Job history</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>{t("jobHistory")}</p>
         {jobHistory.length === 0 && (
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>No roles added yet.</p>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{t("noRolesYet")}</p>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {jobHistory.map((entry, i) => (
@@ -123,26 +124,26 @@ export default function CareerProfileForm({
                 <input
                   value={entry.title}
                   onChange={(e) => updateJobEntry(i, "title", e.target.value)}
-                  placeholder="Job title"
+                  placeholder={t("jobTitlePlaceholder")}
                   style={{ ...inputStyle, flex: "1 1 160px" }}
                 />
                 <input
                   value={entry.company}
                   onChange={(e) => updateJobEntry(i, "company", e.target.value)}
-                  placeholder="Company"
+                  placeholder={t("companyPlaceholder")}
                   style={{ ...inputStyle, flex: "1 1 160px" }}
                 />
                 <input
                   value={entry.duration}
                   onChange={(e) => updateJobEntry(i, "duration", e.target.value)}
-                  placeholder="e.g. 2021 - 2024"
+                  placeholder={t("durationPlaceholder")}
                   style={{ ...inputStyle, flex: "1 1 120px" }}
                 />
               </div>
               <textarea
                 value={entry.description}
                 onChange={(e) => updateJobEntry(i, "description", e.target.value)}
-                placeholder="What did you do in this role?"
+                placeholder={t("roleDescriptionPlaceholder")}
                 rows={2}
                 style={{ ...inputStyle, resize: "vertical" }}
               />
@@ -151,7 +152,7 @@ export default function CareerProfileForm({
                 onClick={() => setJobHistory((prev) => prev.filter((_, idx) => idx !== i))}
                 style={{ ...smallButton, alignSelf: "flex-start" }}
               >
-                Remove
+                {t("remove")}
               </button>
             </div>
           ))}
@@ -161,12 +162,12 @@ export default function CareerProfileForm({
           onClick={() => setJobHistory((prev) => [...prev, { title: "", company: "", duration: "", description: "" }])}
           style={{ ...smallButton, marginTop: 10 }}
         >
-          + Add role
+          {t("addRole")}
         </button>
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>Skills</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>{t("skills")}</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
           {skills.map((skill) => (
             <span
@@ -187,7 +188,7 @@ export default function CareerProfileForm({
               <button
                 type="button"
                 onClick={() => setSkills((prev) => prev.filter((s) => s !== skill))}
-                aria-label={`Remove ${skill}`}
+                aria-label={t("removeSkillAriaLabel", { skill })}
                 style={{ background: "none", border: "none", color: "var(--teal)", cursor: "pointer", fontSize: 12, padding: 0 }}
               >
                 ×
@@ -205,19 +206,19 @@ export default function CareerProfileForm({
                 addSkill();
               }
             }}
-            placeholder="Add a skill and press Enter"
+            placeholder={t("addSkillPlaceholder")}
             style={{ ...inputStyle, flex: "1 1 200px" }}
           />
           <button type="button" onClick={addSkill} style={smallButton}>
-            Add
+            {t("add")}
           </button>
         </div>
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>Qualifications</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>{t("qualifications")}</p>
         {qualifications.length === 0 && (
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>None added yet.</p>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{t("noneAddedYet")}</p>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {qualifications.map((entry, i) => (
@@ -225,19 +226,19 @@ export default function CareerProfileForm({
               <input
                 value={entry.credential}
                 onChange={(e) => updateQualEntry(i, "credential", e.target.value)}
-                placeholder="Degree / certification"
+                placeholder={t("credentialPlaceholder")}
                 style={{ ...inputStyle, flex: "1 1 160px" }}
               />
               <input
                 value={entry.institution}
                 onChange={(e) => updateQualEntry(i, "institution", e.target.value)}
-                placeholder="Institution"
+                placeholder={t("institutionPlaceholder")}
                 style={{ ...inputStyle, flex: "1 1 160px" }}
               />
               <input
                 value={entry.year}
                 onChange={(e) => updateQualEntry(i, "year", e.target.value)}
-                placeholder="Year"
+                placeholder={t("yearPlaceholder")}
                 style={{ ...inputStyle, flex: "0 1 90px" }}
               />
               <button
@@ -245,7 +246,7 @@ export default function CareerProfileForm({
                 onClick={() => setQualifications((prev) => prev.filter((_, idx) => idx !== i))}
                 style={smallButton}
               >
-                Remove
+                {t("remove")}
               </button>
             </div>
           ))}
@@ -255,19 +256,19 @@ export default function CareerProfileForm({
           onClick={() => setQualifications((prev) => [...prev, { credential: "", institution: "", year: "" }])}
           style={{ ...smallButton, marginTop: 10 }}
         >
-          + Add qualification
+          {t("addQualification")}
         </button>
       </div>
 
       <div style={{ marginBottom: 24 }}>
         <label htmlFor="career-aspirations" style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 8 }}>
-          Career aspirations
+          {t("careerAspirations")}
         </label>
         <textarea
           id="career-aspirations"
           value={careerAspirations}
           onChange={(e) => setCareerAspirations(e.target.value)}
-          placeholder="Where do you want your career to go next?"
+          placeholder={t("careerAspirationsPlaceholder")}
           rows={3}
           style={{ ...inputStyle, resize: "vertical" }}
         />
@@ -289,7 +290,7 @@ export default function CareerProfileForm({
           opacity: isSaving ? 0.6 : 1,
         }}
       >
-        {saved ? "Saved" : isSaving ? "Saving…" : "Save"}
+        {saved ? t("saved") : isSaving ? t("saving") : t("save")}
       </button>
     </div>
   );

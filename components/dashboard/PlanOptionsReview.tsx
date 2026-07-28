@@ -7,7 +7,7 @@ import {
   generatePlanFromSelections,
 } from "@/app/dashboard/gap-analysis/actions";
 import type { LearningFormat } from "@/lib/gap-analysis/actionLibrary";
-import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { Horizon } from "@/lib/gap-analysis/horizons";
 
 type GapOptions = {
@@ -32,6 +32,7 @@ export default function PlanOptionsReview({
   onDone: (planId: string) => void;
 }) {
   const t = useTranslations("planOptionsReview");
+  const tDim = useTranslations("competencyDimensions");
   const [gaps, setGaps] = useState<GapOptions[] | null>(null);
   const [selections, setSelections] = useState<Record<string, LearningFormat>>({});
   const [loading, setLoading] = useState(true);
@@ -85,7 +86,7 @@ export default function PlanOptionsReview({
           {gaps.map((g) => (
             <div key={g.dimension}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{g.dimension}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{dimensionLabel(tDim, g.dimension as CompetencyDimension)}</span>
                 <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   {g.currentLevel} → {g.targetLevel} · <span style={{ color: "var(--teal)" }}>{t("impactLabel", { value: g.impact })}</span>
                 </span>

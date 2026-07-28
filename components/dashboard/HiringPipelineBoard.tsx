@@ -11,6 +11,7 @@ import { generateCandidateRanking } from "@/lib/hiring/rankingActions";
 import { generateInterviewQuestions } from "@/lib/hiring/postingActions";
 import { CANDIDATE_CV_BUCKET, CANDIDATE_CV_MAX_BYTES, CANDIDATE_CV_ALLOWED_MIME_TYPES } from "@/lib/hiring/constants";
 import { HIRING_STAGES, stageLabel } from "@/lib/hiring/types";
+import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { JobPosting, JobPostingCompetencyRequirement, HiringCandidate, HiringStage } from "@/lib/hiring/types";
 
 const card: React.CSSProperties = {
@@ -89,6 +90,7 @@ export default function HiringPipelineBoard({
 }) {
   const t = useTranslations("hiringPipelineBoard");
   const tStage = useTranslations("hiringStages");
+  const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [ranking, setRanking] = useState(false);
@@ -131,7 +133,7 @@ export default function HiringPipelineBoard({
             </p>
             {sortedReqs.map((r) => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{r.dimension}</span>
+                <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, r.dimension as CompetencyDimension)}</span>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                   <div style={{ width: `${r.target_level}%`, height: "100%", background: "var(--teal)" }} />
                 </div>
@@ -322,6 +324,7 @@ export default function HiringPipelineBoard({
 
 function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobPosting; hasRequirements: boolean }) {
   const t = useTranslations("hiringPipelineBoard");
+  const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -356,7 +359,7 @@ function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobP
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {questions.map((q, i) => (
             <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: "rgba(255,255,255,0.02)" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{q.dimension}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{dimensionLabel(tDim, q.dimension as CompetencyDimension)}</span>
               <p style={{ fontSize: 13.5, color: "var(--text)", marginTop: 4, lineHeight: 1.5 }}>{q.question}</p>
               <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5, fontStyle: "italic" }}>{q.whatToListenFor}</p>
             </div>

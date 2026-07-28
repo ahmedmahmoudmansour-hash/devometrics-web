@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { getAssessment } from "@/lib/assessments/catalog";
+import { getAssessment, assessmentDisplayName, assessmentDisplayDescription } from "@/lib/assessments/catalog";
 import AssessmentForm from "@/components/dashboard/AssessmentForm";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -15,6 +15,7 @@ export default async function AssessmentPage({
   const assessment = getAssessment(slug);
   if (!assessment) notFound();
   const t = await getTranslations("assessmentPage");
+  const tCatalog = await getTranslations("assessmentCatalog");
 
   const supabase = await createClient();
   const {
@@ -36,10 +37,10 @@ export default async function AssessmentPage({
             {t("backToAll")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            {assessment.name}
+            {assessmentDisplayName(tCatalog, assessment.slug)}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            {assessment.description}
+            {assessmentDisplayDescription(tCatalog, assessment.slug)}
           </p>
         </div>
         <AssessmentForm assessment={assessment} careerStage={profile?.career_stage ?? null} />
