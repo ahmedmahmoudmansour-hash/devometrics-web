@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { RoleplayScenario } from "@/lib/roleplay/scenarios";
 import type { RoleplaySession } from "@/lib/supabase/types";
 import { useSpeechInput, stripStageDirections } from "@/lib/roleplay/useSpeech";
@@ -35,6 +36,7 @@ export default function RoleplayChat({
   scenario: RoleplayScenario;
   initialSession: RoleplaySession | null;
 }) {
+  const t = useTranslations("roleplayChat");
   const [sessionId, setSessionId] = useState<string | null>(initialSession?.id ?? null);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(
     initialSession && initialSession.messages.length > 0
@@ -78,7 +80,7 @@ export default function RoleplayChat({
     setVoice(name);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(latest ? stripStageDirections(latest.content) : `Hi, this is ${label}.`, name);
+    play(latest ? stripStageDirections(latest.content) : t("greetingFallback", { name: label }), name);
   }
 
   const { play, startStream, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
@@ -124,9 +126,9 @@ export default function RoleplayChat({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Something went wrong");
+        throw new Error(body.error || t("somethingWentWrong"));
       }
-      if (!res.body) throw new Error("Something went wrong");
+      if (!res.body) throw new Error(t("somethingWentWrong"));
 
       const newSessionId = res.headers.get("X-Session-Id");
       if (newSessionId) setSessionId(newSessionId);
@@ -170,7 +172,7 @@ export default function RoleplayChat({
 
       if (endScenario) setEnded(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -207,17 +209,17 @@ export default function RoleplayChat({
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3 }}>
             <button type="button" onClick={() => handleModeChange("text")} style={modeButtonStyle(!isSpeechMode)}>
-              💬 Text
+              {t("textMode")}
             </button>
             <button type="button" onClick={() => handleModeChange("speech")} style={modeButtonStyle(isSpeechMode)}>
-              🔊 Speech
+              {t("speechMode")}
             </button>
           </div>
           {isSpeechMode && (
             <select
               value={voice}
               onChange={(e) => handleVoiceNameChange(e.target.value)}
-              aria-label="Voice for the other person in this scenario"
+              aria-label={t("voiceSelectLabel")}
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
@@ -275,39 +277,39 @@ export default function RoleplayChat({
                   style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, opacity: speaking || voiceLoading ? 0.6 : 1 }}
                 >
                   {voiceLoading
-                    ? "Generating voice…"
-                    : `🔊 ${autoplayFailedFor.has(i) ? "Play (autoplay was blocked)" : "Play"}`}
+                    ? t("generatingVoice")
+                    : `🔊 ${autoplayFailedFor.has(i) ? t("playAutoplayBlocked") : t("play")}`}
                 </button>
               </div>
             )}
           </div>
         ))}
         {loading && (
-          <div style={{ alignSelf: "flex-start", color: "var(--text-muted)", fontSize: 13 }}>Thinking…</div>
+          <div style={{ alignSelf: "flex-start", color: "var(--text-muted)", fontSize: 13 }}>{t("thinking")}</div>
         )}
         {voiceLoading && (
-          <div style={{ alignSelf: "flex-start", color: "var(--teal)", fontSize: 12 }}>Generating voice…</div>
+          <div style={{ alignSelf: "flex-start", color: "var(--teal)", fontSize: 12 }}>{t("generatingVoice")}</div>
         )}
         {speaking && (
-          <div style={{ alignSelf: "flex-start", color: "var(--teal)", fontSize: 12 }}>Speaking…</div>
+          <div style={{ alignSelf: "flex-start", color: "var(--teal)", fontSize: 12 }}>{t("speaking")}</div>
         )}
         {error && <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{error}</div>}
         {voiceError && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>Voice: {voiceError}</div>
+          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{t("voicePrefix", { error: voiceError })}</div>
         )}
         {micError && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>Mic: {micError}</div>
+          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{t("micPrefix", { error: micError })}</div>
         )}
       </div>
 
       {ended ? (
         <div style={{ padding: 16, borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>Scenario complete — feedback above ↑</span>
+          <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>{t("scenarioComplete")}</span>
           <Link
             href="/dashboard/roleplay"
             style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 16px", textDecoration: "none" }}
           >
-            Try another scenario
+            {t("tryAnotherScenario")}
           </Link>
         </div>
       ) : (
@@ -316,8 +318,8 @@ export default function RoleplayChat({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            aria-label="Your response"
-            placeholder="Say what you'd actually say…"
+            aria-label={t("yourResponseLabel")}
+            placeholder={t("responsePlaceholder")}
             disabled={loading}
             style={{
               flex: 1,
@@ -335,7 +337,7 @@ export default function RoleplayChat({
               type="button"
               onClick={toggleMic}
               disabled={loading}
-              aria-label={listening ? "Stop recording" : "Speak your response"}
+              aria-label={listening ? t("stopRecording") : t("speakYourResponse")}
               style={{
                 background: listening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
                 border: listening ? "1px solid rgba(248,113,113,0.4)" : "1px solid var(--border)",
@@ -346,7 +348,7 @@ export default function RoleplayChat({
                 color: listening ? "#f87171" : "var(--text-muted)",
               }}
             >
-              {listening ? "● Listening" : "🎙"}
+              {listening ? t("listening") : "🎙"}
             </button>
           )}
           <button
@@ -364,12 +366,12 @@ export default function RoleplayChat({
               opacity: loading ? 0.6 : 1,
             }}
           >
-            Send
+            {t("send")}
           </button>
           <button
             type="button"
             disabled={loading}
-            onClick={() => send("I'd like to end the scenario here and get feedback.", true)}
+            onClick={() => send(t("endScenarioMessage"), true)}
             style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid var(--border)",
@@ -382,7 +384,7 @@ export default function RoleplayChat({
               whiteSpace: "nowrap",
             }}
           >
-            End & get feedback
+            {t("endAndGetFeedback")}
           </button>
         </form>
       )}

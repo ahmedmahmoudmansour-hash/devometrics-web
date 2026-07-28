@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomScenario } from "@/lib/roleplay/customScenarios";
 import RoleplayChat from "@/components/dashboard/RoleplayChat";
@@ -12,6 +13,7 @@ export default async function CustomScenarioPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getTranslations("roleplayScenarioPage");
   const { id } = await params;
 
   const supabase = await createClient();
@@ -41,13 +43,13 @@ export default async function CustomScenarioPage({
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/roleplay" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← All scenarios
+            {t("allScenarios")}
           </Link>
         </div>
         <PremiumGate
           tier={effectiveSubscriptionTier(profile ?? null)}
-          feature="Interview Simulator"
-          description="Practice this scenario with the AI playing the other person, in text or voice — upgrade to Premium to start."
+          feature={t("premiumFeature")}
+          description={t("premiumDescription")}
         >
           <RoleplayChat scenario={scenario} initialSession={latest ?? null} />
         </PremiumGate>

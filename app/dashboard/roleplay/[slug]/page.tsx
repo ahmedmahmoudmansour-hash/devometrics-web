@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { getRoleplayScenario } from "@/lib/roleplay/scenarios";
+import { getRoleplayScenario, localizeScenario } from "@/lib/roleplay/scenarios";
 import RoleplayChat from "@/components/dashboard/RoleplayChat";
 import PremiumGate from "@/components/dashboard/PremiumGate";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
@@ -12,9 +13,12 @@ export default async function RoleplayScenarioPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const t = await getTranslations("roleplayScenarioPage");
+  const tScenario = await getTranslations("roleplayScenarios");
   const { slug } = await params;
-  const scenario = getRoleplayScenario(slug);
-  if (!scenario) notFound();
+  const rawScenario = getRoleplayScenario(slug);
+  if (!rawScenario) notFound();
+  const scenario = localizeScenario(rawScenario, tScenario);
 
   const supabase = await createClient();
   const {
@@ -40,13 +44,13 @@ export default async function RoleplayScenarioPage({
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/roleplay" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← All scenarios
+            {t("allScenarios")}
           </Link>
         </div>
         <PremiumGate
           tier={effectiveSubscriptionTier(profile ?? null)}
-          feature="Interview Simulator"
-          description="Practice this scenario with the AI playing the other person, in text or voice — upgrade to Premium to start."
+          feature={t("premiumFeature")}
+          description={t("premiumDescription")}
         >
           <RoleplayChat scenario={scenario} initialSession={latest ?? null} />
         </PremiumGate>

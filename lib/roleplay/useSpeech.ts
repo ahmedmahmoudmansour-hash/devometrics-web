@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 import { RealtimeClient } from "@speechmatics/real-time-client";
 import { PCMRecorder } from "@speechmatics/browser-audio-input";
 import { getSpeechToTextToken } from "@/lib/speech/sttToken";
@@ -58,6 +59,7 @@ function getServerSnapshot() {
 }
 
 export function useSpeechInput(onResult: (transcript: string) => void) {
+  const t = useTranslations("speechErrors");
   const [listening, setListening] = useState(false);
   // Surfaced to the UI — a mic that silently does nothing is
   // indistinguishable from a mic that's broken, which testers report as
@@ -126,7 +128,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
     const RecognitionCtor = getSpeechRecognition();
     if (!RecognitionCtor) {
       setListening(false);
-      setError("Voice input isn't available in this browser — Chrome works best, or type instead.");
+      setError(t("voiceInputUnavailable"));
       return;
     }
     fallbackActiveRef.current = true;
@@ -157,11 +159,11 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       fallbackActiveRef.current = false;
       setListening(false);
       if (code === "not-allowed" || code === "service-not-allowed") {
-        setError("Microphone access is blocked — allow the mic for this site in your browser, then try again.");
+        setError(t("micBlocked"));
       } else if (code === "network") {
-        setError("The browser's speech service couldn't be reached — Chrome is the most reliable, or type instead.");
+        setError(t("networkUnreachable"));
       } else {
-        setError("The microphone stopped — check mic permission for this site and try again.");
+        setError(t("micStopped"));
       }
     };
     recognition.onend = () => {
@@ -182,7 +184,7 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
-  }, [onResult]);
+  }, [onResult, t]);
 
   const start = useCallback(async () => {
     setError(null);
@@ -261,13 +263,13 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       // silently trying a second engine that will also fail.
       if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
         wantListeningRef.current = false;
-        setError("Microphone access is blocked — allow the mic for this site in your browser, then try again.");
+        setError(t("micBlocked"));
         setListening(false);
         return;
       }
       startBrowserFallback();
     }
-  }, [onResult, startBrowserFallback, stopSpeechmatics]);
+  }, [onResult, startBrowserFallback, stopSpeechmatics, t]);
 
   const stop = useCallback(() => {
     wantListeningRef.current = false;

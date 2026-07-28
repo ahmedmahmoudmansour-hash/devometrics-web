@@ -1,9 +1,11 @@
 "use client";
 
 import { useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { deleteCustomScenario } from "@/app/dashboard/roleplay/customActions";
 
 export default function DeleteScenarioButton({ scenarioId }: { scenarioId: string }) {
+  const t = useTranslations("deleteScenarioButton");
   const [isPending, startTransition] = useTransition();
 
   return (
@@ -17,7 +19,7 @@ export default function DeleteScenarioButton({ scenarioId }: { scenarioId: strin
           await deleteCustomScenario(scenarioId);
         });
       }}
-      aria-label="Delete this custom scenario"
+      aria-label={t("deleteAriaLabel")}
       style={{
         position: "absolute",
         top: 12,
@@ -32,7 +34,7 @@ export default function DeleteScenarioButton({ scenarioId }: { scenarioId: strin
         opacity: isPending ? 0.5 : 1,
       }}
     >
-      Delete
+      {t("delete")}
     </button>
   );
 }

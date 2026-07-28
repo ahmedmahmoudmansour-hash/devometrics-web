@@ -161,3 +161,39 @@ export const ROLEPLAY_SCENARIOS: RoleplayScenario[] = [
 export function getRoleplayScenario(slug: string): RoleplayScenario | null {
   return ROLEPLAY_SCENARIOS.find((s) => s.slug === slug) ?? null;
 }
+
+// Maps a built-in scenario's stable slug to its key in the "roleplayScenarios"
+// message namespace. Custom (user-authored) scenarios have no entry here —
+// they're already in whatever language the user wrote them in, so
+// localizeScenario() passes them through unchanged.
+const SCENARIO_TRANSLATION_KEY: Record<string, string> = {
+  "missed-deadlines": "missedDeadlines",
+  "team-conflict": "teamConflict",
+  "reluctant-delegate": "reluctantDelegate",
+  "difficult-feedback": "difficultFeedback",
+  "layoff-conversation": "layoffConversation",
+  "stakeholder-pushback": "stakeholderPushback",
+  "underperforming-new-hire": "underperformingNewHire",
+  "promotion-ask": "promotionAsk",
+  "job-interview": "jobInterview",
+  "salary-negotiation": "salaryNegotiation",
+  "impossible-deadline": "impossibleDeadline",
+  "cross-functional-deadlock": "crossFunctionalDeadlock",
+  "budget-defense": "budgetDefense",
+};
+
+// t must come from useTranslations("roleplayScenarios") / getTranslations("roleplayScenarios").
+// Only overrides the display-facing fields (title/setup/yourRole/openingMessage)
+// — slug/level/competencyFocus stay as-is since they're stable identifiers
+// used for linking and DB storage, not display text.
+export function localizeScenario(scenario: RoleplayScenario, t: (key: string) => string): RoleplayScenario {
+  const key = SCENARIO_TRANSLATION_KEY[scenario.slug];
+  if (!key) return scenario;
+  return {
+    ...scenario,
+    title: t(`${key}.title`),
+    setup: t(`${key}.setup`),
+    yourRole: t(`${key}.yourRole`),
+    openingMessage: t(`${key}.openingMessage`),
+  };
+}

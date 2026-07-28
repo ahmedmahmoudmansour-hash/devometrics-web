@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createCustomScenario } from "@/app/dashboard/roleplay/customActions";
 
 const inputStyle: React.CSSProperties = {
@@ -25,6 +26,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function CreateScenarioForm() {
+  const t = useTranslations("createScenarioForm");
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [setup, setSetup] = useState("");
@@ -50,7 +52,7 @@ export default function CreateScenarioForm() {
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
         <label htmlFor="scenario-title" style={labelStyle}>
-          Scenario name
+          {t("scenarioName")}
         </label>
         <input
           id="scenario-title"
@@ -58,16 +60,16 @@ export default function CreateScenarioForm() {
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Negotiating scope with a client who keeps adding requests"
+          placeholder={t("scenarioNamePlaceholder")}
           style={inputStyle}
         />
       </div>
       <div>
         <label htmlFor="scenario-setup" style={labelStyle}>
-          The situation
+          {t("theSituation")}
         </label>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: -4, marginBottom: 8, lineHeight: 1.5 }}>
-          Describe what&apos;s going on and who the other person is — this is what the AI reads to play them realistically.
+          {t("theSituationDescription")}
         </p>
         <textarea
           id="scenario-setup"
@@ -75,13 +77,13 @@ export default function CreateScenarioForm() {
           rows={4}
           value={setup}
           onChange={(e) => setSetup(e.target.value)}
-          placeholder="e.g. A long-time client keeps adding 'small' requests outside the agreed scope. You've absorbed a few already, but it's eating your margin and the team's time."
+          placeholder={t("theSituationPlaceholder")}
           style={inputStyle}
         />
       </div>
       <div>
         <label htmlFor="scenario-role" style={labelStyle}>
-          Your role in this conversation
+          {t("yourRoleLabel")}
         </label>
         <textarea
           id="scenario-role"
@@ -89,13 +91,13 @@ export default function CreateScenarioForm() {
           rows={2}
           value={yourRole}
           onChange={(e) => setYourRole(e.target.value)}
-          placeholder="e.g. You're the account lead, about to raise the scope-creep issue directly with the client."
+          placeholder={t("yourRolePlaceholder")}
           style={inputStyle}
         />
       </div>
       <div>
         <label htmlFor="scenario-opening" style={labelStyle}>
-          How the other person opens the conversation
+          {t("openingLabel")}
         </label>
         <textarea
           id="scenario-opening"
@@ -103,7 +105,7 @@ export default function CreateScenarioForm() {
           rows={2}
           value={openingMessage}
           onChange={(e) => setOpeningMessage(e.target.value)}
-          placeholder={'e.g. "Hey, thanks for hopping on — I actually had one more small thing to add to the list, is that alright?"'}
+          placeholder={t("openingPlaceholder")}
           style={inputStyle}
         />
       </div>
@@ -126,7 +128,7 @@ export default function CreateScenarioForm() {
           opacity: isPending ? 0.6 : 1,
         }}
       >
-        {isPending ? "Creating…" : "Start this scenario"}
+        {isPending ? t("creating") : t("startScenario")}
       </button>
     </form>
   );

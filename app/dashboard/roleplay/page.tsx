@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { ROLEPLAY_SCENARIOS } from "@/lib/roleplay/scenarios";
+import { ROLEPLAY_SCENARIOS, localizeScenario } from "@/lib/roleplay/scenarios";
 import { LEVEL_SECTIONS, type LevelSection } from "@/lib/assessments/catalog";
 import DeleteScenarioButton from "@/components/dashboard/DeleteScenarioButton";
 import type { CustomScenario, RoleplaySession } from "@/lib/supabase/types";
@@ -14,6 +15,8 @@ const SECTION_ICON: Record<LevelSection, string> = {
 };
 
 export default async function RoleplayListPage() {
+  const t = await getTranslations("roleplayListPage");
+  const tScenario = await getTranslations("roleplayScenarios");
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,20 +51,19 @@ export default async function RoleplayListPage() {
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 32 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Interview & Scenario Simulator
+            {t("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            Practice real workplace conversations — the AI plays the other person and guides you
-            through it, then gives you direct feedback on how you handled it.
+            {t("description")}
           </p>
         </div>
 
         <div style={{ marginBottom: 36 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Your custom scenarios</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{t("yourCustomScenarios")}</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
             <Link
@@ -81,7 +83,7 @@ export default async function RoleplayListPage() {
               }}
             >
               <span style={{ fontSize: 24, color: "var(--teal)" }}>+</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--teal)" }}>Create your own scenario</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--teal)" }}>{t("createYourOwnScenario")}</span>
             </Link>
             {(customScenarios ?? []).map((cs) => {
               const session = latestBySlug.get(cs.id);
@@ -107,11 +109,11 @@ export default async function RoleplayListPage() {
                     {cs.setup}
                   </p>
                   {session?.completed ? (
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>Completed — try again →</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>{t("completedTryAgain")}</span>
                   ) : session ? (
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#f0b840" }}>In progress →</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#f0b840" }}>{t("inProgress")}</span>
                   ) : (
-                    <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+                    <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
                   )}
                 </Link>
               );
@@ -145,7 +147,8 @@ export default async function RoleplayListPage() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
-                {items.map((s) => {
+                {items.map((raw) => {
+                  const s = localizeScenario(raw, tScenario);
                   const session = latestBySlug.get(s.slug);
                   return (
                     <Link
@@ -170,11 +173,11 @@ export default async function RoleplayListPage() {
                         {s.setup}
                       </p>
                       {session?.completed ? (
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>Completed — try again →</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>{t("completedTryAgain")}</span>
                       ) : session ? (
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#f0b840" }}>In progress →</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#f0b840" }}>{t("inProgress")}</span>
                       ) : (
-                        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Not started</span>
+                        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
                       )}
                     </Link>
                   );
