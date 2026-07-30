@@ -436,58 +436,38 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
           </p>
         </div>
 
+        {/* Card grid, not a table — a 4-column table forced ~570px of
+            content into a ~326px mobile viewport, which meant scrolling
+            sideways to read a row (worse in RTL, where the scroll direction
+            itself is disorienting). auto-fit + minmax naturally stacks to
+            one column on narrow screens with zero horizontal scroll. */}
         <div
           style={{
-            background: "var(--navy-mid)",
-            border: "1px solid var(--border)",
-            borderRadius: 16,
-            overflow: "hidden",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 14,
           }}
         >
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
-              <thead>
-                <tr>
-                  {[t("scalingTierHeader"), t("scalingSizeHeader"), t("scalingCreditHeader"), t("scalingAddsHeader")].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "12px 18px",
-                        textAlign: "start",
-                        color: "var(--text-muted)",
-                        fontWeight: 700,
-                        fontSize: 11,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        borderBottom: "1px solid var(--border)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <tr key={n}>
-                    <td style={{ padding: "12px 18px", fontWeight: 700, color: "var(--text)", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
-                      {t(`scalingTier${n}Name`)}
-                    </td>
-                    <td style={{ padding: "12px 18px", color: "var(--text-muted)", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
-                      {t(`scalingTier${n}Size`)}
-                    </td>
-                    <td className="mono" style={{ padding: "12px 18px", color: "var(--teal)", fontWeight: 700, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
-                      {t(`scalingTier${n}Credit`)}
-                    </td>
-                    <td style={{ padding: "12px 18px", color: "var(--text-muted)", borderBottom: "1px solid var(--border)", lineHeight: 1.6 }}>
-                      {t(`scalingTier${n}Adds`)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <div
+              key={n}
+              style={{
+                background: "var(--navy-mid)",
+                border: "1px solid var(--border)",
+                borderRadius: 14,
+                padding: "18px 20px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t(`scalingTier${n}Name`)}</span>
+                <span className="mono" style={{ fontSize: 15, fontWeight: 700, color: "var(--teal)" }}>
+                  {t(`scalingTier${n}Credit`)}
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{t(`scalingTier${n}Size`)}</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.6 }}>{t(`scalingTier${n}Adds`)}</p>
+            </div>
+          ))}
         </div>
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", marginTop: 16 }}>

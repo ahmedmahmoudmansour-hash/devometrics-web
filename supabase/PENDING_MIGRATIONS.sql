@@ -7,12 +7,16 @@
 -- self-update policy), and 0092 (closes a further self-escalation gap that
 -- 0091's fix left open — is_admin/subscription_tier/premium_trial_expires_at
 -- were still writable by any user on their own row; only the budget column
--- was actually guarded). Every statement is idempotent (IF NOT EXISTS /
--- CREATE OR REPLACE), so running this more than once is safe. 0091 depends
--- on 0090's ai_usage_events table and 0013's is_admin() — both already
--- earlier in this same file. 0092 depends on 0091 having run first (it
--- redefines the same policy again, superseding it) — so paste order is
--- already correct. 0089 and 0090 don't depend on each other or on 0091/0092.
+-- was actually guarded), and 0093 (per-employee AI spend breakdown for the
+-- platform-admin dashboard only — deliberately gated so it never becomes
+-- visible to a company's own org-admin or its employees). Every statement
+-- is idempotent (IF NOT EXISTS / CREATE OR REPLACE), so running this more
+-- than once is safe. 0091 depends on 0090's ai_usage_events table and
+-- 0013's is_admin() — both already earlier in this same file. 0092 depends
+-- on 0091 having run first (it redefines the same policy again,
+-- superseding it). 0093 depends on 0090's ai_usage_events table and
+-- 0013's is_admin() too. Paste order is already correct as laid out below.
+-- 0089 and 0090 don't depend on each other or on 0091/0092/0093.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -240,3 +244,35 @@ create policy "Users can update their own profile"
       id, is_admin, subscription_tier, premium_trial_expires_at, monthly_ai_budget_usd
     )
   );
+
+-- ============================================================
+-- 0093: Per-employee AI spend breakdown, platform-admin only
+-- ============================================================
+
+-- org_ai_spend_this_month (0090) deliberately has no admin gate — it's a
+-- single scalar sum any org member can call to check "can I proceed", not
+-- sensitive on its own. A PER-EMPLOYEE breakdown is different: it reveals
+-- individual usage patterns, which should only ever be visible to the
+-- platform's own super-admin backend view (/dashboard/admin), never to a
+-- company's own org-admin or its employees — per explicit product
+-- decision, customers should only ever see an abstracted "credit" concept,
+-- never real dollar figures or a colleague's usage. This function is
+-- gated by is_admin() internally (not just by the calling UI), so it
+-- returns zero rows for anyone who isn't a platform admin, regardless of
+-- what eventually calls it.
+
+create or replace function public.org_member_ai_spend_this_month(target_org_id uuid)
+returns table(user_id uuid, cost_usd numeric)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select e.user_id, coalesce(sum(e.cost_usd), 0) as cost_usd
+  from public.ai_usage_events e
+  where e.organization_id = target_org_id
+    and e.created_at >= date_trunc('month', now())
+    and e.user_id is not null
+    and public.is_admin()
+  group by e.user_id;
+$$;

@@ -121,6 +121,61 @@ export async function updateOrgSeatLimit(organizationId: string, seatLimit: numb
   return { success: true };
 }
 
+export type OrgMemberSpendRow = {
+  userId: string;
+  name: string;
+  email: string;
+  spendThisMonthUsd: number;
+};
+
+// Platform-admin-only, per-employee breakdown within one company — never
+// exposed to the company's own org-admin or its employees (see migration
+// 0093's comment: customers only ever see an abstracted "credit" concept,
+// never real dollar figures or a colleague's usage). The RPC itself is
+// also gated by is_admin() internally, so this is defense-in-depth, not
+// the only guard.
+export async function getOrgMemberAiSpend(organizationId: string): Promise<{ isAdmin: boolean; rows: OrgMemberSpendRow[] }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { isAdmin: false, rows: [] };
+
+  const { data: ownProfile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single<{ is_admin: boolean }>();
+  if (!ownProfile?.is_admin) return { isAdmin: false, rows: [] };
+
+  const { data: members } = await supabase
+    .from("organization_members")
+    .select("user_id, profiles(full_name, email)")
+    .eq("organization_id", organizationId)
+    .returns<{ user_id: string; profiles: { full_name: string | null; email: string | null } }[]>();
+  if (!members || members.length === 0) return { isAdmin: true, rows: [] };
+
+  const { data: spend, error } = await supabase.rpc("org_member_ai_spend_this_month", { target_org_id: organizationId });
+  if (error) {
+    console.error("getOrgMemberAiSpend failed — migration 0093 may not be run yet:", error);
+  }
+  const spendByUser = new Map<string, number>();
+  for (const s of (spend ?? []) as { user_id: string; cost_usd: number }[]) {
+    spendByUser.set(s.user_id, Number(s.cost_usd));
+  }
+
+  const rows: OrgMemberSpendRow[] = members
+    .map((m) => ({
+      userId: m.user_id,
+      name: m.profiles?.full_name ?? "—",
+      email: m.profiles?.email ?? "—",
+      spendThisMonthUsd: spendByUser.get(m.user_id) ?? 0,
+    }))
+    .sort((a, b) => b.spendThisMonthUsd - a.spendThisMonthUsd);
+
+  return { isAdmin: true, rows };
+}
+
 // null clears the budget back to unlimited. Raising it is exactly how a
 // platform admin "adds more credits" to a client mid-month — there's no
 // separate top-up action, just a new number.

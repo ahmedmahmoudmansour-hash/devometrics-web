@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateOrgSeatLimit, updateOrgAiBudget } from "@/lib/admin/organizations";
-import type { AdminOrganizationRow } from "@/lib/admin/organizations";
+import { updateOrgSeatLimit, updateOrgAiBudget, getOrgMemberAiSpend } from "@/lib/admin/organizations";
+import type { AdminOrganizationRow, OrgMemberSpendRow } from "@/lib/admin/organizations";
 
 const cellStyle: React.CSSProperties = {
   padding: "10px 14px",
@@ -114,7 +114,72 @@ function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
   );
 }
 
+// Per-employee dollar breakdown — platform-admin eyes only, never a
+// company's own org-admin or its employees (see migration 0093's comment).
+// Fetched on demand per org, not eagerly for every row, since this is a
+// drill-down most admins won't open for most companies most of the time.
+function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
+  const [rows, setRows] = useState<OrgMemberSpendRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getOrgMemberAiSpend(organizationId)
+      .then((result) => {
+        if (cancelled) return;
+        if (!result.isAdmin) {
+          setError("Not authorized");
+        } else {
+          setRows(result.rows);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError("Could not load employee spend");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [organizationId]);
+
+  if (loading) {
+    return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>Loading…</p>;
+  }
+  if (error) {
+    return <p style={{ fontSize: 12, color: "#f87171", padding: "10px 14px" }}>{error}</p>;
+  }
+  if (!rows || rows.length === 0) {
+    return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>No AI usage recorded this month.</p>;
+  }
+
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>
+          <th style={{ ...headStyle, textAlign: "left", background: "transparent" }}>Employee</th>
+          <th style={{ ...headStyle, textAlign: "left", background: "transparent" }}>Email</th>
+          <th style={{ ...headStyle, textAlign: "right", background: "transparent" }}>Spend this month</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.userId}>
+            <td style={cellStyle}>{r.name}</td>
+            <td style={cellStyle}>{r.email}</td>
+            <td style={{ ...cellStyle, textAlign: "right" }}>${r.spendThisMonthUsd.toFixed(2)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function AdminOrganizationsTable({ initial }: { initial: AdminOrganizationRow[] }) {
+  const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
+
   if (initial.length === 0) {
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, marginBottom: 24 }}>
@@ -141,13 +206,16 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
               <th style={{ ...headStyle, textAlign: "left" }}>Seat limit</th>
               <th style={{ ...headStyle, textAlign: "right" }}>AI spend this month</th>
               <th style={{ ...headStyle, textAlign: "left" }}>Monthly AI budget</th>
+              <th style={{ ...headStyle, textAlign: "left" }}></th>
             </tr>
           </thead>
           <tbody>
             {initial.map((org) => {
               const overBudget = org.monthlyAiBudgetUsd !== null && org.spendThisMonthUsd >= org.monthlyAiBudgetUsd;
+              const isExpanded = expandedOrgId === org.id;
               return (
-                <tr key={org.id}>
+                <Fragment key={org.id}>
+                <tr>
                   <td style={cellStyle}>{org.name}</td>
                   <td style={{ ...cellStyle, textAlign: "right" }}>{org.memberCount}</td>
                   <td style={cellStyle}>
@@ -159,7 +227,33 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                   <td style={cellStyle}>
                     <AiBudgetCell org={org} />
                   </td>
+                  <td style={cellStyle}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedOrgId(isExpanded ? null : org.id)}
+                      style={{
+                        background: "transparent",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6,
+                        padding: "5px 10px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {isExpanded ? "Hide" : "By employee"}
+                    </button>
+                  </td>
                 </tr>
+                {isExpanded && (
+                  <tr>
+                    <td colSpan={6} style={{ padding: 0, borderBottom: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
+                      <EmployeeSpendPanel organizationId={org.id} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               );
             })}
           </tbody>
