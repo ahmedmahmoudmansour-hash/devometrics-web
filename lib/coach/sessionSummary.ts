@@ -4,6 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { CoachMessage } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -62,13 +64,20 @@ export async function generateSessionSummary(): Promise<{ summary?: SessionSumma
     return { error: "Not enough conversation to summarize yet — talk with your coach a bit first." };
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   const transcript = messages
     .map((m) => `${m.role === "user" ? "CLIENT" : "COACH"}: ${m.content}`)
     .join("\n\n");
 
   try {
+    // Haiku 4.5 — same reasoning as the Coach route: a bounded structured
+    // extraction over an existing transcript, not a scored decision.
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
+      model: "claude-haiku-4-5",
       max_tokens: 1500,
       system:
         "You summarize an AI career-coaching session on Devometrics for the client's own records. Summarize only what was actually discussed — no invented commitments, no advice beyond what the coach actually gave.",
@@ -79,6 +88,16 @@ export async function generateSessionSummary(): Promise<{ summary?: SessionSumma
     const toolUse = response.content.find((block) => block.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
     const raw = toolUse.input as SessionSummary;
+
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "coach_session_summary",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    });
+
     return {
       summary: {
         meetingNotes: raw.meetingNotes ?? "",

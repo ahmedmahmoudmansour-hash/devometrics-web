@@ -410,6 +410,95 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
         ))}
       </div>
 
+      {/* How Enterprise scales — the org-size bands from the AI routing/cost
+          doc (Starter/Growth/Enterprise/Enterprise Plus/Strategic). Shown as
+          a table, not separate pricing cards, since none of these bands have
+          real self-serve checkout wired up yet — every row still routes to
+          "Talk to sales", same as the Enterprise card above it. The AI
+          credit column is the same monthly_ai_budget_usd safety cap the
+          admin dashboard already lets us raise per org, not a price. */}
+      <div style={{ marginTop: 64 }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <span
+            className="mono"
+            style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}
+          >
+            {t("scalingLabel")}
+          </span>
+          <h3
+            className="font-display"
+            style={{ fontSize: "clamp(1.4rem, 2.6vw, 1.9rem)", fontWeight: 700, letterSpacing: "-0.01em", marginTop: 8, color: "var(--text)" }}
+          >
+            {t("scalingHeadline")}
+          </h3>
+          <p style={{ fontSize: 14.5, color: "var(--text-muted)", marginTop: 10, maxWidth: 640, marginInlineStart: "auto", marginInlineEnd: "auto", lineHeight: 1.7 }}>
+            {t("scalingSubtext")}
+          </p>
+        </div>
+
+        <div
+          style={{
+            background: "var(--navy-mid)",
+            border: "1px solid var(--border)",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
+              <thead>
+                <tr>
+                  {[t("scalingTierHeader"), t("scalingSizeHeader"), t("scalingCreditHeader"), t("scalingAddsHeader")].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        padding: "12px 18px",
+                        textAlign: "start",
+                        color: "var(--text-muted)",
+                        fontWeight: 700,
+                        fontSize: 11,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        borderBottom: "1px solid var(--border)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <tr key={n}>
+                    <td style={{ padding: "12px 18px", fontWeight: 700, color: "var(--text)", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
+                      {t(`scalingTier${n}Name`)}
+                    </td>
+                    <td style={{ padding: "12px 18px", color: "var(--text-muted)", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
+                      {t(`scalingTier${n}Size`)}
+                    </td>
+                    <td className="mono" style={{ padding: "12px 18px", color: "var(--teal)", fontWeight: 700, borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" }}>
+                      {t(`scalingTier${n}Credit`)}
+                    </td>
+                    <td style={{ padding: "12px 18px", color: "var(--text-muted)", borderBottom: "1px solid var(--border)", lineHeight: 1.6 }}>
+                      {t(`scalingTier${n}Adds`)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", marginTop: 16 }}>
+          {t("fiftyEmployees")}{" "}
+          <Link href="/contact?type=sales" style={{ color: "var(--teal)", textDecoration: "none" }}>
+            {t("talkToSales")}
+          </Link>{" "}
+          {t("aboutCustomTerms")}
+        </p>
+      </div>
+
       {/* Coming soon — deliberately vague on timing, no dates or commitments.
           Framed as Premium/Enterprise since these are ongoing-value features
           meant to reinforce the subscription, not one-shot tools. */}

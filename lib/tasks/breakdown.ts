@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { callOpenRouterJson } from "@/lib/ai/openrouter";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+export type TaskBreakdownResult = { steps: string[]; model: string; inputTokens: number; outputTokens: number };
 
 const RECORD_TOOL = {
   name: "record_task_breakdown",
@@ -21,24 +21,22 @@ const RECORD_TOOL = {
 
 // Server-side only, unlike Orbit's client-side Groq call with
 // dangerouslyAllowBrowser — the API key never reaches the browser here.
-export async function breakdownIntoSteps(title: string, context?: string): Promise<string[]> {
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 400,
+// GPT-5.4 Mini via OpenRouter — highest-frequency of the drafting-shaped
+// call sites (any individual user, on demand, per milestone/task), trivial
+// output shape, same routing rationale as the rest of this batch.
+export async function breakdownIntoSteps(title: string, context?: string): Promise<TaskBreakdownResult> {
+  const { data, model, inputTokens, outputTokens } = await callOpenRouterJson<{ steps: string[] }>({
+    model: "openai/gpt-5.4-mini",
+    maxTokens: 400,
     system:
       "Break the given goal into 3-6 small, concrete, actionable steps someone could each realistically do in under 30 minutes. No vague steps like 'work on it' — each must be a specific, doable action.",
-    tools: [RECORD_TOOL],
-    tool_choice: { type: "tool", name: "record_task_breakdown" },
-    messages: [{ role: "user", content: `Goal: ${title}${context?.trim() ? `\nContext: ${context.trim()}` : ""}` }],
+    user: `Goal: ${title}${context?.trim() ? `\nContext: ${context.trim()}` : ""}`,
+    jsonSchema: { name: "record_task_breakdown", schema: RECORD_TOOL.input_schema },
   });
 
-  const toolUse = response.content.find((block) => block.type === "tool_use");
-  if (!toolUse || toolUse.type !== "tool_use") {
-    throw new Error("Model did not return structured output");
-  }
-  const { steps } = toolUse.input as { steps: string[] };
+  const { steps } = data;
   if (!Array.isArray(steps) || steps.length === 0) {
     throw new Error("Model returned no steps");
   }
-  return steps;
+  return { steps, model, inputTokens, outputTokens };
 }

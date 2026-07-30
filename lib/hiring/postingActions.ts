@@ -1,15 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import { suggestRoleGrading, type RoleGradingSuggestion } from "@/lib/jobArchitecture/actions";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "@/lib/limits";
+import { callOpenRouterJson } from "@/lib/ai/openrouter";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { JobPostingStatus, InterviewQuestion } from "./types";
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_TITLE = 120;
 const MAX_DEPARTMENT = 120;
@@ -243,24 +242,20 @@ export async function generateInterviewQuestions(postingId: string): Promise<{ e
 
   const reqLines = requirements.map((r) => `${r.dimension}: target ${r.target_level}/100`).join("\n");
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1500,
+    // GPT-5.4 Mini via OpenRouter — drafting-shaped, decision support only,
+    // same routing rationale as generateJobDescription/suggestRoleGrading.
+    const { data: raw, model, inputTokens, outputTokens } = await callOpenRouterJson<{ questions: InterviewQuestion[] }>({
+      model: "openai/gpt-5.4-mini",
+      maxTokens: 1500,
       system:
         "You write behavioral, competency-based interview questions for Devometrics' Smart Hiring feature. This is decision support for the interviewer, never a script to read verbatim or an automated evaluation. Write one open-ended question per required competency (STAR-style: 'tell me about a time...', 'walk me through...') that would actually surface real evidence, not a hypothetical or a yes/no question. Ask the same core questions of every candidate for a given posting — consistency across candidates is what makes notes comparable and fair. Never invent facts about the role beyond what's given.",
-      tools: [INTERVIEW_QUESTIONS_TOOL],
-      tool_choice: { type: "tool", name: "record_interview_questions" },
-      messages: [
-        {
-          role: "user",
-          content: `ROLE: ${posting.title}\n\nJOB DESCRIPTION:\n${posting.job_description || "(none provided)"}\n\nREQUIRED COMPETENCIES:\n${reqLines}`,
-        },
-      ],
+      user: `ROLE: ${posting.title}\n\nJOB DESCRIPTION:\n${posting.job_description || "(none provided)"}\n\nREQUIRED COMPETENCIES:\n${reqLines}`,
+      jsonSchema: { name: "record_interview_questions", schema: INTERVIEW_QUESTIONS_TOOL.input_schema },
     });
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
-    const raw = toolUse.input as { questions: InterviewQuestion[] };
     const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
     const questions = (raw.questions ?? []).filter((q) => validDims.has(q.dimension) && q.question?.trim());
     if (questions.length === 0) throw new Error("Model returned no usable questions");
@@ -270,6 +265,8 @@ export async function generateInterviewQuestions(postingId: string): Promise<{ e
       .update({ interview_questions: questions, interview_questions_generated_at: new Date().toISOString() })
       .eq("id", postingId);
     if (error) return { error: "Generated, but could not save the questions — try again." };
+
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "interview_questions", model, inputTokens, outputTokens });
   } catch (err) {
     console.error("generateInterviewQuestions failed:", err);
     return { error: "Couldn't generate interview questions right now — try again in a moment." };

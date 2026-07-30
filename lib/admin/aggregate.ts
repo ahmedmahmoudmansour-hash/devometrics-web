@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
+import { effectiveSubscriptionTier, type SubscriptionTier } from "@/lib/billing/subscriptionTier";
 import type { AssessmentResult, DevelopmentPlan, GapAnalysis, Milestone, Profile } from "@/lib/supabase/types";
 
 export type PilotRow = {
@@ -14,6 +15,10 @@ export type PilotRow = {
   plans: number;
   milestonesDone: number;
   milestonesTotal: number;
+  monthlyAiBudgetUsd: number | null;
+  spendThisMonthUsd: number;
+  subscriptionTier: SubscriptionTier;
+  effectiveTier: SubscriptionTier;
 };
 
 // Admin-only aggregation for the pilot tracking view. Relies entirely on the
@@ -89,6 +94,29 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
     milestoneStatsByUser.set(userId, stats);
   }
 
+  // Isolated defensive query (migration 0091 may not have run yet) — kept
+  // separate from the main profiles.select("*") above so a missing column
+  // only degrades this one field instead of blanking the whole admin table.
+  const budgetByUser = new Map<string, number | null>();
+  const { data: budgets, error: budgetsError } = await supabase
+    .from("profiles")
+    .select("id, monthly_ai_budget_usd")
+    .returns<{ id: string; monthly_ai_budget_usd: number | null }[]>();
+  if (budgetsError) {
+    console.error("Could not read monthly_ai_budget_usd — migration 0091 may not be run yet:", budgetsError);
+  }
+  for (const b of budgets ?? []) budgetByUser.set(b.id, b.monthly_ai_budget_usd);
+
+  // One RPC call per user, same posture as buildAdminOrganizations' per-org
+  // spend lookup — no service-role key, so no single cross-user aggregate.
+  const spendByUser = new Map<string, number>();
+  await Promise.all(
+    (profiles ?? []).map(async (p) => {
+      const { data } = await supabase.rpc("user_ai_spend_this_month", { target_user_id: p.id });
+      spendByUser.set(p.id, data == null ? 0 : Number(data));
+    })
+  );
+
   const rows: PilotRow[] = (profiles ?? []).map((p) => {
     const stats = milestoneStatsByUser.get(p.id) ?? { done: 0, total: 0 };
     return {
@@ -103,6 +131,10 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
       plans: planCountByUser.get(p.id) ?? 0,
       milestonesDone: stats.done,
       milestonesTotal: stats.total,
+      monthlyAiBudgetUsd: budgetByUser.get(p.id) ?? null,
+      spendThisMonthUsd: spendByUser.get(p.id) ?? 0,
+      subscriptionTier: p.subscription_tier,
+      effectiveTier: effectiveSubscriptionTier(p),
     };
   });
 

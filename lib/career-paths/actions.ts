@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { callOpenRouterJson } from "@/lib/ai/openrouter";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { CareerPathBranch, GapAnalysis, Profile } from "@/lib/supabase/types";
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // Regeneration is a full Claude call — once per hour is plenty for a map
 // that changes when the user's profile/gap analysis changes, not by the
@@ -140,23 +140,28 @@ export async function generateCareerPaths(): Promise<{ error?: string; success?:
     return { error: "There's nothing to build a map from yet — fill in your career profile or run a Gap Analysis first." };
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let currentRole: string;
   let branches: CareerPathBranch[];
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 4000,
+    // GPT-5.4 Mini via OpenRouter — a drafting-shaped map the user reviews,
+    // not a scored decision. Same routing rationale as the other "AI
+    // suggest/generate" drafting features.
+    const { data: raw, model, inputTokens, outputTokens } = await callOpenRouterJson<{ currentRole: string; branches: CareerPathBranch[] }>({
+      model: "openai/gpt-5.4-mini",
+      maxTokens: 4000,
       system:
         "You map realistic career paths for a professional on Devometrics, a career-development platform. Ground every judgment in the background actually provided — never invent employers, roles they didn't hold, or skills they didn't list. Readiness percentages must reflect their real competency data, not optimism. Do NOT include salary figures anywhere — the platform deliberately excludes compensation claims it cannot source.",
-      tools: [PATHS_TOOL],
-      tool_choice: { type: "tool", name: "record_career_paths" },
-      messages: [{ role: "user", content: background }],
+      user: background,
+      jsonSchema: { name: "record_career_paths", schema: PATHS_TOOL.input_schema },
     });
-    const toolUse = response.content.find((block) => block.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
-    const raw = toolUse.input as { currentRole: string; branches: CareerPathBranch[] };
     currentRole = raw.currentRole;
     branches = raw.branches;
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "career_paths", model, inputTokens, outputTokens });
   } catch (err) {
     console.error("generateCareerPaths failed:", err);
     return { error: "Could not generate your map right now — try again in a moment." };

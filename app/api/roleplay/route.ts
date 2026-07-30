@@ -14,7 +14,7 @@ import {
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
-import { assertOrgAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { AssessmentResult, Profile, RoleplayMessage, RoleplaySession } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
 
   const membership = await getMyOrganizationMembership();
   const organizationId = membership?.organization_id ?? null;
-  const budgetCheck = await assertOrgAiBudgetOk(supabase, organizationId);
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) {
     return NextResponse.json({ error: budgetCheck.error }, { status: 403 });
   }
@@ -154,8 +154,13 @@ export async function POST(request: Request) {
   // for a roleplay scenario can run long) before anything happens. This was
   // the single biggest latency gap between Roleplay and Coach — Coach was
   // streamed, this route wasn't.
+  // Haiku 4.5 — same routing decision as Coach (app/api/coach/route.ts):
+  // measured cheaper, faster, and more consistent than Sonnet across 10
+  // distinct real conversation scenarios this session, and this is
+  // conversational rather than scored, so the calibration gap that keeps
+  // scoring features on Sonnet doesn't apply.
   const stream = anthropic.messages.stream({
-    model: "claude-sonnet-5",
+    model: "claude-haiku-4-5",
     max_tokens: 1024,
     system: systemPrompt,
     messages:

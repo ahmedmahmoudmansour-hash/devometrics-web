@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import type { SurveyQuestion } from "./types";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+export type SurveyQuestionsResult = { questions: SurveyQuestion[]; model: string; inputTokens: number; outputTokens: number };
 
 const RECORD_TOOL = {
   name: "record_survey_questions",
@@ -39,30 +39,22 @@ const RECORD_TOOL = {
 // with that gate, open text can self-identify someone through its content
 // alone (e.g. naming a specific shift or project). No software gate fixes
 // that; it's a real, inherent limitation of open-text feedback, not a bug.
-export async function generateSurveyQuestions(theme: string, focus?: string): Promise<SurveyQuestion[]> {
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 2048,
+// GPT-5.4 Mini via OpenRouter — drafting-shaped question set an admin
+// reviews and edits before publishing, same routing rationale as the other
+// "AI suggest/generate" drafting features.
+export async function generateSurveyQuestions(theme: string, focus?: string): Promise<SurveyQuestionsResult> {
+  const { data, model, inputTokens, outputTokens } = await callOpenRouterJson<{ questions: SurveyQuestion[] }>({
+    model: "openai/gpt-5.4-mini",
+    maxTokens: 2048,
     system:
       'You are drafting an anonymous internal pulse survey for a company\'s HR team. Write 5-8 clear, neutral, non-leading questions on the given theme. Mix "rating" questions (1-5 agreement/satisfaction scale — do not include the scale in the text, just the statement), a couple of "multiple_choice" questions where a fixed set of options genuinely fits better than a scale, and 1-2 "qualitative" open-ended questions that invite specific, actionable feedback a rating can\'t capture. Avoid jargon, avoid double-barreled questions (asking two things at once), and avoid anything that could pressure a specific answer.',
-    tools: [RECORD_TOOL],
-    tool_choice: { type: "tool", name: "record_survey_questions" },
-    messages: [
-      {
-        role: "user",
-        content: `Theme: ${theme}${focus?.trim() ? `\n\nSpecific focus requested by HR: ${focus.trim()}` : ""}`,
-      },
-    ],
+    user: `Theme: ${theme}${focus?.trim() ? `\n\nSpecific focus requested by HR: ${focus.trim()}` : ""}`,
+    jsonSchema: { name: "record_survey_questions", schema: RECORD_TOOL.input_schema },
   });
 
-  const toolUse = response.content.find((block) => block.type === "tool_use");
-  if (!toolUse || toolUse.type !== "tool_use") {
-    throw new Error("Model did not return structured output");
-  }
-
-  const { questions } = toolUse.input as { questions: SurveyQuestion[] };
+  const { questions } = data;
   if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error("Model returned no questions");
   }
-  return questions;
+  return { questions, model, inputTokens, outputTokens };
 }

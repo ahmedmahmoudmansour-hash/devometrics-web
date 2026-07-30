@@ -1,13 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { callOpenRouterJson } from "@/lib/ai/openrouter";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { RoleTrack } from "@/lib/supabase/types";
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_NAME = 120;
 const MAX_TEXT = 4000;
@@ -206,33 +205,31 @@ export type RoleGradingSuggestion = {
 // The headline capability: turn a plain role title + responsibilities into a
 // suggested grade, track, level, and required-competency profile. Decision
 // support the admin reviews and edits before saving — never auto-applied.
-// claude-sonnet-5 (not Opus): this is a well-scoped structured extraction,
-// exactly what Sonnet handles cleanly and cheaply at per-role volume.
+// GPT-5.4 Mini via OpenRouter: a drafting-shaped suggestion, not a scored
+// decision — measured this session as the strongest, most consistent
+// cheap-tier performer for exactly this kind of structured generation.
 export async function suggestRoleGrading(title: string, responsibilities: string): Promise<{ error: string } | { suggestion: RoleGradingSuggestion }> {
-  const { user } = await requireAdmin();
-  if (!user) return { error: "Not authorized" };
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
 
   const cleanTitle = title.trim().slice(0, MAX_NAME);
   if (!cleanTitle) return { error: "Enter a role title first" };
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1200,
+    const { data: raw, model, inputTokens, outputTokens } = await callOpenRouterJson<RoleGradingSuggestion>({
+      model: "openai/gpt-5.4-mini",
+      maxTokens: 1200,
       system:
-        "You are a compensation and job-architecture analyst. Grade roles consistently on a 1-10 band that rises with scope, autonomy, impact, and complexity, and define the competency profile a role genuinely requires. Ground every judgment strictly in the title and responsibilities given — never invent duties, headcount, or seniority that isn't stated. This is decision support an HR admin will review and edit, not an automated grading decision. Use ONLY the exact competency dimension names provided in the tool schema.",
-      tools: [GRADING_TOOL],
-      tool_choice: { type: "tool", name: "record_role_grading" },
-      messages: [
-        {
-          role: "user",
-          content: `ROLE TITLE: ${cleanTitle}\n\nRESPONSIBILITIES:\n${responsibilities.trim().slice(0, MAX_TEXT) || "(none provided — infer a sensible profile from the title alone, and keep confidence modest)"}`,
-        },
-      ],
+        "You are a compensation and job-architecture analyst. Grade roles consistently on a 1-10 band that rises with scope, autonomy, impact, and complexity, and define the competency profile a role genuinely requires. Ground every judgment strictly in the title and responsibilities given — never invent duties, headcount, or seniority that isn't stated. This is decision support an HR admin will review and edit, not an automated grading decision. Use ONLY the exact competency dimension names provided in the schema.",
+      user: `ROLE TITLE: ${cleanTitle}\n\nRESPONSIBILITIES:\n${responsibilities.trim().slice(0, MAX_TEXT) || "(none provided — infer a sensible profile from the title alone, and keep confidence modest)"}`,
+      jsonSchema: { name: "record_role_grading", schema: GRADING_TOOL.input_schema },
     });
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
-    const raw = toolUse.input as RoleGradingSuggestion;
+
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "role_grading", model, inputTokens, outputTokens });
+
     const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
     return {
       suggestion: {
@@ -305,7 +302,9 @@ function formatJD(title: string, jd: GeneratedJD): string {
 // the same underlying substance a JD needs, just not written twice. The
 // competency targets are internal 0-100 scoring data; the model is told to
 // translate them into plain-language requirements, never surface the raw
-// numbers to a candidate.
+// numbers to a candidate. GPT-5.4 Mini via OpenRouter — measured this
+// session as the best result of any model tested on exactly this task
+// (JD generation), beating Sonnet on quality while costing a fraction.
 export async function generateJobDescription(roleId: string): Promise<{ error: string } | { jd: GeneratedJD; formatted: string }> {
   const { supabase, user, organizationId } = await requireAdmin();
   if (!user || !organizationId) return { error: "Not authorized" };
@@ -329,27 +328,22 @@ export async function generateJobDescription(roleId: string): Promise<{ error: s
       .map((r) => `${r.dimension}: target ${r.target_level}/100`)
       .join("\n") || "(none defined)";
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1200,
+    const { data: jd, model, inputTokens, outputTokens } = await callOpenRouterJson<GeneratedJD>({
+      model: "openai/gpt-5.4-mini",
+      maxTokens: 1200,
       system:
         "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, or requirements not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output.",
-      tools: [JD_TOOL],
-      tool_choice: { type: "tool", name: "record_job_description" },
-      messages: [
-        {
-          role: "user",
-          content: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}`,
-        },
-      ],
+      user: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}`,
+      jsonSchema: { name: "record_job_description", schema: JD_TOOL.input_schema },
     });
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
-    const jd = toolUse.input as GeneratedJD;
     const formatted = formatJD(role.title, jd);
 
     await supabase.from("job_roles").update({ generated_jd: formatted }).eq("id", roleId);
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "job_description", model, inputTokens, outputTokens });
     revalidatePath("/dashboard/company/job-architecture");
 
     return { jd, formatted };

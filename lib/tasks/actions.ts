@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { breakdownIntoSteps } from "./breakdown";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { PersonalTask, PersonalSubtask, TaskRecurring, TaskPriority } from "./types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -328,9 +330,16 @@ export async function breakdownMilestoneIntoTasks(milestoneId: string) {
     .maybeSingle<{ user_id: string }>();
   if (!plan || plan.user_id !== user.id) return { error: "You can only break down your own milestones" };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let steps: string[];
   try {
-    steps = await breakdownIntoSteps(milestone.title, milestone.description ?? undefined);
+    const result = await breakdownIntoSteps(milestone.title, milestone.description ?? undefined);
+    steps = result.steps;
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "task_breakdown", model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
   } catch {
     return { error: "Could not generate steps right now — try again." };
   }
@@ -366,9 +375,16 @@ export async function breakdownTaskIntoSubtasks(taskId: string) {
     .maybeSingle<{ id: string; title: string }>();
   if (!task) return { error: "Task not found" };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let steps: string[];
   try {
-    steps = await breakdownIntoSteps(task.title);
+    const result = await breakdownIntoSteps(task.title);
+    steps = result.steps;
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "task_breakdown", model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
   } catch {
     return { error: "Could not generate steps right now — try again." };
   }

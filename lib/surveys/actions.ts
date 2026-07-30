@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { generateSurveyQuestions } from "./generateQuestions";
 import { aggregateSurveyResponses, type QuestionAggregate } from "./aggregate";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { SurveyAnswers, SurveyQuestion } from "./types";
 
 // AI-only, no DB writes — lets the admin review and edit the draft before
@@ -17,8 +19,14 @@ export async function previewSurveyQuestions(theme: string, focus?: string): Pro
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
-    const questions = await generateSurveyQuestions(theme, focus);
+    const { questions, model, inputTokens, outputTokens } = await generateSurveyQuestions(theme, focus);
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "survey_questions", model, inputTokens, outputTokens });
     return { questions };
   } catch {
     return { error: "Could not generate questions right now — try again." };

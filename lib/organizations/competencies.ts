@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import { suggestCompetencyDimension } from "./suggestDimension";
+import { getMyOrganizationMembership } from "./actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 function isValidDimension(value: string): value is CompetencyDimension {
   return (COMPETENCY_DIMENSIONS as readonly string[]).includes(value);
@@ -84,9 +86,15 @@ export async function suggestDimensionForCompetency(
   if (!user) return { error: "Not authenticated" };
   if (!name.trim()) return { error: "Enter a competency name first" };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
-    const suggestion = await suggestCompetencyDimension(name, description);
-    return { success: true, ...suggestion };
+    const { dimension, rationale, model, inputTokens, outputTokens } = await suggestCompetencyDimension(name, description);
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "competency_dimension", model, inputTokens, outputTokens });
+    return { success: true, dimension, rationale };
   } catch {
     return { error: "Could not get a suggestion right now — try again." };
   }

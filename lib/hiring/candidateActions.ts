@@ -15,7 +15,7 @@ import {
 import { CANDIDATE_CV_BUCKET } from "./constants";
 import type { HiringStage } from "./types";
 import { HIRING_STAGES } from "./types";
-import { assertOrgAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 const MAX_NAME = 120;
 const MAX_PHONE = 40;
@@ -152,7 +152,7 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
     .maybeSingle<{ title: string; job_description: string }>();
   if (!posting) return { error: "Posting not found" };
 
-  const budgetCheck = await assertOrgAiBudgetOk(supabase, organizationId);
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
   const targetRole = posting.title.slice(0, MAX_TARGET_ROLE_LENGTH);

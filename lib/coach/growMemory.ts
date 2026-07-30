@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export type GrowState = { goal: string; reality: string; options: string; will: string };
+export type GrowMemoryResult = { state: GrowState; model: string; inputTokens: number; outputTokens: number };
 
 const UPDATE_TOOL = {
   name: "update_grow_memory",
@@ -39,17 +40,21 @@ const UPDATE_TOOL = {
 // short current-state summary per field, not an append-only log: each call
 // is told to carry forward anything still true and only change what this
 // exchange actually updated.
+// Haiku 4.5 — same shape/reasoning as the Coach route itself
+// (app/api/coach/route.ts): a small bounded structured extraction, not a
+// scored decision, so the calibration gap that keeps scoring features on
+// Sonnet doesn't apply here.
 export async function updateGrowMemory(
   priorMemory: GrowState | null,
   latestUserMessage: string,
   latestAssistantReply: string
-): Promise<GrowState> {
+): Promise<GrowMemoryResult> {
   const priorContext = priorMemory
     ? `Goal: ${priorMemory.goal || "(none yet)"}\nReality: ${priorMemory.reality || "(none yet)"}\nOptions: ${priorMemory.options || "(none yet)"}\nWill: ${priorMemory.will || "(none yet)"}`
     : "No prior GROW memory — this is the first exchange.";
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-5",
+    model: "claude-haiku-4-5",
     max_tokens: 512,
     system:
       "You maintain a running GROW-model (Goal, Reality, Options, Will) summary of an ongoing career-coaching relationship. Given the prior summary and the latest exchange, call update_grow_memory with the new current state. Carry forward anything still true; do not discard established context just because it wasn't repeated this turn. Only change a field if this exchange actually moved it forward.",
@@ -67,5 +72,10 @@ export async function updateGrowMemory(
   if (!toolUse || toolUse.type !== "tool_use") {
     throw new Error("Model did not return structured output");
   }
-  return toolUse.input as GrowState;
+  return {
+    state: toolUse.input as GrowState,
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  };
 }
