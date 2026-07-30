@@ -2,17 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { RealtimeClient } from "@speechmatics/real-time-client";
-import { PCMRecorder } from "@speechmatics/browser-audio-input";
-import { getSpeechToTextToken } from "@/lib/speech/sttToken";
+import { SpeechConfig, AudioConfig, SpeechRecognizer, ResultReason } from "microsoft-cognitiveservices-speech-sdk";
+import { getAzureSpeechToken } from "@/lib/speech/azureSttToken";
 
 // Minimal shape of the non-standard Web Speech API — not in TS's default DOM
 // lib since it's still webkit-prefixed in most browsers. This is now only
-// the *fallback* path: used when Speechmatics real-time transcription
-// (below) can't be reached — no key configured, mic/WebSocket setup fails,
-// or the account's real-time quota runs out. Chrome supports it reliably;
-// Safari and Firefox are hit-or-miss, so it still degrades to typing from
-// there.
+// the *fallback* path: used when Azure real-time transcription (below)
+// can't be reached — no key configured, mic setup fails, or the service is
+// briefly unreachable. Chrome supports it reliably; Safari and Firefox are
+// hit-or-miss, so it still degrades to typing from there.
 type SpeechRecognitionResult = { transcript: string };
 type SpeechRecognitionEvent = { results: ArrayLike<ArrayLike<SpeechRecognitionResult>> };
 interface SpeechRecognitionLike extends EventTarget {
@@ -34,17 +32,11 @@ function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
     | null;
 }
 
-// Real-time transcription needs a mic (getUserMedia) and an AudioWorklet to
-// convert captured audio to PCM before streaming it to Speechmatics — both
-// are widely supported, but this keeps old/unusual browsers from silently
-// hanging on start().
-function supportsSpeechmatics(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof navigator !== "undefined" &&
-    "mediaDevices" in navigator &&
-    typeof AudioWorkletNode !== "undefined"
-  );
+// Azure's SDK captures the mic itself (AudioConfig.fromDefaultMicrophoneInput)
+// rather than needing a hand-rolled AudioWorklet, so this only needs to rule
+// out environments without getUserMedia at all.
+function supportsAzureStt(): boolean {
+  return typeof window !== "undefined" && typeof navigator !== "undefined" && "mediaDevices" in navigator;
 }
 
 // Feature support never changes after the page loads, so there's nothing to
@@ -58,7 +50,7 @@ function getServerSnapshot() {
   return false;
 }
 
-export function useSpeechInput(onResult: (transcript: string) => void) {
+export function useSpeechInput(onResult: (transcript: string) => void, locale: "en" | "ar" = "en") {
   const t = useTranslations("speechErrors");
   const [listening, setListening] = useState(false);
   // Surfaced to the UI — a mic that silently does nothing is
@@ -75,15 +67,13 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   // Browser SpeechRecognition fallback
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   // True from the moment a fallback engine is spun up until it's genuinely
-  // stopped (not merely restarted after a silence timeout). Speechmatics
-  // failure is reported through two independent paths — the WebSocket's
-  // async "Error" message AND the rejected client.start() promise can both
-  // fire for the very same underlying failure (e.g. quota_exceeded) — and
-  // without this guard both would call startBrowserFallback(), spinning up
-  // two separate SpeechRecognition instances against the same microphone.
-  // Both would then fire onresult for the same speech and both feed the
-  // same onResult callback, which is what produced the doubled/garbled
-  // transcript ("Let Let me me go go") seen in the browser-fallback path.
+  // stopped (not merely restarted after a silence timeout). Azure failure
+  // can be reported through more than one path (a rejected start callback
+  // AND a "canceled" event can both fire for the same underlying failure),
+  // and without this guard both would call startBrowserFallback(), spinning
+  // up two separate SpeechRecognition instances against the same
+  // microphone — the doubled/garbled-transcript bug this guard exists to
+  // prevent (confirmed live in this exact codebase before this guard).
   const fallbackActiveRef = useRef(false);
   const browserSupported = useSyncExternalStore(
     noopSubscribe,
@@ -91,39 +81,30 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
     getServerSnapshot
   );
 
-  // Speechmatics real-time transcription (same paid vendor as the TTS
-  // voice, same free-tier-first, upgrade-later posture)
-  const clientRef = useRef<RealtimeClient | null>(null);
-  const recorderRef = useRef<PCMRecorder | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  // Accumulates words between EndOfUtterance boundaries (Speechmatics
-  // detects ~1s of silence and emits one) — that boundary is what stands in
-  // for the Web Speech API's "one onresult per finished phrase" behavior,
-  // since AddTranscript itself streams in continuously, not per-utterance.
-  const bufferRef = useRef("");
-  const speechmaticsSupported = useSyncExternalStore(
-    noopSubscribe,
-    supportsSpeechmatics,
-    getServerSnapshot
-  );
-  const supported = speechmaticsSupported || browserSupported;
+  // Azure real-time transcription — primary engine (moved from Speechmatics
+  // after a real, measured comparison on the test/azure-speech branch:
+  // Speechmatics' real-time STT failed 9 of 10 trials with quota_exceeded,
+  // Azure failed 0 of 10, and Azure's word-error-rate was roughly 100x
+  // better on the same test audio in both English and Arabic).
+  const recognizerRef = useRef<SpeechRecognizer | null>(null);
+  const azureSupported = useSyncExternalStore(noopSubscribe, supportsAzureStt, getServerSnapshot);
+  const supported = azureSupported || browserSupported;
 
-  const stopSpeechmatics = useCallback(() => {
-    recorderRef.current?.stopRecording();
-    recorderRef.current = null;
-    clientRef.current?.stopRecognition({ noTimeout: true }).catch(() => {});
-    clientRef.current = null;
-    if (audioContextRef.current?.state !== "closed") {
-      audioContextRef.current?.close().catch(() => {});
+  const stopAzure = useCallback(() => {
+    const recognizer = recognizerRef.current;
+    recognizerRef.current = null;
+    if (recognizer) {
+      recognizer.stopContinuousRecognitionAsync(
+        () => recognizer.close(),
+        () => recognizer.close()
+      );
     }
-    audioContextRef.current = null;
-    bufferRef.current = "";
   }, []);
 
   const startBrowserFallback = useCallback(() => {
-    // Both the Speechmatics socket's "Error" event and a rejected
-    // client.start() promise can independently call this for the same
-    // failure — only the first should actually spin up an engine.
+    // Both an Azure "canceled" event and a rejected start callback can
+    // independently call this for the same failure — only the first should
+    // actually spin up an engine.
     if (fallbackActiveRef.current) return;
     const RecognitionCtor = getSpeechRecognition();
     if (!RecognitionCtor) {
@@ -189,75 +170,40 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
   const start = useCallback(async () => {
     setError(null);
     wantListeningRef.current = true;
-    if (!supportsSpeechmatics()) {
+    if (!supportsAzureStt()) {
       startBrowserFallback();
       return;
     }
     try {
-      const jwt = await getSpeechToTextToken();
+      const { token, region } = await getAzureSpeechToken();
+      const speechConfig = SpeechConfig.fromAuthorizationToken(token, region);
+      speechConfig.speechRecognitionLanguage = locale === "ar" ? "ar-EG" : "en-US";
 
-      const audioContext = new AudioContext(
-        navigator.userAgent.includes("Firefox") ? undefined : { sampleRate: 16000 }
-      );
-      audioContextRef.current = audioContext;
+      const audioConfig = AudioConfig.fromDefaultMicrophoneInput();
+      const recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+      recognizerRef.current = recognizer;
 
-      const recorder = new PCMRecorder("/js/pcm-audio-worklet.min.js");
-      recorderRef.current = recorder;
-
-      const client = new RealtimeClient({ appId: "devometrics" });
-      clientRef.current = client;
-
-      recorder.addEventListener("audio", (event) => {
-        try {
-          client.sendAudio(event.data);
-        } catch {
-          // Socket not open yet (or already torn down) — drop this chunk
-          // rather than throw mid-recording.
+      // Fires once per finished utterance — Azure's own silence-based
+      // boundary detection, the equivalent of Speechmatics' EndOfUtterance.
+      recognizer.recognized = (_sender, event) => {
+        if (event.result.reason === ResultReason.RecognizedSpeech && event.result.text.trim()) {
+          onResult(event.result.text.trim());
         }
-      });
+      };
+      recognizer.canceled = (_sender, event) => {
+        console.error("Azure real-time STT canceled, falling back:", event.errorDetails);
+        stopAzure();
+        startBrowserFallback();
+      };
+      recognizer.sessionStopped = () => setListening(false);
 
-      client.addEventListener("receiveMessage", ({ data }) => {
-        if (data.message === "AddTranscript") {
-          for (const r of data.results) {
-            const content = r.alternatives?.[0]?.content;
-            if (!content) continue;
-            bufferRef.current += (r.type === "punctuation" || !bufferRef.current ? "" : " ") + content;
-          }
-        } else if (data.message === "EndOfUtterance") {
-          const utterance = bufferRef.current.trim();
-          bufferRef.current = "";
-          if (utterance) onResult(utterance);
-        } else if (data.message === "Error") {
-          console.error("Speechmatics real-time error, falling back:", data);
-          stopSpeechmatics();
-          startBrowserFallback();
-        }
+      await new Promise<void>((resolve, reject) => {
+        recognizer.startContinuousRecognitionAsync(resolve, reject);
       });
-
-      client.addEventListener("socketStateChange", ({ socketState }) => {
-        if (socketState === "closed") setListening(false);
-      });
-
-      await client.start(jwt, {
-        transcription_config: {
-          language: "en",
-          max_delay: 2,
-          // 1s fired on natural mid-sentence thinking pauses, sending the
-          // half-finished thought and making the coach "interrupt" the user.
-          // Speechmatics caps this at 2s server-side — anything higher
-          // fails the whole StartRecognition handshake with a
-          // protocol_error, which silently killed real-time transcription
-          // for every session (confirmed live: the server's rejection
-          // reason was literally "must be less than or equal to 2").
-          conversation_config: { end_of_utterance_silence_trigger: 2 },
-        },
-        audio_format: { type: "raw", encoding: "pcm_f32le", sample_rate: audioContext.sampleRate },
-      });
-      await recorder.startRecording({ audioContext });
       setListening(true);
     } catch (err) {
-      console.error("Speechmatics STT unavailable, falling back to browser recognition:", err);
-      stopSpeechmatics();
+      console.error("Azure STT unavailable, falling back to browser recognition:", err);
+      stopAzure();
       // Mic permission denial is the one failure the fallback can't fix —
       // the browser engine needs the same permission. Name it instead of
       // silently trying a second engine that will also fail.
@@ -269,25 +215,25 @@ export function useSpeechInput(onResult: (transcript: string) => void) {
       }
       startBrowserFallback();
     }
-  }, [onResult, startBrowserFallback, stopSpeechmatics, t]);
+  }, [onResult, startBrowserFallback, stopAzure, t, locale]);
 
   const stop = useCallback(() => {
     wantListeningRef.current = false;
-    stopSpeechmatics();
+    stopAzure();
     recognitionRef.current?.stop();
     setListening(false);
-  }, [stopSpeechmatics]);
+  }, [stopAzure]);
 
   // Same reasoning as lib/speech/useVoicePlayback.ts — leaving a scenario
-  // mid-recording shouldn't leave the mic and socket running in the
+  // mid-recording shouldn't leave the mic and connection running in the
   // background.
   useEffect(() => {
     return () => {
       wantListeningRef.current = false;
-      stopSpeechmatics();
+      stopAzure();
       recognitionRef.current?.stop();
     };
-  }, [stopSpeechmatics]);
+  }, [stopAzure]);
 
   return { listening, supported, start, stop, error };
 }

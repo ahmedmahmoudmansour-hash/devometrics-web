@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { RoleplayScenario } from "@/lib/roleplay/scenarios";
 import type { RoleplaySession } from "@/lib/supabase/types";
 import { useSpeechInput, stripStageDirections } from "@/lib/roleplay/useSpeech";
@@ -37,6 +37,7 @@ export default function RoleplayChat({
   initialSession: RoleplaySession | null;
 }) {
   const t = useTranslations("roleplayChat");
+  const locale = useLocale();
   const [sessionId, setSessionId] = useState<string | null>(initialSession?.id ?? null);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(
     initialSession && initialSession.messages.length > 0
@@ -69,7 +70,7 @@ export default function RoleplayChat({
     }
     setVoice(lastNamedVoice);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
-    if (latest) play(stripStageDirections(latest.content), lastNamedVoice);
+    if (latest) play(stripStageDirections(latest.content), lastNamedVoice, locale === "ar" ? "ar" : "en");
   }
 
   // Picking a different voice replays the character's latest line in that
@@ -80,7 +81,7 @@ export default function RoleplayChat({
     setVoice(name);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(latest ? stripStageDirections(latest.content) : t("greetingFallback", { name: label }), name);
+    play(latest ? stripStageDirections(latest.content) : t("greetingFallback", { name: label }), name, locale === "ar" ? "ar" : "en");
   }
 
   const { play, startStream, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
@@ -109,7 +110,7 @@ export default function RoleplayChat({
   } = useSpeechInput((transcript) => {
     if (speakingRef.current) return; // that's the character's voice, not the user
     if (transcript.trim()) setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript.trim()}` : transcript.trim()));
-  });
+  }, locale === "ar" ? "ar" : "en");
 
   async function send(text: string, endScenario: boolean) {
     if (!text.trim() || loading) return;
@@ -146,7 +147,7 @@ export default function RoleplayChat({
       // not from raw deltas, since a delta can be an unclosed *fragment*.
       const voiceStream =
         voice !== "off"
-          ? startStream(voice, {
+          ? startStream(voice, locale === "ar" ? "ar" : "en", {
               onFirstChunkFailed: () => setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex)),
               transformChunk: stripStageDirections,
             })
@@ -263,7 +264,7 @@ export default function RoleplayChat({
                 <button
                   type="button"
                   onClick={() =>
-                    play(stripStageDirections(m.content), voice).then((ok) => {
+                    play(stripStageDirections(m.content), voice, locale === "ar" ? "ar" : "en").then((ok) => {
                       if (ok) {
                         setAutoplayFailedFor((prev) => {
                           const next = new Set(prev);

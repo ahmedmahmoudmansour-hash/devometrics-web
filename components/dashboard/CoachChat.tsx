@@ -246,7 +246,7 @@ export default function CoachChat({
   } = useSpeechInput((transcript) => {
     if (playingRef.current) return; // coach is talking — this is its own voice, not the user
     if (transcript.trim()) setInput((prev) => (prev.trim() ? `${prev.trim()} ${transcript.trim()}` : transcript.trim()));
-  });
+  }, locale === "ar" ? "ar" : "en");
 
   // Keep the newest message in view whenever one is added (user send AND
   // coach reply) — previously this only fired once per send() in the
@@ -283,7 +283,7 @@ export default function CoachChat({
     handleVoiceChange(lastNamedVoice);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === lastNamedVoice)?.label ?? lastNamedVoice;
-    play(latest ? latest.content : `Hi, this is ${label}.`, lastNamedVoice);
+    play(latest ? latest.content : `Hi, this is ${label}.`, lastNamedVoice, locale === "ar" ? "ar" : "en");
   }
 
   // Picking a different voice replays the coach's latest line in that voice —
@@ -293,7 +293,7 @@ export default function CoachChat({
     handleVoiceChange(name);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(latest ? latest.content : `Hi, this is ${label}.`, name);
+    play(latest ? latest.content : `Hi, this is ${label}.`, name, locale === "ar" ? "ar" : "en");
   }
 
   async function send(rawText: string) {
@@ -330,7 +330,7 @@ export default function CoachChat({
       // straight in as it arrives from the same fetch stream.
       const voiceStream =
         voice !== "off"
-          ? startStream(voice, {
+          ? startStream(voice, locale === "ar" ? "ar" : "en", {
               onFirstChunkFailed: () => setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex)),
             })
           : null;
@@ -545,7 +545,7 @@ export default function CoachChat({
                   <button
                     type="button"
                     onClick={() =>
-                      play(m.content, voice).then((ok) => {
+                      play(m.content, voice, locale === "ar" ? "ar" : "en").then((ok) => {
                         if (ok) {
                           setAutoplayFailedFor((prev) => {
                             const next = new Set(prev);

@@ -12,9 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Vendored, minified worklet asset copied from
-    // @speechmatics/browser-audio-input — not source we maintain.
-    "public/js/pcm-audio-worklet.min.js",
   ]),
 ]);
 

@@ -19,11 +19,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const SENTENCE_BOUNDARY = /[.!?…]["')\]]?\s/;
 
-async function synthesize(text: string, voice: string): Promise<Blob> {
+async function synthesize(text: string, voice: string, locale: "en" | "ar"): Promise<Blob> {
   const res = await fetch("/api/speech/synthesize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, voice }),
+    body: JSON.stringify({ text, voice, locale }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -71,6 +71,7 @@ export function useVoicePlayback() {
   const startStream = useCallback(
     (
       voice: string,
+      locale: "en" | "ar",
       callbacks?: {
         onFirstChunkFailed?: () => void;
         // Applied to each COMPLETE sentence right before synthesis, not to
@@ -107,7 +108,7 @@ export function useVoicePlayback() {
       function queueChunk(text: string) {
         const transformed = (callbacks?.transformChunk?.(text) ?? text).trim();
         if (!transformed) return; // e.g. a chunk that was ONLY a stage direction
-        const p = synthesize(transformed, voice);
+        const p = synthesize(transformed, voice, locale);
         p.catch(() => {});
         synthesisQueue.push(p);
         wake();
@@ -200,10 +201,10 @@ export function useVoicePlayback() {
   // Resolves true/false based on whether the FIRST chunk actually started,
   // matching the old play()'s contract so existing callers don't change.
   const play = useCallback(
-    (text: string, voice: string): Promise<boolean> => {
+    (text: string, voice: string, locale: "en" | "ar"): Promise<boolean> => {
       return new Promise((resolve) => {
         let settled = false;
-        const handle = startStream(voice, {
+        const handle = startStream(voice, locale, {
           onFirstChunkFailed: () => {
             if (!settled) {
               settled = true;
