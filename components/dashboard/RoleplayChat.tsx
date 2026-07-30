@@ -9,12 +9,7 @@ import { useSpeechInput, stripStageDirections } from "@/lib/roleplay/useSpeech";
 import { useVoicePlayback } from "@/lib/speech/useVoicePlayback";
 import { renderInlineMarkdown } from "@/lib/format/renderInlineMarkdown";
 
-const NAMED_VOICES = [
-  { value: "sarah", label: "Sarah" },
-  { value: "theo", label: "Theo" },
-  { value: "megan", label: "Megan" },
-  { value: "jack", label: "Jack" },
-];
+const VOICE_VALUES = ["sarah", "theo", "megan", "jack"] as const;
 
 function modeButtonStyle(active: boolean): React.CSSProperties {
   return {
@@ -37,7 +32,13 @@ export default function RoleplayChat({
   initialSession: RoleplaySession | null;
 }) {
   const t = useTranslations("roleplayChat");
+  const tVoices = useTranslations("voiceNames");
   const locale = useLocale();
+  // Each named voice maps to a genuinely different Azure voice per language
+  // (lib/speech/azureTts.ts) — the label is that voice's own real name in
+  // the current language, so switching to Arabic doesn't leave an English
+  // character name (e.g. "Jack") sitting in an otherwise-Arabic picker.
+  const NAMED_VOICES = VOICE_VALUES.map((v) => ({ value: v, label: tVoices(v) }));
   const [sessionId, setSessionId] = useState<string | null>(initialSession?.id ?? null);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(
     initialSession && initialSession.messages.length > 0

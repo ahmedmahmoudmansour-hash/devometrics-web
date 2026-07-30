@@ -15,8 +15,17 @@ export const DEFAULT_LOCALE = "en";
 export const SUPPORTED_LOCALES = ["en", "ar"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
-function isSupportedLocale(value: string | undefined): value is Locale {
+export function isSupportedLocale(value: string | undefined): value is Locale {
   return !!value && (SUPPORTED_LOCALES as readonly string[]).includes(value);
+}
+
+// Same cookie-first, profile-fallback priority as the getRequestConfig
+// below — extracted so API route handlers (which don't go through
+// next-intl's own resolution) can determine which language to have the
+// model reply in, consistently with what the user actually sees in the UI.
+export function resolveApiLocale(cookieValue: string | undefined, profileLanguage: string | null | undefined): Locale {
+  if (isSupportedLocale(cookieValue)) return cookieValue;
+  return isSupportedLocale(profileLanguage ?? undefined) ? (profileLanguage as Locale) : DEFAULT_LOCALE;
 }
 
 export default getRequestConfig(async () => {

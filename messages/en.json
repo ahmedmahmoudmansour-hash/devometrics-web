@@ -888,6 +888,12 @@
     "readyNow": "Ready now? You don't need an appointment to start.",
     "joinSessionNow": "Join session now →"
   },
+  "voiceNames": {
+    "sarah": "Sarah",
+    "megan": "Megan",
+    "theo": "Theo",
+    "jack": "Jack"
+  },
   "coachChat": {
     "summaryTitle": "Session summary",
     "meetingNotes": "Meeting notes",

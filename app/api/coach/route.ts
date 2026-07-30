@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCoachSystemPrompt } from "@/lib/coach/systemPrompt";
+import { LOCALE_COOKIE, resolveApiLocale } from "@/lib/i18n/request";
 import { updateGrowMemory } from "@/lib/coach/growMemory";
 import {
   MAX_COACH_MESSAGE_LENGTH,
@@ -180,6 +182,7 @@ export async function POST(request: Request) {
     assessmentResults: latestAssessments,
     discoveryProfile: discoveryProfile ?? null,
     growMemory: growMemory ?? null,
+    locale: resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language),
   });
 
   const conversation = [

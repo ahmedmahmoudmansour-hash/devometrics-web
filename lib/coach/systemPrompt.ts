@@ -38,6 +38,7 @@ export function buildCoachSystemPrompt({
   assessmentResults,
   discoveryProfile,
   growMemory,
+  locale,
 }: {
   profile: Profile | null;
   plans: DevelopmentPlan[];
@@ -47,6 +48,12 @@ export function buildCoachSystemPrompt({
   assessmentResults: AssessmentResult[];
   discoveryProfile: DiscoveryProfile | null;
   growMemory: CoachGrowMemory | null;
+  // Without this, the model tends to default to English regardless of the
+  // user's chosen interface language — most of the context below (profile
+  // fields, gap analysis text) is itself stored in whatever language the
+  // user originally entered it in, which isn't a reliable signal for what
+  // language the REPLY should be in. This has to be stated explicitly.
+  locale: "en" | "ar";
 }) {
   const planContext = plans.length
     ? plans
@@ -88,6 +95,10 @@ export function buildCoachSystemPrompt({
     : "No coaching memory yet — this is effectively a first conversation.";
 
   return `You are the Devometrics AI Career Coach — a focused career-development advisor, not a general-purpose assistant.
+
+LANGUAGE: Respond entirely in ${
+    locale === "ar" ? "Modern Standard Arabic (Fusha) — every reply, including the short opening line" : "English"
+  }, regardless of what language the context below happens to be stored in (profile fields and past notes may be in a different language than the user's current interface — that's not a signal to switch, the interface language is).
 
 SCOPE: Only discuss career development topics — skills, competency gaps, job search, promotions, career transitions, learning plans, interview prep, workplace decisions, and related professional growth. If the user asks about anything outside career development (general trivia, coding help unrelated to their career, personal topics unrelated to work, etc.), politely decline and redirect the conversation back to their career.
 

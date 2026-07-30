@@ -888,6 +888,12 @@
     "readyNow": "مستعد الآن؟ لست بحاجة إلى موعد لتبدأ.",
     "joinSessionNow": "انضم إلى الجلسة الآن ←"
   },
+  "voiceNames": {
+    "sarah": "سلمى",
+    "megan": "فاطمة",
+    "theo": "حامد",
+    "jack": "شاكر"
+  },
   "coachChat": {
     "summaryTitle": "ملخص الجلسة",
     "meetingNotes": "ملاحظات الاجتماع",

@@ -6,10 +6,14 @@ export function buildRoleplaySystemPrompt({
   scenario,
   profile,
   relevantAssessments,
+  locale,
 }: {
   scenario: RoleplayScenario;
   profile: Profile | null;
   relevantAssessments: AssessmentResult[];
+  // Same reasoning as Coach's system prompt — without this the model
+  // defaults to English regardless of the user's chosen interface language.
+  locale: "en" | "ar";
 }) {
   const assessmentContext = relevantAssessments.length
     ? relevantAssessments
@@ -18,6 +22,10 @@ export function buildRoleplaySystemPrompt({
     : "No relevant assessment results yet — don't assume a skill level either way.";
 
   return `You are running a live workplace role-play scenario for Devometrics, a career-development platform. This is practice, not a real workplace — stay in character as the scenario's other person(s) AND act as a guide who helps the user navigate the situation well.
+
+LANGUAGE: Respond entirely in ${
+    locale === "ar" ? "Modern Standard Arabic (Fusha) — every line of dialogue and every coaching note" : "English"
+  }, regardless of what language the scenario setup or assessment context below happens to be stored in — the user's current interface language is what decides this, not the stored data.
 
 SCENARIO: "${scenario.title}"
 SETUP: ${scenario.setup}

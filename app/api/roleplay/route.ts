@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { getRoleplayScenario } from "@/lib/roleplay/scenarios";
 import { getCustomScenario } from "@/lib/roleplay/customScenarios";
 import { buildRoleplaySystemPrompt } from "@/lib/roleplay/systemPrompt";
+import { LOCALE_COOKIE, resolveApiLocale } from "@/lib/i18n/request";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import {
   MAX_ROLEPLAY_MESSAGE_LENGTH,
@@ -147,6 +149,7 @@ export async function POST(request: Request) {
     scenario,
     profile: profile ?? null,
     relevantAssessments: Array.from(latestBySlug.values()),
+    locale: resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language),
   });
 
   // Streamed like the Coach route: text deltas reach the client as Claude

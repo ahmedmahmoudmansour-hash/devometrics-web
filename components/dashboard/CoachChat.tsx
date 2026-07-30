@@ -14,12 +14,7 @@ import { renderInlineMarkdown } from "@/lib/format/renderInlineMarkdown";
 import { generateSessionSummary, emailSessionSummary, type SessionSummary } from "@/lib/coach/sessionSummary";
 import { createTask } from "@/lib/tasks/actions";
 
-const NAMED_VOICES = [
-  { value: "sarah", label: "Sarah" },
-  { value: "theo", label: "Theo" },
-  { value: "megan", label: "Megan" },
-  { value: "jack", label: "Jack" },
-];
+const VOICE_VALUES = ["sarah", "theo", "megan", "jack"] as const;
 
 function modeButtonStyle(active: boolean): React.CSSProperties {
   return {
@@ -189,7 +184,14 @@ export default function CoachChat({
   initialVoice: string;
 }) {
   const t = useTranslations("coachChat");
+  const tVoices = useTranslations("voiceNames");
   const locale = useLocale();
+  // Each named voice maps to a genuinely different Azure voice per language
+  // (lib/speech/azureTts.ts) — the label here is that voice's own real name
+  // in the current language, not just a translated caption, so switching to
+  // Arabic doesn't leave an English character name (e.g. "Jack") sitting in
+  // an otherwise-Arabic picker.
+  const NAMED_VOICES = VOICE_VALUES.map((v) => ({ value: v, label: tVoices(v) }));
   // Computed once from the server-provided history — new messages only ever
   // append to the live thread, so this never needs recomputing.
   const [{ today: initialToday, past: pastSessions }] = useState(() => partitionByDay(initialMessages));
