@@ -9,7 +9,7 @@ import Avatar from "@/components/Avatar";
 import Mascot from "@/components/Mascot";
 import { updateCoachVoice } from "@/app/dashboard/actions";
 import { useVoicePlayback } from "@/lib/speech/useVoicePlayback";
-import { useSpeechInput } from "@/lib/roleplay/useSpeech";
+import { useSpeechInput, sanitizeForSpeech } from "@/lib/roleplay/useSpeech";
 import { renderInlineMarkdown } from "@/lib/format/renderInlineMarkdown";
 import { generateSessionSummary, emailSessionSummary, type SessionSummary } from "@/lib/coach/sessionSummary";
 import { createTask } from "@/lib/tasks/actions";
@@ -285,7 +285,7 @@ export default function CoachChat({
     handleVoiceChange(lastNamedVoice);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === lastNamedVoice)?.label ?? lastNamedVoice;
-    play(latest ? latest.content : `Hi, this is ${label}.`, lastNamedVoice, locale === "ar" ? "ar" : "en");
+    play(sanitizeForSpeech(latest ? latest.content : `Hi, this is ${label}.`), lastNamedVoice, locale === "ar" ? "ar" : "en");
   }
 
   // Picking a different voice replays the coach's latest line in that voice —
@@ -295,7 +295,7 @@ export default function CoachChat({
     handleVoiceChange(name);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(latest ? latest.content : `Hi, this is ${label}.`, name, locale === "ar" ? "ar" : "en");
+    play(sanitizeForSpeech(latest ? latest.content : `Hi, this is ${label}.`), name, locale === "ar" ? "ar" : "en");
   }
 
   async function send(rawText: string) {
@@ -334,6 +334,7 @@ export default function CoachChat({
         voice !== "off"
           ? startStream(voice, locale === "ar" ? "ar" : "en", {
               onFirstChunkFailed: () => setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex)),
+              transformChunk: sanitizeForSpeech,
             })
           : null;
 
@@ -547,7 +548,7 @@ export default function CoachChat({
                   <button
                     type="button"
                     onClick={() =>
-                      play(m.content, voice, locale === "ar" ? "ar" : "en").then((ok) => {
+                      play(sanitizeForSpeech(m.content), voice, locale === "ar" ? "ar" : "en").then((ok) => {
                         if (ok) {
                           setAutoplayFailedFor((prev) => {
                             const next = new Set(prev);

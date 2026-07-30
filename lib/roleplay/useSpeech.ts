@@ -262,3 +262,22 @@ export function stripStageDirections(text: string): string {
   // them whole.
   return text.replace(/\*\*[^*]+\*\*/g, "").replace(/\*[^*]+\*/g, "").trim();
 }
+
+// The "sanitizeForSpeech" this file's other comment referenced but never
+// actually implemented — built now after confirming live that Azure's
+// Arabic voice read Coach's **bold** markers as "نجمة نجمة" (literally
+// "star star"). renderInlineMarkdown.tsx already established **bold** is
+// the one markdown construct that actually shows up in Coach/Roleplay
+// output in practice — this keeps the enclosed text (unlike
+// stripStageDirections, which deletes the whole span) since Coach's bold
+// text is real content, not a stage direction to discard. Em dashes and
+// curly quotes get normalized too, since several TTS voices read those
+// literally — deliberately NOT applied to the visible transcript, only
+// right before synthesis, so the on-screen text keeps its real formatting.
+export function sanitizeForSpeech(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/—/g, ", ")
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'");
+}

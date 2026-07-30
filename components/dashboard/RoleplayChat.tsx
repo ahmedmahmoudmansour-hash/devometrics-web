@@ -5,7 +5,16 @@ import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import type { RoleplayScenario } from "@/lib/roleplay/scenarios";
 import type { RoleplaySession } from "@/lib/supabase/types";
-import { useSpeechInput, stripStageDirections } from "@/lib/roleplay/useSpeech";
+import { useSpeechInput, stripStageDirections, sanitizeForSpeech } from "@/lib/roleplay/useSpeech";
+
+// Order matters: strip stage directions first (which discards whole
+// *action* spans), then sanitize what's left for speech (which keeps text
+// but drops **bold** markers and normalizes punctuation) — running it the
+// other way would strip the asterisks off a stage direction first,
+// leaving its words behind to be read aloud instead of discarded.
+function forSpeech(text: string): string {
+  return sanitizeForSpeech(stripStageDirections(text));
+}
 import { useVoicePlayback } from "@/lib/speech/useVoicePlayback";
 import { renderInlineMarkdown } from "@/lib/format/renderInlineMarkdown";
 
@@ -71,7 +80,7 @@ export default function RoleplayChat({
     }
     setVoice(lastNamedVoice);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
-    if (latest) play(stripStageDirections(latest.content), lastNamedVoice, locale === "ar" ? "ar" : "en");
+    if (latest) play(forSpeech(latest.content), lastNamedVoice, locale === "ar" ? "ar" : "en");
   }
 
   // Picking a different voice replays the character's latest line in that
@@ -82,7 +91,7 @@ export default function RoleplayChat({
     setVoice(name);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(latest ? stripStageDirections(latest.content) : t("greetingFallback", { name: label }), name, locale === "ar" ? "ar" : "en");
+    play(latest ? forSpeech(latest.content) : t("greetingFallback", { name: label }), name, locale === "ar" ? "ar" : "en");
   }
 
   const { play, startStream, playing: speaking, loading: voiceLoading, error: voiceError } = useVoicePlayback();
@@ -150,7 +159,7 @@ export default function RoleplayChat({
         voice !== "off"
           ? startStream(voice, locale === "ar" ? "ar" : "en", {
               onFirstChunkFailed: () => setAutoplayFailedFor((prev) => new Set(prev).add(assistantIndex)),
-              transformChunk: stripStageDirections,
+              transformChunk: forSpeech,
             })
           : null;
 
@@ -265,7 +274,7 @@ export default function RoleplayChat({
                 <button
                   type="button"
                   onClick={() =>
-                    play(stripStageDirections(m.content), voice, locale === "ar" ? "ar" : "en").then((ok) => {
+                    play(forSpeech(m.content), voice, locale === "ar" ? "ar" : "en").then((ok) => {
                       if (ok) {
                         setAutoplayFailedFor((prev) => {
                           const next = new Set(prev);
