@@ -292,6 +292,92 @@ export function NineBoxGrid({
   );
 }
 
+// A trend line with a soft area fill and an emphasized, labeled endpoint —
+// gaps (null months, e.g. no Gap Analysis run that month) break the line
+// rather than interpolating or dropping to zero, since a gap is real
+// information ("nothing measured this month"), not a value.
+export function TrendLineChart({
+  data,
+  unit = "",
+  color = TEAL,
+  height = 120,
+}: {
+  data: { label: string; value: number | null }[];
+  unit?: string;
+  color?: string;
+  height?: number;
+}) {
+  const width = 520;
+  const padX = 14;
+  const padTop = 18;
+  const padBottom = 24;
+  const plotW = width - padX * 2;
+  const plotH = height - padTop - padBottom;
+
+  const values = data.map((d) => d.value).filter((v): v is number => v !== null);
+  if (values.length === 0) return null;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  // A little headroom above/below so the line never touches the frame.
+  const yFor = (v: number) => padTop + plotH - ((v - min) / range) * plotH * 0.85 - plotH * 0.075;
+  const xFor = (i: number) => padX + (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
+
+  // Break into contiguous runs of non-null points — each run gets its own
+  // path segment, so a null month renders as a genuine visual gap.
+  const runs: { i: number; v: number }[][] = [];
+  let current: { i: number; v: number }[] = [];
+  data.forEach((d, i) => {
+    if (d.value === null) {
+      if (current.length > 0) runs.push(current);
+      current = [];
+    } else {
+      current.push({ i, v: d.value });
+    }
+  });
+  if (current.length > 0) runs.push(current);
+
+  const linePath = (run: { i: number; v: number }[]) =>
+    run.map((p, idx) => `${idx === 0 ? "M" : "L"} ${xFor(p.i)} ${yFor(p.v)}`).join(" ");
+  const areaPath = (run: { i: number; v: number }[]) =>
+    `${linePath(run)} L ${xFor(run[run.length - 1].i)} ${padTop + plotH} L ${xFor(run[0].i)} ${padTop + plotH} Z`;
+
+  const lastPoint = [...data].reverse().find((d) => d.value !== null);
+  const lastIndex = lastPoint ? data.lastIndexOf(lastPoint) : -1;
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={data.map((d) => `${d.label}: ${d.value ?? "no data"}${unit}`).join(", ")}>
+      {[0.25, 0.5, 0.75].map((f) => (
+        <line key={f} x1={padX} x2={width - padX} y1={padTop + plotH * f} y2={padTop + plotH * f} stroke={GRID} strokeDasharray="2 4" />
+      ))}
+      {runs.map((run, i) => (
+        <g key={i}>
+          <path d={areaPath(run)} fill={color} opacity={0.08} />
+          <path d={linePath(run)} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      ))}
+      {data.map((d, i) =>
+        d.value === null ? null : (
+          <g key={i}>
+            <circle cx={xFor(i)} cy={yFor(d.value)} r={i === lastIndex ? 4.5 : 3} fill={i === lastIndex ? color : "var(--navy-mid)"} stroke={color} strokeWidth={i === lastIndex ? 0 : 2} />
+            <title>{`${d.label}: ${d.value}${unit}`}</title>
+          </g>
+        )
+      )}
+      {lastIndex >= 0 && (
+        <text x={xFor(lastIndex)} y={yFor(data[lastIndex].value as number) - 12} textAnchor="middle" fontSize="13" fontWeight="800" fill={color}>
+          {data[lastIndex].value}{unit}
+        </text>
+      )}
+      {data.map((d, i) => (
+        <text key={i} x={xFor(i)} y={height - 6} textAnchor="middle" fontSize="10" fill={MUTED}>
+          {d.label}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 export function ScoreBar({ value, color }: { value: number; color?: string }) {
   return (
     <div style={{ height: 8, background: GRID, borderRadius: 4, overflow: "hidden" }}>

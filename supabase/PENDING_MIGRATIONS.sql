@@ -1,14 +1,16 @@
 -- ============================================================
 -- DEVOMETRICS — PENDING MIGRATIONS IN ONE PASTE
 -- 0089 through 0096 confirmed applied (2026-08-02) — trimmed from this
--- file. Three remain: 0097, curated workflow automation recipes (new hire
+-- file. Four remain: 0097, curated workflow automation recipes (new hire
 -- onboarding, low assessment score follow-up, high-potential flag to
--- manager); 0098, exit interviews + AI-assisted root-cause analysis; and
+-- manager); 0098, exit interviews + AI-assisted root-cause analysis;
 -- 0099, Flight Risk Score v1 + two history-snapshot tables (performance
--- rating history, manager-change history). All three are admin-gated and
--- depend only on 0016's is_org_admin() and the organizations/
--- organization_members tables — none of the three depend on each other,
--- order between them doesn't matter.
+-- rating history, manager-change history); and 0100, a one-policy addition
+-- granting a reporting-line manager (not necessarily an org admin) read
+-- access to their own direct reports' Gap Analyses, needed for the new
+-- manager "Team Pulse" dashboard section. All four are additive/admin- or
+-- manager-gated and depend only on 0016's is_org_admin()/gap_analyses and
+-- 0078's is_manager_of_user() — order between them doesn't matter.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -280,3 +282,25 @@ create policy "Org admins can generate flight risk scores"
 create index if not exists employee_performance_rating_history_employee_idx on public.employee_performance_rating_history (employee_user_id, created_at desc);
 create index if not exists employee_role_change_history_employee_idx on public.employee_role_change_history (employee_user_id, created_at desc);
 create index if not exists employee_flight_risk_scores_employee_idx on public.employee_flight_risk_scores (organization_id, employee_user_id, created_at desc);
+
+-- ============================================================
+-- 0100: Manager visibility into direct reports' Gap Analyses
+-- ============================================================
+
+-- gap_analyses' only SELECT policy for a non-owner (migration 0016) is
+-- "Org admins can view their members' gap analyses", gated by
+-- is_org_admin_of_user(user_id) — a plain reporting-line manager who is
+-- NOT an org admin has zero visibility into their own direct reports'
+-- career health/competency data today. Migration 0078 closed this exact
+-- gap for performance_reviews via is_manager_of_user(); this closes it for
+-- gap_analyses too, needed for the new manager "Team Pulse" view.
+--
+-- Postgres combines multiple PERMISSIVE policies for the same command with
+-- OR, so this is added as its own policy rather than rewriting 0016's —
+-- both can independently grant access without either needing to know about
+-- the other. is_manager_of_user is a plain `select exists(...)` (defined in
+-- 0078), so it can never throw and abort this table's other policy.
+drop policy if exists "Managers can view their direct reports' gap analyses" on public.gap_analyses;
+create policy "Managers can view their direct reports' gap analyses"
+  on public.gap_analyses for select
+  using (public.is_manager_of_user(user_id));

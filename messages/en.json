@@ -1826,7 +1826,12 @@
     "backToProgress": "← Back to progress",
     "title": "My Team",
     "description": "Your direct reports' Impact Cycles — submit your Manager's Perspective, set Focus Areas, and close cycles for the people who report to you.",
-    "notEnabledYet": "This isn't enabled on this database yet — the <code>0072_reporting_lines.sql</code> migration needs to be run in the Supabase SQL Editor first."
+    "notEnabledYet": "This isn't enabled on this database yet — the <code>0072_reporting_lines.sql</code> migration needs to be run in the Supabase SQL Editor first.",
+    "teamPulseTitle": "Team pulse",
+    "teamPulseHint": "Career Health and top development gap for each direct report, from their own most recent Gap Analysis — the same measured data they can already see about themselves.",
+    "teamPulseNoAnalysis": "Hasn't run a Gap Analysis yet.",
+    "teamPulseCareerHealth": "Career Health",
+    "teamPulseTopGap": "Biggest gap: {dimension} ({gap} pts short of target)"
   },
   "myPerformanceReview": {
     "yourReflection": "Your Reflection",
@@ -2195,6 +2200,30 @@
     "methodologyP1": "The 9-box layout follows the performance-and-potential tradition popularized in GE/McKinsey-era succession practice, adapted honestly: this platform measures competency levels, not appraisal ratings, so the axes say what they actually contain. The literature on identifying potential (e.g. Silzer & Church, 2009) emphasizes multi-source, structured evidence over single-rater impressions — which is exactly why these charts draw only on measured assessment and gap-analysis data.",
     "methodologyP2": "Treat every view as decision support: a person low on the grid with 0 assessments is undermeasured, not underperforming. No demographic attributes are used anywhere in these computations.",
     "unspecified": "Unspecified"
+  },
+  "workforceDashboard": {
+    "strategicView": "Strategic",
+    "operationalView": "Operational",
+    "strategicViewHint": "The big picture for decision-making: trends over time, your organization's strongest and weakest areas, and what needs your attention most.",
+    "operationalViewHint": "The full operational detail: department and geographic breakdowns, participation rates, and every open item.",
+    "allDepartments": "All departments",
+    "employeesInDepartment": "In this department",
+    "openPostings": "Open postings",
+    "candidatesInPipeline": "Candidates in pipeline",
+    "careerHealthTrend": "Career Health over time",
+    "careerHealthTrendHint": "Average Career Health Score across every Gap Analysis run each month — a gap means no analyses ran that month, not a zero.",
+    "headcountTrend": "Headcount over time",
+    "headcountTrendHint": "Cumulative headcount among today's team members, by join date.",
+    "flightRiskTrend": "Flight Risk trend",
+    "flightRiskTrendHint": "Average Flight Risk score across every scoring run each month — only shown once the feature has been used at least once.",
+    "topStrengths": "Top strengths",
+    "topStrengthsHint": "Your organization's three highest-scoring competency dimensions.",
+    "topGaps": "Top gaps",
+    "topGapsHint": "Your organization's three lowest-scoring competency dimensions — where targeted development moves the whole company.",
+    "topAttentionTitle": "Needs your attention",
+    "seeAllAttention": "See all {count} items in Operational view →",
+    "surveyParticipationDetail": "Survey participation",
+    "allAttentionTitle": "All attention items"
   },
   "chartsCommon": {
     "total": "total"

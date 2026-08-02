@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
-import { buildCompanyOverview, type AttentionFlag } from "@/lib/organizations/companyOverview";
+import { buildCompanyOverview } from "@/lib/organizations/companyOverview";
+import { attentionFlagText } from "@/lib/organizations/attentionText";
 import { createClient } from "@/lib/supabase/server";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
-import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import OrganizationProfileForm from "@/components/dashboard/OrganizationProfileForm";
@@ -30,37 +30,6 @@ async function countOrNull(
 ): Promise<number | null> {
   const { count } = await supabase.from(table).select("*", { count: "exact", head: true }).eq("organization_id", organizationId);
   return count ?? null;
-}
-
-type Translator = (key: string, values?: Record<string, string | number>) => string;
-
-// Each AttentionFlag carries a stable key + structured params, not a
-// pre-built English sentence (see lib/organizations/companyOverview.ts) —
-// this is the one place that turns it into the actual localized copy.
-function attentionFlagText(t: Translator, tDim: Translator, flag: AttentionFlag): string {
-  switch (flag.key) {
-    case "lowDimension":
-      return t("attentionLowDimension", { dimension: dimensionLabel(tDim, flag.dimension), score: flag.score });
-    case "noManager":
-      return t("attentionNoManager", { count: flag.count, total: flag.total });
-    case "lowSurveyParticipation":
-      return t("attentionLowSurveyParticipation", {
-        title: flag.title,
-        percent: flag.percent,
-        responses: flag.responses,
-        assigned: flag.assigned,
-      });
-    case "noSuccessor":
-      return t("attentionNoSuccessor", { count: flag.count, total: flag.total });
-    case "openPostingsNoCandidates":
-      return t("attentionOpenPostingsNoCandidates", { count: flag.count });
-    case "highFlightRisk":
-      return t("attentionHighFlightRisk", { name: flag.name, score: flag.score });
-    case "exitInterviewInsight":
-      return t("attentionExitInterviewInsight", { summary: flag.summary });
-    case "exitInterviewTrendsReady":
-      return t("attentionExitInterviewTrendsReady", { count: flag.count });
-  }
 }
 
 export default async function CompanyProfilePage() {
