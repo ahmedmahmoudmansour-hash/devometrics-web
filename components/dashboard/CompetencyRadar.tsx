@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
 
 const CENTER = 150;
@@ -19,6 +22,7 @@ function polygonPoints(fractions: number[]) {
 }
 
 export default function CompetencyRadar({ competencies }: { competencies: CompetencyScore[] }) {
+  const t = useTranslations("competencyRadar");
   if (competencies.length === 0) return null;
 
   const rings = [0.25, 0.5, 0.75, 1];
@@ -26,7 +30,7 @@ export default function CompetencyRadar({ competencies }: { competencies: Compet
   const targetPoints = polygonPoints(competencies.map((c) => c.targetLevel / 100));
 
   return (
-    <svg viewBox="0 0 300 340" className="w-full h-full" role="img" aria-label="Skill Radar">
+    <svg viewBox="0 0 300 340" className="w-full h-full" role="img" aria-label={t("skillRadarAria")}>
       {rings.map((r) => (
         <polygon
           key={r}

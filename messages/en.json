@@ -384,6 +384,9 @@
     "ctaText": "See where your own gap actually is — run a free Devometrics gap analysis.",
     "ctaButton": "Get started"
   },
+  "sidebarNav": {
+    "searchTooltip": "Search (Ctrl+K)"
+  },
   "dashboardHome": {
     "heading": "Your progress",
     "sectionToday": "Today",
@@ -593,6 +596,64 @@
     "resourceTierLabel": "Resource budget",
     "selectBudget": "Select a budget"
   },
+  "personalizationOptions": {
+    "careerStage": {
+      "student": "Student",
+      "jobSeeker": "Job seeker",
+      "earlyCareerProfessional": "Early-career professional",
+      "professional": "Professional",
+      "manager": "Manager",
+      "executive": "Executive",
+      "careerChanger": "Career changer",
+      "entrepreneurFreelancer": "Entrepreneur / Freelancer"
+    },
+    "accommodationName": {
+      "standard": "Standard",
+      "biteSizedLowDistraction": "Bite-sized & low-distraction",
+      "audioVideoFirst": "Audio/video-first",
+      "structuredPredictable": "Structured & predictable"
+    },
+    "accommodationDescription": {
+      "standard": "No specific accommodation — default pacing and format.",
+      "biteSizedLowDistraction": "Shorter sessions, broken into smaller steps. Good fit if long unstructured blocks of time don't work for you.",
+      "audioVideoFirst": "Prioritizes listening and watching over dense reading wherever a resource offers both.",
+      "structuredPredictable": "Fixed, explicit scheduling — same day and time each week, no ambiguity about when or how much."
+    },
+    "resourceTierName": {
+      "premium": "Premium resources",
+      "budgetConsciousMix": "Budget-conscious mix",
+      "freeOpenOnly": "Free & open resources only"
+    },
+    "resourceTierHint": {
+      "premium": "Real prices vary a lot by format — roughly free–$20/mo for reading, $30–60 for a course certificate, $75–300/mo for mentorship, $200–1,500 per cohort program.",
+      "budgetConsciousMix": "Mixes free resources with occasional low-cost paid options, but steers away from expensive mentorship or cohort programs — free community alternatives get suggested for those instead.",
+      "freeOpenOnly": "Your plan will point to free, open resources (open courseware, curated free platforms, your public library) instead of assuming paid courses."
+    },
+    "learningFormatName": {
+      "readingSelfStudy": "Reading & self-study",
+      "researchCaseStudies": "Research & case studies",
+      "videoCourses": "Video courses",
+      "shortCoursesWorkshops": "Short courses & workshops",
+      "professionalCertifications": "Professional certifications",
+      "webinarsVirtualEvents": "Webinars & virtual events",
+      "handsOnProjects": "Hands-on projects",
+      "mentorshipCoaching": "Mentorship & coaching",
+      "peerLearning": "Peer learning",
+      "liveCohortClasses": "Live cohort classes"
+    },
+    "learningFormatDescription": {
+      "readingSelfStudy": "Articles, books, or documentation you work through on your own, at your own pace.",
+      "researchCaseStudies": "Real case studies, postmortems, or research pieces — more evidence-driven than general reading.",
+      "videoCourses": "Structured, pre-recorded video curriculum you watch on your own schedule.",
+      "shortCoursesWorkshops": "A brief, intensive session or two — done in a day or a few days, not spread over weeks.",
+      "professionalCertifications": "A recognized credential you work toward, often with an exam or assessment at the end.",
+      "webinarsVirtualEvents": "A single live or recorded online session — a talk, demo, or panel, not an ongoing program.",
+      "handsOnProjects": "Learning by doing — applying a skill directly to a real task or project you already have.",
+      "mentorshipCoaching": "One-on-one guidance from someone more experienced than you.",
+      "peerLearning": "Learning alongside people at a similar level — no formal instructor, just mutual accountability.",
+      "liveCohortClasses": "A structured, multi-week program you go through live, together with the same group of people the whole way."
+    }
+  },
   "welcomeModal": {
     "welcomeTitleNamed": "Welcome, {name} 👋",
     "welcomeTitle": "Welcome 👋",
@@ -678,6 +739,9 @@
     "creatingPlan": "Creating plan…",
     "autoGeneratePlan": "Auto-generate plan",
     "customizePerSkill": "Customize per skill instead"
+  },
+  "competencyRadar": {
+    "skillRadarAria": "Skill Radar"
   },
   "bridgeGapPage": {
     "backToGapAnalysis": "← Gap Analysis",
@@ -1048,7 +1112,8 @@
     "pendingHeading": "Pending ({count})",
     "revoke": "Revoke",
     "noValidRowsError": "No rows with an Email column value were found in that file.",
-    "readFileError": "Could not read that file — make sure it's a .csv or .xlsx export."
+    "readFileError": "Could not read that file — make sure it's a .csv or .xlsx export.",
+    "emailPlaceholder": "employee@company.com"
   },
   "organizationProfileForm": {
     "title": "Company profile",
@@ -1075,10 +1140,13 @@
     "title": "Brand your workspace",
     "description": "Optional — your logo and accent color apply across every employee's dashboard in this workspace, not just this page.",
     "logoLabel": "Logo",
+    "logoPreviewAlt": "Workspace logo preview",
     "uploadImage": "Or upload an image",
     "uploading": "Uploading…",
     "accentColorLabel": "Accent color",
     "pickColorAria": "Pick accent color",
+    "chooseImageFileError": "Please choose an image file",
+    "imageTooLargeError": "Image must be under 3MB",
     "save": "Save",
     "saved": "Saved"
   },
@@ -1115,6 +1183,7 @@
     "tableAssessments": "Assessments",
     "tablePlans": "Plans",
     "tableMilestones": "Milestones",
+    "tableActionsAria": "Actions",
     "assignTaskLink": "Assign task",
     "teamCapabilityPyramid": "Team capability pyramid",
     "teamCapabilityPyramidDesc": "The same 8 dimensions from the heatmap below, grouped by tier and averaged across everyone who's run a Gap Analysis.",

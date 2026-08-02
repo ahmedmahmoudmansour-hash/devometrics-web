@@ -218,7 +218,7 @@ export default function InviteEmployeeForm({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
             <div>
               <label style={labelStyle}>{t("emailLabel")}</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="employee@company.com" style={fieldStyle} />
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("emailPlaceholder")} style={fieldStyle} />
             </div>
             <div>
               <label style={labelStyle}>{t("jobTitleLabel")}</label>

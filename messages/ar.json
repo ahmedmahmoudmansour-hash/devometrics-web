@@ -384,6 +384,9 @@
     "ctaText": "اكتشف أين تكمن فجوتك فعليًا — أجرِ تحليل فجوة مجاني مع ديفومتركس.",
     "ctaButton": "ابدأ الآن"
   },
+  "sidebarNav": {
+    "searchTooltip": "بحث (Ctrl+K)"
+  },
   "dashboardHome": {
     "heading": "تقدّمك",
     "sectionToday": "اليوم",
@@ -593,6 +596,64 @@
     "resourceTierLabel": "ميزانية الموارد",
     "selectBudget": "اختر ميزانية"
   },
+  "personalizationOptions": {
+    "careerStage": {
+      "student": "طالب",
+      "jobSeeker": "باحث عن عمل",
+      "earlyCareerProfessional": "محترف في بداية مسيرته المهنية",
+      "professional": "محترف",
+      "manager": "مدير",
+      "executive": "تنفيذي",
+      "careerChanger": "متحوّل مهني",
+      "entrepreneurFreelancer": "رائد أعمال / مستقل"
+    },
+    "accommodationName": {
+      "standard": "قياسي",
+      "biteSizedLowDistraction": "مقسّم إلى أجزاء صغيرة وقليل التشتيت",
+      "audioVideoFirst": "الصوت/الفيديو أولاً",
+      "structuredPredictable": "منظّم وقابل للتوقع"
+    },
+    "accommodationDescription": {
+      "standard": "بدون ترتيب خاص — الوتيرة والصيغة الافتراضية.",
+      "biteSizedLowDistraction": "جلسات أقصر، مقسّمة إلى خطوات أصغر. مناسب إذا كانت الفترات الزمنية الطويلة غير المنظمة لا تناسبك.",
+      "audioVideoFirst": "يُعطي الأولوية للاستماع والمشاهدة على القراءة المكثفة كلما أتاح المصدر الخيارين.",
+      "structuredPredictable": "جدولة ثابتة وواضحة — نفس اليوم والوقت كل أسبوع، دون أي غموض حول التوقيت أو الكمية."
+    },
+    "resourceTierName": {
+      "premium": "موارد مميزة (مدفوعة)",
+      "budgetConsciousMix": "مزيج موفّر للميزانية",
+      "freeOpenOnly": "موارد مجانية ومفتوحة فقط"
+    },
+    "resourceTierHint": {
+      "premium": "تتفاوت الأسعار الفعلية كثيرًا حسب الصيغة — من مجاني إلى نحو 20 دولارًا شهريًا للقراءة، و30–60 دولارًا لشهادة دورة، و75–300 دولار شهريًا للإرشاد، و200–1500 دولار لبرنامج الدفعات الجماعية.",
+      "budgetConsciousMix": "يمزج بين الموارد المجانية وخيارات مدفوعة منخفضة التكلفة أحيانًا، لكنه يتجنّب برامج الإرشاد أو الدفعات الجماعية المكلفة — ويُقترح بدلاً منها بدائل مجتمعية مجانية.",
+      "freeOpenOnly": "ستوجّهك خطتك إلى موارد مجانية ومفتوحة (مواد تعليمية مفتوحة، منصات مجانية مُنتقاة، مكتبتك العامة) بدلاً من افتراض دورات مدفوعة."
+    },
+    "learningFormatName": {
+      "readingSelfStudy": "القراءة والدراسة الذاتية",
+      "researchCaseStudies": "البحث ودراسات الحالة",
+      "videoCourses": "دورات فيديو",
+      "shortCoursesWorkshops": "دورات وورش عمل قصيرة",
+      "professionalCertifications": "شهادات مهنية",
+      "webinarsVirtualEvents": "ندوات إلكترونية وفعاليات افتراضية",
+      "handsOnProjects": "مشاريع عملية",
+      "mentorshipCoaching": "الإرشاد والتدريب",
+      "peerLearning": "التعلّم مع الأقران",
+      "liveCohortClasses": "فصول جماعية مباشرة"
+    },
+    "learningFormatDescription": {
+      "readingSelfStudy": "مقالات أو كتب أو وثائق تدرسها بنفسك، وبالوتيرة التي تناسبك.",
+      "researchCaseStudies": "دراسات حالة حقيقية، أو تحليلات لاحقة، أو أوراق بحثية — أكثر استنادًا إلى الأدلة من القراءة العامة.",
+      "videoCourses": "منهج فيديو مُسجَّل ومنظّم تشاهده وفق جدولك الخاص.",
+      "shortCoursesWorkshops": "جلسة أو جلستان مكثّفتان وقصيرتان — تُنجَز خلال يوم أو أيام قليلة، لا على مدى أسابيع.",
+      "professionalCertifications": "مؤهَّل معترف به تسعى لنيله، وغالبًا ما ينتهي باختبار أو تقييم.",
+      "webinarsVirtualEvents": "جلسة واحدة مباشرة أو مسجَّلة عبر الإنترنت — محاضرة أو عرض توضيحي أو حلقة نقاش، وليست برنامجًا مستمرًا.",
+      "handsOnProjects": "التعلّم بالممارسة — تطبيق مهارة مباشرة على مهمة أو مشروع حقيقي لديك بالفعل.",
+      "mentorshipCoaching": "توجيه فردي من شخص أكثر خبرة منك.",
+      "peerLearning": "التعلّم إلى جانب أشخاص في مستوى مشابه — دون مدرّب رسمي، بل بمساءلة متبادلة فقط.",
+      "liveCohortClasses": "برنامج منظّم يمتد عدة أسابيع، تخوضه مباشرة مع نفس المجموعة من الأشخاص طوال الوقت."
+    }
+  },
   "welcomeModal": {
     "welcomeTitleNamed": "مرحبًا، {name} 👋",
     "welcomeTitle": "مرحبًا 👋",
@@ -678,6 +739,9 @@
     "creatingPlan": "جارٍ إنشاء الخطة…",
     "autoGeneratePlan": "توليد الخطة تلقائيًا",
     "customizePerSkill": "تخصيص كل مهارة بدلاً من ذلك"
+  },
+  "competencyRadar": {
+    "skillRadarAria": "رادار المهارات"
   },
   "bridgeGapPage": {
     "backToGapAnalysis": "← تحليل الفجوة",
@@ -1048,7 +1112,8 @@
     "pendingHeading": "قيد الانتظار ({count})",
     "revoke": "إلغاء",
     "noValidRowsError": "لم يُعثر على أي صف يحتوي على قيمة في عمود البريد الإلكتروني في ذلك الملف.",
-    "readFileError": "تعذّرت قراءة الملف — تأكد من أنه بصيغة ‎.csv أو ‎.xlsx صحيحة."
+    "readFileError": "تعذّرت قراءة الملف — تأكد من أنه بصيغة ‎.csv أو ‎.xlsx صحيحة.",
+    "emailPlaceholder": "employee@company.com"
   },
   "organizationProfileForm": {
     "title": "ملف الشركة",
@@ -1075,10 +1140,13 @@
     "title": "خصص هوية مساحة عملك",
     "description": "اختياري — يُطبَّق شعارك ولونك المميز على لوحة تحكم كل موظف في مساحة العمل هذه، وليس هذه الصفحة فقط.",
     "logoLabel": "الشعار",
+    "logoPreviewAlt": "معاينة شعار مساحة العمل",
     "uploadImage": "أو ارفع صورة",
     "uploading": "جارٍ الرفع…",
     "accentColorLabel": "اللون المميز",
     "pickColorAria": "اختر اللون المميز",
+    "chooseImageFileError": "الرجاء اختيار ملف صورة",
+    "imageTooLargeError": "يجب ألا يتجاوز حجم الصورة 3 ميغابايت",
     "save": "حفظ",
     "saved": "تم الحفظ"
   },
@@ -1115,6 +1183,7 @@
     "tableAssessments": "التقييمات",
     "tablePlans": "الخطط",
     "tableMilestones": "المعالم",
+    "tableActionsAria": "الإجراءات",
     "assignTaskLink": "تكليف مهمة",
     "teamCapabilityPyramid": "هرم قدرات الفريق",
     "teamCapabilityPyramidDesc": "نفس المحاور الثمانية من الخريطة الحرارية أدناه، مجمعة حسب المستوى ومتوسطة لجميع من أجروا تحليل الفجوة.",

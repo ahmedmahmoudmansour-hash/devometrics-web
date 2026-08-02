@@ -362,7 +362,7 @@ export default function GapAnalysisFlow({
                       await updateProfile(values.location, values.learningPreferences, values.careerStage, values.accommodation, values.resourceTier);
                       const result = await generatePlanFromAnalysis(analysis.id, horizon);
                       if (result?.planId) setCreatedPlanId(result.planId);
-                      else setError(result?.error ?? "Something went wrong");
+                      else setError(result?.error ?? t("errorFallback"));
                     })
                   }
                   style={{

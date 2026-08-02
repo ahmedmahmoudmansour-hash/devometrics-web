@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   ListChecks,
@@ -113,6 +114,7 @@ export default function SidebarNav({
   hasManager: boolean;
   hasOrgMembership: boolean;
 }) {
+  const t = useTranslations("sidebarNav");
   const pathname = usePathname();
   const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership);
 
@@ -183,7 +185,7 @@ export default function SidebarNav({
 
       <button
         type="button"
-        title="Search (Ctrl+K)"
+        title={t("searchTooltip")}
         onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
         style={{
           display: "flex",

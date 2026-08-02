@@ -118,7 +118,7 @@ export default async function CompanyEmployeesPage() {
                         <th style={{ ...headStyle, textAlign: "end" }}>{t("tableAssessments")}</th>
                         <th style={{ ...headStyle, textAlign: "end" }}>{t("tablePlans")}</th>
                         <th style={{ ...headStyle, textAlign: "end" }}>{t("tableMilestones")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }} aria-label="Actions" />
+                        <th style={{ ...headStyle, textAlign: "end" }} aria-label={t("tableActionsAria")} />
                       </tr>
                     </thead>
                     <tbody>
