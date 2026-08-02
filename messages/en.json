@@ -4489,5 +4489,23 @@
     "creatingButton": "Creating…",
     "createButton": "Create workspace",
     "successMessage": "Workspace created — invite sent."
+  },
+  "workflowAutomation": {
+    "title": "Automations",
+    "description": "Curated automations that connect features you already use — turn each one on or off for your workspace.",
+    "recipes": {
+      "hire_to_onboarding": {
+        "title": "New hire onboarding",
+        "description": "When a hired candidate joins, automatically give them a short onboarding checklist and email their manager to schedule a 30-day check-in."
+      },
+      "low_score_to_reassessment": {
+        "title": "Low assessment score follow-up",
+        "description": "When someone scores below 50 on an assessment, add a task to review the results now and a reminder to retake it in 60 days."
+      },
+      "high_potential_to_succession": {
+        "title": "High-potential flag to manager",
+        "description": "When someone's Gap Analysis places them in the High Potential zone, email their manager to consider them for succession planning."
+      }
+    }
   }
 }

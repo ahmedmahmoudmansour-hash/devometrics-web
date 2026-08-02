@@ -14,6 +14,8 @@ import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandin
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
 import CompanyWidgetGrid, { COMPANY_WIDGET_ICONS, type CompanyWidget } from "@/components/dashboard/CompanyWidgetGrid";
+import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
+import { getAutomationSettings } from "@/lib/automations/actions";
 
 // Live counts for the widget grid — each an isolated, defensive count query
 // (head:true, no rows fetched) against a table that may belong to a
@@ -61,6 +63,7 @@ export default async function CompanyProfilePage() {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
   const overview = await buildCompanyOverview(data);
+  const automationSettings = data.organizationId ? await getAutomationSettings(data.organizationId) : null;
 
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
@@ -304,6 +307,10 @@ export default async function CompanyProfilePage() {
         )}
 
         {widgets.length > 0 && <CompanyWidgetGrid widgets={widgets} />}
+
+        {data.organizationId && automationSettings && (
+          <AutomationSettingsPanel organizationId={data.organizationId} initialSettings={automationSettings} />
+        )}
 
         {data.organizationId && (
           <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 24 }}>

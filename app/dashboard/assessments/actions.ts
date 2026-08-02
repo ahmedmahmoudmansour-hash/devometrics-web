@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { FREE_ASSESSMENT_LIMIT } from "@/lib/limits";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { runLowScoreToReassessment } from "@/lib/automations/recipes";
 import type { CaseStudyResponse, Profile } from "@/lib/supabase/types";
 
 export async function saveAssessmentResult(
@@ -50,4 +52,12 @@ export async function saveAssessmentResult(
   });
   revalidatePath("/dashboard/assessments");
   revalidatePath(`/dashboard/assessments/${slug}`);
+
+  const membership = await getMyOrganizationMembership();
+  await runLowScoreToReassessment(supabase, {
+    organizationId: membership?.organization_id ?? null,
+    userId: user.id,
+    assessmentSlug: slug,
+    score,
+  });
 }

@@ -4,6 +4,10 @@ import { extractCompetencies } from "@/lib/gap-analysis/extract";
 import { inferRoleContext } from "@/lib/gap-analysis/inferRoleContext";
 import { careerHealthScore } from "@/lib/gap-analysis/dimensions";
 import { buildBackgroundContext } from "@/lib/gap-analysis/backgroundContext";
+import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { runHighPotentialToSuccession } from "@/lib/automations/recipes";
+import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import {
   MAX_CV_LENGTH,
   MAX_JOB_DESCRIPTION_LENGTH,
@@ -139,6 +143,21 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: "Failed to save gap analysis" }, { status: 500 });
+  }
+
+  const dimensionLevels: Partial<Record<CompetencyDimension, number>> = {};
+  for (const c of competencies) dimensionLevels[c.dimension] = c.currentLevel;
+  const point = computeNineBoxPoint(dimensionLevels);
+  if (point && zoneForPoint(point.x, point.y).label === "High Potential") {
+    const [membership, { data: profile }] = await Promise.all([
+      getMyOrganizationMembership(),
+      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>(),
+    ]);
+    await runHighPotentialToSuccession(supabase, {
+      organizationId: membership?.organization_id ?? null,
+      userId: user.id,
+      userName: profile?.full_name || user.email || "A team member",
+    });
   }
 
   return NextResponse.json({ analysis: data });
