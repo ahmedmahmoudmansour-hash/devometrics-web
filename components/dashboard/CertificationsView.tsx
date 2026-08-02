@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   createCertification,
   updateCertification,
@@ -9,11 +10,19 @@ import {
 } from "@/lib/certifications/actions";
 import { expiryStatus, type Certification, type ExpiryStatus } from "@/lib/certifications/types";
 
-const STATUS_STYLE: Record<ExpiryStatus, { color: string; label: string }> = {
-  expired: { color: "248,113,113", label: "Expired" },
-  soon: { color: "240,184,64", label: "Expiring soon" },
-  ok: { color: "0,201,167", label: "Valid" },
-  none: { color: "148,163,184", label: "No expiry" },
+const STATUS_STYLE: Record<ExpiryStatus, { color: string }> = {
+  expired: { color: "248,113,113" },
+  soon: { color: "240,184,64" },
+  ok: { color: "0,201,167" },
+  none: { color: "148,163,184" },
+};
+
+// t must come from useTranslations("certificationsView").
+const STATUS_LABEL_KEY: Record<ExpiryStatus, string> = {
+  expired: "statusExpired",
+  soon: "statusExpiringSoon",
+  ok: "statusValid",
+  none: "statusNoExpiry",
 };
 
 function inputStyle(): React.CSSProperties {
@@ -34,6 +43,7 @@ function labelStyle(): React.CSSProperties {
 }
 
 function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
+  const t = useTranslations("certificationsView");
   const [open, setOpen] = useState(false);
   const [credentialName, setCredentialName] = useState("");
   const [issuer, setIssuer] = useState("");
@@ -81,7 +91,7 @@ function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
           cursor: "pointer",
         }}
       >
-        + Add certification
+        {t("addCertification")}
       </button>
     );
   }
@@ -93,23 +103,23 @@ function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
     >
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={labelStyle()}>Credential name *</label>
-          <input style={inputStyle()} value={credentialName} onChange={(e) => setCredentialName(e.target.value)} required autoFocus placeholder="AWS Solutions Architect — Associate" />
+          <label style={labelStyle()}>{t("credentialNameLabel")}</label>
+          <input style={inputStyle()} value={credentialName} onChange={(e) => setCredentialName(e.target.value)} required autoFocus placeholder={t("credentialNamePlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle()}>Issuer</label>
-          <input style={inputStyle()} value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Amazon Web Services" />
+          <label style={labelStyle()}>{t("issuerLabel")}</label>
+          <input style={inputStyle()} value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder={t("issuerPlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle()}>Credential URL</label>
-          <input style={inputStyle()} value={credentialUrl} onChange={(e) => setCredentialUrl(e.target.value)} placeholder="https://…" />
+          <label style={labelStyle()}>{t("credentialUrlLabel")}</label>
+          <input style={inputStyle()} value={credentialUrl} onChange={(e) => setCredentialUrl(e.target.value)} placeholder={t("credentialUrlPlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle()}>Issued date</label>
+          <label style={labelStyle()}>{t("issuedDateLabel")}</label>
           <input type="date" style={inputStyle()} value={issuedDate} onChange={(e) => setIssuedDate(e.target.value)} />
         </div>
         <div>
-          <label style={labelStyle()}>Expiry date</label>
+          <label style={labelStyle()}>{t("expiryDateLabel")}</label>
           <input type="date" style={inputStyle()} value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
         </div>
       </div>
@@ -120,14 +130,14 @@ function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
           disabled={isPending}
           style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
         >
-          {isPending ? "Saving…" : "Save"}
+          {isPending ? t("saving") : t("save")}
         </button>
         <button
           type="button"
           onClick={reset}
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </form>
@@ -135,6 +145,7 @@ function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
 }
 
 function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged: () => void }) {
+  const t = useTranslations("certificationsView");
   const [expanded, setExpanded] = useState(false);
   const [credentialId, setCredentialId] = useState(cert.credential_id ?? "");
   const [notes, setNotes] = useState(cert.notes ?? "");
@@ -142,6 +153,7 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
   const [isPending, startTransition] = useTransition();
   const status = expiryStatus(cert.expiry_date);
   const style = STATUS_STYLE[status];
+  const statusLabel = t(STATUS_LABEL_KEY[status]);
 
   function saveDetails() {
     startTransition(async () => {
@@ -151,7 +163,7 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
   }
 
   function remove() {
-    if (!confirm(`Remove ${cert.credential_name}?`)) return;
+    if (!confirm(t("removeConfirm", { name: cert.credential_name }))) return;
     startTransition(async () => {
       await deleteCertification(cert.id);
       onChanged();
@@ -164,12 +176,12 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
         <div>
           <p style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)" }}>{cert.credential_name}</p>
           <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>
-            {cert.issuer || "Issuer not set"}
-            {cert.expiry_date ? ` · expires ${new Date(cert.expiry_date).toLocaleDateString()}` : ""}
+            {cert.issuer || t("issuerNotSet")}
+            {cert.expiry_date ? t("expiresOn", { date: new Date(cert.expiry_date).toLocaleDateString() }) : ""}
           </p>
           {cert.credential_url && (
             <a href={cert.credential_url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: "var(--teal)" }}>
-              View credential ↗
+              {t("viewCredential")}
             </a>
           )}
         </div>
@@ -186,14 +198,14 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
               whiteSpace: "nowrap",
             }}
           >
-            {style.label}
+            {statusLabel}
           </span>
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "var(--text-muted)", cursor: "pointer" }}
           >
-            {expanded ? "Hide" : "Details"}
+            {expanded ? t("hide") : t("details")}
           </button>
         </div>
       </div>
@@ -202,21 +214,21 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={labelStyle()}>Credential ID</label>
+              <label style={labelStyle()}>{t("credentialIdLabel")}</label>
               <input style={inputStyle()} value={credentialId} onChange={(e) => setCredentialId(e.target.value)} />
             </div>
             <div>
-              <label style={labelStyle()}>Expiry date</label>
+              <label style={labelStyle()}>{t("expiryDateLabel")}</label>
               <input type="date" style={inputStyle()} value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
             </div>
           </div>
           <div>
-            <label style={labelStyle()}>Notes</label>
+            <label style={labelStyle()}>{t("notesLabel")}</label>
             <textarea
               style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Renewal process, CE hours needed…"
+              placeholder={t("notesPlaceholder")}
             />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -226,10 +238,10 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
               disabled={isPending}
               style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
             >
-              {isPending ? "Saving…" : "Save details"}
+              {isPending ? t("saving") : t("saveDetails")}
             </button>
             <button type="button" onClick={remove} disabled={isPending} style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}>
-              Remove
+              {t("remove")}
             </button>
           </div>
         </div>
@@ -239,6 +251,7 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
 }
 
 export default function CertificationsView({ initial }: { initial: Certification[] }) {
+  const t = useTranslations("certificationsView");
   const [certifications, setCertifications] = useState(initial);
   const [, startTransition] = useTransition();
 
@@ -257,15 +270,15 @@ export default function CertificationsView({ initial }: { initial: Certification
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>{certifications.length}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Tracked</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("tracked")}</p>
         </div>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--amber)" }}>{soonCount}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Expiring soon</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("statusExpiringSoon")}</p>
         </div>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
           <p style={{ fontSize: 20, fontWeight: 800, color: "#f87171" }}>{expiredCount}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Expired</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("statusExpired")}</p>
         </div>
       </div>
 
@@ -273,7 +286,7 @@ export default function CertificationsView({ initial }: { initial: Certification
 
       {certifications.length === 0 ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>No certifications tracked yet — add your first one above.</p>
+          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("emptyState")}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -283,8 +296,7 @@ export default function CertificationsView({ initial }: { initial: Certification
         </div>
       )}
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
-        Private to you. If a credential has an expiry date within 30 days, you&apos;ll get an email
-        reminder — at most one every few days, not a daily nag.
+        {t("privacyNote")}
       </p>
     </div>
   );
