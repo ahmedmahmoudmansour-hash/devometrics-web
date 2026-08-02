@@ -16,6 +16,7 @@ import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretationDisplay, bigFiveTraitLabel } from "@/lib/personality/bigFive";
 import { resolveAssessmentDisplayName } from "@/lib/assessments/catalog";
+import { resolveAssignableDisplayName } from "@/lib/assessments/assignableCatalog";
 import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection";
 import ManagerNotesSection from "@/components/dashboard/ManagerNotesSection";
 
@@ -38,6 +39,7 @@ export default async function EmployeeDetailPage({
   const tInterp = await getTranslations("bigFiveInterpretations");
   const tBands = await getTranslations("scoreBands");
   const tCatalog = await getTranslations("assessmentCatalog");
+  const tExercise = await getTranslations("caseStudyExercises");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const data = await buildEmployeeDetail(userId);
@@ -48,6 +50,7 @@ export default async function EmployeeDetailPage({
     plans,
     gapAnalysis,
     assessmentResults,
+    exerciseAttempts,
     resumeScore,
     assignedAssessments,
     orgDimensionAverages,
@@ -248,7 +251,7 @@ export default async function EmployeeDetailPage({
               />
             )}
 
-            {(assessmentResults.length > 0 || resumeScore !== null) && (
+            {(assessmentResults.length > 0 || exerciseAttempts.length > 0 || resumeScore !== null) && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
                 {resumeScore !== null && (
                   <div className="print-avoid-break" style={card}>
@@ -288,6 +291,28 @@ export default async function EmployeeDetailPage({
                           {t("moreCount", { count: assessmentResults.length - 6 })}
                         </p>
                       )}
+                    </div>
+                  </div>
+                )}
+                {exerciseAttempts.length > 0 && (
+                  <div className="print-avoid-break" style={{ ...card, gridColumn: "1 / -1" }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
+                      {t("exercisesCount", { count: exerciseAttempts.length })}
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      {exerciseAttempts.map((a) => (
+                        <div key={a.slug}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600 }}>
+                            <span style={{ color: "var(--text)" }}>{a.name}</span>
+                            <span className="mono" style={{ color: levelText(a.score), fontWeight: 700 }}>{a.score}/100</span>
+                          </div>
+                          {a.report && (
+                            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>
+                              <strong style={{ color: "var(--text)" }}>{t("exerciseRecommendation")}</strong> {a.report.recommendation}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -412,7 +437,7 @@ export default async function EmployeeDetailPage({
           <GenerateAssessmentSummaryButton
             employeeUserId={userId}
             hasSummary={!!assessmentSummary}
-            pendingAssignments={assignedAssessments.filter((a) => !a.completed).map((a) => resolveAssessmentDisplayName(tCatalog, a.slug))}
+            pendingAssignments={assignedAssessments.filter((a) => !a.completed).map((a) => resolveAssignableDisplayName(tCatalog, tExercise, a.slug))}
           />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />

@@ -414,6 +414,7 @@
   },
   "sidebarNav": {
     "search": "بحث",
+    "searchTooltip": "بحث (Ctrl+K)",
     "progress": "التقدم",
     "understandSection": "الفهم",
     "discovery": "الاكتشاف",
@@ -1544,6 +1545,8 @@
     "leadershipGrowthAxis": "مؤشر النمو القيادي",
     "resumeIntelligence": "ذكاء السيرة الذاتية",
     "assessmentsCount": "التقييمات ({count})",
+    "exercisesCount": "تمارين دراسة الحالة ({count})",
+    "exerciseRecommendation": "التوصية:",
     "moreCount": "+ {count} أخرى",
     "workingStyle": "أسلوب العمل (السمات الخمس الكبرى)",
     "workingStyleDesc": "مُبلَّغ عنه ذاتيًا، وشاركه {firstName} طواعية — مدخل للوعي الذاتي في محادثات التطوير، وليس إشارة للتوظيف أو الترقية أو التعويض.",

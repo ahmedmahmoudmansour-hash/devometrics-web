@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { assignAssessment, removeAssignedAssessment } from "@/lib/organizations/actions";
-import { ASSESSMENTS, resolveAssessmentDisplayName, type AssessmentTranslator } from "@/lib/assessments/catalog";
+import { ASSESSMENTS, type AssessmentTranslator } from "@/lib/assessments/catalog";
 import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
+import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
+import { resolveAssignableDisplayName } from "@/lib/assessments/assignableCatalog";
 
 // English Proficiency and Cognitive Reasoning live outside ASSESSMENTS
 // (they're objective tests, not the self-report catalog — see
@@ -13,11 +15,20 @@ import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
 // admins should still be able to push them to someone the same way as any
 // other assessment, so they're added here rather than to the catalog
 // itself (which would wrongly route them through the Likert AssessmentForm).
-function buildAssignable(t: AssessmentTranslator) {
+// Case Study Exercises (lib/assessments/caseStudyExercises.ts) are a
+// fourth, separate catalog — same reasoning, added here rather than
+// merged into ASSESSMENTS since they're a genuinely different exercise
+// format (timed, written, AI-scored) with their own completion table.
+function buildAssignable(t: AssessmentTranslator, tExercise: (key: string) => string) {
   return [
-    ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: resolveAssessmentDisplayName(t, a.slug), level: a.level as string })),
-    { slug: ENGLISH_PROFICIENCY_SLUG, name: resolveAssessmentDisplayName(t, ENGLISH_PROFICIENCY_SLUG), level: "A1–C2" },
-    { slug: COGNITIVE_ABILITY_SLUG, name: resolveAssessmentDisplayName(t, COGNITIVE_ABILITY_SLUG), level: "Numerical/Verbal/Logical" },
+    ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: resolveAssignableDisplayName(t, tExercise, a.slug), level: a.level as string })),
+    { slug: ENGLISH_PROFICIENCY_SLUG, name: resolveAssignableDisplayName(t, tExercise, ENGLISH_PROFICIENCY_SLUG), level: "A1–C2" },
+    { slug: COGNITIVE_ABILITY_SLUG, name: resolveAssignableDisplayName(t, tExercise, COGNITIVE_ABILITY_SLUG), level: "Numerical/Verbal/Logical" },
+    ...CASE_STUDY_EXERCISES.map((e) => ({
+      slug: e.slug,
+      name: resolveAssignableDisplayName(t, tExercise, e.slug),
+      level: `${e.level} exercise`,
+    })),
   ];
 }
 
@@ -40,7 +51,8 @@ export default function AssignAssessmentForm({
 }) {
   const t = useTranslations("assignAssessmentForm");
   const tCatalog = useTranslations("assessmentCatalog");
-  const assignable = buildAssignable(tCatalog);
+  const tExercise = useTranslations("caseStudyExercises");
+  const assignable = buildAssignable(tCatalog, tExercise);
   const assignedSlugs = new Set(assigned.map((a) => a.slug));
   const available = assignable.filter((a) => !assignedSlugs.has(a.slug));
   const [slug, setSlug] = useState(available[0]?.slug ?? "");
@@ -71,7 +83,7 @@ export default function AssignAssessmentForm({
           {assigned.map((a) => (
             <div key={a.slug} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
               <span style={{ color: "var(--text)" }}>
-                {resolveAssessmentDisplayName(tCatalog, a.slug)}{" "}
+                {resolveAssignableDisplayName(tCatalog, tExercise, a.slug)}{" "}
                 {a.completed ? (
                   <span style={{ color: "var(--teal)", fontSize: 11, fontWeight: 700 }}>{t("completed")}</span>
                 ) : (

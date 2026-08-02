@@ -16,7 +16,13 @@
 -- on 0091 having run first (it redefines the same policy again,
 -- superseding it). 0093 depends on 0090's ai_usage_events table and
 -- 0013's is_admin() too. Paste order is already correct as laid out below.
--- 0089 and 0090 don't depend on each other or on 0091/0092/0093.
+-- 0089 and 0090 don't depend on each other or on 0091/0092/0093. 0094 adds
+-- an admin-read RLS policy on case_study_exercise_attempts (previously had
+-- none at all) so org admins can see Case Study Exercise results once an
+-- exercise is assigned via the existing assigned_assessments mechanism.
+-- 0094 depends only on 0016's is_org_admin_of_user() and 0028's
+-- case_study_exercise_attempts table, both from much earlier migrations
+-- than this file — not on anything else pasted here.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -276,3 +282,27 @@ as $$
     and public.is_admin()
   group by e.user_id;
 $$;
+
+-- ============================================================
+-- 0094: Case Study Exercise admin visibility
+-- ============================================================
+
+-- Case Study Exercises had no admin-read RLS policy at all -- migration
+-- 0028 only granted the employee themselves read/write on their own rows
+-- (auth.uid() = user_id). That's a real gap once an admin assigns an
+-- exercise via the existing assigned_assessments mechanism (0058): the
+-- admin's per-employee report page would query this table and get zero
+-- rows back, no matter what the employee actually submitted, with no
+-- error to explain why.
+--
+-- Same precedent as 0016's existing "Org admins can view their members'
+-- assessment results" policy on assessment_results -- blanket visibility
+-- into an org member's own attempts, not scoped to only
+-- admin-assigned ones, for consistency with how every other
+-- assessment-shaped table in this app already works. is_org_admin_of_user
+-- (0016) is a plain `select exists(...)`, language sql function -- no
+-- multi-row select-into risk, safe to reuse directly inside this policy.
+drop policy if exists "Org admins can view their members' case study exercise attempts" on public.case_study_exercise_attempts;
+create policy "Org admins can view their members' case study exercise attempts"
+  on public.case_study_exercise_attempts for select
+  using (public.is_org_admin_of_user(user_id));

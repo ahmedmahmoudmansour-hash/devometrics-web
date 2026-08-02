@@ -414,6 +414,7 @@
   },
   "sidebarNav": {
     "search": "Search",
+    "searchTooltip": "Search (Ctrl+K)",
     "progress": "Progress",
     "understandSection": "Understand",
     "discovery": "Discovery",
@@ -1544,6 +1545,8 @@
     "leadershipGrowthAxis": "Leadership growth signal",
     "resumeIntelligence": "Resume Intelligence",
     "assessmentsCount": "Assessments ({count})",
+    "exercisesCount": "Case Study Exercises ({count})",
+    "exerciseRecommendation": "Recommendation:",
     "moreCount": "+ {count} more",
     "workingStyle": "Working style (Big Five)",
     "workingStyleDesc": "Self-reported, and shared voluntarily by {firstName} — a self-awareness input for development conversations, not a hiring, promotion, or compensation signal.",

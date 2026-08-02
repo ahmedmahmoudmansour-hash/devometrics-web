@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type {
   AssessmentResult,
+  CaseStudyExerciseAttempt,
   DevelopmentPlan,
   EmployeeAssessmentSummary,
   GapAnalysis,
@@ -14,6 +15,7 @@ import type {
   ManagerNote,
 } from "@/lib/supabase/types";
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
+import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
 
 export { resolveAssessmentName };
@@ -388,6 +390,11 @@ export type EmployeeDetail = {
   plans: (DevelopmentPlan & { milestones: Milestone[] })[];
   gapAnalysis: { competencies: CompetencyScore[]; careerHealthScore: number; targetRole: string; generatedAt: string } | null;
   assessmentResults: { slug: string; name: string; score: number; completedAt: string }[];
+  // Case Study Exercises are a separate catalog/table (case_study_exercise_
+  // attempts, migration 0028) from the Likert assessmentResults above — kept
+  // as its own field rather than merged in, since it carries a structured
+  // report (strengths/gaps/recommendation), not just a score.
+  exerciseAttempts: { slug: string; name: string; score: number; report: CaseStudyExerciseAttempt["report"]; submittedAt: string }[];
   resumeScore: number | null;
   assignedAssessments: { slug: string; name: string; assignedAt: string; completed: boolean }[];
   // Team-wide benchmarks so the report can show where this person stands
@@ -428,6 +435,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     plans: [],
     gapAnalysis: null,
     assessmentResults: [],
+    exerciseAttempts: [],
     resumeScore: null,
     assignedAssessments: [],
     orgDimensionAverages: {},
@@ -496,6 +504,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     { data: plans },
     { data: latestAnalysis },
     { data: assessmentRows },
+    { data: exerciseAttemptRows },
     { data: latestResume },
     { data: assignedRows },
     { data: summaryRow },
@@ -522,6 +531,16 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
       .eq("user_id", employeeUserId)
       .order("completed_at", { ascending: false })
       .returns<Pick<AssessmentResult, "assessment_slug" | "score" | "completed_at">[]>(),
+    // New admin-read policy (migration 0094) — a query error before it's
+    // run just yields null here, same isolated-query graceful degrade as
+    // every other newer table in this function.
+    supabase
+      .from("case_study_exercise_attempts")
+      .select("exercise_slug, score, report, submitted_at")
+      .eq("user_id", employeeUserId)
+      .not("submitted_at", "is", null)
+      .order("submitted_at", { ascending: false })
+      .returns<Pick<CaseStudyExerciseAttempt, "exercise_slug" | "score" | "report" | "submitted_at">[]>(),
     supabase
       .from("resume_analyses")
       .select("overall_score")
@@ -588,6 +607,21 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     }
   }
 
+  const latestExerciseAttemptBySlug = new Map<
+    string,
+    { slug: string; score: number | null; report: CaseStudyExerciseAttempt["report"]; submittedAt: string }
+  >();
+  for (const a of exerciseAttemptRows ?? []) {
+    if (!latestExerciseAttemptBySlug.has(a.exercise_slug)) {
+      latestExerciseAttemptBySlug.set(a.exercise_slug, {
+        slug: a.exercise_slug,
+        score: a.score,
+        report: a.report,
+        submittedAt: a.submitted_at as string,
+      });
+    }
+  }
+
   const planIds = (plans ?? []).map((p) => p.id);
   const { data: milestones } = planIds.length
     ? await supabase
@@ -648,14 +682,20 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     assessmentResults: Array.from(latestAssessmentBySlug.values())
       .map((r) => ({ ...r, name: resolveAssessmentName(r.slug) }))
       .sort((a, b) => b.score - a.score),
+    exerciseAttempts: Array.from(latestExerciseAttemptBySlug.values())
+      .filter((a): a is { slug: string; score: number; report: CaseStudyExerciseAttempt["report"]; submittedAt: string } => a.score !== null)
+      .map((a) => ({ ...a, name: resolveAssignableName(a.slug) }))
+      .sort((a, b) => b.score - a.score),
     assignedAssessments: (assignedRows ?? []).map((r) => ({
       slug: r.assessment_slug,
-      name: resolveAssessmentName(r.assessment_slug),
+      name: resolveAssignableName(r.assessment_slug),
       assignedAt: r.created_at,
-      // Completed if any real result exists for this assessment, regardless
-      // of whether it happened before or after the assignment — someone who
-      // already took it before being assigned shouldn't be shown as pending.
-      completed: latestAssessmentBySlug.has(r.assessment_slug),
+      // Completed if any real result exists for this assessment/exercise,
+      // regardless of whether it happened before or after the assignment —
+      // someone who already took it before being assigned shouldn't be
+      // shown as pending. Checks both tables since an assigned slug could
+      // be either a Likert/objective assessment or a Case Study Exercise.
+      completed: latestAssessmentBySlug.has(r.assessment_slug) || latestExerciseAttemptBySlug.has(r.assessment_slug),
     })),
     resumeScore: latestResume?.overall_score ?? null,
     orgDimensionAverages: companyData.dimensionAverages,

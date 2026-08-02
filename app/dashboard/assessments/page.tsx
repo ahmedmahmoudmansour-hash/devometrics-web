@@ -85,25 +85,40 @@ export default async function AssessmentsPage() {
     if (!latestBySlug.has(r.assessment_slug)) latestBySlug.set(r.assessment_slug, r);
   }
 
-  // English Proficiency and Cognitive Reasoning live outside ASSESSMENTS
-  // (they're objective tests, not the self-report catalog) — without this,
-  // someone assigned either would never see it in the "Assigned to you"
-  // callout below, even though the admin-side assignment picker already
-  // lets them be assigned.
-  const pendingAssigned = (assignedRows ?? [])
-    .map((r) =>
-      r.assessment_slug === ENGLISH_PROFICIENCY_SLUG
-        ? { slug: ENGLISH_PROFICIENCY_SLUG, name: t("englishProficiencyName") }
-        : r.assessment_slug === COGNITIVE_ABILITY_SLUG
-        ? { slug: COGNITIVE_ABILITY_SLUG, name: t("cognitiveReasoningName") }
-        : ASSESSMENTS.find((a) => a.slug === r.assessment_slug)
-    )
-    .filter((a): a is { slug: string; name: string } => !!a && !latestBySlug.has(a.slug));
-
   const latestAttemptBySlug = new Map<string, CaseStudyExerciseAttempt>();
   for (const a of exerciseAttempts ?? []) {
     if (!latestAttemptBySlug.has(a.exercise_slug)) latestAttemptBySlug.set(a.exercise_slug, a);
   }
+
+  // English Proficiency and Cognitive Reasoning live outside ASSESSMENTS
+  // (they're objective tests, not the self-report catalog) — without this,
+  // someone assigned either would never see it in the "Assigned to you"
+  // callout below, even though the admin-side assignment picker already
+  // lets them be assigned. Case Study Exercises are a third, separate
+  // catalog with their own completion table (case_study_exercise_attempts,
+  // not assessment_results) and their own route
+  // (/dashboard/assessments/exercise/[slug], not /dashboard/assessments/[slug])
+  // — kind carries which one so the link below routes to the right place.
+  const pendingAssigned = (assignedRows ?? [])
+    .map((r) => {
+      if (r.assessment_slug === ENGLISH_PROFICIENCY_SLUG) {
+        return { slug: ENGLISH_PROFICIENCY_SLUG, name: t("englishProficiencyName"), kind: "assessment" as const };
+      }
+      if (r.assessment_slug === COGNITIVE_ABILITY_SLUG) {
+        return { slug: COGNITIVE_ABILITY_SLUG, name: t("cognitiveReasoningName"), kind: "assessment" as const };
+      }
+      const assessment = ASSESSMENTS.find((a) => a.slug === r.assessment_slug);
+      if (assessment) return { slug: assessment.slug, name: assessment.name, kind: "assessment" as const };
+      const exercise = CASE_STUDY_EXERCISES.find((e) => e.slug === r.assessment_slug);
+      if (exercise) {
+        return { slug: exercise.slug, name: localizeCaseStudyExercise(exercise, tExercise).title, kind: "exercise" as const };
+      }
+      return null;
+    })
+    .filter((a): a is { slug: string; name: string; kind: "assessment" | "exercise" } => {
+      if (!a) return false;
+      return a.kind === "exercise" ? !latestAttemptBySlug.has(a.slug) : !latestBySlug.has(a.slug);
+    });
 
   // Goal-based: surface the exercise matching the user's highest-impact gap
   // from their most recent Gap Analysis, if they've run one.
@@ -154,10 +169,10 @@ export default async function AssessmentsPage() {
               {pendingAssigned.map((a) => (
                 <Link
                   key={a.slug}
-                  href={`/dashboard/assessments/${a.slug}`}
+                  href={a.kind === "exercise" ? `/dashboard/assessments/exercise/${a.slug}` : `/dashboard/assessments/${a.slug}`}
                   style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}
                 >
-                  <span style={{ color: "var(--text)" }}>{assessmentDisplayName(tCatalog, a.slug)}</span>
+                  <span style={{ color: "var(--text)" }}>{a.kind === "exercise" ? a.name : assessmentDisplayName(tCatalog, a.slug)}</span>
                   <span style={{ color: "#f0b840", fontWeight: 600 }}>{t("start")}</span>
                 </Link>
               ))}
