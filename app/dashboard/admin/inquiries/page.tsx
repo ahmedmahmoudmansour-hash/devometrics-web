@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { listContactInquiries } from "@/lib/contact/actions";
 
 const TYPE_COLOR: Record<string, string> = {
@@ -9,6 +10,9 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 export default async function AdminInquiriesPage() {
+  const t = await getTranslations("adminInquiriesPage");
+  const locale = await getLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const { isAdmin, inquiries } = await listContactInquiries();
   if (!isAdmin) redirect("/dashboard");
 
@@ -34,20 +38,19 @@ export default async function AdminInquiriesPage() {
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard/admin" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to admin
+            {t("backToAdmin")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Contact inquiries
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-            {inquiries.length} submission{inquiries.length === 1 ? "" : "s"} from the /contact form —
-            each one was also emailed to the matching team inbox when submitted.
+            {t("submissionsCount", { count: inquiries.length })}
           </p>
         </div>
 
         {inquiries.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, textAlign: "center" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No inquiries yet.</p>
+            <p style={{ color: "var(--text-muted)", fontSize: 14 }}>{t("emptyState")}</p>
           </div>
         ) : (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
@@ -55,10 +58,10 @@ export default async function AdminInquiriesPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Type</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>From</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>Message</th>
-                    <th style={{ ...headStyle, textAlign: "left", whiteSpace: "nowrap" }}>Received</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colType")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colFrom")}</th>
+                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colMessage")}</th>
+                    <th style={{ ...headStyle, textAlign: "left", whiteSpace: "nowrap" }}>{t("colReceived")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -85,7 +88,7 @@ export default async function AdminInquiriesPage() {
                       </td>
                       <td style={{ ...cellStyle, maxWidth: 420, whiteSpace: "pre-wrap" }}>{inquiry.message}</td>
                       <td style={{ ...cellStyle, whiteSpace: "nowrap", color: "var(--text-muted)", fontSize: 12 }}>
-                        {new Date(inquiry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {new Date(inquiry.created_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
                       </td>
                     </tr>
                   ))}

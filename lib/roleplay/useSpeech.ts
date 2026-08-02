@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { SpeechConfig, AudioConfig, SpeechRecognizer, ResultReason } from "microsoft-cognitiveservices-speech-sdk";
+import { SpeechConfig, AudioConfig, SpeechRecognizer, ResultReason, PropertyId } from "microsoft-cognitiveservices-speech-sdk";
 import { getAzureSpeechToken } from "@/lib/speech/azureSttToken";
 
 // Minimal shape of the non-standard Web Speech API — not in TS's default DOM
@@ -178,6 +178,16 @@ export function useSpeechInput(onResult: (transcript: string) => void, locale: "
       const { token, region } = await getAzureSpeechToken();
       const speechConfig = SpeechConfig.fromAuthorizationToken(token, region);
       speechConfig.speechRecognitionLanguage = locale === "ar" ? "ar-EG" : "en-US";
+      // Azure's default end-of-utterance silence timeout (~500ms) is tuned
+      // for short commands, not conversational practice — it fires
+      // `recognized` mid-thought on an ordinary pause for breath or a
+      // filler word, fragmenting one sentence into several appended chunks
+      // in the input box. 900ms gives a natural pause room to happen
+      // without being long enough to feel unresponsive when the user
+      // actually stops talking. InitialSilenceTimeoutMs (time to wait for
+      // speech to START at all) is left at the SDK default — that's about
+      // detecting a dead mic, not conversational cadence.
+      speechConfig.setProperty(PropertyId.Speech_SegmentationSilenceTimeoutMs, "900");
 
       const audioConfig = AudioConfig.fromDefaultMicrophoneInput();
       const recognizer = new SpeechRecognizer(speechConfig, audioConfig);

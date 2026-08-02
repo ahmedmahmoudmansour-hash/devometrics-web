@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { updateProfileAiBudget, updateUserSubscriptionTier } from "@/lib/admin/profiles";
 import type { PilotRow } from "@/lib/admin/aggregate";
 import type { SubscriptionTier } from "@/lib/billing/subscriptionTier";
@@ -23,6 +24,7 @@ const headStyle: React.CSSProperties = {
 };
 
 function AiBudgetCell({ row }: { row: PilotRow }) {
+  const t = useTranslations("adminPilotTable");
   const router = useRouter();
   const [value, setValue] = useState(row.monthlyAiBudgetUsd === null ? "" : String(row.monthlyAiBudgetUsd));
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ function AiBudgetCell({ row }: { row: PilotRow }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
-        placeholder="Unlimited"
+        placeholder={t("unlimitedPlaceholder")}
         disabled={isPending}
         style={{
           width: 90,
@@ -69,6 +71,7 @@ function AiBudgetCell({ row }: { row: PilotRow }) {
 }
 
 function SubscriptionTierCell({ row }: { row: PilotRow }) {
+  const t = useTranslations("adminPilotTable");
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -104,13 +107,13 @@ function SubscriptionTierCell({ row }: { row: PilotRow }) {
           outline: "none",
         }}
       >
-        <option value="free">Free</option>
-        <option value="premium">Premium</option>
-        <option value="enterprise">Enterprise</option>
+        <option value="free">{t("tierFree")}</option>
+        <option value="premium">{t("tierPremium")}</option>
+        <option value="enterprise">{t("tierEnterprise")}</option>
       </select>
       {trialLapsed && (
-        <span style={{ fontSize: 10.5, color: "var(--text-muted)" }} title="Trial expired — currently behaves as free">
-          expired
+        <span style={{ fontSize: 10.5, color: "var(--text-muted)" }} title={t("trialExpiredTitle")}>
+          {t("trialExpiredLabel")}
         </span>
       )}
       {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
@@ -119,30 +122,33 @@ function SubscriptionTierCell({ row }: { row: PilotRow }) {
 }
 
 export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
+  const t = useTranslations("adminPilotTable");
+  const locale = useLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th style={{ ...headStyle, textAlign: "left" }}>Name</th>
-              <th style={{ ...headStyle, textAlign: "left" }}>Email</th>
-              <th style={{ ...headStyle, textAlign: "left" }}>Organization</th>
-              <th style={{ ...headStyle, textAlign: "left" }}>Subscription</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>Career Health Score</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>Assessments</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>Plans</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>Milestones</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>Joined</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>AI spend this month</th>
-              <th style={{ ...headStyle, textAlign: "left" }}>Monthly AI budget</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colName")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colEmail")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colOrganization")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colSubscription")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colCareerHealthScore")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colAssessments")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colPlans")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colMilestones")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colJoined")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colAiSpendThisMonth")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colMonthlyAiBudget")}</th>
             </tr>
           </thead>
           <tbody>
             {initial.length === 0 ? (
               <tr>
                 <td style={cellStyle} colSpan={11}>
-                  No pilot participants yet.
+                  {t("noParticipants")}
                 </td>
               </tr>
             ) : (
@@ -153,7 +159,7 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
                     <td style={cellStyle}>{r.name}</td>
                     <td style={cellStyle}>{r.email}</td>
                     <td style={{ ...cellStyle, color: r.organizationName ? "var(--text)" : "var(--text-muted)" }}>
-                      {r.organizationName ?? "— individual —"}
+                      {r.organizationName ?? t("individualLabel")}
                     </td>
                     <td style={cellStyle}>
                       <SubscriptionTierCell row={r} />
@@ -169,7 +175,7 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
                       {r.milestonesDone}/{r.milestonesTotal}
                     </td>
                     <td style={{ ...cellStyle, textAlign: "right" }}>
-                      {new Date(r.joined).toLocaleDateString()}
+                      {new Date(r.joined).toLocaleDateString(dateLocale)}
                     </td>
                     <td style={{ ...cellStyle, textAlign: "right", color: overBudget ? "#f87171" : "var(--text)", fontWeight: overBudget ? 700 : 400 }}>
                       ${r.spendThisMonthUsd.toFixed(2)}

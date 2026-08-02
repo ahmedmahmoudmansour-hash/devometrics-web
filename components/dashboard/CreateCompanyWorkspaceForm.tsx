@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createCompanyWorkspace } from "@/lib/admin/organizations";
 
 const inputStyle: React.CSSProperties = {
@@ -25,6 +26,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function CreateCompanyWorkspaceForm() {
+  const t = useTranslations("createCompanyWorkspaceForm");
   const router = useRouter();
   const [name, setName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -68,49 +70,48 @@ export default function CreateCompanyWorkspaceForm() {
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Create a company workspace</h2>
+      <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2, marginBottom: 16 }}>
-        Provisions the workspace and emails the person you name — they sign up with that address and are
-        attached as its admin automatically. You are never a member of it yourself.
+        {t("description")}
       </p>
       <form onSubmit={submit} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
         <div>
-          <label style={labelStyle}>Company name</label>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Corp" required />
+          <label style={labelStyle}>{t("companyNameLabel")}</label>
+          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("companyNamePlaceholder")} required />
         </div>
         <div>
-          <label style={labelStyle}>Founding admin email</label>
+          <label style={labelStyle}>{t("adminEmailLabel")}</label>
           <input
             style={inputStyle}
             type="email"
             value={adminEmail}
             onChange={(e) => setAdminEmail(e.target.value)}
-            placeholder="admin@acme.com"
+            placeholder={t("adminEmailPlaceholder")}
             required
           />
         </div>
         <div>
-          <label style={labelStyle}>Seat limit</label>
+          <label style={labelStyle}>{t("seatLimitLabel")}</label>
           <input
             style={inputStyle}
             type="number"
             min={0}
             value={seatLimit}
             onChange={(e) => setSeatLimit(e.target.value)}
-            placeholder="Unlimited"
+            placeholder={t("seatLimitPlaceholder")}
           />
         </div>
         <div>
-          <label style={labelStyle}>Website</label>
-          <input style={inputStyle} value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="acme.com" />
+          <label style={labelStyle}>{t("websiteLabel")}</label>
+          <input style={inputStyle} value={website} onChange={(e) => setWebsite(e.target.value)} placeholder={t("websitePlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle}>Industry</label>
-          <input style={inputStyle} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="SaaS" />
+          <label style={labelStyle}>{t("industryLabel")}</label>
+          <input style={inputStyle} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder={t("industryPlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle}>Employee count</label>
-          <input style={inputStyle} value={employeeCount} onChange={(e) => setEmployeeCount(e.target.value)} placeholder="51-200" />
+          <label style={labelStyle}>{t("employeeCountLabel")}</label>
+          <input style={inputStyle} value={employeeCount} onChange={(e) => setEmployeeCount(e.target.value)} placeholder={t("employeeCountPlaceholder")} />
         </div>
         <div style={{ display: "flex", alignItems: "flex-end" }}>
           <button
@@ -129,12 +130,12 @@ export default function CreateCompanyWorkspaceForm() {
               width: "100%",
             }}
           >
-            {isPending ? "Creating…" : "Create workspace"}
+            {isPending ? t("creatingButton") : t("createButton")}
           </button>
         </div>
       </form>
       {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
-      {success && <p style={{ color: "var(--teal)", fontSize: 12.5, marginTop: 10 }}>Workspace created — invite sent.</p>}
+      {success && <p style={{ color: "var(--teal)", fontSize: 12.5, marginTop: 10 }}>{t("successMessage")}</p>}
     </div>
   );
 }

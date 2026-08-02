@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { updateOrgSeatLimit, updateOrgAiBudget, getOrgMemberAiSpend } from "@/lib/admin/organizations";
 import type { AdminOrganizationRow, OrgMemberSpendRow } from "@/lib/admin/organizations";
 
@@ -22,6 +23,7 @@ const headStyle: React.CSSProperties = {
 };
 
 function SeatLimitCell({ org }: { org: AdminOrganizationRow }) {
+  const t = useTranslations("adminOrganizationsTable");
   const router = useRouter();
   const [value, setValue] = useState(org.seatLimit === null ? "" : String(org.seatLimit));
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ function SeatLimitCell({ org }: { org: AdminOrganizationRow }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
-        placeholder="Unlimited"
+        placeholder={t("unlimitedPlaceholder")}
         disabled={isPending}
         style={{
           width: 80,
@@ -62,13 +64,14 @@ function SeatLimitCell({ org }: { org: AdminOrganizationRow }) {
           outline: "none",
         }}
       />
-      {overLimit && <span style={{ fontSize: 10.5, color: "#f87171", fontWeight: 700 }}>over</span>}
+      {overLimit && <span style={{ fontSize: 10.5, color: "#f87171", fontWeight: 700 }}>{t("overLabel")}</span>}
       {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
     </div>
   );
 }
 
 function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
+  const t = useTranslations("adminOrganizationsTable");
   const router = useRouter();
   const [value, setValue] = useState(org.monthlyAiBudgetUsd === null ? "" : String(org.monthlyAiBudgetUsd));
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +99,7 @@ function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
-        placeholder="Unlimited"
+        placeholder={t("unlimitedPlaceholder")}
         disabled={isPending}
         style={{
           width: 90,
@@ -119,6 +122,7 @@ function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
 // Fetched on demand per org, not eagerly for every row, since this is a
 // drill-down most admins won't open for most companies most of the time.
 function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
+  const t = useTranslations("adminOrganizationsTable");
   const [rows, setRows] = useState<OrgMemberSpendRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,13 +133,13 @@ function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
       .then((result) => {
         if (cancelled) return;
         if (!result.isAdmin) {
-          setError("Not authorized");
+          setError(t("notAuthorized"));
         } else {
           setRows(result.rows);
         }
       })
       .catch(() => {
-        if (!cancelled) setError("Could not load employee spend");
+        if (!cancelled) setError(t("couldNotLoadSpend"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -143,25 +147,25 @@ function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [organizationId]);
+  }, [organizationId, t]);
 
   if (loading) {
-    return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>Loading…</p>;
+    return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>{t("loadingEllipsis")}</p>;
   }
   if (error) {
     return <p style={{ fontSize: 12, color: "#f87171", padding: "10px 14px" }}>{error}</p>;
   }
   if (!rows || rows.length === 0) {
-    return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>No AI usage recorded this month.</p>;
+    return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>{t("noUsageThisMonth")}</p>;
   }
 
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
         <tr>
-          <th style={{ ...headStyle, textAlign: "left", background: "transparent" }}>Employee</th>
-          <th style={{ ...headStyle, textAlign: "left", background: "transparent" }}>Email</th>
-          <th style={{ ...headStyle, textAlign: "right", background: "transparent" }}>Spend this month</th>
+          <th style={{ ...headStyle, textAlign: "left", background: "transparent" }}>{t("colEmployee")}</th>
+          <th style={{ ...headStyle, textAlign: "left", background: "transparent" }}>{t("colEmail")}</th>
+          <th style={{ ...headStyle, textAlign: "right", background: "transparent" }}>{t("colSpendThisMonth")}</th>
         </tr>
       </thead>
       <tbody>
@@ -178,12 +182,13 @@ function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
 }
 
 export default function AdminOrganizationsTable({ initial }: { initial: AdminOrganizationRow[] }) {
+  const t = useTranslations("adminOrganizationsTable");
   const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
 
   if (initial.length === 0) {
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, marginBottom: 24 }}>
-        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No company workspaces yet.</p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("noWorkspacesYet")}</p>
       </div>
     );
   }
@@ -191,21 +196,20 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
       <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Company seats</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("sectionTitle")}</h2>
         <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
-          Set how many seats each company gets. Blank means unlimited. Enforced at the database level — a
-          company can&apos;t add a new employee past its limit.
+          {t("sectionDescription")}
         </p>
       </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th style={{ ...headStyle, textAlign: "left" }}>Organization</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>Members</th>
-              <th style={{ ...headStyle, textAlign: "left" }}>Seat limit</th>
-              <th style={{ ...headStyle, textAlign: "right" }}>AI spend this month</th>
-              <th style={{ ...headStyle, textAlign: "left" }}>Monthly AI budget</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colOrganization")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colMembers")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colSeatLimit")}</th>
+              <th style={{ ...headStyle, textAlign: "right" }}>{t("colAiSpendThisMonth")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colMonthlyAiBudget")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}></th>
             </tr>
           </thead>
@@ -242,7 +246,7 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                         cursor: "pointer",
                       }}
                     >
-                      {isExpanded ? "Hide" : "By employee"}
+                      {isExpanded ? t("hideButton") : t("byEmployeeButton")}
                     </button>
                   </td>
                 </tr>
