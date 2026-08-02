@@ -22,7 +22,12 @@
 -- exercise is assigned via the existing assigned_assessments mechanism.
 -- 0094 depends only on 0016's is_org_admin_of_user() and 0028's
 -- case_study_exercise_attempts table, both from much earlier migrations
--- than this file — not on anything else pasted here.
+-- than this file — not on anything else pasted here. 0095 is a data fix,
+-- not a schema change: backfills cost_usd for ai_usage_events rows that
+-- were silently recorded as $0 due to a real bug (Anthropic's
+-- claude-haiku-4-5 alias returns a dated snapshot string in the API
+-- response that the pricing lookup didn't match) — depends only on
+-- 0090's ai_usage_events table.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -306,3 +311,18 @@ drop policy if exists "Org admins can view their members' case study exercise at
 create policy "Org admins can view their members' case study exercise attempts"
   on public.case_study_exercise_attempts for select
   using (public.is_org_admin_of_user(user_id));
+
+-- ============================================================
+-- 0095: Backfill Haiku cost_usd (real $0 bug, not a schema change)
+-- ============================================================
+
+-- Confirmed live: requesting "claude-haiku-4-5" from Anthropic returns
+-- response.model = "claude-haiku-4-5-20251001", which the AI_USAGE_PRICING
+-- map had no entry for -- every Coach/Roleplay call since the Haiku
+-- migration recorded a real row with cost_usd = 0. App code is fixed
+-- (computeCostUsd now strips a trailing -YYYYMMDD before the pricing
+-- lookup); this repairs the rows already written wrong. Safe to run more
+-- than once -- recomputes from stored token counts, doesn't apply a delta.
+update public.ai_usage_events
+set cost_usd = (input_tokens::numeric / 1000000) * 1.0 + (output_tokens::numeric / 1000000) * 5.0
+where model = 'claude-haiku-4-5-20251001';

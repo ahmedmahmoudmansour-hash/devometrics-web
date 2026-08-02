@@ -3,18 +3,34 @@ import type { createClient } from "@/lib/supabase/server";
 // Per 1M tokens, USD. Deliberately the standard/list rate (not any temporary
 // intro/promotional rate) — a budget check should err toward overestimating
 // real cost, never under, so a genuine spend spike is never silently missed.
-// Keys must exactly match the `model` string each call site records
-// (response.model for Anthropic, data.model for OpenRouter) — computeCostUsd
-// silently returns $0 for any key that doesn't match, so a typo here means
-// usage tracking under-reports without ever throwing.
+// Keys must match the bare model alias, not a dated snapshot — see
+// normalizeModelId below for why a raw string-equality lookup here isn't
+// safe. computeCostUsd silently returns $0 for any key that still doesn't
+// match after normalizing, so a typo here means usage tracking
+// under-reports without ever throwing.
 export const AI_USAGE_PRICING: Record<string, { input: number; output: number }> = {
   "claude-sonnet-5": { input: 3.0, output: 15.0 },
   "claude-haiku-4-5": { input: 1.0, output: 5.0 },
   "openai/gpt-5.4-mini": { input: 0.75, output: 4.5 },
 };
 
+// Anthropic aliases can resolve to a dated snapshot in the actual API
+// response even when the alias itself has no date — confirmed live, not
+// from docs: requesting "claude-haiku-4-5" comes back with
+// response.model = "claude-haiku-4-5-20251001", while "claude-sonnet-5"
+// round-trips exactly as requested. Without this, every Haiku-routed call
+// (Coach, Roleplay, coach_grow_memory, coach_session_summary) silently
+// priced at $0 forever — the exact "typo means under-reporting without
+// ever throwing" risk called out above, just triggered by the API itself
+// rather than a typo. Stripping a trailing -YYYYMMDD before the lookup
+// means any current or future dated snapshot still matches its bare
+// AI_USAGE_PRICING key.
+function normalizeModelId(model: string): string {
+  return model.replace(/-\d{8}$/, "");
+}
+
 export function computeCostUsd(model: string, inputTokens: number, outputTokens: number): number {
-  const pricing = AI_USAGE_PRICING[model];
+  const pricing = AI_USAGE_PRICING[normalizeModelId(model)];
   // Unknown model — log $0 rather than throw. Usage tracking must never
   // break the feature it's instrumenting.
   if (!pricing) return 0;
