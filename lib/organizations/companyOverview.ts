@@ -3,6 +3,7 @@ import type { CompanyData } from "@/lib/organizations/aggregate";
 import { buildHiringOverview } from "@/lib/hiring/aggregate";
 import { listOrgSurveys, type OrgSurveySummary } from "@/lib/surveys/actions";
 import { listHighFlightRiskEmployees } from "@/lib/retention/ai";
+import { MIN_INTERVIEWS_FOR_ANALYSIS } from "@/lib/exitInterviews/constants";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { SuccessionRole } from "@/lib/supabase/types";
 
@@ -33,7 +34,9 @@ export type AttentionFlag =
   | { key: "lowSurveyParticipation"; severity: "warning"; href: string; title: string; percent: number; responses: number; assigned: number }
   | { key: "noSuccessor"; severity: "warning"; href: string; count: number; total: number }
   | { key: "openPostingsNoCandidates"; severity: "info"; href: string; count: number }
-  | { key: "highFlightRisk"; severity: "warning"; href: string; name: string; score: number };
+  | { key: "highFlightRisk"; severity: "warning"; href: string; name: string; score: number }
+  | { key: "exitInterviewInsight"; severity: "info"; href: string; summary: string }
+  | { key: "exitInterviewTrendsReady"; severity: "info"; href: string; count: number };
 
 export type CompanyOverview = {
   hiring: { openPostings: number; totalCandidates: number; totalHired: number };
@@ -56,7 +59,7 @@ export async function buildCompanyOverview(company: CompanyData): Promise<Compan
   };
   if (!company.isOrgAdmin || !company.organizationId) return empty;
 
-  const [hiring, surveys, { data: successionRoles }, highRiskEmployees] = await Promise.all([
+  const [hiring, surveys, { data: successionRoles }, highRiskEmployees, exitInterviewState] = await Promise.all([
     buildHiringOverview(),
     listOrgSurveys(),
     // Isolated defensive read, same posture as every other newer table in
@@ -73,6 +76,20 @@ export async function buildCompanyOverview(company: CompanyData): Promise<Compan
     // Only ever surfaces employees an admin already opted to score
     // individually (see lib/retention/ai.ts) — never triggers new scoring.
     listHighFlightRiskEmployees(company.organizationId as string),
+    (async () => {
+      const supabase = await createClient();
+      const [{ count: exitInterviewCount }, { data: latestAnalysis }] = await Promise.all([
+        supabase.from("exit_interviews").select("*", { count: "exact", head: true }).eq("organization_id", company.organizationId as string),
+        supabase
+          .from("exit_interview_analyses")
+          .select("analysis, created_at")
+          .eq("organization_id", company.organizationId as string)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<{ analysis: { summary: string }; created_at: string }>(),
+      ]);
+      return { exitInterviewCount: exitInterviewCount ?? 0, latestAnalysis };
+    })(),
   ]);
 
   const attention: AttentionFlag[] = [];
@@ -140,6 +157,26 @@ export async function buildCompanyOverview(company: CompanyData): Promise<Compan
       href: `/dashboard/company/${e.employeeUserId}`,
       name: e.name,
       score: e.score,
+    });
+  }
+
+  // Surface real intelligence when it exists (a completed analysis's own
+  // summary), rather than just a reminder to go run one — falls back to
+  // the reminder only when there's enough data but no analysis has ever
+  // been generated yet.
+  if (exitInterviewState.latestAnalysis?.analysis?.summary) {
+    attention.push({
+      key: "exitInterviewInsight",
+      severity: "info",
+      href: "/dashboard/company/exit-interviews",
+      summary: exitInterviewState.latestAnalysis.analysis.summary,
+    });
+  } else if (exitInterviewState.exitInterviewCount >= MIN_INTERVIEWS_FOR_ANALYSIS) {
+    attention.push({
+      key: "exitInterviewTrendsReady",
+      severity: "info",
+      href: "/dashboard/company/exit-interviews",
+      count: exitInterviewState.exitInterviewCount,
     });
   }
 

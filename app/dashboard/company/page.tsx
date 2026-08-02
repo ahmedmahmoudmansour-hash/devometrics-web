@@ -56,6 +56,10 @@ function attentionFlagText(t: Translator, tDim: Translator, flag: AttentionFlag)
       return t("attentionOpenPostingsNoCandidates", { count: flag.count });
     case "highFlightRisk":
       return t("attentionHighFlightRisk", { name: flag.name, score: flag.score });
+    case "exitInterviewInsight":
+      return t("attentionExitInterviewInsight", { summary: flag.summary });
+    case "exitInterviewTrendsReady":
+      return t("attentionExitInterviewTrendsReady", { count: flag.count });
   }
 }
 

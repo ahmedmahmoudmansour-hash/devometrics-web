@@ -5,11 +5,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { MIN_INTERVIEWS_FOR_ANALYSIS } from "./constants";
 import type { ExitInterview, ExitInterviewAnalysis, ExitInterviewAnalysisRecord } from "./types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const MIN_INTERVIEWS_FOR_ANALYSIS = 3;
 
 const ANALYSIS_TOOL = {
   name: "record_exit_interview_analysis",

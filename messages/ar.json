@@ -1420,7 +1420,9 @@
     "attentionLowSurveyParticipation": "مشاركة منخفضة في \"{title}\" ({percent}% — {responses}/{assigned})",
     "attentionNoSuccessor": "{count} من أصل {total} أدوار حرجة ليس لديها خليفة جاهز",
     "attentionOpenPostingsNoCandidates": "{count, plural, one {وظيفة مفتوحة واحدة ليس لديها} other {# وظائف مفتوحة ليس لديها}} مرشحون بعد",
-    "attentionHighFlightRisk": "{name} مُصنّف بمخاطر مغادرة عالية ({score}/100)"
+    "attentionHighFlightRisk": "{name} مُصنّف بمخاطر مغادرة عالية ({score}/100)",
+    "attentionExitInterviewInsight": "رؤية من مقابلات الخروج: {summary}",
+    "attentionExitInterviewTrendsReady": "{count, plural, one {تم تسجيل مقابلة خروج واحدة} other {تم تسجيل # مقابلات خروج}} — كافية لتشغيل تحليل اتجاهات الأسباب الجذرية"
   },
   "inviteCodeDisplay": {
     "label": "رمز الدعوة:",

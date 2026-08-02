@@ -1420,7 +1420,9 @@
     "attentionLowSurveyParticipation": "Low participation on \"{title}\" ({percent}% — {responses}/{assigned})",
     "attentionNoSuccessor": "{count} of {total} critical roles have no ready successor",
     "attentionOpenPostingsNoCandidates": "{count, plural, one {# open posting has} other {# open postings have}} no candidates yet",
-    "attentionHighFlightRisk": "{name} flagged as a high flight risk ({score}/100)"
+    "attentionHighFlightRisk": "{name} flagged as a high flight risk ({score}/100)",
+    "attentionExitInterviewInsight": "Exit interview insight: {summary}",
+    "attentionExitInterviewTrendsReady": "{count, plural, one {# exit interview is} other {# exit interviews are}} recorded — enough to run root-cause trend analysis"
   },
   "inviteCodeDisplay": {
     "label": "Invite code:",
