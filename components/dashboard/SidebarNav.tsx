@@ -23,7 +23,6 @@ import {
   Route,
   Search,
   Milestone as MilestoneIcon,
-  BadgeCheck,
   Users,
   ClipboardCheck,
   Library,
@@ -88,7 +87,11 @@ function buildSections(
       items: [
         { href: "/dashboard/tasks", labelKey: "tasksCalendar", icon: ListChecks },
         { href: "/dashboard/notes", labelKey: "workspace", icon: NotebookPen },
-        { href: "/dashboard/certifications", labelKey: "certifications", icon: BadgeCheck },
+        // Certifications is deliberately hidden from nav (2026-08-02) — a
+        // manual credential/expiry tracker, low perceived value per user
+        // feedback. Route/data left intact, not removed: an AI-driven
+        // Career Roadmap replacement is a separate future project, not a
+        // rebuild of this page.
         { href: "/dashboard/accountability", labelKey: "accountabilityGroups", icon: Users },
         // Only relevant to someone actually part of a company workspace —
         // an individual account will never have anything assigned here.

@@ -35,7 +35,6 @@ function buildEntries(
     { labelKey: "careerPaths", href: "/dashboard/career-paths", hintKey: "careerPathsHint", keywords: "map future promotion readiness next role" },
     { labelKey: "tasksCalendar", href: "/dashboard/tasks", keywords: "todo task calendar day week plan sync outlook google" },
     { labelKey: "workspace", href: "/dashboard/notes", hintKey: "workspaceHint", keywords: "notes ideas write second brain action items" },
-    { labelKey: "certifications", href: "/dashboard/certifications", hintKey: "certificationsHint", keywords: "certification credential license expiry renew badge" },
     { labelKey: "accountabilityGroups", href: "/dashboard/accountability", hintKey: "accountabilityGroupsHint", keywords: "accountability study group peer partner checkin progress" },
     { labelKey: "discovery", href: "/dashboard/discovery", hintKey: "discoveryHint", keywords: "interview questions profile onboarding" },
     { labelKey: "resumeIntelligence", href: "/dashboard/resume", keywords: "cv ats score keywords bullets" },
