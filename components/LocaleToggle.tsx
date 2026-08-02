@@ -8,9 +8,9 @@ import { updateLanguage } from "@/app/dashboard/actions";
 // Must match LOCALE_COOKIE in lib/i18n/request.ts.
 const LOCALE_COOKIE = "devometrics-locale";
 
-// Rendered in the dashboard sidebar (components/dashboard/SidebarNav.tsx).
-// Not yet added to the public marketing Navbar/Footer — those still need a
-// full i18n pass before a logged-out visitor can safely switch there.
+// Rendered in the dashboard sidebar (components/dashboard/SidebarNav.tsx)
+// and the public marketing Navbar (components/Navbar.tsx) — safe for a
+// logged-out visitor since updateLanguage() below no-ops without a user.
 //
 // Unlike ThemeToggle (a pure client-side CSS-variable flip, no reload
 // needed), switching locale changes server-rendered translated content,

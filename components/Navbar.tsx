@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import LocaleToggle from "./LocaleToggle";
 
 // Hash links are prefixed with "/" so they resolve correctly from any page,
 // not just the homepage — plain "#how-it-works" only works when already on
@@ -93,6 +94,7 @@ export default function Navbar() {
 
         {/* CTA */}
         <div className="hidden md:flex" style={{ gap: 12, alignItems: "center" }}>
+          <LocaleToggle />
           <ThemeToggle />
           <Link
             href="/login"
@@ -142,6 +144,7 @@ export default function Navbar() {
 
         {/* Mobile theme toggle + hamburger */}
         <div className="flex md:hidden" style={{ alignItems: "center", gap: 8 }}>
+        <LocaleToggle />
         <ThemeToggle />
         <button
           onClick={() => setMenuOpen(!menuOpen)}
