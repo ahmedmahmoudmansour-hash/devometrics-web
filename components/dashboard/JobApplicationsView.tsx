@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   createJobApplication,
   updateJobApplication,
@@ -44,6 +45,8 @@ function labelStyle(): React.CSSProperties {
 }
 
 function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
+  const t = useTranslations("jobApplicationsView");
+  const tStages = useTranslations("jobApplicationStages");
   const [open, setOpen] = useState(false);
   const [company, setCompany] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
@@ -101,7 +104,7 @@ function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
           cursor: "pointer",
         }}
       >
-        + Add application
+        {t("addApplication")}
       </button>
     );
   }
@@ -121,31 +124,31 @@ function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
     >
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div>
-          <label style={labelStyle()}>Company *</label>
+          <label style={labelStyle()}>{t("companyLabel")}</label>
           <input style={inputStyle()} value={company} onChange={(e) => setCompany(e.target.value)} required autoFocus />
         </div>
         <div>
-          <label style={labelStyle()}>Role title *</label>
+          <label style={labelStyle()}>{t("roleTitleLabel")}</label>
           <input style={inputStyle()} value={roleTitle} onChange={(e) => setRoleTitle(e.target.value)} required />
         </div>
         <div>
-          <label style={labelStyle()}>Location</label>
-          <input style={inputStyle()} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Remote, city…" />
+          <label style={labelStyle()}>{t("locationLabel")}</label>
+          <input style={inputStyle()} value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("locationPlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle()}>Source</label>
-          <input style={inputStyle()} value={source} onChange={(e) => setSource(e.target.value)} placeholder="LinkedIn, referral…" />
+          <label style={labelStyle()}>{t("sourceLabel")}</label>
+          <input style={inputStyle()} value={source} onChange={(e) => setSource(e.target.value)} placeholder={t("sourcePlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle()}>Job posting URL</label>
-          <input style={inputStyle()} value={jobUrl} onChange={(e) => setJobUrl(e.target.value)} placeholder="https://…" />
+          <label style={labelStyle()}>{t("jobUrlLabel")}</label>
+          <input style={inputStyle()} value={jobUrl} onChange={(e) => setJobUrl(e.target.value)} placeholder={t("jobUrlPlaceholder")} />
         </div>
         <div>
-          <label style={labelStyle()}>Stage</label>
+          <label style={labelStyle()}>{t("stage")}</label>
           <select style={{ ...inputStyle(), cursor: "pointer" }} value={stage} onChange={(e) => setStage(e.target.value as JobApplicationStage)}>
             {JOB_APPLICATION_STAGES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+              <option key={s} value={s}>
+                {stageLabel(tStages, s)}
               </option>
             ))}
           </select>
@@ -168,14 +171,14 @@ function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Saving…" : "Save"}
+          {isPending ? t("saving") : t("save")}
         </button>
         <button
           type="button"
           onClick={reset}
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </form>
@@ -183,6 +186,8 @@ function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
 }
 
 function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: () => void }) {
+  const t = useTranslations("jobApplicationsView");
+  const tStages = useTranslations("jobApplicationStages");
   const [expanded, setExpanded] = useState(false);
   const [nextAction, setNextAction] = useState(app.next_action ?? "");
   const [nextActionDate, setNextActionDate] = useState(app.next_action_date ?? "");
@@ -209,7 +214,7 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
   }
 
   function remove() {
-    if (!confirm(`Remove ${app.role_title} at ${app.company}?`)) return;
+    if (!confirm(t("removeConfirm", { role: app.role_title, company: app.company }))) return;
     startTransition(async () => {
       await deleteJobApplication(app.id);
       onChanged();
@@ -223,18 +228,18 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
           <p style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)" }}>{app.role_title}</p>
           <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>
             {app.company}
-            {app.location ? ` · ${app.location}` : ""}
-            {app.source ? ` · via ${app.source}` : ""}
+            {app.location ? t("locationSuffix", { location: app.location }) : ""}
+            {app.source ? t("sourceSuffix", { source: app.source }) : ""}
           </p>
           {app.job_url && (
             <a href={app.job_url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: "var(--teal)" }}>
-              View posting ↗
+              {t("viewPosting")}
             </a>
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <select
-            aria-label="Stage"
+            aria-label={t("stage")}
             value={app.stage}
             disabled={isPending}
             onChange={(e) => changeStage(e.target.value as JobApplicationStage)}
@@ -251,8 +256,8 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
             }}
           >
             {JOB_APPLICATION_STAGES.map((s) => (
-              <option key={s.value} value={s.value} style={{ color: "#000" }}>
-                {s.label}
+              <option key={s} value={s} style={{ color: "#000" }}>
+                {stageLabel(tStages, s)}
               </option>
             ))}
           </select>
@@ -261,15 +266,15 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
             onClick={() => setExpanded((v) => !v)}
             style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "var(--text-muted)", cursor: "pointer" }}
           >
-            {expanded ? "Hide" : "Details"}
+            {expanded ? t("hide") : t("details")}
           </button>
         </div>
       </div>
 
       {app.next_action && !expanded && (
         <p style={{ fontSize: 12, color: "var(--amber)", marginTop: 10 }}>
-          Next: {app.next_action}
-          {app.next_action_date ? ` — ${new Date(app.next_action_date).toLocaleDateString()}` : ""}
+          {t("nextActionLine", { action: app.next_action })}
+          {app.next_action_date ? t("nextActionDateSuffix", { date: new Date(app.next_action_date).toLocaleDateString() }) : ""}
         </p>
       )}
 
@@ -277,25 +282,25 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={labelStyle()}>Next action</label>
-              <input style={inputStyle()} value={nextAction} onChange={(e) => setNextAction(e.target.value)} placeholder="Follow up, prep for interview…" />
+              <label style={labelStyle()}>{t("nextActionFieldLabel")}</label>
+              <input style={inputStyle()} value={nextAction} onChange={(e) => setNextAction(e.target.value)} placeholder={t("nextActionPlaceholder")} />
             </div>
             <div>
-              <label style={labelStyle()}>Next action date</label>
+              <label style={labelStyle()}>{t("nextActionDateFieldLabel")}</label>
               <input type="date" style={inputStyle()} value={nextActionDate} onChange={(e) => setNextActionDate(e.target.value)} />
             </div>
             <div>
-              <label style={labelStyle()}>Salary range</label>
-              <input style={inputStyle()} value={salaryRange} onChange={(e) => setSalaryRange(e.target.value)} placeholder="$90k–$110k" />
+              <label style={labelStyle()}>{t("salaryRangeLabel")}</label>
+              <input style={inputStyle()} value={salaryRange} onChange={(e) => setSalaryRange(e.target.value)} placeholder={t("salaryRangePlaceholder")} />
             </div>
           </div>
           <div>
-            <label style={labelStyle()}>Notes</label>
+            <label style={labelStyle()}>{t("notesLabel")}</label>
             <textarea
               style={{ ...inputStyle(), minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Interviewer names, questions asked, how it went…"
+              placeholder={t("notesPlaceholder")}
             />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -305,7 +310,7 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
               disabled={isPending}
               style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
             >
-              {isPending ? "Saving…" : "Save details"}
+              {isPending ? t("saving") : t("saveDetails")}
             </button>
             <button
               type="button"
@@ -313,7 +318,7 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
               disabled={isPending}
               style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}
             >
-              Remove
+              {t("remove")}
             </button>
           </div>
         </div>
@@ -323,6 +328,8 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
 }
 
 export default function JobApplicationsView({ initial }: { initial: JobApplication[] }) {
+  const t = useTranslations("jobApplicationsView");
+  const tStages = useTranslations("jobApplicationStages");
   const [applications, setApplications] = useState(initial);
   const [, startTransition] = useTransition();
   const [filter, setFilter] = useState<"active" | "all">("active");
@@ -343,15 +350,15 @@ export default function JobApplicationsView({ initial }: { initial: JobApplicati
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>{applications.length}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Total tracked</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("totalTracked")}</p>
         </div>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)" }}>{activeCount}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>In motion</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("inMotion")}</p>
         </div>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--amber)" }}>{offerCount}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Offers</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("offers")}</p>
         </div>
       </div>
 
@@ -374,7 +381,7 @@ export default function JobApplicationsView({ initial }: { initial: JobApplicati
                 cursor: "pointer",
               }}
             >
-              {f === "active" ? "Active" : "All"}
+              {f === "active" ? t("active") : t("all")}
             </button>
           ))}
         </div>
@@ -383,7 +390,7 @@ export default function JobApplicationsView({ initial }: { initial: JobApplicati
       {visible.length === 0 ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
           <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
-            {applications.length === 0 ? "No applications tracked yet — add your first one above." : "Nothing in this view."}
+            {applications.length === 0 ? t("emptyNoApplications") : t("emptyFilteredView")}
           </p>
         </div>
       ) : (
@@ -394,8 +401,7 @@ export default function JobApplicationsView({ initial }: { initial: JobApplicati
         </div>
       )}
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
-        {stageLabel("saved")} through {stageLabel("withdrawn")} — fully private to you. Not visible to your
-        organization or its admins.
+        {t("privacyNote", { saved: stageLabel(tStages, "saved"), withdrawn: stageLabel(tStages, "withdrawn") })}
       </p>
     </div>
   );

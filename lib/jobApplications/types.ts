@@ -8,23 +8,35 @@ export type JobApplicationStage =
   | "rejected"
   | "withdrawn";
 
-export const JOB_APPLICATION_STAGES: { value: JobApplicationStage; label: string }[] = [
-  { value: "saved", label: "Saved" },
-  { value: "applied", label: "Applied" },
-  { value: "phone_screen", label: "Phone screen" },
-  { value: "interview", label: "Interview" },
-  { value: "offer", label: "Offer" },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
+export const JOB_APPLICATION_STAGES: JobApplicationStage[] = [
+  "saved",
+  "applied",
+  "phone_screen",
+  "interview",
+  "offer",
+  "accepted",
+  "rejected",
+  "withdrawn",
 ];
 
 // Stages that count as "still in motion" for the open-applications count —
 // accepted/rejected/withdrawn are all end states, saved is pre-application.
 export const ACTIVE_STAGES: JobApplicationStage[] = ["applied", "phone_screen", "interview", "offer"];
 
-export function stageLabel(stage: JobApplicationStage): string {
-  return JOB_APPLICATION_STAGES.find((s) => s.value === stage)?.label ?? stage;
+const STAGE_TRANSLATION_KEY: Record<JobApplicationStage, string> = {
+  saved: "saved",
+  applied: "applied",
+  phone_screen: "phoneScreen",
+  interview: "interview",
+  offer: "offer",
+  accepted: "accepted",
+  rejected: "rejected",
+  withdrawn: "withdrawn",
+};
+
+// t must come from useTranslations("jobApplicationStages").
+export function stageLabel(t: (key: string) => string, stage: JobApplicationStage): string {
+  return t(STAGE_TRANSLATION_KEY[stage]);
 }
 
 export type JobApplication = {
