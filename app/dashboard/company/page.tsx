@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { buildCompanyOverview, type AttentionFlag } from "@/lib/organizations/companyOverview";
 import { createClient } from "@/lib/supabase/server";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import OrganizationProfileForm from "@/components/dashboard/OrganizationProfileForm";
@@ -28,10 +30,37 @@ async function countOrNull(
   return count ?? null;
 }
 
+type Translator = (key: string, values?: Record<string, string | number>) => string;
+
+// Each AttentionFlag carries a stable key + structured params, not a
+// pre-built English sentence (see lib/organizations/companyOverview.ts) —
+// this is the one place that turns it into the actual localized copy.
+function attentionFlagText(t: Translator, tDim: Translator, flag: AttentionFlag): string {
+  switch (flag.key) {
+    case "lowDimension":
+      return t("attentionLowDimension", { dimension: dimensionLabel(tDim, flag.dimension), score: flag.score });
+    case "noManager":
+      return t("attentionNoManager", { count: flag.count, total: flag.total });
+    case "lowSurveyParticipation":
+      return t("attentionLowSurveyParticipation", {
+        title: flag.title,
+        percent: flag.percent,
+        responses: flag.responses,
+        assigned: flag.assigned,
+      });
+    case "noSuccessor":
+      return t("attentionNoSuccessor", { count: flag.count, total: flag.total });
+    case "openPostingsNoCandidates":
+      return t("attentionOpenPostingsNoCandidates", { count: flag.count });
+  }
+}
+
 export default async function CompanyProfilePage() {
   const t = await getTranslations("companyProfilePage");
+  const tDim = await getTranslations("competencyDimensions");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
+  const overview = await buildCompanyOverview(data);
 
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
@@ -171,6 +200,108 @@ export default async function CompanyProfilePage() {
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
           {t("scopeNote")}
         </p>
+
+        {data.organizationId && data.rows.length > 0 && (
+          <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div
+              style={{
+                background: "var(--navy-mid)",
+                border: "1px solid var(--border)",
+                borderRadius: 16,
+                padding: 22,
+                display: "flex",
+                gap: 28,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>{data.rows.length}</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("overviewTeamSize")}</p>
+              </div>
+              {data.companyCareerHealthScore !== null && (
+                <div>
+                  <p style={{ fontSize: 26, fontWeight: 800, color: "var(--teal)" }}>{data.companyCareerHealthScore}</p>
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("companyCareerHealth")}</p>
+                </div>
+              )}
+              <div>
+                <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>{overview.hiring.openPostings}</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("overviewOpenPostings")}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>{overview.hiring.totalCandidates}</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("overviewCandidatesInPipeline")}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)" }}>{overview.hiring.totalHired}</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("overviewHired")}</p>
+              </div>
+            </div>
+
+            {overview.attention.length > 0 && (
+              <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("overviewAttentionTitle")}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {overview.attention.map((flag, i) => (
+                    <Link
+                      key={i}
+                      href={flag.href}
+                      style={{ display: "flex", alignItems: "flex-start", gap: 10, textDecoration: "none" }}
+                    >
+                      <span
+                        style={{
+                          flexShrink: 0,
+                          marginTop: 5,
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: flag.severity === "warning" ? "var(--amber)" : "var(--teal)",
+                        }}
+                      />
+                      <span style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>
+                        {attentionFlagText(t, tDim, flag)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(data.leadershipReadiness.length > 0 || overview.surveys.length > 0) && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+                {data.leadershipReadiness.length > 0 && (
+                  <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("overviewLeadershipReadiness")}</p>
+                    <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>{t("overviewLeadershipReadinessHint")}</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {data.leadershipReadiness.slice(0, 5).map((r) => (
+                        <div key={r.userId} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                          <span style={{ color: "var(--text)" }}>{r.name}</span>
+                          <span className="mono" style={{ color: "var(--teal)", fontWeight: 700 }}>{r.score}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {overview.surveys.length > 0 && (
+                  <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("overviewSurveyParticipation")}</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {overview.surveys.slice(0, 5).map((s) => (
+                        <div key={s.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                          <span style={{ color: "var(--text)" }}>{s.title}</span>
+                          <span className="mono" style={{ color: "var(--text-muted)", fontWeight: 600 }}>
+                            {s.responseCount ?? 0}/{s.assignedCount}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {widgets.length > 0 && <CompanyWidgetGrid widgets={widgets} />}
 

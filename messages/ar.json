@@ -1401,7 +1401,21 @@
     "surveysStat": "{count, plural, one {استبيان واحد} other {# استبيانات}}",
     "surveysStatEmpty": "استبيانات نبض مجهولة المصدر",
     "analyticsLabel": "التحليلات",
-    "analyticsStat": "خريطة حرارية للمهارات ومصفوفة المواهب على مستوى القوى العاملة"
+    "analyticsStat": "خريطة حرارية للمهارات ومصفوفة المواهب على مستوى القوى العاملة",
+    "companyCareerHealth": "الصحة المهنية للشركة",
+    "overviewTeamSize": "أعضاء الفريق",
+    "overviewOpenPostings": "الوظائف المفتوحة",
+    "overviewCandidatesInPipeline": "المرشحون في خط الأنابيب",
+    "overviewHired": "تم التوظيف",
+    "overviewAttentionTitle": "يحتاج إلى انتباه",
+    "overviewLeadershipReadiness": "جاهزية القيادة",
+    "overviewLeadershipReadinessHint": "مرتّبة حسب درجات القيادة والتفكير الاستراتيجي وإدارة الأشخاص — إشارة توجيهية، وليست خطة تعاقب وظيفي رسمية.",
+    "overviewSurveyParticipation": "مشاركة الاستبيانات",
+    "attentionLowDimension": "فجوة على مستوى الفريق في {dimension} (بمعدل {score}/100)",
+    "attentionNoManager": "{count} من أصل {total} موظفين ليس لديهم مدير معيّن في المخطط التنظيمي",
+    "attentionLowSurveyParticipation": "مشاركة منخفضة في \"{title}\" ({percent}% — {responses}/{assigned})",
+    "attentionNoSuccessor": "{count} من أصل {total} أدوار حرجة ليس لديها خليفة جاهز",
+    "attentionOpenPostingsNoCandidates": "{count, plural, one {وظيفة مفتوحة واحدة ليس لديها} other {# وظائف مفتوحة ليس لديها}} مرشحون بعد"
   },
   "inviteCodeDisplay": {
     "label": "رمز الدعوة:",

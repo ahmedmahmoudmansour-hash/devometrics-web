@@ -1401,7 +1401,21 @@
     "surveysStat": "{count, plural, one {# survey} other {# surveys}}",
     "surveysStatEmpty": "Anonymous pulse surveys",
     "analyticsLabel": "Analytics",
-    "analyticsStat": "Workforce skill heatmap & talent grid"
+    "analyticsStat": "Workforce skill heatmap & talent grid",
+    "companyCareerHealth": "Company Career Health",
+    "overviewTeamSize": "Team members",
+    "overviewOpenPostings": "Open postings",
+    "overviewCandidatesInPipeline": "Candidates in pipeline",
+    "overviewHired": "Hired",
+    "overviewAttentionTitle": "Needs attention",
+    "overviewLeadershipReadiness": "Leadership readiness",
+    "overviewLeadershipReadinessHint": "Ranked by Leadership, Strategic Thinking, and People Management scores — a directional signal, not a formal succession plan.",
+    "overviewSurveyParticipation": "Survey participation",
+    "attentionLowDimension": "Team-wide gap in {dimension} (avg {score}/100)",
+    "attentionNoManager": "{count} of {total} employees have no manager assigned in the Org Chart",
+    "attentionLowSurveyParticipation": "Low participation on \"{title}\" ({percent}% — {responses}/{assigned})",
+    "attentionNoSuccessor": "{count} of {total} critical roles have no ready successor",
+    "attentionOpenPostingsNoCandidates": "{count, plural, one {# open posting has} other {# open postings have}} no candidates yet"
   },
   "inviteCodeDisplay": {
     "label": "Invite code:",
