@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -36,6 +38,13 @@ export async function POST(request: Request) {
 
   const formatHint = format ? ` The person prefers ${format.toLowerCase()}-style learning where possible.` : "";
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
+  }
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -47,6 +56,14 @@ export async function POST(request: Request) {
           content: `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "course_recommendations",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
 
     const searchError = response.content.find(

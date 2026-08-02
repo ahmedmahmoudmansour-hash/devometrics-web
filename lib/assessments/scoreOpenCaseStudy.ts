@@ -28,11 +28,13 @@ export async function scoreOpenCaseStudy({
   scenario,
   prompt,
   responseText,
+  onUsage,
 }: {
   assessmentName: string;
   scenario: string;
   prompt: string;
   responseText: string;
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
 }): Promise<{ score: number; insight: string }> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
@@ -46,6 +48,12 @@ export async function scoreOpenCaseStudy({
         content: `SCENARIO: ${scenario}\n\nPROMPT: ${prompt}\n\nRESPONSE: ${responseText}`,
       },
     ],
+  });
+
+  onUsage?.({
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

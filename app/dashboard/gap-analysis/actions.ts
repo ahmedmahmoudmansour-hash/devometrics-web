@@ -30,6 +30,8 @@ import {
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { buildBackgroundContext } from "@/lib/gap-analysis/backgroundContext";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { GapAnalysis, Profile } from "@/lib/supabase/types";
 
 function targetDateWeeksFromNow(weeks: number): string {
@@ -279,11 +281,18 @@ export async function generateQuickPlan(targetRole: string, cvText: string, hori
     }
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   const effectiveCvText = await buildBackgroundContext(supabase, user.id, cvText);
 
   let inferred;
   try {
-    inferred = await inferRoleContext(trimmedRole, effectiveCvText);
+    inferred = await inferRoleContext(trimmedRole, effectiveCvText, (usage) =>
+      recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis_role_context", ...usage })
+    );
   } catch {
     return { error: "Couldn't generate a plan for that role — please try again." };
   }
@@ -294,6 +303,7 @@ export async function generateQuickPlan(targetRole: string, cvText: string, hori
       cvText: effectiveCvText,
       jobDescription: inferred.inferredJobDescription,
       targetRole: trimmedRole,
+      onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis", ...usage }),
     });
   } catch {
     return { error: "Plan generation failed — please try again." };

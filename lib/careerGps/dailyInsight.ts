@@ -2,6 +2,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -70,6 +72,11 @@ export async function getDailyInsight(): Promise<string | null> {
   }
   if (!context.trim()) return null;
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return null; // same "degrade silently" posture as every other branch in this function
+
   let insight: string;
   try {
     const response = await anthropic.messages.create({
@@ -78,6 +85,14 @@ export async function getDailyInsight(): Promise<string | null> {
       system:
         "Write exactly one short, specific sentence (under 25 words) telling this person something genuinely useful about their own measured career data — a real movement, a real gap, or a real next step. No greetings, no generic encouragement like 'keep going', no emoji. State it as a fact or observation, not a command. Ground it strictly in the data given — never invent numbers or claims not present in the context.",
       messages: [{ role: "user", content: context }],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "daily_insight",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const text = response.content.find((b) => b.type === "text");
     if (!text || text.type !== "text") return null;

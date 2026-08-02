@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { SuccessionCandidate, SuccessionReport } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -227,6 +228,9 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
           .join("\n")}`
       : "";
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: data.organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let report: SuccessionReport;
   try {
     const response = await anthropic.messages.create({
@@ -242,6 +246,14 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
           content: `CRITICAL ROLE: ${role.title}\n\nROLE REQUIREMENTS (as described by the admin):\n${role.description || "(no description provided — infer sensible requirements from the title)"}\n\nWORKFORCE DATA:\n${workforce}${nomineeBlock}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId: data.organizationId,
+      userId: user.id,
+      feature: "succession_ranking",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((block) => block.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");

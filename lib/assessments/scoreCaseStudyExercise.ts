@@ -49,11 +49,13 @@ export async function scoreCaseStudyExercise({
   context,
   prompt,
   responseText,
+  onUsage,
 }: {
   dimension: string;
   context: string;
   prompt: string;
   responseText: string;
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
 }): Promise<ExerciseReport> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
@@ -67,6 +69,12 @@ export async function scoreCaseStudyExercise({
         content: `CASE CONTEXT:\n${context}\n\nPROMPT:\n${prompt}\n\nRESPONSE:\n${responseText}`,
       },
     ],
+  });
+
+  onUsage?.({
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

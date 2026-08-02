@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { CandidateRankingReport, RankedCandidate } from "./types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -119,6 +120,9 @@ export async function generateCandidateRanking(postingId: string): Promise<{ err
     })
     .join("\n");
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: company.organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let report: CandidateRankingReport;
   try {
     const response = await anthropic.messages.create({
@@ -134,6 +138,14 @@ export async function generateCandidateRanking(postingId: string): Promise<{ err
           content: `JOB POSTING: ${posting.title}\n\nJOB DESCRIPTION:\n${posting.job_description || "(none provided)"}\n\nCANDIDATES:\n${candidateBlock}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId: company.organizationId,
+      userId: user.id,
+      feature: "candidate_ranking",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");

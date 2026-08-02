@@ -5,6 +5,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { BRIDGE_CONTENT_RATE_LIMIT_WINDOW_MINUTES, BRIDGE_CONTENT_RATE_LIMIT_MAX_RUNS } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { BridgeContent } from "@/lib/learning/bridgeContent";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
@@ -116,6 +118,11 @@ export async function generateBridgeContent(dimension: string) {
   const competency = analysis.competencies.find((c) => c.dimension === dimension);
   if (!competency) return { error: "That dimension wasn't part of your most recent Gap Analysis." };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   // Call 1: web-search-only, plain text — grounds external resources in
   // reality instead of letting the model invent plausible-sounding course
   // names. Same tool and reasoning as /api/trends. Split into its own call
@@ -134,6 +141,14 @@ export async function generateBridgeContent(dimension: string) {
           content: `Search the web for 2-3 real, current, genuinely FREE learning resources (articles, official documentation, reputable videos, or recognized free courses — not paywalled content) that would help someone improve their "${dimension}" skills, specifically useful for someone working toward a "${competency.rationale ? competency.rationale + " — " : ""}${analysis.target_role}" role. They are currently measured at ${competency.currentLevel}/100, targeting ${competency.targetLevel}/100. Prefer credible sources: established publications, official docs, recognized free platforms (Khan Academy, freeCodeCamp, MIT OpenCourseWare, Google/Microsoft free training, HBR free articles, reputable YouTube channels from real institutions). For each, give: Title, exact URL, Source name, one-sentence description. Only include resources you can verify are real via search — never guess or fabricate a plausible-sounding one. If you can't find good free resources, say so plainly instead of making something up.`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "gap_analysis_bridge",
+      model: searchResponse.model,
+      inputTokens: searchResponse.usage.input_tokens,
+      outputTokens: searchResponse.usage.output_tokens,
     });
     const textBlocks = searchResponse.content.filter((b) => b.type === "text");
     const combined = textBlocks.map((b) => (b.type === "text" ? b.text : "")).join("\n").trim();
@@ -161,6 +176,14 @@ export async function generateBridgeContent(dimension: string) {
           content: `COMPETENCY GAP TO BRIDGE\nDimension: ${dimension}\nCurrent level: ${competency.currentLevel}/100\nTarget level: ${competency.targetLevel}/100\nTarget role: ${analysis.target_role}\nWhy this gap matters (from the Gap Analysis): ${competency.rationale}\n\nVERIFIED EXTERNAL RESOURCES (from a real web search just now — only use these, do not add others):\n${verifiedResourcesText}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "gap_analysis_bridge",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((block) => block.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");

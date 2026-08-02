@@ -7,6 +7,7 @@ import { buildBackgroundContext } from "@/lib/gap-analysis/backgroundContext";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { runHighPotentialToSuccession } from "@/lib/automations/recipes";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import {
   MAX_CV_LENGTH,
@@ -79,6 +80,17 @@ export async function POST(request: Request) {
     }
   }
 
+  // Resolved once, reused for both the budget check and the high-potential
+  // automation check further down — this was previously only fetched late
+  // for the latter, leaving the actual AI calls above it completely
+  // unmetered.
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
+  }
+
   // Enriched with everything else already known about this person — saved
   // Career Profile, completed assessments, Big Five — so a full Gap
   // Analysis run is informed by the whole picture, not just whatever's
@@ -95,7 +107,9 @@ export async function POST(request: Request) {
   let timelineRationale: string | null = null;
   if (!effectiveJobDescription) {
     try {
-      const inferred = await inferRoleContext(targetRole, effectiveCvText);
+      const inferred = await inferRoleContext(targetRole, effectiveCvText, (usage) =>
+        recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis_role_context", ...usage })
+      );
       effectiveJobDescription = inferred.inferredJobDescription;
       roleContextInferred = true;
       estimatedTimelineMonths = inferred.estimatedTimelineMonths;
@@ -110,7 +124,13 @@ export async function POST(request: Request) {
 
   let competencies;
   try {
-    competencies = await extractCompetencies({ cvText: effectiveCvText, jobDescription: effectiveJobDescription, targetRole, performanceData });
+    competencies = await extractCompetencies({
+      cvText: effectiveCvText,
+      jobDescription: effectiveJobDescription,
+      targetRole,
+      performanceData,
+      onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis", ...usage }),
+    });
   } catch {
     return NextResponse.json({ error: "Gap analysis failed — please try again" }, { status: 502 });
   }
@@ -149,12 +169,9 @@ export async function POST(request: Request) {
   for (const c of competencies) dimensionLevels[c.dimension] = c.currentLevel;
   const point = computeNineBoxPoint(dimensionLevels);
   if (point && zoneForPoint(point.x, point.y).label === "High Potential") {
-    const [membership, { data: profile }] = await Promise.all([
-      getMyOrganizationMembership(),
-      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>(),
-    ]);
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>();
     await runHighPotentialToSuccession(supabase, {
-      organizationId: membership?.organization_id ?? null,
+      organizationId,
       userId: user.id,
       userName: profile?.full_name || user.email || "A team member",
     });

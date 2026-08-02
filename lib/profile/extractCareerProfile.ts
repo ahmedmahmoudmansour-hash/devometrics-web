@@ -66,7 +66,10 @@ const RECORD_TOOL = {
 // the user re-type their own history" principle as extractExperienceSummary,
 // but structured (LinkedIn-style fields) instead of prose, so it can be
 // individually edited and re-saved.
-export async function extractCareerProfile(cvText: string): Promise<ExtractedCareerProfile> {
+export async function extractCareerProfile(
+  cvText: string,
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void
+): Promise<ExtractedCareerProfile> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 2048,
@@ -75,6 +78,12 @@ export async function extractCareerProfile(cvText: string): Promise<ExtractedCar
     tools: [RECORD_TOOL],
     tool_choice: { type: "tool", name: "record_career_profile" },
     messages: [{ role: "user", content: cvText }],
+  });
+
+  onUsage?.({
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

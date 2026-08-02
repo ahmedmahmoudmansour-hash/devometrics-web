@@ -3,13 +3,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_TEXT = 3000;
 
-type ReviewContext = { organizationId: string; employeeUserId: string };
+// actingUserId is the admin/manager actually running this AI action — the
+// one whose budget is charged — distinct from employeeUserId, whose Gap
+// Analysis data is only being read as context.
+type ReviewContext = { organizationId: string; employeeUserId: string; actingUserId: string };
 
 // "For admin" in the name is legacy — a real reporting-line manager who
 // isn't an org admin can use these too (migration 0078), same as they can
@@ -37,7 +42,10 @@ async function loadReviewForAdmin(reviewId: string): Promise<{ error: string } |
   ]);
   if (!isAdmin && !isManager) return { error: "Not authorized" };
 
-  return { supabase, ctx: { organizationId: review.organization_id, employeeUserId: review.employee_user_id } };
+  return {
+    supabase,
+    ctx: { organizationId: review.organization_id, employeeUserId: review.employee_user_id, actingUserId: user.id },
+  };
 }
 
 async function latestGapAnalysisSummary(supabase: Awaited<ReturnType<typeof createClient>>, employeeUserId: string): Promise<string> {
@@ -97,6 +105,9 @@ export async function suggestFocusAreas(reviewId: string): Promise<{ error: stri
 
   const existingTitles = (existingGoals ?? []).map((g) => g.title);
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -111,6 +122,14 @@ export async function suggestFocusAreas(reviewId: string): Promise<{ error: stri
           content: `${gapSummary}\n\n${self?.reflection ? `Their self-reflection this cycle:\n${self.reflection.slice(0, MAX_TEXT)}\n\n` : ""}${existingTitles.length > 0 ? `Focus Areas already set (don't repeat these): ${existingTitles.join(", ")}` : "No Focus Areas set yet."}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId: ctx.organizationId,
+      userId: ctx.actingUserId,
+      feature: "performance_review_ai",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
@@ -154,6 +173,9 @@ export async function draftManagerPerspective(reviewId: string): Promise<{ error
 
   const goalLines = (goals ?? []).map((g) => `- ${g.title}: ${g.status.replace("_", " ")}`);
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -174,6 +196,14 @@ export async function draftManagerPerspective(reviewId: string): Promise<{ error
           ].join("\n\n"),
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId: ctx.organizationId,
+      userId: ctx.actingUserId,
+      feature: "performance_review_ai",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
@@ -224,6 +254,9 @@ export async function suggestCompetencyRatings(reviewId: string): Promise<{ erro
     supabase.from("performance_review_self_assessments").select("reflection").eq("review_id", reviewId).maybeSingle<{ reflection: string | null }>(),
   ]);
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -238,6 +271,14 @@ export async function suggestCompetencyRatings(reviewId: string): Promise<{ erro
           content: `${gapSummary}\n\n${self?.reflection ? `Their self-reflection this cycle:\n${self.reflection.slice(0, MAX_TEXT)}` : "No self-reflection submitted yet."}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId: ctx.organizationId,
+      userId: ctx.actingUserId,
+      feature: "performance_review_ai",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
@@ -261,7 +302,7 @@ export async function suggestCompetencyRatings(reviewId: string): Promise<{ erro
 export async function draftConclusion(reviewId: string): Promise<{ error: string } | { conclusion: string }> {
   const loaded = await loadReviewForAdmin(reviewId);
   if ("error" in loaded) return loaded;
-  const { supabase } = loaded;
+  const { supabase, ctx } = loaded;
 
   const [{ data: self }, { data: manager }, { data: goals }, { data: ratings }] = await Promise.all([
     supabase.from("performance_review_self_assessments").select("rating, reflection").eq("review_id", reviewId).maybeSingle<{ rating: number | null; reflection: string | null }>(),
@@ -282,6 +323,9 @@ export async function draftConclusion(reviewId: string): Promise<{ error: string
     ratings && ratings.length > 0 ? `Competency ratings:\n${ratings.map((r) => `- ${r.dimension}: ${r.rating}/5`).join("\n")}` : "",
   ].filter(Boolean);
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -289,6 +333,14 @@ export async function draftConclusion(reviewId: string): Promise<{ error: string
       system:
         "Write a short closing Conclusion (3-5 sentences) for this Impact Cycle, synthesizing the self-reflection, Manager's Perspective, Focus Area outcomes, and competency ratings given. Balanced and specific — name what actually happened, not generic praise. This is a draft the manager will edit before closing the cycle.",
       messages: [{ role: "user", content: parts.join("\n\n") }],
+    });
+    await recordAiUsage(supabase, {
+      organizationId: ctx.organizationId,
+      userId: ctx.actingUserId,
+      feature: "performance_review_ai",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const text = response.content.find((b) => b.type === "text");
     if (!text || text.type !== "text") throw new Error("No text output");
@@ -320,6 +372,11 @@ export async function helpDraftReflection(reviewId: string, roughNotes: string):
   const trimmed = roughNotes.trim().slice(0, MAX_TEXT);
   if (!trimmed) return { error: "Add a few rough notes first" };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -327,6 +384,14 @@ export async function helpDraftReflection(reviewId: string, roughNotes: string):
       system:
         "Turn this person's rough notes into a clear, first-person reflection paragraph for their own performance review. Use only what they actually wrote — never add accomplishments, numbers, or claims they didn't mention. Keep their voice; don't inflate it into corporate-speak. Plain text only, no headers or bullet points.",
       messages: [{ role: "user", content: trimmed }],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "performance_review_ai",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const text = response.content.find((b) => b.type === "text");
     if (!text || text.type !== "text") throw new Error("No text output");

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { extractCareerProfile, type JobHistoryEntry, type QualificationEntry } from "./extractCareerProfile";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 export async function importCareerProfileFromCV() {
   const supabase = await createClient();
@@ -23,9 +25,16 @@ export async function importCareerProfileFromCV() {
     return { error: "Run a Gap Analysis with your CV first — there's nothing to import from yet." };
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let extracted;
   try {
-    extracted = await extractCareerProfile(latestAnalysis.cv_text);
+    extracted = await extractCareerProfile(latestAnalysis.cv_text, (usage) =>
+      recordAiUsage(supabase, { organizationId, userId: user.id, feature: "career_profile_extraction", ...usage })
+    );
   } catch {
     return { error: "Could not read your CV right now — try again." };
   }

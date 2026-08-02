@@ -8,6 +8,8 @@ import {
   DISCOVERY_RATE_LIMIT_MAX_RUNS,
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -58,9 +60,18 @@ export async function POST(request: Request) {
     }
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
+  }
+
   let summary: string;
   try {
-    summary = await synthesizeDiscoveryProfile(answers);
+    summary = await synthesizeDiscoveryProfile(answers, (usage) =>
+      recordAiUsage(supabase, { organizationId, userId: user.id, feature: "discovery_synthesis", ...usage })
+    );
   } catch {
     return NextResponse.json({ error: "Discovery synthesis failed — please try again" }, { status: 502 });
   }

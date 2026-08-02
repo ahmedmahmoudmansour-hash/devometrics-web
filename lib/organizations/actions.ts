@@ -12,6 +12,7 @@ import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 import { runHireToOnboarding } from "@/lib/automations/recipes";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -768,6 +769,11 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
       : "",
   ].join("\n");
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let summary: { overallSummary: string; keyStrengths: string[]; developmentPriorities: string[]; standingNote: string };
   try {
     const response = await anthropic.messages.create({
@@ -778,6 +784,14 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
       tools: [ASSESSMENT_SUMMARY_TOOL],
       tool_choice: { type: "tool", name: "record_assessment_summary" },
       messages: [{ role: "user", content: prompt }],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "employee_assessment_summary",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((block) => block.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");

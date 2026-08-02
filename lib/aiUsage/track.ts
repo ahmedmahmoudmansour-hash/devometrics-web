@@ -53,7 +53,23 @@ export type AiUsageFeature =
   | "task_breakdown"
   | "accountability_group_ai"
   | "exit_interview_analysis"
-  | "flight_risk_score";
+  | "flight_risk_score"
+  | "gap_analysis"
+  | "gap_analysis_role_context"
+  | "daily_insight"
+  | "note_analysis"
+  | "resume_intelligence"
+  | "course_recommendations"
+  | "gap_analysis_bridge"
+  | "candidate_interview_assessment"
+  | "candidate_ranking"
+  | "performance_review_ai"
+  | "succession_ranking"
+  | "employee_assessment_summary"
+  | "case_study_scoring"
+  | "career_profile_extraction"
+  | "discovery_synthesis"
+  | "career_gps_what_if";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 

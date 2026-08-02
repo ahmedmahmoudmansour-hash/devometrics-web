@@ -70,9 +70,11 @@ const RECORD_TOOL = {
 export async function extractResumeAnalysis({
   resumeText,
   targetRole,
+  onUsage,
 }: {
   resumeText: string;
   targetRole: string | null;
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
 }): Promise<ResumeAnalysisResult> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
@@ -90,6 +92,12 @@ Be specific, not generic — "add more keywords" is not a valid finding, "add 's
         content: `TARGET ROLE: ${targetRole || "Not specified — infer field from the resume itself"}\n\nRESUME:\n${resumeText}`,
       },
     ],
+  });
+
+  onUsage?.({
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

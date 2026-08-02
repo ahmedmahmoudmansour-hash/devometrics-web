@@ -10,6 +10,8 @@ import {
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { Profile } from "@/lib/supabase/types";
 
 export async function POST(request: Request) {
@@ -75,9 +77,20 @@ export async function POST(request: Request) {
     }
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
+  }
+
   let result;
   try {
-    result = await extractResumeAnalysis({ resumeText, targetRole: targetRole || null });
+    result = await extractResumeAnalysis({
+      resumeText,
+      targetRole: targetRole || null,
+      onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "resume_intelligence", ...usage }),
+    });
   } catch {
     return NextResponse.json({ error: "Resume analysis failed — please try again" }, { status: 502 });
   }

@@ -4,6 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS, sanitizeCompetencyScores, type CompetencyDimension, type CompetencyScore } from "@/lib/gap-analysis/dimensions";
 import { computePromotionReadiness } from "./readiness";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -16,7 +18,11 @@ export type WhatIfResult = {
   topGapsAfter: { dimension: string; gapSize: number }[];
 };
 
-async function loadLatestAnalysis(): Promise<{ error: string } | { analysis: GapAnalysis }> {
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function loadLatestAnalysis(): Promise<
+  { error: string } | { analysis: GapAnalysis; supabase: SupabaseServerClient; userId: string }
+> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,7 +38,7 @@ async function loadLatestAnalysis(): Promise<{ error: string } | { analysis: Gap
     .maybeSingle<GapAnalysis>();
   if (!analysis) return { error: "Run a Gap Analysis first — there's nothing to simulate against yet." };
 
-  return { analysis };
+  return { analysis, supabase, userId: user.id };
 }
 
 function toResult(scenario: string, current: CompetencyScore[], projected: CompetencyScore[]): WhatIfResult {
@@ -83,7 +89,7 @@ const RETARGET_TOOL = {
 export async function simulateTargetRoleChange(newTargetRole: string): Promise<{ error: string } | WhatIfResult> {
   const loaded = await loadLatestAnalysis();
   if ("error" in loaded) return loaded;
-  const { analysis } = loaded;
+  const { analysis, supabase, userId } = loaded;
 
   const trimmedRole = newTargetRole.trim().slice(0, 120);
   if (!trimmedRole) return { error: "Enter a role to simulate" };
@@ -91,6 +97,11 @@ export async function simulateTargetRoleChange(newTargetRole: string): Promise<{
   const currentSummary = analysis.competencies
     .map((c) => `- ${c.dimension}: currently measured at ${c.currentLevel}/100`)
     .join("\n");
+
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId });
+  if (budgetCheck.error) return { error: budgetCheck.error };
 
   try {
     const response = await anthropic.messages.create({
@@ -103,6 +114,14 @@ export async function simulateTargetRoleChange(newTargetRole: string): Promise<{
       messages: [
         { role: "user", content: `HYPOTHETICAL TARGET ROLE: ${trimmedRole}\n\nDimensions to define requirements for:\n${currentSummary}` },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId,
+      feature: "career_gps_what_if",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");

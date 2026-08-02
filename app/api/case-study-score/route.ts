@@ -9,6 +9,8 @@ import {
   CASE_STUDY_RATE_LIMIT_MAX_RUNS,
 } from "@/lib/limits";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -61,12 +63,20 @@ export async function POST(request: Request) {
     }
   }
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) {
+    return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
+  }
+
   try {
     const result = await scoreOpenCaseStudy({
       assessmentName: assessment.name,
       scenario: caseStudy.scenario,
       prompt: caseStudy.prompt,
       responseText,
+      onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "case_study_scoring", ...usage }),
     });
     return NextResponse.json(result);
   } catch {

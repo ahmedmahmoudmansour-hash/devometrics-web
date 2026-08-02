@@ -7,6 +7,8 @@ import { scoreCaseStudyExercise } from "@/lib/assessments/scoreCaseStudyExercise
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { CASE_STUDY_RATE_LIMIT_WINDOW_MINUTES, CASE_STUDY_RATE_LIMIT_MAX_RUNS } from "@/lib/limits";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { Profile } from "@/lib/supabase/types";
 
 const MAX_RESPONSE_LENGTH = 6000;
@@ -70,6 +72,11 @@ export async function submitExerciseAttempt(attemptId: string, slug: string, res
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let report;
   try {
     report = await scoreCaseStudyExercise({
@@ -77,6 +84,7 @@ export async function submitExerciseAttempt(attemptId: string, slug: string, res
       context: exercise.context,
       prompt: exercise.prompt,
       responseText: trimmed,
+      onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "case_study_scoring", ...usage }),
     });
   } catch {
     return { error: "Scoring is temporarily unavailable — please try submitting again." };

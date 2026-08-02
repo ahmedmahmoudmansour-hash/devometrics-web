@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { NoteInsight } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -121,6 +123,11 @@ export async function analyzeNote(id: string): Promise<{ insight?: NoteInsight; 
   if (note.ai_insight) return { insight: note.ai_insight };
   if (!note.content.trim()) return { error: "This note is empty — write something to organize first." };
 
+  const membership = await getMyOrganizationMembership();
+  const organizationId = membership?.organization_id ?? null;
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   let insight: NoteInsight;
   try {
     const response = await anthropic.messages.create({
@@ -136,6 +143,14 @@ export async function analyzeNote(id: string): Promise<{ insight?: NoteInsight; 
           content: `NOTE TITLE: ${note.title || "(untitled)"}\n\nNOTE CONTENT:\n${note.content}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "note_analysis",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((block) => block.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");

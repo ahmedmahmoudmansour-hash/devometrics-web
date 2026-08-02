@@ -38,7 +38,14 @@ const RECORD_TOOL = {
 // general, well-known knowledge of the role rather than blocking the whole
 // Gap Analysis on a missing paste. Explicitly not a fabricated citation to a
 // specific real job posting or company — general role-knowledge only.
-export async function inferRoleContext(targetRole: string, cvText: string): Promise<RoleContext> {
+export async function inferRoleContext(
+  targetRole: string,
+  cvText: string,
+  // Same onUsage pattern as extractCompetencies (lib/gap-analysis/extract.ts)
+  // — lets a caller that needs cost tracking observe real token usage
+  // without changing this function's return type for callers that don't.
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void
+): Promise<RoleContext> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 1024,
@@ -51,6 +58,12 @@ export async function inferRoleContext(targetRole: string, cvText: string): Prom
         content: `TARGET ROLE: ${targetRole}\n\nCANDIDATE'S CURRENT BACKGROUND:\n${cvText}`,
       },
     ],
+  });
+
+  onUsage?.({
+    model: response.model,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
 
   const toolUse = response.content.find((block) => block.type === "tool_use");

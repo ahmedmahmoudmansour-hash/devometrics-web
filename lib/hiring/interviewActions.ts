@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { MAX_INTERVIEW_NOTE_LENGTH } from "@/lib/limits";
+import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { CandidateAssessment } from "./types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -141,6 +142,9 @@ export async function generateCandidateAssessment(candidateId: string): Promise<
 
   const notesBlock = notes.map((n, i) => `Note ${i + 1}:\n${n.note}`).join("\n\n");
 
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
@@ -155,6 +159,14 @@ export async function generateCandidateAssessment(candidateId: string): Promise<
           content: `CANDIDATE: ${candidate.full_name}\n\nROLE: ${posting?.title ?? "(unspecified)"}\n\nJOB DESCRIPTION:\n${posting?.job_description || "(none provided)"}\n\nMANAGER'S INTERVIEW NOTES (oldest to newest):\n${notesBlock}`,
         },
       ],
+    });
+    await recordAiUsage(supabase, {
+      organizationId,
+      userId: user.id,
+      feature: "candidate_interview_assessment",
+      model: response.model,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
