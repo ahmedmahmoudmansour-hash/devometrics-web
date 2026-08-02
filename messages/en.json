@@ -134,6 +134,7 @@
     "headline": "Invest in the gap that matters",
     "subtext": "One salary-band improvement pays for decades of Devometrics.",
     "pilotNote": "Pilot phase: every account gets full Individual access right now, free — the tiers below are what launches after the pilot.",
+    "studentNoteContactSales": "Student, or want to talk pricing? Email us at",
     "regionNote": "Pricing shown reflects your region automatically.",
     "studentNote": "Student? Email sales@devometrics.com",
     "studentDiscount": "for a {percent}% discount.",
@@ -160,7 +161,7 @@
     "planPremiumFeature8": "Resume Intelligence — 4 runs/mo",
     "planPremiumFeature9": "Interview Simulator, text + voice — 50 sessions/mo",
     "planPremiumFeature10": "Priority support",
-    "planPremiumCta": "Try it now",
+    "planPremiumCta": "Talk to sales",
     "planEnterpriseName": "Enterprise",
     "planEnterpriseDescription": "Workforce intelligence for teams and organizations — AI credit and features scale with your headcount.",
     "planEnterpriseFeature1": "Everything in Individual, for every seat",
@@ -172,7 +173,7 @@
     "planEnterpriseFeature7": "Executive-level assessments",
     "planEnterpriseFeature8": "Bulk employee import + Excel export",
     "planEnterpriseFeature9": "Fully isolated company data",
-    "planEnterpriseCta": "Set up your company workspace",
+    "planEnterpriseCta": "Talk to sales",
     "mostPopular": "Most popular",
     "perEmployeeMo": "/employee/mo",
     "billedAnnually": "Billed annually · {min}-employee minimum",
@@ -575,8 +576,7 @@
   "upgradeToPremiumCard": {
     "title": "Upgrade to Premium",
     "subtitle": "Full gap analysis, all assessments, longer plan horizons, and named resources per milestone.",
-    "monthly": "Monthly",
-    "annual": "Annual — save more"
+    "contactToUpgrade": "Contact us to upgrade"
   },
   "premiumTrialForm": {
     "activated": "Premium trial activated — you have full access for {days} days.",
@@ -1147,8 +1147,7 @@
   },
   "premiumGate": {
     "premiumFeature": "Premium feature",
-    "upgradeMonthly": "Upgrade — Monthly",
-    "annualSaveMore": "Annual — save more"
+    "contactToUpgrade": "Contact us to upgrade"
   },
   "cognitiveAbilityPage": {
     "backToAll": "← All assessments",

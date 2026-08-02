@@ -1,25 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
-import {
-  PRICING,
-  STUDENT_DISCOUNT,
-  PROMO_DISCOUNT,
-  PROMO_END_DATE,
-  ENTERPRISE_PRICING,
-  ENTERPRISE_MIN_SEATS,
-  isPromoActive,
-  promoPrice,
-  type PricingRegion,
-} from "@/lib/billing/pricingTiers";
-
-function discountPercent(region: PricingRegion): number {
-  const { monthly, annual } = PRICING[region];
-  return Math.round((1 - annual / (monthly * 12)) * 100);
-}
+import { ENTERPRISE_MIN_SEATS, type PricingRegion } from "@/lib/billing/pricingTiers";
 
 // Translated function names (t) aren't stable identifiers to branch logic
 // on, so plans carry their own ctaType instead of the old
@@ -39,26 +23,16 @@ type Plan = {
   popular: boolean;
 };
 
-export default function Pricing({ initialRegion }: { initialRegion: PricingRegion }) {
+// initialRegion is threaded through from app/page.tsx's geo-IP lookup and
+// kept as a real prop (not deleted) even though no branch here reads it
+// right now — region-based $ figures are paused while pricing is decided
+// directly per deal (see the price: null on Premium/Enterprise below), not
+// removed, so turning real numbers back on later is a data change here,
+// not a call-site change in app/page.tsx.
+export default function Pricing({ initialRegion: _initialRegion }: { initialRegion: PricingRegion }) {
   const t = useTranslations("pricing");
-  const locale = useLocale();
-  const [annual, setAnnual] = useState(true);
-  const region = initialRegion;
-
-  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
-  const promoEndLabel = PROMO_END_DATE.toLocaleDateString(dateLocale, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
 
   function buildPlans(): Plan[] {
-    const promoActive = isPromoActive();
-    const premiumMonthly = promoActive ? promoPrice(region, "monthly") : PRICING[region].monthly;
-    const premiumAnnual = promoActive ? promoPrice(region, "annual") : PRICING[region].annual;
-    const originalMonthly = promoActive ? PRICING[region].monthly : null;
-    const originalAnnual = promoActive ? PRICING[region].annual : null;
-
     return [
       {
         name: t("planFreeName"),
@@ -79,9 +53,13 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
         popular: false,
       },
       {
+        // No $ figure shown for now — pricing is set directly per deal
+        // rather than published, so this always renders the "Custom"
+        // branch below (plan.price.monthly === null) regardless of region
+        // or promo state.
         name: t("planPremiumName"),
-        price: { monthly: premiumMonthly, annual: premiumAnnual },
-        originalPrice: { monthly: originalMonthly, annual: originalAnnual },
+        price: { monthly: null, annual: null },
+        originalPrice: { monthly: null, annual: null },
         perSeat: false,
         description: t("planPremiumDescription"),
         features: [
@@ -97,15 +75,18 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
           t("planPremiumFeature10"),
         ],
         cta: t("planPremiumCta"),
-        ctaType: "signup",
+        ctaType: "contact",
         ctaStyle: "filled",
         popular: true,
       },
       {
+        // Same as Premium above — was a real per-seat $ figure
+        // (ENTERPRISE_PRICING[region]), now always "Custom" until pricing
+        // is public again.
         name: t("planEnterpriseName"),
-        price: { monthly: ENTERPRISE_PRICING[region], annual: null },
+        price: { monthly: null, annual: null },
         originalPrice: { monthly: null, annual: null },
-        perSeat: true,
+        perSeat: false,
         description: t("planEnterpriseDescription"),
         features: [
           t("planEnterpriseFeature1"),
@@ -119,7 +100,7 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
           t("planEnterpriseFeature9"),
         ],
         cta: t("planEnterpriseCta"),
-        ctaType: "signup",
+        ctaType: "contact",
         ctaStyle: "filled",
         popular: false,
       },
@@ -127,7 +108,6 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
   }
 
   const plans = buildPlans();
-  const savePercent = discountPercent(region);
 
   return (
     <section
@@ -183,70 +163,11 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
         </p>
 
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-          {t("regionNote")}{" "}
+          {t("studentNoteContactSales")}{" "}
           <a href="mailto:sales@devometrics.com" style={{ color: "var(--teal)" }}>
-            {t("studentNote")}
-          </a>{" "}
-          {t("studentDiscount", { percent: Math.round(STUDENT_DISCOUNT * 100) })}
+            sales@devometrics.com
+          </a>
         </p>
-
-        {/* Monthly/Annual toggle */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 12,
-            marginTop: 20,
-            background: "var(--navy-mid)",
-            border: "1px solid var(--border)",
-            borderRadius: 100,
-            paddingInlineStart: 16,
-            paddingInlineEnd: 4,
-            paddingBlock: 4,
-          }}
-        >
-          <span style={{ fontSize: 14, color: annual ? "var(--text-muted)" : "var(--text)", fontWeight: 500 }}>{t("monthly")}</span>
-          <button
-            onClick={() => setAnnual(!annual)}
-            style={{
-              width: 48,
-              height: 28,
-              background: "var(--navy-light)",
-              border: "1px solid var(--border)",
-              borderRadius: 100,
-              cursor: "pointer",
-              position: "relative",
-              transition: "background 0.2s",
-            }}
-          >
-            <span
-              style={{
-                position: "absolute",
-                insetBlockStart: 3,
-                insetInlineStart: annual ? 22 : 3,
-                width: 20,
-                height: 20,
-                background: "var(--teal)",
-                borderRadius: "50%",
-                transition: "inset-inline-start 0.2s ease",
-              }}
-            />
-          </button>
-          <span style={{ fontSize: 14, color: annual ? "var(--text)" : "var(--text-muted)", fontWeight: 500 }}>{t("annual")}</span>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--teal)",
-              background: "rgba(0,201,167,0.1)",
-              borderRadius: 100,
-              padding: "4px 10px",
-              marginInlineEnd: 4,
-            }}
-          >
-            {t("savePercent", { percent: savePercent })}
-          </span>
-        </div>
       </div>
 
       {/* Cards */}
@@ -311,27 +232,13 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
                 </>
               ) : plan.price.monthly === null ? (
                 <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>{t("custom")}</span>
-              ) : plan.price.monthly === 0 ? (
-                <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>{t("free")}</span>
               ) : (
-                <>
-                  {(annual ? plan.originalPrice.annual : plan.originalPrice.monthly) !== null && (
-                    <span className="mono" style={{ fontSize: 18, fontWeight: 400, color: "var(--text-muted)", textDecoration: "line-through", marginInlineEnd: 8 }}>
-                      ${annual ? plan.originalPrice.annual : plan.originalPrice.monthly}
-                    </span>
-                  )}
-                  <span className="mono" style={{ fontSize: 34, fontWeight: 700, color: "var(--text)" }}>
-                    ${annual ? plan.price.annual : plan.price.monthly}
-                    <span style={{ fontSize: 15, fontWeight: 400, color: "var(--text-muted)" }}>
-                      {annual ? t("perYear") : t("perMonth")}
-                    </span>
-                  </span>
-                  {(annual ? plan.originalPrice.annual : plan.originalPrice.monthly) !== null && (
-                    <p style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, marginTop: 4 }}>
-                      {t("offUntil", { percent: Math.round(PROMO_DISCOUNT * 100), date: promoEndLabel })}
-                    </p>
-                  )}
-                </>
+                // Only Free (0) reaches here now that Premium/Enterprise
+                // are always null above — a real nonzero price branch
+                // (with the annual/monthly toggle + promo pricing) existed
+                // here before pricing was hidden; see git history to
+                // restore it once prices go public again.
+                <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em" }}>{t("free")}</span>
               )}
             </div>
 
@@ -460,9 +367,6 @@ export default function Pricing({ initialRegion }: { initialRegion: PricingRegio
             >
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t(`scalingTier${n}Name`)}</span>
-                <span className="mono" style={{ fontSize: 15, fontWeight: 700, color: "var(--teal)" }}>
-                  {t(`scalingTier${n}Credit`)}
-                </span>
               </div>
               <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{t(`scalingTier${n}Size`)}</p>
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.6 }}>{t(`scalingTier${n}Adds`)}</p>

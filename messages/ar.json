@@ -134,6 +134,7 @@
     "headline": "استثمر في الفجوة التي تهم",
     "subtext": "تحسين واحد في الشريحة الوظيفية يغطي تكلفة عقود من الاشتراك في ديفومتركس.",
     "pilotNote": "مرحلة تجريبية: يحصل كل حساب حاليًا على وصول كامل لباقة فردي مجانًا — الفئات أدناه هي ما سيُطلق بعد انتهاء المرحلة التجريبية.",
+    "studentNoteContactSales": "طالب، أو تريد مناقشة الأسعار؟ راسلنا على",
     "regionNote": "الأسعار المعروضة تعكس منطقتك تلقائيًا.",
     "studentNote": "طالب؟ راسلنا على sales@devometrics.com",
     "studentDiscount": "للحصول على خصم {percent}%.",
@@ -160,7 +161,7 @@
     "planPremiumFeature8": "ذكاء السيرة الذاتية — 4 مرات شهريًا",
     "planPremiumFeature9": "محاكي المقابلات، نص + صوت — 50 جلسة شهريًا",
     "planPremiumFeature10": "دعم ذو أولوية",
-    "planPremiumCta": "جرّبها الآن",
+    "planPremiumCta": "تحدث مع فريق المبيعات",
     "planEnterpriseName": "المؤسسات",
     "planEnterpriseDescription": "ذكاء القوى العاملة للفرق والمؤسسات — رصيد الذكاء الاصطناعي والميزات تتوسع مع عدد موظفيك.",
     "planEnterpriseFeature1": "كل ما في باقة فردي، لكل مقعد",
@@ -172,7 +173,7 @@
     "planEnterpriseFeature7": "تقييمات على مستوى الإدارة التنفيذية",
     "planEnterpriseFeature8": "استيراد جماعي للموظفين + تصدير إلى إكسل",
     "planEnterpriseFeature9": "بيانات الشركة معزولة تمامًا",
-    "planEnterpriseCta": "أنشئ مساحة عمل شركتك",
+    "planEnterpriseCta": "تحدث مع فريق المبيعات",
     "mostPopular": "الأكثر شيوعًا",
     "perEmployeeMo": "/موظف/شهريًا",
     "billedAnnually": "تُفوتَر سنويًا · حد أدنى {min} موظفين",
@@ -575,8 +576,7 @@
   "upgradeToPremiumCard": {
     "title": "الترقية إلى بريميوم",
     "subtitle": "تحليل فجوة كامل، وجميع التقييمات، وآفاق خطط أطول، وموارد محددة بالاسم لكل محطة.",
-    "monthly": "شهري",
-    "annual": "سنوي — وفّر أكثر"
+    "contactToUpgrade": "تواصل معنا للترقية"
   },
   "premiumTrialForm": {
     "activated": "تم تفعيل تجربة بريميوم — لديك وصول كامل لمدة {days} يومًا.",
@@ -1147,8 +1147,7 @@
   },
   "premiumGate": {
     "premiumFeature": "ميزة بريميوم",
-    "upgradeMonthly": "الترقية — شهري",
-    "annualSaveMore": "سنوي — وفّر أكثر"
+    "contactToUpgrade": "تواصل معنا للترقية"
   },
   "cognitiveAbilityPage": {
     "backToAll": "← كل التقييمات",

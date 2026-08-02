@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 export default function UpgradeToPremiumCard() {
@@ -10,38 +11,22 @@ export default function UpgradeToPremiumCard() {
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
         {t("subtitle")}
       </p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <a
-          href="/api/billing/checkout?cadence=monthly"
-          style={{
-            background: "var(--teal)",
-            color: "#0A0F1E",
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 16px",
-            fontSize: 13,
-            fontWeight: 700,
-            textDecoration: "none",
-          }}
-        >
-          {t("monthly")}
-        </a>
-        <a
-          href="/api/billing/checkout?cadence=annual"
-          style={{
-            background: "transparent",
-            color: "var(--teal)",
-            border: "1px solid rgba(0,201,167,0.4)",
-            borderRadius: 8,
-            padding: "8px 16px",
-            fontSize: 13,
-            fontWeight: 700,
-            textDecoration: "none",
-          }}
-        >
-          {t("annual")}
-        </a>
-      </div>
+      <Link
+        href="/contact?type=sales"
+        style={{
+          display: "inline-block",
+          background: "var(--teal)",
+          color: "#0A0F1E",
+          border: "none",
+          borderRadius: 8,
+          padding: "8px 16px",
+          fontSize: 13,
+          fontWeight: 700,
+          textDecoration: "none",
+        }}
+      >
+        {t("contactToUpgrade")}
+      </Link>
     </div>
   );
 }

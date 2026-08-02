@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { SubscriptionTier } from "@/lib/billing/subscriptionTier";
 
@@ -27,38 +28,22 @@ export default function PremiumGate({
       </p>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{feature}</h2>
       <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 20 }}>{description}</p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <a
-          href="/api/billing/checkout?cadence=monthly"
-          style={{
-            background: "var(--teal)",
-            color: "#0A0F1E",
-            border: "none",
-            borderRadius: 8,
-            padding: "10px 20px",
-            fontSize: 14,
-            fontWeight: 700,
-            textDecoration: "none",
-          }}
-        >
-          {t("upgradeMonthly")}
-        </a>
-        <a
-          href="/api/billing/checkout?cadence=annual"
-          style={{
-            background: "transparent",
-            color: "var(--teal)",
-            border: "1px solid rgba(0,201,167,0.4)",
-            borderRadius: 8,
-            padding: "10px 20px",
-            fontSize: 14,
-            fontWeight: 700,
-            textDecoration: "none",
-          }}
-        >
-          {t("annualSaveMore")}
-        </a>
-      </div>
+      <Link
+        href="/contact?type=sales"
+        style={{
+          display: "inline-block",
+          background: "var(--teal)",
+          color: "#0A0F1E",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 20px",
+          fontSize: 14,
+          fontWeight: 700,
+          textDecoration: "none",
+        }}
+      >
+        {t("contactToUpgrade")}
+      </Link>
     </div>
   );
 }
