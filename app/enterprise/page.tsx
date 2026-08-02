@@ -204,7 +204,7 @@ export default async function EnterprisePage() {
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <Link
-                href="/signup"
+                href="/contact?type=sales"
                 style={{
                   background: "var(--teal)",
                   color: "#0A0F1E",
@@ -216,7 +216,7 @@ export default async function EnterprisePage() {
                   letterSpacing: "0.01em",
                 }}
               >
-                {t("ctaSetup")}
+                {t("talkToSales")}
               </Link>
               <a
                 href="#capabilities"
@@ -435,7 +435,7 @@ export default async function EnterprisePage() {
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
-              href="/signup"
+              href="/contact?type=sales"
               style={{
                 background: "var(--teal)",
                 color: "#0A0F1E",
@@ -445,20 +445,6 @@ export default async function EnterprisePage() {
                 padding: "14px 28px",
                 borderRadius: 10,
                 letterSpacing: "0.01em",
-              }}
-            >
-              {t("ctaSetup")}
-            </Link>
-            <Link
-              href="/contact?type=sales"
-              style={{
-                color: "var(--text)",
-                textDecoration: "none",
-                fontSize: 15,
-                fontWeight: 600,
-                padding: "14px 20px",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
               }}
             >
               {t("talkToSales")}
