@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { toggleTask, createTask } from "@/lib/tasks/actions";
 import type { PersonalTask } from "@/lib/tasks/types";
 import type { WeekDeadline } from "@/lib/tasks/actions";
@@ -14,8 +15,21 @@ const PRIORITY_DOT: Record<PersonalTask["priority"], string> = {
   low: "var(--text-muted)",
 };
 
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAY_LABEL_KEYS = ["dayMon", "dayTue", "dayWed", "dayThu", "dayFri", "daySat", "daySun"] as const;
+const MONTH_LABEL_KEYS = [
+  "monthJan",
+  "monthFeb",
+  "monthMar",
+  "monthApr",
+  "monthMay",
+  "monthJun",
+  "monthJul",
+  "monthAug",
+  "monthSep",
+  "monthOct",
+  "monthNov",
+  "monthDec",
+] as const;
 
 function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -86,6 +100,7 @@ function QuickAdd({
   onClose: () => void;
   onMoreOptions?: () => void;
 }) {
+  const t = useTranslations("calendarView");
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +109,7 @@ function QuickAdd({
 
   function save() {
     if (!title.trim()) {
-      setError("Give it a title");
+      setError(t("titleRequired"));
       return;
     }
     setError(null);
@@ -144,8 +159,8 @@ function QuickAdd({
           if (e.key === "Enter") save();
           if (e.key === "Escape") onClose();
         }}
-        placeholder="Task title…"
-        aria-label={`New task on ${day}`}
+        placeholder={t("taskTitlePlaceholder")}
+        aria-label={t("newTaskOnAria", { date: day })}
         style={fieldStyle}
       />
       <input
@@ -153,7 +168,7 @@ function QuickAdd({
         lang="en-US"
         value={time}
         onChange={(e) => setTime(e.target.value)}
-        aria-label="Time (optional)"
+        aria-label={t("timeOptionalAria")}
         style={{ ...fieldStyle, colorScheme: "dark" }}
       />
       {error && <p style={{ color: "#f87171", fontSize: 11 }}>{error}</p>}
@@ -174,14 +189,14 @@ function QuickAdd({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Adding…" : "Add"}
+          {isPending ? t("adding") : t("add")}
         </button>
         <button
           type="button"
           onClick={onClose}
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
         >
-          Cancel
+          {t("cancel")}
         </button>
         {onMoreOptions && (
           <button
@@ -189,7 +204,7 @@ function QuickAdd({
             onClick={onMoreOptions}
             style={{ background: "none", border: "none", fontSize: 11, color: "var(--teal)", cursor: "pointer", padding: 0 }}
           >
-            More options ↓
+            {t("moreOptions")}
           </button>
         )}
       </div>
@@ -210,6 +225,11 @@ export default function CalendarView({
   deadlines: WeekDeadline[];
   onDayClick?: (dateStr: string) => void;
 }) {
+  const t = useTranslations("calendarView");
+  const locale = useLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
+  const DAY_LABELS = DAY_LABEL_KEYS.map((k) => t(k));
+  const MONTH_LABELS = MONTH_LABEL_KEYS.map((k) => t(k));
   const [mode, setMode] = useState<Mode>("week");
   const [offset, setOffset] = useState(0);
   const [quickAddDay, setQuickAddDay] = useState<string | null>(null);
@@ -258,8 +278,8 @@ export default function CalendarView({
     const leading = (firstDay.getDay() + 6) % 7; // Monday-first offset
     const cells: (string | null)[] = Array(leading).fill(null);
     for (let d = 1; d <= lastDay.getDate(); d++) cells.push(toDateStr(new Date(year, m, d)));
-    return { label: `${firstDay.toLocaleString("default", { month: "long" })} ${year}`, cells };
-  }, [today, offset]);
+    return { label: `${firstDay.toLocaleString(dateLocale, { month: "long" })} ${year}`, cells };
+  }, [today, offset, dateLocale]);
 
   const year = useMemo(() => {
     const y = today.getFullYear() + offset;
@@ -271,34 +291,34 @@ export default function CalendarView({
       return { label: MONTH_LABELS[m], deadlines: monthDeadlines, total: monthTasks.length, completed: monthTasks.filter((t) => t.completed).length };
     });
     return { year: y, months };
-  }, [today, offset, tasks, deadlines]);
+  }, [today, offset, tasks, deadlines, locale]);
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 4 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Calendar</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("title")}</h2>
         <div style={{ display: "flex", gap: 6 }}>
           {(["week", "month", "year"] as Mode[]).map((m) => (
             <button key={m} type="button" onClick={() => changeMode(m)} style={modeButtonStyle(mode === m)}>
-              {m[0].toUpperCase() + m.slice(1)}
+              {t(`modeLabel.${m}`)}
             </button>
           ))}
         </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <button type="button" onClick={() => setOffset((o) => o - 1)} style={navButtonStyle} aria-label="Previous">
+        <button type="button" onClick={() => setOffset((o) => o - 1)} style={navButtonStyle} aria-label={t("previousAria")}>
           ←
         </button>
         <span style={{ fontSize: 12, color: "var(--text-muted)", minWidth: 140 }}>
           {mode === "week" ? week.label : mode === "month" ? month.label : year.year}
         </span>
-        <button type="button" onClick={() => setOffset((o) => o + 1)} style={navButtonStyle} aria-label="Next">
+        <button type="button" onClick={() => setOffset((o) => o + 1)} style={navButtonStyle} aria-label={t("nextAria")}>
           →
         </button>
         {offset !== 0 && (
           <button type="button" onClick={() => setOffset(0)} style={{ ...navButtonStyle, width: "auto", padding: "0 10px" }}>
-            Today
+            {t("todayButton")}
           </button>
         )}
       </div>
@@ -422,7 +442,7 @@ export default function CalendarView({
           {quickAddDay && month.cells.includes(quickAddDay) && (
             <div style={{ maxWidth: 340 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: "var(--teal)", marginTop: 10 }}>
-                New task — {quickAddDay}
+                {t("newTaskHeading", { date: quickAddDay })}
               </p>
               <QuickAdd
                 day={quickAddDay}
@@ -447,7 +467,7 @@ export default function CalendarView({
             <div key={m.label} style={{ border: "1px solid var(--border)", background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 12 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{m.label}</p>
               {m.deadlines.length === 0 ? (
-                <p style={{ fontSize: 10.5, color: "var(--text-muted)" }}>No deadlines</p>
+                <p style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{t("noDeadlines")}</p>
               ) : (
                 m.deadlines.map((d) => (
                   <p key={d.milestoneId} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -457,7 +477,7 @@ export default function CalendarView({
               )}
               {m.total > 0 && (
                 <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 6 }}>
-                  {m.completed}/{m.total} tasks done
+                  {t("tasksDoneCount", { completed: m.completed, total: m.total })}
                 </p>
               )}
             </div>

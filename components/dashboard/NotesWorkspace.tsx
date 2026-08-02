@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { createNote, updateNote, deleteNote, analyzeNote } from "@/lib/notes/actions";
 import { createTask } from "@/lib/tasks/actions";
 import type { NoteInsight, PersonalNote } from "@/lib/supabase/types";
@@ -25,6 +26,7 @@ function NoteEditor({
   note: PersonalNote | null; // null = creating a new note
   onDone: () => void;
 }) {
+  const t = useTranslations("notesWorkspace");
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -50,15 +52,15 @@ function NoteEditor({
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title"
-        aria-label="Note title"
+        placeholder={t("titlePlaceholder")}
+        aria-label={t("noteTitleAria")}
         style={inputStyle}
       />
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="Write freely — meeting thoughts, ideas, observations, things you don't want to lose…"
-        aria-label="Note content"
+        placeholder={t("contentPlaceholder")}
+        aria-label={t("noteContentAria")}
         rows={8}
         style={{ ...inputStyle, resize: "vertical" }}
       />
@@ -80,7 +82,7 @@ function NoteEditor({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Saving…" : "Save note"}
+          {isPending ? t("savingButton") : t("saveNoteButton")}
         </button>
         <button
           type="button"
@@ -97,7 +99,7 @@ function NoteEditor({
             cursor: "pointer",
           }}
         >
-          Cancel
+          {t("cancelButton")}
         </button>
       </div>
     </div>
@@ -105,6 +107,7 @@ function NoteEditor({
 }
 
 function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsight: NoteInsight | null }) {
+  const t = useTranslations("notesWorkspace");
   const [insight, setInsight] = useState<NoteInsight | null>(initialInsight);
   const [error, setError] = useState<string | null>(null);
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
@@ -149,7 +152,7 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Organizing…" : "✨ Organize with AI"}
+          {isPending ? t("organizingButton") : t("organizeWithAiButton")}
         </button>
         {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
       </div>
@@ -167,20 +170,20 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
       }}
     >
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginBottom: 6 }}>
-        AI summary
+        {t("aiSummaryLabel")}
       </p>
       <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.7 }}>{insight.summary}</p>
       {insight.actionItems.length > 0 && (
         <>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginTop: 12, marginBottom: 6 }}>
-            Action items
+            {t("actionItemsLabel")}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {insight.actionItems.map((item, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>— {item}</span>
                 {addedItems.has(i) ? (
-                  <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, whiteSpace: "nowrap" }}>✓ Added to tasks</span>
+                  <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700, whiteSpace: "nowrap" }}>{t("addedToTasks")}</span>
                 ) : (
                   <button
                     type="button"
@@ -198,7 +201,7 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
                       whiteSpace: "nowrap",
                     }}
                   >
-                    + Add as task
+                    {t("addAsTaskButton")}
                   </button>
                 )}
               </div>
@@ -212,6 +215,9 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
 }
 
 export default function NotesWorkspace({ initialNotes }: { initialNotes: PersonalNote[] }) {
+  const t = useTranslations("notesWorkspace");
+  const locale = useLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -246,15 +252,14 @@ export default function NotesWorkspace({ initialNotes }: { initialNotes: Persona
             alignSelf: "flex-start",
           }}
         >
-          + New note
+          {t("newNoteButton")}
         </button>
       )}
 
       {initialNotes.length === 0 && !creating && (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
           <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
-            Nothing here yet. Capture a thought after a meeting, an idea for your development plan,
-            or feedback you want to remember — then let the AI turn it into action items.
+            {t("emptyState")}
           </p>
         </div>
       )}
@@ -268,10 +273,10 @@ export default function NotesWorkspace({ initialNotes }: { initialNotes: Persona
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                 <div>
                   <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>
-                    {note.title || "Untitled note"}
+                    {note.title || t("untitledNote")}
                   </h2>
                   <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                    {new Date(note.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {new Date(note.updated_at).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -280,7 +285,7 @@ export default function NotesWorkspace({ initialNotes }: { initialNotes: Persona
                     onClick={() => setEditingId(note.id)}
                     style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
                   >
-                    Edit
+                    {t("editButton")}
                   </button>
                   <button
                     type="button"
@@ -288,7 +293,7 @@ export default function NotesWorkspace({ initialNotes }: { initialNotes: Persona
                     disabled={isPending}
                     style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
                   >
-                    Delete
+                    {t("deleteButton")}
                   </button>
                 </div>
               </div>

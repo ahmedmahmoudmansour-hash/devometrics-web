@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function CourseRecommendations({ topic }: { topic: string }) {
+  const t = useTranslations("courseRecommendations");
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,12 +24,12 @@ export default function CourseRecommendations({ topic }: { topic: string }) {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "Could not fetch course recommendations");
+          throw new Error(body.error || t("fetchError"));
         }
         const { summary: text } = await res.json();
         setSummary(text);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not fetch course recommendations");
+        setError(err instanceof Error ? err.message : t("fetchError"));
       } finally {
         setLoading(false);
       }
@@ -41,11 +43,11 @@ export default function CourseRecommendations({ topic }: { topic: string }) {
         onClick={handleToggle}
         style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}
       >
-        {open ? "▲ Hide course recommendations" : "🔍 Find real courses for this"}
+        {open ? t("hideCourses") : t("findCourses")}
       </button>
       {open && (
         <div style={{ marginTop: 8 }}>
-          {loading && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Searching the web…</p>}
+          {loading && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("searching")}</p>}
           {error && <p style={{ fontSize: 12, color: "#f87171" }}>{error}</p>}
           {summary && (
             <div

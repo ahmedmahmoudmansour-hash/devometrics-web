@@ -2,10 +2,12 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { getCalendarFeedToken } from "@/lib/tasks/calendarFeed";
 import { importCalendarICS } from "@/lib/tasks/icsImportAction";
 
 export default function CalendarSyncCard() {
+  const t = useTranslations("calendarSyncCard");
   const router = useRouter();
   const [feedUrl, setFeedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export default function CalendarSyncCard() {
         if (result.imported) router.refresh();
       });
     };
-    reader.onerror = () => setImportStatus({ error: "Could not read that file." });
+    reader.onerror = () => setImportStatus({ error: t("couldNotReadFile") });
     reader.readAsText(file);
   }
 
@@ -62,11 +64,10 @@ export default function CalendarSyncCard() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
-            🔄 Sync with Outlook / Google Calendar
+            {t("title")}
           </h2>
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5, maxWidth: 520 }}>
-            Subscribe once and your Devometrics tasks and milestone deadlines appear in your own
-            calendar automatically — and stay updated as you add more.
+            {t("description")}
           </p>
         </div>
         {!feedUrl && (
@@ -87,7 +88,7 @@ export default function CalendarSyncCard() {
               opacity: isPending ? 0.6 : 1,
             }}
           >
-            {isPending ? "Setting up…" : "Get my calendar link"}
+            {isPending ? t("settingUp") : t("getMyCalendarLink")}
           </button>
         )}
       </div>
@@ -128,35 +129,30 @@ export default function CalendarSyncCard() {
                 whiteSpace: "nowrap",
               }}
             >
-              {copied ? "✓ Copied" : "Copy link"}
+              {copied ? t("copied") : t("copyLink")}
             </button>
           </div>
-          <ul style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8, marginTop: 10, paddingLeft: 18 }}>
+          <ul style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8, marginTop: 10, paddingInlineStart: 18 }}>
             <li>
-              <strong style={{ color: "var(--text)" }}>Outlook:</strong> Calendar → Add calendar →
-              Subscribe from web → paste the link
+              <strong style={{ color: "var(--text)" }}>{t("outlookLabel")}</strong> {t("outlookSteps")}
             </li>
             <li>
-              <strong style={{ color: "var(--text)" }}>Google Calendar:</strong> Other calendars → + →
-              From URL → paste the link
+              <strong style={{ color: "var(--text)" }}>{t("googleLabel")}</strong> {t("googleSteps")}
             </li>
             <li>
-              <strong style={{ color: "var(--text)" }}>Apple Calendar:</strong> File → New Calendar
-              Subscription → paste the link
+              <strong style={{ color: "var(--text)" }}>{t("appleLabel")}</strong> {t("appleSteps")}
             </li>
           </ul>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
-            Treat this link like a password — anyone with it can see your task titles. Calendar apps
-            refresh subscribed feeds on their own schedule (typically every few hours).
+            {t("privacyNote")}
           </p>
         </div>
       )}
 
       <div style={{ borderTop: "1px solid var(--border)", marginTop: 16, paddingTop: 14 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>⬆ Import from Outlook / Google / Apple</h3>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("importTitle")}</h3>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, marginBottom: 10, lineHeight: 1.5, maxWidth: 520 }}>
-          Already have events somewhere else? Export a calendar as an .ics file and bring it in as
-          tasks — a one-time import, not a live sync.
+          {t("importDescription")}
         </p>
         <input
           ref={fileInputRef}
@@ -183,17 +179,16 @@ export default function CalendarSyncCard() {
             opacity: isImporting ? 0.6 : 1,
           }}
         >
-          {isImporting ? "Importing…" : "Choose .ics file"}
+          {isImporting ? t("importing") : t("chooseIcsFile")}
         </label>
         {importStatus?.imported !== undefined && (
           <p style={{ fontSize: 12, color: "var(--teal)", marginTop: 8 }}>
-            ✓ Imported {importStatus.imported} event{importStatus.imported === 1 ? "" : "s"} as tasks.
+            {importStatus.imported === 1 ? t("importedOne") : t("importedMany", { count: importStatus.imported })}
           </p>
         )}
         {importStatus?.error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 8 }}>{importStatus.error}</p>}
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
-          In Outlook: File → Save Calendar → export as .ics. In Google Calendar: Settings → Import &
-          export → Export. In Apple Calendar: File → Export.
+          {t("exportInstructions")}
         </p>
       </div>
     </div>

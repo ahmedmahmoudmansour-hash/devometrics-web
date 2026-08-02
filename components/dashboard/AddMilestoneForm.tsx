@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { createMilestone } from "@/app/dashboard/actions";
 
 export default function AddMilestoneForm({
@@ -10,6 +11,7 @@ export default function AddMilestoneForm({
   planId: string;
   nextPosition: number;
 }) {
+  const t = useTranslations("addMilestoneForm");
   const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +34,8 @@ export default function AddMilestoneForm({
         <input
           ref={inputRef}
           type="text"
-          aria-label="New milestone title"
-          placeholder="Add a milestone…"
+          aria-label={t("newMilestoneTitleAria")}
+          placeholder={t("addMilestonePlaceholder")}
           style={{
             flex: 1,
             background: "rgba(255,255,255,0.05)",
@@ -60,7 +62,7 @@ export default function AddMilestoneForm({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          Add
+          {t("add")}
         </button>
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}

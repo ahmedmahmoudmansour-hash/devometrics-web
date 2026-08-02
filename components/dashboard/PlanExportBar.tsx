@@ -1,6 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 export default function PlanExportBar({ planId, title }: { planId: string; title: string }) {
+  const t = useTranslations("planExportBar");
   return (
     <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
       <button
@@ -17,7 +20,7 @@ export default function PlanExportBar({ planId, title }: { planId: string; title
           cursor: "pointer",
         }}
       >
-        Download as PDF
+        {t("downloadPdf")}
       </button>
       <a
         href={`/api/plans/${planId}/export/docx`}
@@ -33,7 +36,7 @@ export default function PlanExportBar({ planId, title }: { planId: string; title
           textDecoration: "none",
         }}
       >
-        Download as Word
+        {t("downloadWord")}
       </a>
     </div>
   );

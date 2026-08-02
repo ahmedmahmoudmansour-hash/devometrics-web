@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import Avatar from "@/components/Avatar";
 import {
   postAccountabilityCheckin,
@@ -10,16 +11,19 @@ import {
 } from "@/lib/accountability/actions";
 import type { AccountabilityGroup, AccountabilityGroupMember, AccountabilityCheckin } from "@/lib/accountability/types";
 
-function timeAgo(iso: string): string {
+// t is passed in rather than called via a hook here, since this is a plain
+// function (hooks can only be called from component bodies) — the caller
+// already has it from its own useTranslations("accountabilityGroups") call.
+function timeAgo(iso: string, t: ReturnType<typeof useTranslations>, dateLocale: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(ms / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("justNow");
+  if (mins < 60) return t("minutesAgo", { mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("hoursAgo", { hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  if (days < 7) return t("daysAgo", { days });
+  return new Date(iso).toLocaleDateString(dateLocale);
 }
 
 export default function AccountabilityGroupDetail({
@@ -36,6 +40,9 @@ export default function AccountabilityGroupDetail({
   currentUserId: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("accountabilityGroups");
+  const locale = useLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const [checkins, setCheckins] = useState(initialCheckins);
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -64,8 +71,8 @@ export default function AccountabilityGroupDetail({
 
   function leave() {
     const prompt = isCreator
-      ? `Leave ${group.name}? You created this group — it stays open for the remaining members.`
-      : `Leave ${group.name}?`;
+      ? t("leaveConfirmCreator", { name: group.name })
+      : t("leaveConfirmMember", { name: group.name });
     if (!confirm(prompt)) return;
     startTransition(async () => {
       const result = await leaveAccountabilityGroup(group.id);
@@ -80,7 +87,7 @@ export default function AccountabilityGroupDetail({
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="What are you working on? What's your progress or blocker?"
+            placeholder={t("checkinPlaceholder")}
             style={{
               width: "100%",
               minHeight: 70,
@@ -102,24 +109,24 @@ export default function AccountabilityGroupDetail({
               disabled={isPending || !content.trim()}
               style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending || !content.trim() ? 0.6 : 1 }}
             >
-              Post check-in
+              {t("postCheckinButton")}
             </button>
           </div>
         </form>
 
         {checkins.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
-            <p style={{ fontSize: 14, color: "var(--text-muted)" }}>No check-ins yet — be the first to post.</p>
+            <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("noCheckinsYet")}</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {checkins.map((c) => (
               <div key={c.id} style={{ display: "flex", gap: 10, background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 14 }}>
-                <Avatar name={c.full_name ?? "Member"} avatarUrl={c.avatar_url} />
+                <Avatar name={c.full_name ?? t("memberFallbackName")} avatarUrl={c.avatar_url} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{c.full_name ?? "Member"}</span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{timeAgo(c.created_at)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{c.full_name ?? t("memberFallbackName")}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{timeAgo(c.created_at, t, dateLocale)}</span>
                   </div>
                   <p style={{ fontSize: 13.5, color: "var(--text)", marginTop: 4, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{c.content}</p>
                   {c.user_id === currentUserId && (
@@ -128,7 +135,7 @@ export default function AccountabilityGroupDetail({
                       onClick={() => remove(c.id)}
                       style={{ marginTop: 6, background: "none", border: "none", color: "#f87171", fontSize: 11.5, cursor: "pointer", padding: 0 }}
                     >
-                      Delete
+                      {t("deleteButton")}
                     </button>
                   )}
                 </div>
@@ -141,14 +148,14 @@ export default function AccountabilityGroupDetail({
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-            Members ({members.length})
+            {t("membersHeading", { count: members.length })}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {members.map((m) => (
               <div key={m.user_id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Avatar name={m.full_name ?? "Member"} avatarUrl={m.avatar_url} size={22} />
-                <span style={{ fontSize: 12.5, color: "var(--text)" }}>{m.full_name ?? "Member"}</span>
-                {group.created_by === m.user_id && <span style={{ fontSize: 10, color: "var(--amber)" }}>creator</span>}
+                <Avatar name={m.full_name ?? t("memberFallbackName")} avatarUrl={m.avatar_url} size={22} />
+                <span style={{ fontSize: 12.5, color: "var(--text)" }}>{m.full_name ?? t("memberFallbackName")}</span>
+                {group.created_by === m.user_id && <span style={{ fontSize: 10, color: "var(--amber)" }}>{t("creatorBadge")}</span>}
               </div>
             ))}
           </div>
@@ -156,7 +163,7 @@ export default function AccountabilityGroupDetail({
 
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-            Invite code
+            {t("inviteCodeHeading")}
           </p>
           <p style={{ fontSize: 16, fontWeight: 800, color: "var(--teal)", letterSpacing: "0.06em" }}>{group.invite_code}</p>
         </div>
@@ -167,7 +174,7 @@ export default function AccountabilityGroupDetail({
           disabled={isPending}
           style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f87171", cursor: "pointer" }}
         >
-          Leave group
+          {t("leaveGroupButton")}
         </button>
       </div>
     </div>

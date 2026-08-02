@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import {
   createAccountabilityGroup,
   previewAccountabilityGroup,
@@ -24,6 +25,7 @@ function inputStyle(): React.CSSProperties {
 }
 
 function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
+  const t = useTranslations("accountabilityGroups");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -49,7 +51,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
   if (createdCode) {
     return (
       <div style={{ background: "rgba(0,201,167,0.08)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
-        <p style={{ fontSize: 13.5, color: "var(--text)", fontWeight: 700 }}>Group created — share this code to invite peers:</p>
+        <p style={{ fontSize: 13.5, color: "var(--text)", fontWeight: 700 }}>{t("groupCreatedMessage")}</p>
         <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)", letterSpacing: "0.08em", marginTop: 6 }}>{createdCode}</p>
         <button
           type="button"
@@ -59,7 +61,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
           }}
           style={{ marginTop: 10, background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
         >
-          Done
+          {t("doneButton")}
         </button>
       </div>
     );
@@ -72,7 +74,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
         onClick={() => setOpen(true)}
         style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
       >
-        + Create group
+        {t("createGroupButton")}
       </button>
     );
   }
@@ -80,20 +82,20 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
   return (
     <form onSubmit={submit} style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>Group name *</label>
-        <input style={inputStyle()} value={name} onChange={(e) => setName(e.target.value)} required autoFocus placeholder="Product Design Study Group" />
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("groupNameLabel")}</label>
+        <input style={inputStyle()} value={name} onChange={(e) => setName(e.target.value)} required autoFocus placeholder={t("groupNamePlaceholder")} />
       </div>
       <div>
-        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>What&apos;s the focus?</label>
-        <input style={inputStyle()} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Weekly check-ins on our dev plans" />
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("focusLabel")}</label>
+        <input style={inputStyle()} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("focusPlaceholder")} />
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" disabled={isPending} style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}>
-          {isPending ? "Creating…" : "Create"}
+          {isPending ? t("creatingButton") : t("createButton")}
         </button>
         <button type="button" onClick={() => setOpen(false)} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}>
-          Cancel
+          {t("cancelButton")}
         </button>
       </div>
     </form>
@@ -101,6 +103,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
 }
 
 function JoinGroupForm({ onJoined }: { onJoined: () => void }) {
+  const t = useTranslations("accountabilityGroups");
   const [code, setCode] = useState("");
   const [preview, setPreview] = useState<{ id: string; name: string; description: string | null; member_count: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -131,17 +134,17 @@ function JoinGroupForm({ onJoined }: { onJoined: () => void }) {
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
-      <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>Have an invite code?</p>
+      <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("haveInviteCode")}</p>
       <form onSubmit={lookup} style={{ display: "flex", gap: 8 }}>
         <input
           style={{ ...inputStyle(), textTransform: "uppercase", letterSpacing: "0.05em" }}
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="ABC123"
+          placeholder={t("inviteCodePlaceholder")}
           maxLength={6}
         />
         <button type="submit" disabled={isPending || !code.trim()} style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "9px 16px", fontSize: 12.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}>
-          Look up
+          {t("lookUpButton")}
         </button>
       </form>
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
@@ -149,14 +152,14 @@ function JoinGroupForm({ onJoined }: { onJoined: () => void }) {
         <div style={{ marginTop: 12, padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{preview.name}</p>
           {preview.description && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{preview.description}</p>}
-          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4 }}>{preview.member_count} member{preview.member_count === 1 ? "" : "s"}</p>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4 }}>{t("memberCount", { count: preview.member_count })}</p>
           <button
             type="button"
             onClick={confirmJoin}
             disabled={isPending}
             style={{ marginTop: 8, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
           >
-            {isPending ? "Joining…" : "Join this group"}
+            {isPending ? t("joiningButton") : t("joinButton")}
           </button>
         </div>
       )}
@@ -165,6 +168,9 @@ function JoinGroupForm({ onJoined }: { onJoined: () => void }) {
 }
 
 export default function AccountabilityGroupsView({ initial }: { initial: AccountabilityGroupSummary[] }) {
+  const t = useTranslations("accountabilityGroups");
+  const locale = useLocale();
+  const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const [groups, setGroups] = useState(initial);
   const [, startTransition] = useTransition();
 
@@ -184,7 +190,7 @@ export default function AccountabilityGroupsView({ initial }: { initial: Account
 
       {groups.length === 0 ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>No groups yet — create one or join with an invite code above.</p>
+          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("noGroupsYet")}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -201,12 +207,12 @@ export default function AccountabilityGroupsView({ initial }: { initial: Account
                   {g.description && <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>{g.description}</p>}
                 </div>
                 <span style={{ fontSize: 11.5, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                  {g.member_count} member{g.member_count === 1 ? "" : "s"}
+                  {t("memberCount", { count: g.member_count })}
                 </span>
               </div>
               {g.latest_checkin && (
                 <p style={{ fontSize: 11.5, color: "var(--teal)", marginTop: 8 }}>
-                  Last check-in {new Date(g.latest_checkin).toLocaleDateString()}
+                  {t("lastCheckin", { date: new Date(g.latest_checkin).toLocaleDateString(dateLocale) })}
                 </p>
               )}
             </Link>
@@ -214,8 +220,7 @@ export default function AccountabilityGroupsView({ initial }: { initial: Account
         </div>
       )}
       <p style={{ fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
-        Groups are peer-to-peer — your organization&apos;s admins have no visibility into who&apos;s in a
-        group or what gets posted there.
+        {t("peerToPeerNote")}
       </p>
     </div>
   );

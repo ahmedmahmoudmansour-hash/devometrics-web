@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { listTodayTasks, listCalendarRange } from "@/lib/tasks/actions";
 import TasksPageClient from "@/components/dashboard/TasksPageClient";
@@ -10,6 +11,7 @@ function toDateStr(d: Date): string {
 }
 
 export default async function TasksPage() {
+  const t = await getTranslations("tasksPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,13 +45,13 @@ export default async function TasksPage() {
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Today&apos;s tasks
+            {t("title")}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-            Your own working list — private, never visible to your manager or organization.
+            {t("subtitle")}
           </p>
         </div>
 

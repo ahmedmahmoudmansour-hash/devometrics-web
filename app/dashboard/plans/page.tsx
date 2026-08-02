@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import PlanCard from "@/components/dashboard/PlanCard";
 import type { DevelopmentPlan, Milestone } from "@/lib/supabase/types";
@@ -14,6 +15,7 @@ export const metadata = { title: "My Development — Devometrics" };
 // see and update everything at once instead of paging through plans one at
 // a time.
 export default async function MyDevelopmentPage() {
+  const t = await getTranslations("plansPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,25 +53,24 @@ export default async function MyDevelopmentPage() {
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            My Development
+            {t("title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
-            Every development plan and milestone you have, in one place — mark each one Not started,
-            In progress, Completed, or Deferred as your priorities actually change.
+            {t("subtitle")}
           </p>
         </div>
 
         {(plans ?? []).length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              You don&apos;t have a development plan yet.{" "}
+              {t("emptyStatePrefix")}{" "}
               <Link href="/dashboard" style={{ color: "var(--teal)" }}>
-                Generate one from the dashboard
+                {t("emptyStateLinkText")}
               </Link>{" "}
-              — it draws on your Gap Analysis, career profile, and completed assessments.
+              {t("emptyStateSuffix")}
             </p>
           </div>
         ) : (
@@ -77,19 +78,19 @@ export default async function MyDevelopmentPage() {
             <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 28, background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
               <div>
                 <p style={{ fontSize: 22, fontWeight: 800, color: "var(--text-muted)" }}>{notStartedCount}</p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Not started</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("statusNotStarted")}</p>
               </div>
               <div>
                 <p style={{ fontSize: 22, fontWeight: 800, color: "var(--phase2)" }}>{inProgressCount}</p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>In progress</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("statusInProgress")}</p>
               </div>
               <div>
                 <p style={{ fontSize: 22, fontWeight: 800, color: "var(--teal)" }}>{completedCount}</p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Completed</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("statusCompleted")}</p>
               </div>
               <div>
                 <p style={{ fontSize: 22, fontWeight: 800, color: "var(--amber)" }}>{deferredCount}</p>
-                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Deferred</p>
+                <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{t("statusDeferred")}</p>
               </div>
             </div>
 

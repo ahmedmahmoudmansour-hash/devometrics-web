@@ -2,12 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { breakdownMilestoneIntoTasks } from "@/lib/tasks/actions";
 import type { Milestone } from "@/lib/supabase/types";
 
 function MilestoneRow({ milestone }: { milestone: Milestone }) {
+  const t = useTranslations("milestoneBreakdownList");
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  // Tracked separately from `message` itself — the message text is now
+  // translated, so an English-only substring check (e.g. message.includes
+  // ("Added")) would silently stop matching once the UI is in Arabic.
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   function handleBreakdown() {
@@ -15,10 +21,12 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
     startTransition(async () => {
       const result = await breakdownMilestoneIntoTasks(milestone.id);
       if (result?.error) {
+        setSuccess(false);
         setMessage(result.error);
         return;
       }
-      setMessage(`Added ${result?.count ?? 0} tasks to today.`);
+      setSuccess(true);
+      setMessage(t("addedTasksMessage", { count: result?.count ?? 0 }));
       router.refresh();
     });
   }
@@ -27,7 +35,7 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
       <span style={{ fontSize: 13, color: "var(--text)" }}>{milestone.title}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {message && <span style={{ fontSize: 11, color: message.includes("Added") ? "var(--teal)" : "#f87171" }}>{message}</span>}
+        {message && <span style={{ fontSize: 11, color: success ? "var(--teal)" : "#f87171" }}>{message}</span>}
         <button
           type="button"
           onClick={handleBreakdown}
@@ -43,7 +51,7 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
             whiteSpace: "nowrap",
           }}
         >
-          {isPending ? "Thinking…" : "Break into daily tasks"}
+          {isPending ? t("thinking") : t("breakIntoTasks")}
         </button>
       </div>
     </div>
@@ -51,11 +59,12 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
 }
 
 export default function MilestoneBreakdownList({ milestones }: { milestones: Milestone[] }) {
+  const t = useTranslations("milestoneBreakdownList");
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Your open milestones</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("title")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-        Turn any of these into a few concrete steps for today.
+        {t("subtitle")}
       </p>
       <div>
         {milestones.map((m) => (

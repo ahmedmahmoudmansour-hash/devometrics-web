@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import MilestoneRow from "./MilestoneRow";
 import AddMilestoneForm from "./AddMilestoneForm";
 import { updatePlanTitle, deletePlan } from "@/app/dashboard/actions";
@@ -20,6 +21,7 @@ export default function PlanCard({
   // detail page passing false.
   showDetailLink?: boolean;
 }) {
+  const t = useTranslations("planCard");
   const [isPending, startTransition] = useTransition();
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState(plan.title);
@@ -47,7 +49,7 @@ export default function PlanCard({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                aria-label="Plan title"
+                aria-label={t("planTitleAria")}
                 style={{
                   fontSize: 16,
                   fontWeight: 700,
@@ -71,7 +73,7 @@ export default function PlanCard({
                 }
                 style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
               >
-                Save
+                {t("save")}
               </button>
               <button
                 type="button"
@@ -81,7 +83,7 @@ export default function PlanCard({
                 }}
                 style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           ) : (
@@ -90,10 +92,10 @@ export default function PlanCard({
               <button
                 type="button"
                 onClick={() => setEditingTitle(true)}
-                aria-label="Edit plan title"
+                aria-label={t("editPlanTitleAria")}
                 style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
               >
-                Edit
+                {t("edit")}
               </button>
             </div>
           )}
@@ -118,14 +120,14 @@ export default function PlanCard({
             </span>
           )}
           <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>
-            {done}/{total} complete
+            {t("completeCount", { done, total })}
           </span>
           {showDetailLink && (
             <Link
               href={`/dashboard/plans/${plan.id}`}
               style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "underline" }}
             >
-              View & export
+              {t("viewAndExport")}
             </Link>
           )}
         </div>
@@ -153,7 +155,7 @@ export default function PlanCard({
       <div style={{ marginTop: 20 }}>
         {milestones.length === 0 ? (
           <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
-            No milestones yet — add your first one below.
+            {t("noMilestonesYet")}
           </p>
         ) : (
           milestones
@@ -168,7 +170,7 @@ export default function PlanCard({
         {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {confirmingDelete ? (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Delete this whole plan and its milestones?</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("confirmDeleteQuestion")}</span>
             <button
               type="button"
               disabled={isPending}
@@ -180,14 +182,14 @@ export default function PlanCard({
               }
               style={{ background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
             >
-              Confirm delete
+              {t("confirmDelete")}
             </button>
             <button
               type="button"
               onClick={() => setConfirmingDelete(false)}
               style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
             >
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         ) : (
@@ -196,7 +198,7 @@ export default function PlanCard({
             onClick={() => setConfirmingDelete(true)}
             style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
           >
-            Delete plan
+            {t("deletePlan")}
           </button>
         )}
       </div>

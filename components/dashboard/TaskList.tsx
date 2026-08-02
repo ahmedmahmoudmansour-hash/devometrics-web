@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   createTask,
   toggleTask,
@@ -71,6 +72,7 @@ function AddToCalendarControl({
   taskDate: string;
   taskTime: string | null;
 }) {
+  const t = useTranslations("taskList");
   const [open, setOpen] = useState(false);
   // Pre-fills from the task's own date/time when it has one set, instead of
   // always defaulting to today at 9am — one less thing to re-enter for a
@@ -121,7 +123,7 @@ function AddToCalendarControl({
         onClick={() => setOpen(true)}
         style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer", padding: 0 }}
       >
-        Add to calendar
+        {t("addToCalendar")}
       </button>
     );
   }
@@ -144,7 +146,7 @@ function AddToCalendarControl({
         lang="en-US"
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        aria-label="Calendar date"
+        aria-label={t("calendarDateAria")}
         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 8px", fontSize: 11, color: "var(--text)", colorScheme: "dark" }}
       />
       <input
@@ -152,17 +154,17 @@ function AddToCalendarControl({
         lang="en-US"
         value={time}
         onChange={(e) => setTime(e.target.value)}
-        aria-label="Calendar time"
+        aria-label={t("calendarTimeAria")}
         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 8px", fontSize: 11, color: "var(--text)", colorScheme: "dark" }}
       />
       <a href={googleHref} target="_blank" rel="noopener noreferrer" style={{ ...linkStyle, opacity: googleHref ? 1 : 0.5, pointerEvents: googleHref ? "auto" : "none" }}>
-        Google
+        {t("google")}
       </a>
       <a href={outlookHref} target="_blank" rel="noopener noreferrer" style={{ ...linkStyle, opacity: outlookHref ? 1 : 0.5, pointerEvents: outlookHref ? "auto" : "none" }}>
-        Outlook
+        {t("outlook")}
       </a>
       <a href={icsHref} style={{ ...linkStyle, opacity: icsHref ? 1 : 0.5, pointerEvents: icsHref ? "auto" : "none" }}>
-        .ics
+        {t("ics")}
       </a>
     </div>
   );
@@ -179,6 +181,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 function NotesControl({ taskId, initialNotes }: { taskId: string; initialNotes: string | null }) {
+  const t = useTranslations("taskList");
   const [open, setOpen] = useState(Boolean(initialNotes));
   const [notes, setNotes] = useState(initialNotes ?? "");
   const [isPending, startTransition] = useTransition();
@@ -199,7 +202,7 @@ function NotesControl({ taskId, initialNotes }: { taskId: string; initialNotes: 
         onClick={() => setOpen(true)}
         style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer", padding: 0 }}
       >
-        Add note
+        {t("addNote")}
       </button>
     );
   }
@@ -213,20 +216,21 @@ function NotesControl({ taskId, initialNotes }: { taskId: string; initialNotes: 
           setSaved(false);
         }}
         onBlur={handleSave}
-        placeholder="Notes for tracking your own progress"
+        placeholder={t("notesPlaceholder")}
         rows={2}
         style={{ ...inputStyle, width: "100%", resize: "vertical" }}
       />
       {isPending ? (
-        <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>Saving…</p>
+        <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>{t("savingNotes")}</p>
       ) : saved ? (
-        <p style={{ fontSize: 10.5, color: "var(--teal)", marginTop: 2 }}>Saved</p>
+        <p style={{ fontSize: 10.5, color: "var(--teal)", marginTop: 2 }}>{t("savedNotes")}</p>
       ) : null}
     </div>
   );
 }
 
 function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: string | null }) {
+  const t = useTranslations("taskList");
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -246,8 +250,8 @@ function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: stri
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         disabled={isPending}
-        title={currentLabel ?? "Choose a category"}
-        aria-label={currentLabel ?? "Choose a category"}
+        title={currentLabel ?? t("chooseCategoryAria")}
+        aria-label={currentLabel ?? t("chooseCategoryAria")}
         style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, width: 26, height: 26, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
       >
         {currentIcon ?? "+"}
@@ -258,7 +262,7 @@ function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: stri
           style={{
             position: "absolute",
             top: 30,
-            left: 0,
+            insetInlineStart: 0,
             zIndex: 10,
             background: "var(--navy-mid)",
             border: "1px solid var(--border)",
@@ -275,7 +279,7 @@ function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: stri
               key={c.icon}
               type="button"
               onClick={() => pick(c.icon)}
-              style={{ background: "none", border: "none", fontSize: 12.5, color: "var(--text)", cursor: "pointer", padding: "5px 8px", display: "flex", alignItems: "center", gap: 8, borderRadius: 6, textAlign: "left" }}
+              style={{ background: "none", border: "none", fontSize: 12.5, color: "var(--text)", cursor: "pointer", padding: "5px 8px", display: "flex", alignItems: "center", gap: 8, borderRadius: 6, textAlign: "start" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
             >
@@ -290,6 +294,7 @@ function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: stri
 }
 
 function PriorityCycleButton({ taskId, priority }: { taskId: string; priority: TaskPriority }) {
+  const t = useTranslations("taskList");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -306,7 +311,7 @@ function PriorityCycleButton({ taskId, priority }: { taskId: string; priority: T
       type="button"
       onClick={cycle}
       disabled={isPending}
-      title="Click to change priority"
+      title={t("priorityChangeHint")}
       style={{
         background: "none",
         border: `1px solid ${PRIORITY_COLOR[priority]}`,
@@ -319,12 +324,13 @@ function PriorityCycleButton({ taskId, priority }: { taskId: string; priority: T
         cursor: "pointer",
       }}
     >
-      {priority}
+      {t(`priorityLabel.${priority}`)}
     </button>
   );
 }
 
 function TaskRow({ task, onChanged }: { task: PersonalTask; onChanged: () => void }) {
+  const t = useTranslations("taskList");
   const [isPending, startTransition] = useTransition();
   const [isBreakingDown, startBreakdown] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -393,7 +399,7 @@ function TaskRow({ task, onChanged }: { task: PersonalTask; onChanged: () => voi
             <span style={{ fontSize: 10.5, color: "var(--text-muted)", textTransform: "capitalize" }}>
               {task.time && formatTime(task.time)}
               {task.time && task.recurring !== "none" && " · "}
-              {task.recurring !== "none" && `Repeats ${task.recurring}`}
+              {task.recurring !== "none" && t("repeats", { frequency: t(`recurringWord.${task.recurring}`) })}
             </span>
           )}
           {task.subtasks.length > 0 && (
@@ -422,7 +428,7 @@ function TaskRow({ task, onChanged }: { task: PersonalTask; onChanged: () => voi
                 disabled={isBreakingDown}
                 style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 11.5, cursor: "pointer", padding: 0 }}
               >
-                {isBreakingDown ? "Thinking…" : "Break down with AI"}
+                {isBreakingDown ? t("thinkingBreakdown") : t("breakdownWithAi")}
               </button>
             )}
             <button
@@ -431,7 +437,7 @@ function TaskRow({ task, onChanged }: { task: PersonalTask; onChanged: () => voi
               disabled={isPending}
               style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11.5, cursor: "pointer", padding: 0 }}
             >
-              Remove
+              {t("remove")}
             </button>
             <AddToCalendarControl taskId={task.id} title={task.title} recurring={task.recurring} taskDate={task.date} taskTime={task.time} />
           </div>
@@ -451,6 +457,7 @@ export default function TaskList({
   milestones: Milestone[];
   selectedDate?: string | null;
 }) {
+  const t = useTranslations("taskList");
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(selectedDate || defaultDate());
   const [recurring, setRecurring] = useState<TaskRecurring>("none");
@@ -496,7 +503,11 @@ export default function TaskList({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>
-        {initialTasks.length === 0 ? "No tasks yet today" : `${initialTasks.length} task${initialTasks.length === 1 ? "" : "s"} today`}
+        {initialTasks.length === 0
+          ? t("noTasksToday")
+          : initialTasks.length === 1
+            ? t("taskCountOne")
+            : t("taskCountMany", { count: initialTasks.length })}
       </h2>
 
       {initialTasks.length > 0 && (
@@ -511,7 +522,7 @@ export default function TaskList({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add an activity…"
+          placeholder={t("addActivityPlaceholder")}
           required
           style={inputStyle}
         />
@@ -521,27 +532,27 @@ export default function TaskList({
             lang="en-US"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            aria-label="Date"
+            aria-label={t("dateAria")}
             style={{ ...inputStyle, cursor: "pointer", flex: "1 1 150px", colorScheme: "dark" }}
           />
           <select value={recurring} onChange={(e) => setRecurring(e.target.value as TaskRecurring)} style={{ ...inputStyle, cursor: "pointer", flex: "1 1 140px" }}>
-            <option value="none">One-time</option>
-            <option value="daily">Repeat daily</option>
-            <option value="weekdays">Repeat weekdays</option>
-            <option value="weekly">Repeat weekly</option>
-            <option value="monthly">Repeat monthly</option>
+            <option value="none">{t("recurringOption.none")}</option>
+            <option value="daily">{t("recurringOption.daily")}</option>
+            <option value="weekdays">{t("recurringOption.weekdays")}</option>
+            <option value="weekly">{t("recurringOption.weekly")}</option>
+            <option value="monthly">{t("recurringOption.monthly")}</option>
           </select>
           <input
             type="time"
             lang="en-US"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            aria-label="Time (optional)"
+            aria-label={t("timeOptionalAria")}
             style={{ ...inputStyle, cursor: "pointer", flex: "1 1 120px" }}
           />
           {milestones.length > 0 && (
             <select value={milestoneId} onChange={(e) => setMilestoneId(e.target.value)} style={{ ...inputStyle, cursor: "pointer", flex: "1 1 200px" }}>
-              <option value="">Not linked to a milestone</option>
+              <option value="">{t("notLinkedOption")}</option>
               {milestones.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.title}
@@ -551,7 +562,7 @@ export default function TaskList({
           )}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Priority:</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("priorityFieldLabel")}</span>
           {PRIORITY_ORDER.map((p) => (
             <button
               key={p}
@@ -569,12 +580,12 @@ export default function TaskList({
                 cursor: "pointer",
               }}
             >
-              {p}
+              {t(`priorityLabel.${p}`)}
             </button>
           ))}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Category:</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("categoryFieldLabel")}</span>
           {TASK_CATEGORIES.map((c) => (
             <button
               key={c.icon}
@@ -617,7 +628,7 @@ export default function TaskList({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Adding…" : "Add task"}
+          {isPending ? t("addingTask") : t("addTask")}
         </button>
       </form>
     </div>

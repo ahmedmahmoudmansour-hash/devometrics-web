@@ -1,16 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { setMilestoneStatus, updateMilestone, deleteMilestone, type MilestoneStatus } from "@/app/dashboard/actions";
 import CourseRecommendations from "@/components/dashboard/CourseRecommendations";
 import type { Milestone } from "@/lib/supabase/types";
-
-const STATUS_LABEL: Record<MilestoneStatus, string> = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  completed: "Completed",
-  deferred: "Deferred",
-};
 
 const STATUS_COLOR: Record<MilestoneStatus, string> = {
   not_started: "var(--text-muted)",
@@ -31,6 +25,13 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
+  const t = useTranslations("milestoneRow");
+  const STATUS_LABEL: Record<MilestoneStatus, string> = {
+    not_started: t("statusNotStarted"),
+    in_progress: t("statusInProgress"),
+    completed: t("statusCompleted"),
+    deferred: t("statusDeferred"),
+  };
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -45,26 +46,26 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
   const [userNotes, setUserNotes] = useState(milestone.user_notes ?? "");
 
   const meta = [
-    milestone.target_date ? `by ${milestone.target_date}` : null,
-    milestone.weekly_hours ? `~${milestone.weekly_hours} hrs/${milestone.hours_period ?? "month"}` : null,
+    milestone.target_date ? t("byDate", { date: milestone.target_date }) : null,
+    milestone.weekly_hours ? t("hoursPerPeriod", { hours: milestone.weekly_hours, period: milestone.hours_period ?? t("monthFallback") }) : null,
     milestone.budget_note,
   ].filter(Boolean);
 
   if (editing) {
     return (
       <div style={{ padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 30 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingInlineStart: 30 }}>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            aria-label="Milestone title"
+            aria-label={t("milestoneTitleAria")}
             style={inputStyle}
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            aria-label="Milestone description"
+            aria-label={t("milestoneDescriptionAria")}
             rows={2}
             style={{ ...inputStyle, resize: "vertical" }}
           />
@@ -73,18 +74,18 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
             lang="en-US"
             value={targetDate}
             onChange={(e) => setTargetDate(e.target.value)}
-            aria-label="Target date"
+            aria-label={t("targetDateAria")}
             style={{ ...inputStyle, colorScheme: "dark" }}
           />
           <div>
             <label style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
-              Your own notes (private, just for you)
+              {t("ownNotesLabel")}
             </label>
             <textarea
               value={userNotes}
               onChange={(e) => setUserNotes(e.target.value)}
-              aria-label="Your personal notes"
-              placeholder="e.g. reminder of who to ask, a link, or why this matters to you"
+              aria-label={t("personalNotesAria")}
+              placeholder={t("notesPlaceholder")}
               rows={2}
               style={{ ...inputStyle, resize: "vertical" }}
             />
@@ -117,7 +118,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
                 cursor: "pointer",
               }}
             >
-              Save
+              {t("save")}
             </button>
             <button
               type="button"
@@ -139,7 +140,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
                 cursor: "pointer",
               }}
             >
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         </div>
@@ -151,7 +152,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
     <div style={{ padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <select
-          aria-label={`Status for ${milestone.title}`}
+          aria-label={t("statusForAria", { title: milestone.title })}
           value={status}
           onChange={(e) =>
             startTransition(async () => {
@@ -191,7 +192,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
           {milestone.assigned_by && (
             <span
               style={{
-                marginLeft: 8,
+                marginInlineStart: 8,
                 fontSize: 10,
                 fontWeight: 700,
                 color: "var(--amber)",
@@ -203,7 +204,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
                 letterSpacing: "0.04em",
               }}
             >
-              Assigned by your manager
+              {t("assignedByManager")}
             </span>
           )}
           {milestone.description && (
@@ -218,7 +219,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
           )}
           {milestone.success_indicator && (
             <div style={{ fontSize: 11, color: "var(--teal)", marginTop: 3, lineHeight: 1.5 }}>
-              Success: {milestone.success_indicator}
+              {t("successPrefix", { indicator: milestone.success_indicator })}
             </div>
           )}
           {status !== "completed" && <CourseRecommendations topic={milestone.title} />}
@@ -236,7 +237,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
               }}
             >
               <span style={{ color: "var(--amber)", fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                Your note
+                {t("yourNoteLabel")}
               </span>
               <div style={{ marginTop: 2, whiteSpace: "pre-wrap" }}>{milestone.user_notes}</div>
             </div>
@@ -246,19 +247,19 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
           {milestone.target_date && (
             <a
               href={`/api/calendar/milestone/${milestone.id}`}
-              aria-label="Add to calendar"
+              aria-label={t("addToCalendar")}
               style={{ color: "var(--text-muted)", fontSize: 12, padding: 4, textDecoration: "none" }}
             >
-              Add to calendar
+              {t("addToCalendar")}
             </a>
           )}
           <button
             type="button"
             onClick={() => setEditing(true)}
-            aria-label="Edit milestone"
+            aria-label={t("editMilestoneAria")}
             style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", padding: 4 }}
           >
-            Edit
+            {t("edit")}
           </button>
           <button
             type="button"
@@ -268,14 +269,14 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
                 setError(result?.error ?? null);
               })
             }
-            aria-label="Delete milestone"
+            aria-label={t("deleteMilestoneAria")}
             style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", padding: 4 }}
           >
-            Delete
+            {t("delete")}
           </button>
         </div>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12, margin: "4px 0 0 30px" }}>{error}</p>}
+      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 4, marginInlineStart: 30 }}>{error}</p>}
     </div>
   );
 }
