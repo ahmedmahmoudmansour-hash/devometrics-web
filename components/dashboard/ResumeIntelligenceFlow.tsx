@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import FileUploadButton from "@/components/FileUploadButton";
 import type { ResumeAnalysis } from "@/lib/supabase/types";
 
@@ -34,7 +35,8 @@ function Chip({ text, tone }: { text: string; tone: "match" | "missing" }) {
         fontSize: 12,
         padding: "4px 10px",
         borderRadius: 100,
-        margin: "0 6px 6px 0",
+        marginInlineEnd: 6,
+        marginBlockEnd: 6,
         background: tone === "match" ? "rgba(0,201,167,0.1)" : "rgba(248,113,113,0.1)",
         color: tone === "match" ? "var(--teal)" : "#f87171",
         border: `1px solid ${tone === "match" ? "rgba(0,201,167,0.3)" : "rgba(248,113,113,0.3)"}`,
@@ -46,6 +48,7 @@ function Chip({ text, tone }: { text: string; tone: "match" | "missing" }) {
 }
 
 export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnalysis | null }) {
+  const t = useTranslations("resumeIntelligenceFlow");
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(latest);
   const [showForm, setShowForm] = useState(!latest);
   const [targetRole, setTargetRole] = useState("");
@@ -66,13 +69,13 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Something went wrong");
+        throw new Error(body.error || t("errorFallback"));
       }
       const { analysis } = await res.json();
       setAnalysis(analysis);
       setShowForm(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("errorFallback"));
     } finally {
       setLoading(false);
     }
@@ -82,33 +85,32 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
     return (
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-          Run a resume analysis
+          {t("formTitle")}
         </h2>
         <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-          Paste your resume text. Add a target role for keyword-gap analysis against it —
-          optional, but sharper results if you do.
+          {t("formSubtitle")}
         </p>
         <form onSubmit={runAnalysis} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <input
             type="text"
-            aria-label="Target role (optional)"
+            aria-label={t("targetRoleAria")}
             value={targetRole}
             onChange={(e) => setTargetRole(e.target.value)}
-            placeholder="Target role (optional), e.g. Senior Product Manager"
+            placeholder={t("targetRolePlaceholder")}
             style={inputStyle}
           />
           <div>
             <textarea
               required
-              aria-label="Your resume text"
+              aria-label={t("resumeTextAria")}
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value)}
-              placeholder="Paste your resume text…"
+              placeholder={t("resumeTextPlaceholder")}
               rows={10}
               style={{ ...inputStyle, resize: "vertical" }}
             />
             <div style={{ marginTop: 6 }}>
-              <FileUploadButton onExtracted={(text) => setResumeText(text)} label="Or upload a PDF/DOCX instead" />
+              <FileUploadButton onExtracted={(text) => setResumeText(text)} label={t("uploadLabel")} />
             </div>
           </div>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13, color: "var(--text-muted)", cursor: "pointer" }}>
@@ -118,10 +120,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
               onChange={(e) => setConsent(e.target.checked)}
               style={{ marginTop: 2, accentColor: "var(--teal)" }}
             />
-            <span>
-              I consent to Devometrics using AI to analyze the resume I submit here for the
-              purpose of generating this analysis.
-            </span>
+            <span>{t("consentLabel")}</span>
           </label>
           {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
           <button
@@ -140,7 +139,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
               opacity: loading || !consent ? 0.6 : 1,
             }}
           >
-            {loading ? "Analyzing…" : "Run resume analysis"}
+            {loading ? t("analyzing") : t("runAnalysis")}
           </button>
         </form>
         {analysis && (
@@ -149,7 +148,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
             onClick={() => setShowForm(false)}
             style={{ marginTop: 16, background: "none", border: "none", color: "var(--teal)", fontSize: 13, cursor: "pointer" }}
           >
-            ← Back to last result
+            {t("backToLastResult")}
           </button>
         )}
       </div>
@@ -160,7 +159,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: "var(--teal)", textTransform: "uppercase" }}>
-          Resume Intelligence{analysis.target_role ? ` — ${analysis.target_role}` : ""}
+          {t("resultsLabel")}{analysis.target_role ? ` — ${analysis.target_role}` : ""}
         </span>
         <button
           type="button"
@@ -175,20 +174,20 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
             cursor: "pointer",
           }}
         >
-          Run new analysis
+          {t("runNewAnalysis")}
         </button>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 24 }}>
-        <ScoreRing label="Overall" score={analysis.overall_score} />
-        <ScoreRing label="ATS Compatibility" score={analysis.ats_score} />
-        <ScoreRing label="Achievement Quality" score={analysis.achievement_score} />
+        <ScoreRing label={t("overallLabel")} score={analysis.overall_score} />
+        <ScoreRing label={t("atsCompatibilityLabel")} score={analysis.ats_score} />
+        <ScoreRing label={t("achievementQualityLabel")} score={analysis.achievement_score} />
       </div>
 
       {analysis.ats_issues.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>ATS issues</h3>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{t("atsIssuesTitle")}</h3>
+          <ul style={{ margin: 0, paddingInlineStart: 18 }}>
             {analysis.ats_issues.map((issue, i) => (
               <li key={i} style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>{issue}</li>
             ))}
@@ -198,7 +197,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
 
       {(analysis.matched_keywords.length > 0 || analysis.missing_keywords.length > 0) && (
         <div style={{ marginBottom: 20 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Keywords</h3>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{t("keywordsTitle")}</h3>
           <div>
             {analysis.matched_keywords.map((k) => (
               <Chip key={k} text={k} tone="match" />
@@ -212,7 +211,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
 
       {analysis.weak_bullets.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Bullets to strengthen</h3>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{t("bulletsTitle")}</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {analysis.weak_bullets.map((b, i) => (
               <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 12 }}>
@@ -230,9 +229,9 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
       {analysis.visibility_recommendations.length > 0 && (
         <div>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
-            Visibility recommendations
+            {t("visibilityRecommendationsTitle")}
           </h3>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <ul style={{ margin: 0, paddingInlineStart: 18 }}>
             {analysis.visibility_recommendations.map((rec, i) => (
               <li key={i} style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>{rec}</li>
             ))}
@@ -241,8 +240,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
       )}
 
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 20 }}>
-        AI-generated guidance based on the resume you provided — not a certified
-        professional review or a guarantee of interview outcomes.
+        {t("aiDisclaimer")}
       </p>
     </div>
   );

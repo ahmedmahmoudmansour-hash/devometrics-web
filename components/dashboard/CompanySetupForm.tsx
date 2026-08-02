@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { createOrganization, joinOrganization } from "@/lib/organizations/actions";
 import { EMPLOYEE_COUNT_RANGES, INDUSTRIES } from "@/lib/organizations/constants";
 
@@ -16,6 +17,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function CompanySetupForm() {
+  const t = useTranslations("companySetupForm");
   const [tab, setTab] = useState<"create" | "join">("create");
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
@@ -41,12 +43,12 @@ export default function CompanySetupForm() {
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        {(["create", "join"] as const).map((t) => (
+        {(["create", "join"] as const).map((tabOption) => (
           <button
-            key={t}
+            key={tabOption}
             type="button"
             onClick={() => {
-              setTab(t);
+              setTab(tabOption);
               setError(null);
             }}
             style={{
@@ -56,12 +58,12 @@ export default function CompanySetupForm() {
               fontSize: 13,
               fontWeight: 700,
               cursor: "pointer",
-              border: tab === t ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-              background: tab === t ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
-              color: tab === t ? "var(--teal)" : "var(--text-muted)",
+              border: tab === tabOption ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
+              background: tab === tabOption ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+              color: tab === tabOption ? "var(--teal)" : "var(--text-muted)",
             }}
           >
-            {t === "create" ? "Create a new company" : "Join with an invite code"}
+            {tabOption === "create" ? t("createTab") : t("joinTab")}
           </button>
         ))}
       </div>
@@ -70,7 +72,7 @@ export default function CompanySetupForm() {
         {tab === "create" ? (
           <div>
             <label htmlFor="company-name" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-              Company name
+              {t("companyNameLabel")}
             </label>
             <input
               id="company-name"
@@ -78,28 +80,27 @@ export default function CompanySetupForm() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Acme Inc."
+              placeholder={t("companyNamePlaceholder")}
               style={inputStyle}
             />
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
-              You&apos;ll become this workspace&apos;s admin, with a private HR dashboard for your team —
-              their individual tools work exactly the same as any other account.
+              {t("companyNameHint")}
             </p>
 
             <label htmlFor="company-website" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", margin: "16px 0 6px" }}>
-              Company website <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+              {t("companyWebsiteLabel")} <span style={{ color: "var(--text-muted)" }}>{t("optionalLabel")}</span>
             </label>
             <input
               id="company-website"
               type="text"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              placeholder="acme.com"
+              placeholder={t("companyWebsitePlaceholder")}
               style={inputStyle}
             />
 
             <label htmlFor="company-size" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", margin: "16px 0 6px" }}>
-              Number of employees <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+              {t("employeeCountLabel")} <span style={{ color: "var(--text-muted)" }}>{t("optionalLabel")}</span>
             </label>
             <select
               id="company-size"
@@ -107,14 +108,14 @@ export default function CompanySetupForm() {
               onChange={(e) => setEmployeeCount(e.target.value)}
               style={inputStyle}
             >
-              <option value="" style={{ color: "#000" }}>Select a range</option>
+              <option value="" style={{ color: "#000" }}>{t("selectRange")}</option>
               {EMPLOYEE_COUNT_RANGES.map((r) => (
                 <option key={r} value={r} style={{ color: "#000" }}>{r}</option>
               ))}
             </select>
 
             <label htmlFor="company-industry" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", margin: "16px 0 6px" }}>
-              Industry <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+              {t("industryLabel")} <span style={{ color: "var(--text-muted)" }}>{t("optionalLabel")}</span>
             </label>
             <select
               id="company-industry"
@@ -122,28 +123,28 @@ export default function CompanySetupForm() {
               onChange={(e) => setIndustry(e.target.value)}
               style={inputStyle}
             >
-              <option value="" style={{ color: "#000" }}>Select an industry</option>
+              <option value="" style={{ color: "#000" }}>{t("selectIndustry")}</option>
               {INDUSTRIES.map((i) => (
                 <option key={i} value={i} style={{ color: "#000" }}>{i}</option>
               ))}
             </select>
 
             <label htmlFor="admin-title" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", margin: "16px 0 6px" }}>
-              Your title <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+              {t("adminTitleLabel")} <span style={{ color: "var(--text-muted)" }}>{t("optionalLabel")}</span>
             </label>
             <input
               id="admin-title"
               type="text"
               value={adminTitle}
               onChange={(e) => setAdminTitle(e.target.value)}
-              placeholder="e.g. Head of HR"
+              placeholder={t("adminTitlePlaceholder")}
               style={inputStyle}
             />
           </div>
         ) : (
           <div>
             <label htmlFor="invite-code" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-              Invite code
+              {t("inviteCodeLabel")}
             </label>
             <input
               id="invite-code"
@@ -151,12 +152,11 @@ export default function CompanySetupForm() {
               required
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
-              placeholder="e.g. acme-inc-a1b2"
+              placeholder={t("inviteCodePlaceholder")}
               style={inputStyle}
             />
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
-              Ask your company&apos;s workspace admin for this code — it&apos;s shown on their company
-              dashboard.
+              {t("inviteCodeHint")}
             </p>
           </div>
         )}
@@ -178,7 +178,7 @@ export default function CompanySetupForm() {
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Please wait…" : tab === "create" ? "Create company workspace" : "Join company"}
+          {isPending ? t("pleaseWait") : tab === "create" ? t("createSubmit") : t("joinSubmit")}
         </button>
       </form>
     </div>
