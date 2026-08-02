@@ -2,11 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { ACCOUNTABILITY_FILES_BUCKET } from "./constants";
 import type {
   AccountabilityGroup,
   AccountabilityGroupSummary,
   AccountabilityGroupMember,
   AccountabilityCheckin,
+  AccountabilityCheckinReply,
+  AccountabilityCheckinAttachment,
 } from "./types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -210,14 +213,156 @@ export async function getAccountabilityGroupDetail(groupId: string): Promise<{
     .eq("group_id", groupId)
     .order("created_at", { ascending: false })
     .limit(100)
-    .returns<AccountabilityCheckin[]>();
+    .returns<Omit<AccountabilityCheckin, "full_name" | "avatar_url" | "replies" | "attachments">[]>();
+  const checkinIds = (checkinRows ?? []).map((c) => c.id);
+
+  const [{ data: replyRows }, { data: attachmentRows }] = checkinIds.length
+    ? await Promise.all([
+        supabase
+          .from("accountability_checkin_replies")
+          .select("*")
+          .in("checkin_id", checkinIds)
+          .order("created_at", { ascending: true })
+          .returns<Omit<AccountabilityCheckinReply, "full_name" | "avatar_url">[]>(),
+        supabase
+          .from("accountability_checkin_attachments")
+          .select("*")
+          .in("checkin_id", checkinIds)
+          .order("created_at", { ascending: true })
+          .returns<AccountabilityCheckinAttachment[]>(),
+      ])
+    : [{ data: [] }, { data: [] }];
+
+  const repliesByCheckin = new Map<string, AccountabilityCheckinReply[]>();
+  for (const r of replyRows ?? []) {
+    const list = repliesByCheckin.get(r.checkin_id) ?? [];
+    list.push({ ...r, full_name: profiles.get(r.user_id)?.full_name ?? null, avatar_url: profiles.get(r.user_id)?.avatar_url ?? null });
+    repliesByCheckin.set(r.checkin_id, list);
+  }
+  const attachmentsByCheckin = new Map<string, AccountabilityCheckinAttachment[]>();
+  for (const a of attachmentRows ?? []) {
+    const list = attachmentsByCheckin.get(a.checkin_id) ?? [];
+    list.push(a);
+    attachmentsByCheckin.set(a.checkin_id, list);
+  }
+
   const checkins: AccountabilityCheckin[] = (checkinRows ?? []).map((c) => ({
     ...c,
     full_name: profiles.get(c.user_id)?.full_name ?? null,
     avatar_url: profiles.get(c.user_id)?.avatar_url ?? null,
+    replies: repliesByCheckin.get(c.id) ?? [],
+    attachments: attachmentsByCheckin.get(c.id) ?? [],
   }));
 
   return { group, members, checkins, isCreator: group.created_by === user.id };
+}
+
+export async function postAccountabilityReply(checkinId: string, groupId: string, content: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const trimmed = content.trim();
+  if (!trimmed) return { error: "Write something before replying" };
+
+  const { error } = await supabase.from("accountability_checkin_replies").insert({ checkin_id: checkinId, user_id: user.id, content: trimmed });
+  if (error) return { error: "Could not reply — the database may need migration 0096 run first." };
+
+  revalidatePath(`/dashboard/accountability/${groupId}`);
+  return { success: true };
+}
+
+export async function deleteAccountabilityReply(replyId: string, groupId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("accountability_checkin_replies").delete().eq("id", replyId).eq("user_id", user.id);
+  if (error) return { error: "Could not delete — try again." };
+
+  revalidatePath(`/dashboard/accountability/${groupId}`);
+  return { success: true };
+}
+
+// Called after the client has already uploaded the file directly to
+// Storage (same split as Knowledge Hub uploads — see
+// KnowledgeHubUploadForm.tsx) — this only persists the resulting path.
+export async function createAccountabilityAttachment(input: {
+  checkinId: string;
+  groupId: string;
+  storagePath: string;
+  fileName: string;
+  fileSizeBytes: number;
+  mimeType: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.from("accountability_checkin_attachments").insert({
+    checkin_id: input.checkinId,
+    uploaded_by: user.id,
+    storage_path: input.storagePath,
+    file_name: input.fileName,
+    file_size_bytes: input.fileSizeBytes,
+    mime_type: input.mimeType,
+  });
+  if (error) return { error: "Could not attach file — the database may need migration 0096 run first." };
+
+  revalidatePath(`/dashboard/accountability/${input.groupId}`);
+  return { success: true };
+}
+
+export async function deleteAccountabilityAttachment(attachmentId: string, groupId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: attachment } = await supabase
+    .from("accountability_checkin_attachments")
+    .select("storage_path, uploaded_by")
+    .eq("id", attachmentId)
+    .maybeSingle<{ storage_path: string; uploaded_by: string }>();
+  if (!attachment || attachment.uploaded_by !== user.id) return { error: "Could not delete — try again." };
+
+  await supabase.storage.from(ACCOUNTABILITY_FILES_BUCKET).remove([attachment.storage_path]);
+  const { error } = await supabase.from("accountability_checkin_attachments").delete().eq("id", attachmentId).eq("uploaded_by", user.id);
+  if (error) return { error: "Could not delete — try again." };
+
+  revalidatePath(`/dashboard/accountability/${groupId}`);
+  return { success: true };
+}
+
+// Private bucket, so this is the only way to actually view/download a
+// file — RLS on storage.objects independently re-checks membership
+// (defense in depth), this just verifies the attachment row itself
+// belongs to a checkin in a group the caller is in before minting the URL.
+export async function getSignedAccountabilityFileUrl(attachmentId: string): Promise<{ error: string } | { url: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: attachment } = await supabase
+    .from("accountability_checkin_attachments")
+    .select("storage_path")
+    .eq("id", attachmentId)
+    .maybeSingle<{ storage_path: string }>();
+  if (!attachment) return { error: "File not found" };
+
+  const { data, error } = await supabase.storage.from(ACCOUNTABILITY_FILES_BUCKET).createSignedUrl(attachment.storage_path, 300);
+  if (error || !data) return { error: "Could not open this file — try again." };
+
+  return { url: data.signedUrl };
 }
 
 export async function postAccountabilityCheckin(groupId: string, content: string) {

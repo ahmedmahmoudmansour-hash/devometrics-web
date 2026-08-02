@@ -4371,7 +4371,19 @@
     "justNow": "الآن",
     "minutesAgo": "منذ {mins} د",
     "hoursAgo": "منذ {hours} س",
-    "daysAgo": "منذ {days} ي"
+    "daysAgo": "منذ {days} ي",
+    "fileTypeNotSupported": "نوع هذا الملف غير مدعوم.",
+    "fileTooLarge": "هذا الملف كبير جدًا (الحد الأقصى 20 ميغابايت).",
+    "uploadFailed": "فشل الرفع — حاول مرة أخرى.",
+    "uploading": "جارٍ الرفع…",
+    "attachFileButton": "+ إرفاق ملف",
+    "replyPlaceholder": "اكتب ردًا…",
+    "replyButton": "رد",
+    "askAiButton": "✨ اسأل الذكاء الاصطناعي للدعم أو البحث",
+    "askAiTitle": "اسأل مساعد المجموعة الذكي",
+    "askAiPlaceholder": "اطرح سؤالًا — مرتبط بتسجيلات المجموعة عند الحاجة",
+    "askAiThinking": "جارٍ التفكير…",
+    "askAiSubmit": "اسأل"
   },
   "notesWorkspace": {
     "backToProgress": "← العودة إلى التقدم",

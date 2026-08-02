@@ -4371,7 +4371,19 @@
     "justNow": "just now",
     "minutesAgo": "{mins}m ago",
     "hoursAgo": "{hours}h ago",
-    "daysAgo": "{days}d ago"
+    "daysAgo": "{days}d ago",
+    "fileTypeNotSupported": "That file type isn't supported.",
+    "fileTooLarge": "That file is too large (20MB max).",
+    "uploadFailed": "Upload failed — try again.",
+    "uploading": "Uploading…",
+    "attachFileButton": "+ Attach file",
+    "replyPlaceholder": "Write a reply…",
+    "replyButton": "Reply",
+    "askAiButton": "✨ Ask AI for support or research",
+    "askAiTitle": "Ask the group's AI assistant",
+    "askAiPlaceholder": "Ask a question — grounded in this group's check-ins where relevant",
+    "askAiThinking": "Thinking…",
+    "askAiSubmit": "Ask"
   },
   "notesWorkspace": {
     "backToProgress": "← Back to progress",
