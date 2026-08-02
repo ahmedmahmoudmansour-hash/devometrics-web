@@ -804,7 +804,17 @@
     "priorityFieldLabel": "الأولوية:",
     "categoryFieldLabel": "الفئة:",
     "addingTask": "جارٍ الإضافة…",
-    "addTask": "أضف مهمة"
+    "addTask": "أضف مهمة",
+    "categoryLearning": "تعلّم",
+    "categoryDeepWork": "عمل معمّق",
+    "categoryMilestoneStep": "خطوة في محطة",
+    "categoryMeeting": "اجتماع",
+    "categoryPlanningAdmin": "تخطيط / إداري",
+    "categoryReflectionReview": "تأمل / مراجعة",
+    "categoryNetworkingMentorship": "تواصل / إرشاد",
+    "categoryReporting": "تقارير",
+    "categoryPractice": "تدريب",
+    "categoryBreakRest": "استراحة"
   },
   "calendarView": {
     "title": "التقويم",

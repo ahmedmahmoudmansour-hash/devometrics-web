@@ -804,7 +804,17 @@
     "priorityFieldLabel": "Priority:",
     "categoryFieldLabel": "Category:",
     "addingTask": "Adding…",
-    "addTask": "Add task"
+    "addTask": "Add task",
+    "categoryLearning": "Learning",
+    "categoryDeepWork": "Deep work",
+    "categoryMilestoneStep": "Milestone step",
+    "categoryMeeting": "Meeting",
+    "categoryPlanningAdmin": "Planning / admin",
+    "categoryReflectionReview": "Reflection / review",
+    "categoryNetworkingMentorship": "Networking / mentorship",
+    "categoryReporting": "Reporting",
+    "categoryPractice": "Practice",
+    "categoryBreakRest": "Break / rest"
   },
   "calendarView": {
     "title": "Calendar",

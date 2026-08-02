@@ -12,7 +12,7 @@ import {
   updateTaskNotes,
   updateTaskMeta,
 } from "@/lib/tasks/actions";
-import { TASK_CATEGORIES, categoryLabel, type PersonalTask, type TaskRecurring, type TaskPriority } from "@/lib/tasks/types";
+import { TASK_CATEGORIES, categoryTranslationKey, type PersonalTask, type TaskRecurring, type TaskPriority } from "@/lib/tasks/types";
 import type { Milestone } from "@/lib/supabase/types";
 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
@@ -234,7 +234,8 @@ function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: stri
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const currentLabel = categoryLabel(currentIcon);
+  const currentKey = categoryTranslationKey(currentIcon);
+  const currentLabel = currentKey ? t(currentKey) : null;
 
   function pick(icon: string) {
     startTransition(async () => {
@@ -284,7 +285,7 @@ function IconPicker({ taskId, currentIcon }: { taskId: string; currentIcon: stri
               onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
             >
               <span>{c.icon}</span>
-              <span>{c.label}</span>
+              <span>{t(c.translationKey)}</span>
             </button>
           ))}
         </div>
@@ -591,7 +592,7 @@ export default function TaskList({
               key={c.icon}
               type="button"
               onClick={() => setIcon(icon === c.icon ? null : c.icon)}
-              title={c.label}
+              title={t(c.translationKey)}
               style={{
                 background: icon === c.icon ? "rgba(0,201,167,0.12)" : "transparent",
                 border: icon === c.icon ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
@@ -607,7 +608,7 @@ export default function TaskList({
               }}
             >
               <span>{c.icon}</span>
-              <span>{c.label}</span>
+              <span>{t(c.translationKey)}</span>
             </button>
           ))}
         </div>

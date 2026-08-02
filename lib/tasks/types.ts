@@ -13,21 +13,31 @@ export type TaskPriority = "high" | "medium" | "low";
 // wherever there's room. "Break / Rest" is deliberate, not an afterthought —
 // Tiimo's whole design point is keeping downtime visible on the same
 // schedule as work, not just grinding through a task list.
+// label is a plain English fallback only (e.g. for contexts without a
+// translation function handy) — the icon is what's actually stored on a
+// task (PersonalTask.icon), so translating the label is purely a display
+// concern. Real UI should call categoryTranslationKey() + t() instead,
+// same "stable identifier + translated display label" pattern used for
+// PersonalizationFields' career-stage/accommodation options.
 export const TASK_CATEGORIES = [
-  { icon: "📚", label: "Learning" },
-  { icon: "💻", label: "Deep work" },
-  { icon: "🎯", label: "Milestone step" },
-  { icon: "💬", label: "Meeting" },
-  { icon: "📝", label: "Planning / admin" },
-  { icon: "🧠", label: "Reflection / review" },
-  { icon: "🤝", label: "Networking / mentorship" },
-  { icon: "📊", label: "Reporting" },
-  { icon: "🗣️", label: "Practice" },
-  { icon: "☕", label: "Break / rest" },
+  { icon: "📚", label: "Learning", translationKey: "categoryLearning" },
+  { icon: "💻", label: "Deep work", translationKey: "categoryDeepWork" },
+  { icon: "🎯", label: "Milestone step", translationKey: "categoryMilestoneStep" },
+  { icon: "💬", label: "Meeting", translationKey: "categoryMeeting" },
+  { icon: "📝", label: "Planning / admin", translationKey: "categoryPlanningAdmin" },
+  { icon: "🧠", label: "Reflection / review", translationKey: "categoryReflectionReview" },
+  { icon: "🤝", label: "Networking / mentorship", translationKey: "categoryNetworkingMentorship" },
+  { icon: "📊", label: "Reporting", translationKey: "categoryReporting" },
+  { icon: "🗣️", label: "Practice", translationKey: "categoryPractice" },
+  { icon: "☕", label: "Break / rest", translationKey: "categoryBreakRest" },
 ] as const;
 
 export function categoryLabel(icon: string | null): string | null {
   return TASK_CATEGORIES.find((c) => c.icon === icon)?.label ?? null;
+}
+
+export function categoryTranslationKey(icon: string | null): string | null {
+  return TASK_CATEGORIES.find((c) => c.icon === icon)?.translationKey ?? null;
 }
 
 export type PersonalTask = {
