@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import ResumeIntelligenceFlow from "@/components/dashboard/ResumeIntelligenceFlow";
 import PremiumGate from "@/components/dashboard/PremiumGate";
@@ -7,6 +8,7 @@ import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import type { Profile, ResumeAnalysis } from "@/lib/supabase/types";
 
 export default async function ResumePage() {
+  const t = await getTranslations("resumeIntelligencePage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,16 +31,16 @@ export default async function ResumePage() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            ← Back to progress
+            {t("backToProgress")}
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>
-            Resume Intelligence
+            {t("title")}
           </h1>
         </div>
         <PremiumGate
           tier={effectiveSubscriptionTier(profile ?? null)}
-          feature="Resume Intelligence"
-          description="ATS score, achievement score, keyword matches, and weak-bullet analysis against a real target role — upgrade to Premium to run it."
+          feature={t("premiumFeature")}
+          description={t("premiumDescription")}
         >
           <ResumeIntelligenceFlow latest={latest} />
         </PremiumGate>

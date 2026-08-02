@@ -679,6 +679,36 @@
     "autoGeneratePlan": "توليد الخطة تلقائيًا",
     "customizePerSkill": "تخصيص كل مهارة بدلاً من ذلك"
   },
+  "resumeIntelligencePage": {
+    "backToProgress": "← العودة إلى التقدم",
+    "title": "ذكاء السيرة الذاتية",
+    "premiumFeature": "ذكاء السيرة الذاتية",
+    "premiumDescription": "درجة توافق ATS، ودرجة الإنجاز، وتطابق الكلمات المفتاحية، وتحليل النقاط الضعيفة مقابل دور مستهدف حقيقي — قم بالترقية إلى بريميوم لتشغيله."
+  },
+  "resumeIntelligenceFlow": {
+    "formTitle": "أجرِ تحليل سيرة ذاتية",
+    "formSubtitle": "الصق نص سيرتك الذاتية. أضف دورًا مستهدفًا لتحليل فجوة الكلمات المفتاحية مقارنة به — اختياري، لكنه يمنح نتائج أدق إن فعلت.",
+    "targetRoleAria": "الدور المستهدف (اختياري)",
+    "targetRolePlaceholder": "الدور المستهدف (اختياري)، مثال: مدير منتج أول",
+    "resumeTextAria": "نص سيرتك الذاتية",
+    "resumeTextPlaceholder": "الصق نص سيرتك الذاتية…",
+    "uploadLabel": "أو ارفع ملف PDF/DOCX بدلاً من ذلك",
+    "consentLabel": "أوافق على استخدام ديفومتركس للذكاء الاصطناعي لتحليل السيرة الذاتية التي أقدّمها هنا بغرض توليد هذا التحليل.",
+    "analyzing": "جارٍ التحليل…",
+    "runAnalysis": "أجرِ تحليل السيرة الذاتية",
+    "backToLastResult": "← العودة إلى آخر نتيجة",
+    "errorFallback": "حدث خطأ ما",
+    "resultsLabel": "ذكاء السيرة الذاتية",
+    "runNewAnalysis": "أجرِ تحليلًا جديدًا",
+    "overallLabel": "الإجمالي",
+    "atsCompatibilityLabel": "توافق ATS",
+    "achievementQualityLabel": "جودة الإنجازات",
+    "atsIssuesTitle": "مشكلات ATS",
+    "keywordsTitle": "الكلمات المفتاحية",
+    "bulletsTitle": "نقاط تحتاج إلى تعزيز",
+    "visibilityRecommendationsTitle": "توصيات الظهور",
+    "aiDisclaimer": "إرشاد مولَّد بالذكاء الاصطناعي استنادًا إلى السيرة الذاتية التي قدّمتها — وليس مراجعة مهنية معتمدة أو ضمانًا لنتائج المقابلات."
+  },
   "bridgeGapPage": {
     "backToGapAnalysis": "← تحليل الفجوة",
     "title": "سد الفجوة: {dimension}",
@@ -962,6 +992,33 @@
     "cookiePolicy": "سياسة ملفات تعريف الارتباط",
     "copyright": "© {year} Empiric Consultancy. جميع الحقوق محفوظة.",
     "productOf": "ديفومتركس هو أحد منتجات"
+  },
+  "companySetupPage": {
+    "backToProgress": "← العودة إلى التقدم",
+    "title": "إعداد مساحة عمل شركتك",
+    "description": "خطوة أخيرة قبل لوحة التحكم الخاصة بك — أنشئ شركة جديدة أو انضم إلى شركة تمت دعوتك إليها."
+  },
+  "companySetupForm": {
+    "createTab": "إنشاء شركة جديدة",
+    "joinTab": "الانضمام برمز دعوة",
+    "companyNameLabel": "اسم الشركة",
+    "companyNamePlaceholder": "Acme Inc.",
+    "companyNameHint": "ستصبح مسؤول مساحة العمل هذه، مع لوحة تحكم خاصة بالموارد البشرية لفريقك — أدواتهم الفردية تعمل تمامًا كأي حساب آخر.",
+    "companyWebsiteLabel": "موقع الشركة الإلكتروني",
+    "optionalLabel": "(اختياري)",
+    "companyWebsitePlaceholder": "acme.com",
+    "employeeCountLabel": "عدد الموظفين",
+    "selectRange": "اختر نطاقًا",
+    "industryLabel": "القطاع",
+    "selectIndustry": "اختر قطاعًا",
+    "adminTitleLabel": "مسماك الوظيفي",
+    "adminTitlePlaceholder": "مثال: رئيس الموارد البشرية",
+    "inviteCodeLabel": "رمز الدعوة",
+    "inviteCodePlaceholder": "acme-inc-a1b2",
+    "inviteCodeHint": "اطلب هذا الرمز من مسؤول مساحة عمل شركتك — يظهر على لوحة تحكم شركتهم.",
+    "pleaseWait": "يرجى الانتظار…",
+    "createSubmit": "إنشاء مساحة عمل الشركة",
+    "joinSubmit": "الانضمام إلى الشركة"
   },
   "companyNavTabs": {
     "profile": "الملف الشخصي",
@@ -1250,7 +1307,10 @@
     "untappedDesc": "ليست ضمن أي مسار معتمد من دوره الحالي، لكن كفاءاته المقاسة تمثل تطابقًا قويًا — تستحق نقاشًا.",
     "readyNow": "يلبي بالفعل كل متطلب — جاهز الآن.",
     "readyPercent": "{percent}% جاهزية",
-    "matchPercent": "{percent}% تطابق"
+    "matchPercent": "{percent}% تطابق",
+    "currentRoleLabel": "الدور الحالي",
+    "notPlacedInRole": "— غير موضوع في دور —",
+    "savingLabel": "جارٍ الحفظ…"
   },
   "managerNotesSection": {
     "title": "ملاحظات المدير",

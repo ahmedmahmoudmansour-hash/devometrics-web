@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { setMemberRole } from "@/lib/jobArchitecture/actions";
 import type { JobRole } from "@/lib/supabase/types";
 
@@ -18,6 +19,7 @@ export default function MemberRoleSelector({
   currentRoleId: string | null;
   roles: JobRole[];
 }) {
+  const t = useTranslations("careerMobilitySection");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export default function MemberRoleSelector({
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-      <label style={{ fontSize: 12, color: "var(--text-muted)" }}>Current role</label>
+      <label style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("currentRoleLabel")}</label>
       <select
         value={value}
         disabled={isPending}
@@ -57,7 +59,7 @@ export default function MemberRoleSelector({
           minWidth: 220,
         }}
       >
-        <option value="">— Not placed in a role —</option>
+        <option value="">{t("notPlacedInRole")}</option>
         {sorted.map((r) => (
           <option key={r.id} value={r.id}>
             {r.title} (G{r.grade}
@@ -65,7 +67,7 @@ export default function MemberRoleSelector({
           </option>
         ))}
       </select>
-      {isPending && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Saving…</span>}
+      {isPending && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("savingLabel")}</span>}
       {error && <span style={{ fontSize: 12, color: "#f87171" }}>{error}</span>}
     </div>
   );
