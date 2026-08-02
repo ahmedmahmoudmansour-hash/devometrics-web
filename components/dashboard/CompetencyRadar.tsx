@@ -30,7 +30,7 @@ export default function CompetencyRadar({ competencies }: { competencies: Compet
   const targetPoints = polygonPoints(competencies.map((c) => c.targetLevel / 100));
 
   return (
-    <svg viewBox="0 0 300 340" className="w-full h-full" role="img" aria-label="Skill Radar">
+    <svg viewBox="0 0 300 340" className="w-full h-full" role="img" aria-label={t("skillRadarAria")}>
       {rings.map((r) => (
         <polygon
           key={r}

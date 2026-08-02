@@ -186,7 +186,7 @@ export default function SidebarNav({
 
       <button
         type="button"
-        title="Search (Ctrl+K)"
+        title={t("searchTooltip")}
         onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
         style={{
           display: "flex",

@@ -101,11 +101,10 @@ export default function NewPlanForm({
       }}
     >
       <p style={{ fontSize: 15, color: "var(--text)", fontWeight: 600, marginBottom: 4, textAlign: "center" }}>
-        {existingPlanCount === 0 ? "Start your first development plan" : "Add another development plan"}
+        {existingPlanCount === 0 ? t("startFirstTitle") : t("addAnotherTitle")}
       </p>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20, textAlign: "center" }}>
-        Name your target role — we&apos;ll pull in your CV from Gap Analysis and your Career Profile
-        automatically, infer typical responsibilities, and generate real milestones.
+        {t("subtitle")}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 440, margin: "0 auto" }}>
@@ -114,15 +113,15 @@ export default function NewPlanForm({
           required
           value={targetRole}
           onChange={(e) => setTargetRole(e.target.value)}
-          aria-label="Target role"
-          placeholder="Target role, e.g. Senior Product Manager"
+          aria-label={t("targetRoleAria")}
+          placeholder={t("targetRolePlaceholder")}
           style={inputStyle}
         />
         <textarea
           value={cvText}
           onChange={(e) => setCvText(e.target.value)}
-          aria-label="Extra background (optional)"
-          placeholder="Optional — add anything not already in your CV or Career Profile"
+          aria-label={t("extraBackgroundAria")}
+          placeholder={t("extraBackgroundPlaceholder")}
           rows={2}
           style={{ ...inputStyle, resize: "vertical" }}
         />
@@ -131,7 +130,7 @@ export default function NewPlanForm({
 
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            Plan duration
+            {t("planDurationLabel")}
           </label>
           <select
             value={isFree ? "30-day" : horizon}
@@ -147,8 +146,7 @@ export default function NewPlanForm({
           </select>
           {isFree && (
             <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
-              Free plans are 30 days with general guidance. Upgrade for longer horizons and specific
-              course/resource recommendations.
+              {t("freeNote")}
             </p>
           )}
         </div>
@@ -170,7 +168,7 @@ export default function NewPlanForm({
             opacity: isPending ? 0.6 : 1,
           }}
         >
-          {isPending ? "Generating your plan…" : "Generate my plan"}
+          {isPending ? t("generating") : t("generateCta")}
         </button>
       </div>
     </form>

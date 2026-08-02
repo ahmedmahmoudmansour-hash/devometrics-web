@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ACCOMMODATIONS, ACCOMMODATION_DESCRIPTIONS } from "@/lib/gap-analysis/accommodations";
+import { ACCOMMODATIONS } from "@/lib/gap-analysis/accommodations";
 import { RESOURCE_TIERS } from "@/lib/gap-analysis/freeResources";
-import { LEARNING_FORMATS, LEARNING_FORMAT_DESCRIPTIONS } from "@/lib/gap-analysis/actionLibrary";
+import { LEARNING_FORMATS } from "@/lib/gap-analysis/actionLibrary";
 
 export const CAREER_STAGES = [
   "Student",
@@ -15,6 +15,48 @@ export const CAREER_STAGES = [
   "Career changer",
   "Entrepreneur / Freelancer",
 ];
+
+// Every option below is stored in the database (and read by other code and
+// AI prompts) as its stable English identifier — only the on-screen label is
+// translated. These maps translate the identifier from lib/gap-analysis/* to
+// the matching key under the "personalizationOptions" namespace, the same
+// "stable English value, translated display label" pattern used elsewhere.
+const CAREER_STAGE_KEYS: Record<string, string> = {
+  Student: "student",
+  "Job seeker": "jobSeeker",
+  "Early-career professional": "earlyCareerProfessional",
+  Professional: "professional",
+  Manager: "manager",
+  Executive: "executive",
+  "Career changer": "careerChanger",
+  "Entrepreneur / Freelancer": "entrepreneurFreelancer",
+};
+
+const ACCOMMODATION_KEYS: Record<string, string> = {
+  Standard: "standard",
+  "Bite-sized & low-distraction": "biteSizedLowDistraction",
+  "Audio/video-first": "audioVideoFirst",
+  "Structured & predictable": "structuredPredictable",
+};
+
+const RESOURCE_TIER_KEYS: Record<string, string> = {
+  "Premium resources": "premium",
+  "Budget-conscious mix": "budgetConsciousMix",
+  "Free & open resources only": "freeOpenOnly",
+};
+
+const LEARNING_FORMAT_KEYS: Record<string, string> = {
+  "Reading & self-study": "readingSelfStudy",
+  "Research & case studies": "researchCaseStudies",
+  "Video courses": "videoCourses",
+  "Short courses & workshops": "shortCoursesWorkshops",
+  "Professional certifications": "professionalCertifications",
+  "Webinars & virtual events": "webinarsVirtualEvents",
+  "Hands-on projects": "handsOnProjects",
+  "Mentorship & coaching": "mentorshipCoaching",
+  "Peer learning": "peerLearning",
+  "Live cohort classes": "liveCohortClasses",
+};
 
 export type PersonalizationValues = {
   location: string;
@@ -35,15 +77,6 @@ const selectStyle: React.CSSProperties = {
   outline: "none",
 };
 
-const RESOURCE_TIER_HINT: Record<(typeof RESOURCE_TIERS)[number], string> = {
-  "Premium resources":
-    "Real prices vary a lot by format — roughly free–$20/mo for reading, $30–60 for a course certificate, $75–300/mo for mentorship, $200–1,500 per cohort program.",
-  "Budget-conscious mix":
-    "Mixes free resources with occasional low-cost paid options, but steers away from expensive mentorship or cohort programs — free community alternatives get suggested for those instead.",
-  "Free & open resources only":
-    "Your plan will point to free, open resources (open courseware, curated free platforms, your public library) instead of assuming paid courses.",
-};
-
 // The one source for "everything about how I want to learn and what I can
 // afford" — used on Profile Settings (the full editor) and inline on every
 // plan-creation entry point (dashboard quick-plan, Assessments), so the
@@ -58,6 +91,7 @@ export default function PersonalizationFields({
   showCareerStage?: boolean;
 }) {
   const t = useTranslations("personalizationFields");
+  const tOptions = useTranslations("personalizationOptions");
   function set<K extends keyof PersonalizationValues>(key: K, val: PersonalizationValues[K]) {
     onChange({ ...value, [key]: val });
   }
@@ -89,7 +123,7 @@ export default function PersonalizationFields({
             </option>
             {CAREER_STAGES.map((s) => (
               <option key={s} value={s} style={{ color: "#000" }}>
-                {s}
+                {tOptions(`careerStage.${CAREER_STAGE_KEYS[s]}`)}
               </option>
             ))}
           </select>
@@ -126,7 +160,7 @@ export default function PersonalizationFields({
                 type="button"
                 onClick={() => toggleLearningPreference(format)}
                 aria-pressed={checked}
-                title={LEARNING_FORMAT_DESCRIPTIONS[format]}
+                title={tOptions(`learningFormatDescription.${LEARNING_FORMAT_KEYS[format]}`)}
                 style={{
                   padding: "8px 14px",
                   borderRadius: 100,
@@ -138,7 +172,7 @@ export default function PersonalizationFields({
                   color: checked ? "var(--teal)" : "var(--text-muted)",
                 }}
               >
-                {format}
+                {tOptions(`learningFormatName.${LEARNING_FORMAT_KEYS[format]}`)}
               </button>
             );
           })}
@@ -157,13 +191,13 @@ export default function PersonalizationFields({
         >
           {ACCOMMODATIONS.map((a) => (
             <option key={a} value={a} style={{ color: "#000" }}>
-              {a}
+              {tOptions(`accommodationName.${ACCOMMODATION_KEYS[a]}`)}
             </option>
           ))}
         </select>
         {value.accommodation && (
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
-            {ACCOMMODATION_DESCRIPTIONS[value.accommodation as keyof typeof ACCOMMODATION_DESCRIPTIONS]}
+            {tOptions(`accommodationDescription.${ACCOMMODATION_KEYS[value.accommodation]}`)}
           </p>
         )}
       </div>
@@ -181,9 +215,9 @@ export default function PersonalizationFields({
           <option value="" style={{ color: "#000" }}>
             {t("selectBudget")}
           </option>
-          {RESOURCE_TIERS.map((t) => (
-            <option key={t} value={t} style={{ color: "#000" }}>
-              {t}
+          {RESOURCE_TIERS.map((tier) => (
+            <option key={tier} value={tier} style={{ color: "#000" }}>
+              {tOptions(`resourceTierName.${RESOURCE_TIER_KEYS[tier]}`)}
             </option>
           ))}
         </select>
@@ -196,7 +230,7 @@ export default function PersonalizationFields({
               lineHeight: 1.5,
             }}
           >
-            {RESOURCE_TIER_HINT[value.resourceTier as keyof typeof RESOURCE_TIER_HINT]}
+            {tOptions(`resourceTierHint.${RESOURCE_TIER_KEYS[value.resourceTier]}`)}
           </p>
         )}
       </div>

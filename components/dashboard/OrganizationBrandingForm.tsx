@@ -58,11 +58,11 @@ export default function OrganizationBrandingForm({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file");
+      setError(t("chooseImageFileError"));
       return;
     }
     if (file.size > MAX_LOGO_BYTES) {
-      setError("Image must be under 3MB");
+      setError(t("imageTooLargeError"));
       return;
     }
 
@@ -106,7 +106,7 @@ export default function OrganizationBrandingForm({
               // eslint-disable-next-line @next/next/no-img-element -- user-uploaded or externally-hosted logo, not a static asset next/image can optimize meaningfully
               <img
                 src={logoUrl}
-                alt="Workspace logo preview"
+                alt={t("logoPreviewAlt")}
                 style={{ height: 40, width: "auto", maxWidth: 120, borderRadius: 6, background: "rgba(255,255,255,0.05)" }}
               />
             )}
