@@ -1366,6 +1366,7 @@
     "succession": "Succession",
     "scorecard": "Scorecard",
     "surveys": "Surveys",
+    "exitInterviews": "Exit Interviews",
     "analytics": "Analytics"
   },
   "companyProfilePage": {
@@ -1400,6 +1401,9 @@
     "surveysLabel": "Surveys",
     "surveysStat": "{count, plural, one {# survey} other {# surveys}}",
     "surveysStatEmpty": "Anonymous pulse surveys",
+    "exitInterviewsLabel": "Exit Interviews",
+    "exitInterviewsStat": "{count, plural, one {# interview recorded} other {# interviews recorded}}",
+    "exitInterviewsStatEmpty": "Root-cause turnover analysis",
     "analyticsLabel": "Analytics",
     "analyticsStat": "Workforce skill heatmap & talent grid",
     "companyCareerHealth": "Company Career Health",
@@ -4507,5 +4511,51 @@
         "description": "When someone's Gap Analysis places them in the High Potential zone, email their manager to consider them for succession planning."
       }
     }
+  },
+  "exitInterviewsPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Exit Interviews",
+    "description": "Record a structured exit interview for every departure, then run AI-assisted trend analysis across them to spot root causes — flight-risk indicators, manager-related turnover, and department patterns. HR-internal only; departed employees never see their own record.",
+    "recordButton": "+ Record an exit interview",
+    "recordFormHeader": "New exit interview",
+    "employeeNameLabel": "Employee name",
+    "departmentLabel": "Department",
+    "titleLabel": "Title",
+    "managerNameLabel": "Manager name",
+    "lastDayLabel": "Last day",
+    "separationTypeLabel": "Separation type",
+    "separationVoluntary": "Voluntary",
+    "separationInvoluntary": "Involuntary",
+    "separationOther": "Other",
+    "additionalNotesLabel": "Additional notes",
+    "saving": "Saving…",
+    "saveButton": "Save exit interview",
+    "cancelButton": "Cancel",
+    "noInterviewsYet": "No exit interviews recorded yet.",
+    "colName": "Name",
+    "colDepartment": "Department",
+    "colSeparationType": "Separation type",
+    "colLastDay": "Last day",
+    "deleteButton": "Delete",
+    "analysisTitle": "Root-cause trend analysis",
+    "analysisDescription": "AI-assisted pattern detection across all recorded exit interviews — decision support, not an automated conclusion.",
+    "analyzing": "Analyzing…",
+    "analyzeButton": "✨ Analyze trends",
+    "basedOn": "Based on {count} interviews · generated {date}",
+    "topThemesLabel": "Top themes",
+    "mentionedCount": "{count, plural, one {mentioned in # interview} other {mentioned in # interviews}}",
+    "managerRelatedLabel": "Manager-related turnover",
+    "departmentTrendsLabel": "Department trends",
+    "flightRiskLabel": "Flight-risk indicators to watch for",
+    "questions": [
+      "What is your primary reason for leaving?",
+      "What did you enjoy most about working here?",
+      "What could we have done better?",
+      "How would you describe your relationship with your manager?",
+      "Did you feel you had opportunities to grow and develop here?",
+      "Would you recommend this company to a friend as a place to work? Why or why not?",
+      "Would you consider returning to this company in the future?",
+      "Is there anything else you'd like to share?"
+    ]
   }
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews";
 
 export default async function CompanyNavTabs({ active }: { active: TabKey }) {
   const t = await getTranslations("companyNavTabs");
@@ -18,6 +18,7 @@ export default async function CompanyNavTabs({ active }: { active: TabKey }) {
     { key: "succession", label: t("succession"), href: "/dashboard/company/succession" },
     { key: "scorecard", label: t("scorecard"), href: "/dashboard/company/scorecard" },
     { key: "surveys", label: t("surveys"), href: "/dashboard/company/surveys" },
+    { key: "exitInterviews", label: t("exitInterviews"), href: "/dashboard/company/exit-interviews" },
     { key: "analytics", label: t("analytics"), href: "/dashboard/company/analytics" },
   ];
 

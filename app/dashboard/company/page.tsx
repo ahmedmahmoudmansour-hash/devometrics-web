@@ -68,7 +68,7 @@ export default async function CompanyProfilePage() {
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
     const supabase = await createClient();
-    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount, jobPostingCount] = await Promise.all([
+    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount, jobPostingCount, exitInterviewCount] = await Promise.all([
       countOrNull(supabase, "job_roles", data.organizationId),
       countOrNull(supabase, "succession_roles", data.organizationId),
       countOrNull(supabase, "scorecard_kpis", data.organizationId),
@@ -76,6 +76,7 @@ export default async function CompanyProfilePage() {
       countOrNull(supabase, "performance_review_cycles", data.organizationId),
       countOrNull(supabase, "knowledge_hub_content", data.organizationId),
       countOrNull(supabase, "job_postings", data.organizationId),
+      countOrNull(supabase, "exit_interviews", data.organizationId),
     ]);
 
     const hipoCount = data.rows.filter((r) => {
@@ -164,6 +165,13 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/surveys",
         icon: COMPANY_WIDGET_ICONS.MessageSquare,
         stat: surveyCount !== null ? t("surveysStat", { count: surveyCount }) : t("surveysStatEmpty"),
+      },
+      {
+        key: "exitInterviews",
+        label: t("exitInterviewsLabel"),
+        href: "/dashboard/company/exit-interviews",
+        icon: COMPANY_WIDGET_ICONS.UserMinus,
+        stat: exitInterviewCount !== null ? t("exitInterviewsStat", { count: exitInterviewCount }) : t("exitInterviewsStatEmpty"),
       },
       {
         key: "analytics",
