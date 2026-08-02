@@ -54,6 +54,8 @@ function attentionFlagText(t: Translator, tDim: Translator, flag: AttentionFlag)
       return t("attentionNoSuccessor", { count: flag.count, total: flag.total });
     case "openPostingsNoCandidates":
       return t("attentionOpenPostingsNoCandidates", { count: flag.count });
+    case "highFlightRisk":
+      return t("attentionHighFlightRisk", { name: flag.name, score: flag.score });
   }
 }
 

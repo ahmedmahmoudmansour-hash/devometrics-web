@@ -995,12 +995,28 @@ export async function updateMemberPerformance(memberId: string, rating: number |
       performance_rating_updated_at: new Date().toISOString(),
     })
     .eq("id", memberId)
-    .select("id");
+    .select("id, organization_id, user_id");
   if (error) {
     console.error("updateMemberPerformance failed:", error);
     return { error: "Could not update — the database may need migration 0068 run first." };
   }
   if (!data || data.length === 0) return { error: "Not authorized to edit this employee." };
+
+  // Snapshot for Phase 1 of the retention/Flight Risk roadmap — a single
+  // point-in-time row per change, not an old/new diff, since the sequence
+  // of ratings over time IS the trend; nothing downstream needs to know
+  // what it changed FROM. Only logged when actually set (not cleared to
+  // null) — clearing a rating isn't a meaningful data point.
+  if (rating !== null) {
+    const row = data[0];
+    await supabase.from("employee_performance_rating_history").insert({
+      organization_id: row.organization_id,
+      employee_user_id: row.user_id,
+      rating,
+      note: note.trim().slice(0, 1000),
+      recorded_by: user.id,
+    });
+  }
 
   revalidatePath("/dashboard/company/employees");
   return { success: true };

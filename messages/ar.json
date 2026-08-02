@@ -1419,7 +1419,8 @@
     "attentionNoManager": "{count} من أصل {total} موظفين ليس لديهم مدير معيّن في المخطط التنظيمي",
     "attentionLowSurveyParticipation": "مشاركة منخفضة في \"{title}\" ({percent}% — {responses}/{assigned})",
     "attentionNoSuccessor": "{count} من أصل {total} أدوار حرجة ليس لديها خليفة جاهز",
-    "attentionOpenPostingsNoCandidates": "{count, plural, one {وظيفة مفتوحة واحدة ليس لديها} other {# وظائف مفتوحة ليس لديها}} مرشحون بعد"
+    "attentionOpenPostingsNoCandidates": "{count, plural, one {وظيفة مفتوحة واحدة ليس لديها} other {# وظائف مفتوحة ليس لديها}} مرشحون بعد",
+    "attentionHighFlightRisk": "{name} مُصنّف بمخاطر مغادرة عالية ({score}/100)"
   },
   "inviteCodeDisplay": {
     "label": "رمز الدعوة:",
@@ -4557,5 +4558,19 @@
       "هل تفكر في العودة إلى هذه الشركة مستقبلًا؟",
       "هل هناك أي شيء آخر تود مشاركته؟"
     ]
+  },
+  "flightRiskPanel": {
+    "title": "مخاطر المغادرة",
+    "description": "تقييم بمساعدة الذكاء الاصطناعي لمخاطر الاحتفاظ بالموظف، استنادًا فقط إلى إشارات حقيقية ومسجّلة — مدة الخدمة، الأداء، المشاركة في التعلّم، المشاركة في الاستبيانات، ملاحظات المدير، وأنماط دوران القسم/المدير. دعم لاتخاذ القرار، وليس حكمًا نهائيًا.",
+    "computeButton": "✨ احسب مخاطر المغادرة",
+    "recomputeButton": "✨ إعادة الحساب",
+    "computing": "جارٍ الحساب…",
+    "confidenceLabel": "مستوى الثقة: {level}",
+    "confidenceHigh": "عالٍ",
+    "confidenceMedium": "متوسط",
+    "confidenceLow": "منخفض",
+    "generatedOn": "تم الإنشاء في {date}",
+    "contributingFactorsLabel": "العوامل المساهمة",
+    "suggestedActionsLabel": "الإجراءات المقترحة"
   }
 }

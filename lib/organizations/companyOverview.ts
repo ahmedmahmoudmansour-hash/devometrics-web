@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { CompanyData } from "@/lib/organizations/aggregate";
 import { buildHiringOverview } from "@/lib/hiring/aggregate";
 import { listOrgSurveys, type OrgSurveySummary } from "@/lib/surveys/actions";
+import { listHighFlightRiskEmployees } from "@/lib/retention/ai";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { SuccessionRole } from "@/lib/supabase/types";
 
@@ -31,7 +32,8 @@ export type AttentionFlag =
   | { key: "noManager"; severity: "info"; href: string; count: number; total: number }
   | { key: "lowSurveyParticipation"; severity: "warning"; href: string; title: string; percent: number; responses: number; assigned: number }
   | { key: "noSuccessor"; severity: "warning"; href: string; count: number; total: number }
-  | { key: "openPostingsNoCandidates"; severity: "info"; href: string; count: number };
+  | { key: "openPostingsNoCandidates"; severity: "info"; href: string; count: number }
+  | { key: "highFlightRisk"; severity: "warning"; href: string; name: string; score: number };
 
 export type CompanyOverview = {
   hiring: { openPostings: number; totalCandidates: number; totalHired: number };
@@ -54,7 +56,7 @@ export async function buildCompanyOverview(company: CompanyData): Promise<Compan
   };
   if (!company.isOrgAdmin || !company.organizationId) return empty;
 
-  const [hiring, surveys, { data: successionRoles }] = await Promise.all([
+  const [hiring, surveys, { data: successionRoles }, highRiskEmployees] = await Promise.all([
     buildHiringOverview(),
     listOrgSurveys(),
     // Isolated defensive read, same posture as every other newer table in
@@ -68,6 +70,9 @@ export async function buildCompanyOverview(company: CompanyData): Promise<Compan
         .eq("organization_id", company.organizationId as string)
         .returns<Pick<SuccessionRole, "id" | "title" | "report">[]>();
     })(),
+    // Only ever surfaces employees an admin already opted to score
+    // individually (see lib/retention/ai.ts) — never triggers new scoring.
+    listHighFlightRiskEmployees(company.organizationId as string),
   ]);
 
   const attention: AttentionFlag[] = [];
@@ -125,6 +130,16 @@ export async function buildCompanyOverview(company: CompanyData): Promise<Compan
       severity: "info",
       href: "/dashboard/company/hiring",
       count: openPostingsWithNoCandidates.length,
+    });
+  }
+
+  for (const e of highRiskEmployees) {
+    attention.push({
+      key: "highFlightRisk",
+      severity: "warning",
+      href: `/dashboard/company/${e.employeeUserId}`,
+      name: e.name,
+      score: e.score,
     });
   }
 

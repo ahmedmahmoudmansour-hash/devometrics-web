@@ -19,6 +19,8 @@ import { resolveAssessmentDisplayName } from "@/lib/assessments/catalog";
 import { resolveAssignableDisplayName } from "@/lib/assessments/assignableCatalog";
 import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection";
 import ManagerNotesSection from "@/components/dashboard/ManagerNotesSection";
+import FlightRiskPanel from "@/components/dashboard/FlightRiskPanel";
+import { getLatestFlightRiskScore } from "@/lib/retention/ai";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -43,6 +45,7 @@ export default async function EmployeeDetailPage({
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const data = await buildEmployeeDetail(userId);
+  const flightRisk = await getLatestFlightRiskScore(userId);
   if (!data.isAuthorized || !data.profile) redirect("/dashboard/company");
 
   const {
@@ -442,6 +445,7 @@ export default async function EmployeeDetailPage({
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
           <ManagerNotesSection employeeUserId={userId} notes={managerNotes} employeeName={profile.name} />
+          <FlightRiskPanel employeeUserId={userId} initial={flightRisk} />
         </div>
       </div>
     </div>

@@ -36,6 +36,8 @@ export async function setMemberManager(employeeUserId: string, managerUserId: st
     }
   }
 
+  const previousManagerUserId = data.rows.find((r) => r.userId === employeeUserId)?.managerUserId ?? null;
+
   const { error } = await supabase
     .from("organization_members")
     .update({ manager_user_id: managerUserId })
@@ -44,6 +46,20 @@ export async function setMemberManager(employeeUserId: string, managerUserId: st
   if (error) {
     console.error("setMemberManager failed:", error);
     return { error: "Could not update — the database may need migration 0072 run first." };
+  }
+
+  // Phase 1 of the retention/Flight Risk roadmap — a manager change is a
+  // real, meaningful signal on its own (frequent manager churn correlates
+  // with attrition), logged here rather than reconstructed later.
+  if (previousManagerUserId !== managerUserId) {
+    await supabase.from("employee_role_change_history").insert({
+      organization_id: data.organizationId,
+      employee_user_id: employeeUserId,
+      field: "manager",
+      old_value: previousManagerUserId,
+      new_value: managerUserId,
+      changed_by: user.id,
+    });
   }
 
   revalidatePath("/dashboard/company/org-chart");

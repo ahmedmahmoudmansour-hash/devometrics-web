@@ -52,7 +52,8 @@ export type AiUsageFeature =
   | "competency_dimension"
   | "task_breakdown"
   | "accountability_group_ai"
-  | "exit_interview_analysis";
+  | "exit_interview_analysis"
+  | "flight_risk_score";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 

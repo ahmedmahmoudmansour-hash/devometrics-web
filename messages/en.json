@@ -1419,7 +1419,8 @@
     "attentionNoManager": "{count} of {total} employees have no manager assigned in the Org Chart",
     "attentionLowSurveyParticipation": "Low participation on \"{title}\" ({percent}% — {responses}/{assigned})",
     "attentionNoSuccessor": "{count} of {total} critical roles have no ready successor",
-    "attentionOpenPostingsNoCandidates": "{count, plural, one {# open posting has} other {# open postings have}} no candidates yet"
+    "attentionOpenPostingsNoCandidates": "{count, plural, one {# open posting has} other {# open postings have}} no candidates yet",
+    "attentionHighFlightRisk": "{name} flagged as a high flight risk ({score}/100)"
   },
   "inviteCodeDisplay": {
     "label": "Invite code:",
@@ -4557,5 +4558,19 @@
       "Would you consider returning to this company in the future?",
       "Is there anything else you'd like to share?"
     ]
+  },
+  "flightRiskPanel": {
+    "title": "Flight Risk",
+    "description": "AI-assessed retention risk based only on real, on-file signals — tenure, performance, learning engagement, survey participation, manager notes, and department/manager attrition patterns. Decision support, not a verdict.",
+    "computeButton": "✨ Compute flight risk",
+    "recomputeButton": "✨ Recompute",
+    "computing": "Computing…",
+    "confidenceLabel": "Confidence: {level}",
+    "confidenceHigh": "High",
+    "confidenceMedium": "Medium",
+    "confidenceLow": "Low",
+    "generatedOn": "Generated {date}",
+    "contributingFactorsLabel": "Contributing factors",
+    "suggestedActionsLabel": "Suggested actions"
   }
 }
