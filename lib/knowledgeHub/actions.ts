@@ -417,50 +417,6 @@ export async function getSignedKnowledgeHubUrl(contentId: string): Promise<{ err
   return { url: data.signedUrl };
 }
 
-export type PendingKnowledgeHubItem = {
-  contentId: string;
-  title: string;
-  dueDate: string | null;
-  overdue: boolean;
-};
-
-// Feeds PendingKnowledgeHubCard on the main dashboard — everything assigned
-// to the current user with no completion row yet, archived content
-// excluded since it's been retired from active circulation.
-export async function listMyPendingKnowledgeHub(): Promise<PendingKnowledgeHubItem[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: assignments } = await supabase
-    .from("knowledge_hub_assignments")
-    .select("content_id, knowledge_hub_content(title, due_date, archived_at)")
-    .eq("employee_user_id", user.id)
-    .returns<{ content_id: string; knowledge_hub_content: { title: string; due_date: string | null; archived_at: string | null } }[]>();
-  if (!assignments || assignments.length === 0) return [];
-
-  const contentIds = assignments.map((a) => a.content_id);
-  const { data: completions } = await supabase
-    .from("knowledge_hub_completions")
-    .select("content_id")
-    .eq("employee_user_id", user.id)
-    .in("content_id", contentIds)
-    .returns<{ content_id: string }[]>();
-  const completedIds = new Set((completions ?? []).map((c) => c.content_id));
-
-  const today = new Date().toISOString().slice(0, 10);
-  return assignments
-    .filter((a) => a.knowledge_hub_content && !a.knowledge_hub_content.archived_at && !completedIds.has(a.content_id))
-    .map((a) => ({
-      contentId: a.content_id,
-      title: a.knowledge_hub_content.title,
-      dueDate: a.knowledge_hub_content.due_date,
-      overdue: !!a.knowledge_hub_content.due_date && a.knowledge_hub_content.due_date < today,
-    }));
-}
-
 export async function confirmKnowledgeHubRead(contentId: string) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("confirm_knowledge_hub_read", { p_content_id: contentId });

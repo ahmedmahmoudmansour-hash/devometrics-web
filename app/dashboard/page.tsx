@@ -17,16 +17,14 @@ import UpgradeToPremiumCard from "@/components/dashboard/UpgradeToPremiumCard";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import CareerMomentumCard from "@/components/dashboard/CareerMomentumCard";
 import PendingSurveysCard from "@/components/dashboard/PendingSurveysCard";
+import PendingActionsPanel from "@/components/dashboard/PendingActionsPanel";
+import { listMyPendingActions } from "@/lib/actionHub/actions";
 import { recordDailyActivity } from "@/lib/engagement/streak";
 import { syncAchievements } from "@/lib/achievements/evaluate";
 import { computeCompositeScore } from "@/lib/dashboard/compositeScore";
 import { recordAndComputeMomentum } from "@/lib/momentum/momentum";
 import { listMySurveys } from "@/lib/surveys/actions";
-import { listTodayTasks, listOverdueTasks } from "@/lib/tasks/actions";
-import TodayTasksCard from "@/components/dashboard/TodayTasksCard";
-import { listMyPendingKnowledgeHub } from "@/lib/knowledgeHub/actions";
-import PendingKnowledgeHubCard from "@/components/dashboard/PendingKnowledgeHubCard";
-import UpcomingDeadlinesCard from "@/components/dashboard/UpcomingDeadlinesCard";
+import { listTodayTasks } from "@/lib/tasks/actions";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import DismissibleUpgradePrompt from "@/components/dashboard/DismissibleUpgradePrompt";
 import StatRail from "@/components/dashboard/StatRail";
@@ -147,8 +145,7 @@ export default async function DashboardPage() {
 
   const streakResult = await recordDailyActivity();
   const todayTasks = await listTodayTasks();
-  const overdueTasks = await listOverdueTasks();
-  const pendingKnowledgeHub = await listMyPendingKnowledgeHub();
+  const pendingActions = await listMyPendingActions();
   const { data: completedTaskCheck } = await supabase
     .from("personal_tasks")
     .select("id")
@@ -236,9 +233,15 @@ export default async function DashboardPage() {
 
           <DashboardSection label={t("sectionToday")}>
             <OnboardingChecklist steps={onboardingSteps} />
-            <UpcomingDeadlinesCard milestones={milestones ?? []} />
-            <TodayTasksCard tasks={todayTasks} overdue={overdueTasks} />
-            <PendingKnowledgeHubCard items={pendingKnowledgeHub} />
+            {/* One consolidated "needs your attention" list — tasks,
+                Knowledge Hub, assigned assessments, an open performance
+                review, and upcoming milestone deadlines — replacing what
+                were 4 separate scattered cards, per the 2026-08-03
+                strategic memo's "Unified Employee Action Hub" item.
+                Surveys stay their own card: they answer inline right here
+                (a real form, not a link-out), which the plain link-out
+                rows below don't support and shouldn't regress to. */}
+            <PendingActionsPanel actions={pendingActions} compact />
             <PendingSurveysCard surveys={mySurveys} />
           </DashboardSection>
 

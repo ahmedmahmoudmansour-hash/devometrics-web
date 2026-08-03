@@ -477,28 +477,12 @@
     "progress": "أكمل هذه الخطوات الـ{count} لفتح مؤشر صحتك المهنية الكامل بالذكاء الاصطناعي.",
     "startHere": "ابدأ هنا"
   },
-  "todayTasksCard": {
-    "title": "مهامك",
-    "doneToday": "{done} من {total} أُنجزت اليوم",
-    "overdueOnly": "لا شيء جديد اليوم، لكن {count} متأخرة",
-    "nothingScheduled": "لا شيء مجدول اليوم",
-    "privateSuffix": "— خاصة بك، لا يراها أحد غيرك أبدًا",
-    "moreCount": "+ {count} أخرى",
-    "overdueLabel": "متأخرة ({count})"
-  },
-  "upcomingDeadlinesCard": {
-    "title": "🔔 مستحقة خلال {days} أيام",
-    "cta": "قسّمها إلى مهام يومية ←"
-  },
-  "pendingKnowledgeHubCard": {
-    "title": "مركز المعرفة",
-    "overdueTotal": "{overdue} متأخرة، من إجمالي {total} معلّقة",
-    "itemsAssignedOne": "عنصر واحد مكلَّف لك",
-    "itemsAssignedMany": "{count} عناصر مكلَّفة لك",
-    "moreCount": "+ {count} أخرى",
-    "overdueLabel": "متأخرة ({count})",
-    "dueDate": "· الاستحقاق {date}",
-    "wasDue": "· كان مستحقًا {date}"
+  "pendingActionsPanel": {
+    "title": "يحتاج اهتمامك",
+    "hint": "كل ما هو مُسند إليك عبر المهام والتقييمات ومركز المعرفة وتقييمات الأداء وخطط التطوير — قائمة واحدة بدلاً من أربع.",
+    "count": "{count, plural, one {# عنصر} other {# عناصر}}",
+    "overdue": "متأخر",
+    "seeAll": "عرض الكل ({count}) ←"
   },
   "pendingSurveysCard": {
     "titleOne": "لديك استبيان",

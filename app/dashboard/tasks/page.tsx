@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { listTodayTasks, listCalendarRange } from "@/lib/tasks/actions";
+import { listMyPendingActions } from "@/lib/actionHub/actions";
 import TasksPageClient from "@/components/dashboard/TasksPageClient";
+import PendingActionsPanel from "@/components/dashboard/PendingActionsPanel";
 import type { Milestone } from "@/lib/supabase/types";
 
 function toDateStr(d: Date): string {
@@ -19,6 +21,7 @@ export default async function TasksPage() {
   if (!user) redirect("/login");
 
   const tasks = await listTodayTasks();
+  const pendingActions = await listMyPendingActions();
 
   // One wide window (2 months back, 10 months forward) covers Week/Month/Year
   // navigation client-side without a server round trip per mode switch —
@@ -54,6 +57,17 @@ export default async function TasksPage() {
             {t("subtitle")}
           </p>
         </div>
+
+        {/* Tasks themselves already get full treatment via TaskList below —
+            this only surfaces the OTHER systems (assessments, Knowledge
+            Hub, performance review) so nothing is double-listed on this
+            page specifically. The Progress dashboard's compact panel
+            includes tasks too, since it has no task list of its own. */}
+        {pendingActions.filter((a) => a.type !== "task" && a.type !== "milestone").length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <PendingActionsPanel actions={pendingActions.filter((a) => a.type !== "task" && a.type !== "milestone")} />
+          </div>
+        )}
 
         <TasksPageClient
           tasks={tasks}

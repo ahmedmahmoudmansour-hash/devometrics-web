@@ -477,28 +477,12 @@
     "progress": "Complete these {count} steps to unlock your full AI Career Health Score.",
     "startHere": "Start here"
   },
-  "todayTasksCard": {
-    "title": "Your tasks",
-    "doneToday": "{done} of {total} done today",
-    "overdueOnly": "Nothing new today, but {count} overdue",
-    "nothingScheduled": "Nothing scheduled today",
-    "privateSuffix": "— private to you, never visible to anyone else",
-    "moreCount": "+ {count} more",
-    "overdueLabel": "Overdue ({count})"
-  },
-  "upcomingDeadlinesCard": {
-    "title": "🔔 Due in the next {days} days",
-    "cta": "Break these into daily tasks →"
-  },
-  "pendingKnowledgeHubCard": {
-    "title": "Knowledge Hub",
-    "overdueTotal": "{overdue} overdue, {total} total pending",
-    "itemsAssignedOne": "1 item assigned to you",
-    "itemsAssignedMany": "{count} items assigned to you",
-    "moreCount": "+ {count} more",
-    "overdueLabel": "Overdue ({count})",
-    "dueDate": "· due {date}",
-    "wasDue": "· was due {date}"
+  "pendingActionsPanel": {
+    "title": "Needs your attention",
+    "hint": "Everything assigned to you across tasks, assessments, Knowledge Hub, performance reviews, and development plans — one list instead of four.",
+    "count": "{count, plural, one {# item} other {# items}}",
+    "overdue": "Overdue",
+    "seeAll": "See all {count} →"
   },
   "pendingSurveysCard": {
     "titleOne": "You have a survey",
