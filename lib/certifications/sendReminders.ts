@@ -1,9 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
 
 type ReminderCert = { name: string; issuer: string | null; expiry_date: string; expired: boolean };
-type ReminderRow = { user_id: string; email: string; full_name: string | null; certifications: ReminderCert[] };
+type ReminderRow = {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  certifications: ReminderCert[];
+  custom_subject: string | null;
+  custom_message: string | null;
+};
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 // Runs inside the existing daily task-reminders cron (see
@@ -36,9 +43,10 @@ export async function sendDueCertificationReminders(
     try {
       await sendEmail(
         row.email,
-        expired.length > 0
-          ? `${expired.length} certification${expired.length === 1 ? "" : "s"} expired on Devometrics`
-          : "A certification is expiring soon on Devometrics",
+        row.custom_subject ||
+          (expired.length > 0
+            ? `${expired.length} certification${expired.length === 1 ? "" : "s"} expired on Devometrics`
+            : "A certification is expiring soon on Devometrics"),
         renderEmail({
           preheader: `${certs.length} credential${certs.length === 1 ? "" : "s"} need attention — ${certs
             .slice(0, 2)
@@ -47,6 +55,7 @@ export async function sendDueCertificationReminders(
           footerNote: "You're getting this because you track certifications on Devometrics — manage them anytime from Certifications.",
           bodyHtml: `
             <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            ${customMessageHtml(row.custom_message)}
             ${
               expired.length > 0
                 ? `<h3 style="color:#c2410c;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Expired</h3>

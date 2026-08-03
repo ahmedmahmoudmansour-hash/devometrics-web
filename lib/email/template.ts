@@ -5,6 +5,25 @@ export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Renders an org admin's optional custom intro message (organization_email_
+// messages, migration 0101) as one paragraph, right after the greeting and
+// before the standard itemized content — the one place a reminder email's
+// wording can vary per org. Empty/null (the default, no override set)
+// renders nothing, so every reminder looks exactly as it always has until
+// an admin actually sets one. Deliberately just a paragraph of the shell
+// below, never a replacement for it — header, footer, button, and branding
+// stay the fixed Devometrics standard no matter what an admin writes here.
+export function customMessageHtml(message: string | null | undefined): string {
+  if (!message?.trim()) return "";
+  // \n\n-separated paragraphs, same convention as plain-text admin input
+  // anywhere else in this app that renders into HTML (e.g. exit interview
+  // notes) — escaped first so admin-authored text can never inject markup.
+  return escapeHtml(message.trim())
+    .split(/\n{2,}/)
+    .map((p) => `<p style="font-size:15px;line-height:1.7;margin:0 0 16px;">${p.replace(/\n/g, "<br />")}</p>`)
+    .join("");
+}
+
 // Shared branded shell for every transactional email this app sends — a
 // dark-navy header (matching the app's own brand), a white content card,
 // and a consistent footer. Before this, each caller hand-rolled its own

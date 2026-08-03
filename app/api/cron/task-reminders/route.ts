@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
 import { sendDueCertificationReminders } from "@/lib/certifications/sendReminders";
 import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
+import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/sendReminders";
+import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
 
 type ReminderTask = { title: string; date: string; overdue: boolean };
-type ReminderRow = { user_id: string; email: string; full_name: string | null; tasks: ReminderTask[] };
+type ReminderRow = {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  tasks: ReminderTask[];
+  custom_subject: string | null;
+  custom_message: string | null;
+};
 
 // Triggered daily by Vercel Cron (see vercel.json). Vercel automatically
 // sends "Authorization: Bearer $CRON_SECRET" on cron-triggered requests
@@ -48,9 +57,10 @@ export async function GET(request: Request) {
     try {
       await sendEmail(
         row.email,
-        overdue.length > 0
-          ? `${tasks.length} task${tasks.length === 1 ? "" : "s"} need your attention on Devometrics`
-          : "Today's tasks on Devometrics",
+        row.custom_subject ||
+          (overdue.length > 0
+            ? `${tasks.length} task${tasks.length === 1 ? "" : "s"} need your attention on Devometrics`
+            : "Today's tasks on Devometrics"),
         renderEmail({
           preheader: `${tasks.length} task${tasks.length === 1 ? "" : "s"} due — ${tasks
             .slice(0, 2)
@@ -59,6 +69,7 @@ export async function GET(request: Request) {
           footerNote: "You're getting this because you have tasks tracked on Devometrics — manage them anytime from Tasks & Calendar.",
           bodyHtml: `
             <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            ${customMessageHtml(row.custom_message)}
             ${
               overdue.length > 0
                 ? `<h3 style="color:#c2410c;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Overdue</h3>
@@ -93,9 +104,13 @@ export async function GET(request: Request) {
 
   const certResult = await sendDueCertificationReminders(supabase, secret);
   const knowledgeHubResult = await sendDueKnowledgeHubReminders(supabase, secret);
+  const performanceReviewResult = await sendDuePerformanceReviewReminders(supabase, secret);
+  const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
 
   return NextResponse.json({
     candidates: rows?.length ?? 0,
+    performanceReviews: performanceReviewResult,
+    assessments: assessmentResult,
     sent,
     certifications: certResult,
     knowledgeHub: knowledgeHubResult,

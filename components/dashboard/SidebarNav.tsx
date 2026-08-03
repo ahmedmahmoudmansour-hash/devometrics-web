@@ -26,6 +26,7 @@ import {
   Users,
   ClipboardCheck,
   Library,
+  ArrowLeftRight,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LocaleToggle from "@/components/LocaleToggle";
@@ -271,10 +272,16 @@ export default function SidebarNav({
           <span className="dashboard-sidebar-label">{t("profile")}</span>
         </Link>
         {isCompanyAdmin && (
-          <Link href="/dashboard/company" style={itemStyle(isActive("/dashboard/company"), "amber")}>
-            <Building2 size={16} />
-            <span className="dashboard-sidebar-label">{t("company")}</span>
-          </Link>
+          <>
+            <Link href="/dashboard/company" style={itemStyle(isActive("/dashboard/company"), "amber")}>
+              <Building2 size={16} />
+              <span className="dashboard-sidebar-label">{t("company")}</span>
+            </Link>
+            <Link href="/dashboard/choose-workspace" style={itemStyle(isActive("/dashboard/choose-workspace"))}>
+              <ArrowLeftRight size={16} />
+              <span className="dashboard-sidebar-label">{t("switchWorkspace")}</span>
+            </Link>
+          </>
         )}
         {isPlatformAdmin && (
           <Link href="/dashboard/admin" style={itemStyle(isActive("/dashboard/admin"), "amber")}>

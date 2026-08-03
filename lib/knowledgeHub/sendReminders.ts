@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
 
 type ReminderRow = {
   assignment_id: string;
@@ -10,6 +10,8 @@ type ReminderRow = {
   content_title: string;
   due_date: string;
   overdue: boolean;
+  custom_subject: string | null;
+  custom_message: string | null;
 };
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -38,14 +40,16 @@ export async function sendDueKnowledgeHubReminders(
     try {
       await sendEmail(
         row.email,
-        row.overdue
-          ? `Training overdue on Devometrics: ${row.content_title}`
-          : `Training due soon on Devometrics: ${row.content_title}`,
+        row.custom_subject ||
+          (row.overdue
+            ? `Training overdue on Devometrics: ${row.content_title}`
+            : `Training due soon on Devometrics: ${row.content_title}`),
         renderEmail({
           preheader: `${row.content_title} — ${row.overdue ? "overdue" : `due ${row.due_date}`}`,
           footerNote: "You're getting this because your organization assigned you training on Devometrics.",
           bodyHtml: `
             <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            ${customMessageHtml(row.custom_message)}
             ${
               row.overdue
                 ? `<h3 style="color:#c2410c;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Overdue</h3>

@@ -439,6 +439,7 @@
     "accountSection": "Account",
     "profile": "Profile",
     "company": "Company",
+    "switchWorkspace": "Switch workspace",
     "admin": "Admin",
     "logOut": "Log out"
   },
@@ -1369,6 +1370,16 @@
     "exitInterviews": "Exit Interviews",
     "analytics": "Analytics"
   },
+  "chooseWorkspacePage": {
+    "title": "Which workspace do you want?",
+    "description": "You're an admin on a company workspace as well as having your own individual account. Pick one to continue — you can switch anytime from the sidebar.",
+    "descriptionWithOrg": "You're an admin of {org} as well as having your own individual account. Pick one to continue — you can switch anytime from the sidebar.",
+    "employeeTitle": "Employee Workspace",
+    "employeeDescription": "Your own personal Gap Analysis, assessments, AI Coach, and development plan — exactly like any other individual account.",
+    "adminTitle": "Company Administration",
+    "adminDescription": "Your team's workforce dashboard, hiring, performance reviews, org chart, and every company-wide tool.",
+    "rememberNote": "We'll remember your choice on this device — use \"Switch workspace\" in the sidebar to come back here anytime."
+  },
   "companyProfilePage": {
     "backToProgress": "← Back to progress",
     "scopeNote": "Only your own company's members appear here — this is scoped to your organization, not a shared pilot-wide view. Everyone below uses the exact same individual tools as any other Devometrics account; this dashboard just aggregates what they've already done.",
@@ -1496,6 +1507,28 @@
     "imageTooLargeError": "Image must be under 3MB",
     "save": "Save",
     "saved": "Saved"
+  },
+  "emailMessagesForm": {
+    "title": "Customize reminder emails",
+    "description": "Optional — write your own intro message for the reminder emails your employees receive. The layout, header, and buttons stay the standard Devometrics design; only the wording changes. Leave a type blank to keep the default text.",
+    "type_task_reminder": "Task reminders",
+    "type_certification_reminder": "Certification reminders",
+    "type_knowledge_hub_reminder": "Knowledge Hub reminders",
+    "type_performance_review_reminder": "Performance review reminders",
+    "type_assessment_reminder": "Assessment reminders",
+    "hint_task_reminder": "Sent when someone has an overdue or due-today task in Tasks & Calendar.",
+    "hint_certification_reminder": "Sent when a tracked certification has expired or is expiring within 30 days.",
+    "hint_knowledge_hub_reminder": "Sent when assigned training is due within 7 days and hasn't been completed.",
+    "hint_performance_review_reminder": "Sent to an employee when their self-reflection on an open Impact Cycle hasn't been started yet.",
+    "hint_assessment_reminder": "Sent when an assigned assessment still hasn't been completed a few days after assignment.",
+    "subjectLabel": "Subject (optional)",
+    "subjectPlaceholder": "Leave blank to use the default subject",
+    "messageLabel": "Message (optional)",
+    "messagePlaceholder": "Leave blank to use the default message",
+    "messageScopeNote": "This replaces only the intro paragraph — the itemized list of what's due and the action button are always included automatically.",
+    "save": "Save",
+    "saved": "Saved",
+    "useDefault": "Clear and use default"
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",

@@ -11,11 +11,13 @@ import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import OrganizationProfileForm from "@/components/dashboard/OrganizationProfileForm";
 import OrganizationContactsForm from "@/components/dashboard/OrganizationContactsForm";
 import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandingForm";
+import EmailMessagesForm from "@/components/dashboard/EmailMessagesForm";
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
 import CompanyWidgetGrid, { COMPANY_WIDGET_ICONS, type CompanyWidget } from "@/components/dashboard/CompanyWidgetGrid";
 import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
 import { getAutomationSettings } from "@/lib/automations/actions";
+import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 
 // Live counts for the widget grid — each an isolated, defensive count query
 // (head:true, no rows fetched) against a table that may belong to a
@@ -39,6 +41,7 @@ export default async function CompanyProfilePage() {
   if (!data.isOrgAdmin) redirect("/dashboard");
   const overview = await buildCompanyOverview(data);
   const automationSettings = data.organizationId ? await getAutomationSettings(data.organizationId) : null;
+  const emailMessages = data.organizationId ? await getOrganizationEmailMessages(data.organizationId) : null;
 
   let widgets: CompanyWidget[] = [];
   if (data.organizationId) {
@@ -319,6 +322,7 @@ export default async function CompanyProfilePage() {
               organizationId={data.organizationId}
               initial={{ logoUrl: data.organizationLogoUrl, brandColor: data.organizationBrandColor }}
             />
+            {emailMessages && <EmailMessagesForm organizationId={data.organizationId} initial={emailMessages} />}
           </div>
         )}
 
