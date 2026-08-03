@@ -1343,6 +1343,7 @@
     "employees": "Employees",
     "jobArchitecture": "Job Architecture",
     "hiring": "Hiring",
+    "onboarding": "Onboarding",
     "orgChart": "Org Chart",
     "competencies": "Competencies",
     "performanceReviews": "Impact Cycles",
@@ -1353,6 +1354,49 @@
     "surveys": "Surveys",
     "exitInterviews": "Exit Interviews",
     "analytics": "Analytics"
+  },
+  "companyOnboardingPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Onboarding",
+    "description": "Build the checklist every new hire gets automatically when they join — tasks for them to complete, documents to read and acknowledge, and steps their manager signs off on.",
+    "notEnabledYet": "This isn't enabled on this database yet — the <code>0102_onboarding_configurable.sql</code> migration needs to be run in the Supabase SQL Editor first."
+  },
+  "onboardingTemplateEditor": {
+    "title": "Your onboarding checklist",
+    "description": "Add, reorder, or remove steps — every new hire gets exactly this list from now on. Editing it never changes what's already assigned to someone mid-onboarding.",
+    "noSteps": "No steps yet — add your first one below.",
+    "type_task": "Task",
+    "type_knowledge_hub": "Document",
+    "type_manager_approval": "Manager approval",
+    "dueOffset": "due {days, plural, one {# day after joining} other {# days after joining}}",
+    "addStepTitle": "Add a step",
+    "titlePlaceholder": "Step title",
+    "descriptionPlaceholder": "Optional details (shown to the new hire)",
+    "chooseDocument": "Choose a Knowledge Hub document…",
+    "dueOffsetLabel": "Due (days after joining):",
+    "titleRequired": "Give this step a title",
+    "addStep": "Add step"
+  },
+  "myOnboardingPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Onboarding",
+    "description": "Your getting-started checklist — set up by your organization, just for you.",
+    "noneYet": "Nothing assigned yet — check back after your first day, or ask your admin if you were expecting an onboarding checklist."
+  },
+  "myOnboardingChecklist": {
+    "title": "Your checklist",
+    "progress": "{done}/{total} complete",
+    "done": "Done",
+    "markDone": "Mark done",
+    "openDocument": "Open document",
+    "awaitingApproval": "Awaiting manager approval",
+    "dueDate": "Due {date}"
+  },
+  "teamOnboardingSection": {
+    "title": "Team onboarding",
+    "hint": "Your direct reports' onboarding checklists — approve the steps that need your sign-off.",
+    "progress": "{done}/{total}",
+    "approve": "Approve"
   },
   "chooseWorkspacePage": {
     "title": "Which workspace do you want?",

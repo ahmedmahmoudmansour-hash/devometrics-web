@@ -1343,6 +1343,7 @@
     "employees": "الموظفون",
     "jobArchitecture": "هيكلة الوظائف",
     "hiring": "التوظيف",
+    "onboarding": "التأهيل",
     "orgChart": "الهيكل التنظيمي",
     "competencies": "الكفاءات",
     "performanceReviews": "دورات الأداء",
@@ -1353,6 +1354,49 @@
     "surveys": "الاستبيانات",
     "exitInterviews": "مقابلات الخروج",
     "analytics": "التحليلات"
+  },
+  "companyOnboardingPage": {
+    "backToProgress": "← العودة إلى التقدم",
+    "title": "التأهيل",
+    "description": "أنشئ القائمة التي يحصل عليها كل موظف جديد تلقائيًا عند انضمامه — مهام يُكملها، مستندات يقرؤها ويقرّ بها، وخطوات يوافق عليها مديره.",
+    "notEnabledYet": "هذا غير مفعّل على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0102_onboarding_configurable.sql</code> في محرر SQL الخاص بـ Supabase أولاً."
+  },
+  "onboardingTemplateEditor": {
+    "title": "قائمة التأهيل الخاصة بك",
+    "description": "أضف الخطوات أو أعد ترتيبها أو احذفها — سيحصل كل موظف جديد من الآن على هذه القائمة بالضبط. تعديلها لا يغيّر أبدًا ما تم تعيينه بالفعل لشخص أثناء تأهيله.",
+    "noSteps": "لا توجد خطوات بعد — أضف أول خطوة أدناه.",
+    "type_task": "مهمة",
+    "type_knowledge_hub": "مستند",
+    "type_manager_approval": "موافقة المدير",
+    "dueOffset": "{days, plural, one {مستحقة بعد يوم واحد من الانضمام} other {مستحقة بعد # أيام من الانضمام}}",
+    "addStepTitle": "أضف خطوة",
+    "titlePlaceholder": "عنوان الخطوة",
+    "descriptionPlaceholder": "تفاصيل اختيارية (تُعرض للموظف الجديد)",
+    "chooseDocument": "اختر مستندًا من مركز المعرفة…",
+    "dueOffsetLabel": "الاستحقاق (أيام بعد الانضمام):",
+    "titleRequired": "أعطِ هذه الخطوة عنوانًا",
+    "addStep": "أضف الخطوة"
+  },
+  "myOnboardingPage": {
+    "backToProgress": "← العودة إلى التقدم",
+    "title": "التأهيل",
+    "description": "قائمة البدء الخاصة بك — أعدّتها مؤسستك، خصيصًا لك.",
+    "noneYet": "لم يُعيَّن لك شيء بعد — تحقق مرة أخرى بعد يومك الأول، أو اسأل المسؤول إن كنت تتوقع قائمة تأهيل."
+  },
+  "myOnboardingChecklist": {
+    "title": "قائمتك",
+    "progress": "{done}/{total} مكتملة",
+    "done": "تم",
+    "markDone": "وضع علامة مكتمل",
+    "openDocument": "افتح المستند",
+    "awaitingApproval": "بانتظار موافقة المدير",
+    "dueDate": "الاستحقاق {date}"
+  },
+  "teamOnboardingSection": {
+    "title": "تأهيل الفريق",
+    "hint": "قوائم تأهيل تقاريرك المباشرين — وافق على الخطوات التي تحتاج توقيعك.",
+    "progress": "{done}/{total}",
+    "approve": "موافقة"
   },
   "chooseWorkspacePage": {
     "title": "أي مساحة عمل تريد؟",

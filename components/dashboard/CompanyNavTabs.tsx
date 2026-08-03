@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews" | "onboarding";
 
 export default async function CompanyNavTabs({ active }: { active: TabKey }) {
   const t = await getTranslations("companyNavTabs");
@@ -10,6 +10,7 @@ export default async function CompanyNavTabs({ active }: { active: TabKey }) {
     { key: "employees", label: t("employees"), href: "/dashboard/company/employees" },
     { key: "jobArchitecture", label: t("jobArchitecture"), href: "/dashboard/company/job-architecture" },
     { key: "hiring", label: t("hiring"), href: "/dashboard/company/hiring" },
+    { key: "onboarding", label: t("onboarding"), href: "/dashboard/company/onboarding" },
     { key: "orgChart", label: t("orgChart"), href: "/dashboard/company/org-chart" },
     { key: "competencies", label: t("competencies"), href: "/dashboard/company/competencies" },
     { key: "performanceReviews", label: t("performanceReviews"), href: "/dashboard/company/impact-cycles" },

@@ -2,6 +2,7 @@ import type { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
+import { instantiateOnboarding } from "@/lib/onboarding/actions";
 import { isRecipeEnabled, logAutomation, firedRecently } from "./engine";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -26,10 +27,12 @@ export async function runHireToOnboarding(
   const enabled = await isRecipeEnabled(supabase, params.organizationId, "hire_to_onboarding");
   if (!enabled) return;
 
-  await supabase.from("personal_tasks").insert([
-    { user_id: params.employeeUserId, title: "Complete your profile", recurring: "none", date: addDaysIso(0) },
-    { user_id: params.employeeUserId, title: "Take your first assessment in the Assessment Center", recurring: "none", date: addDaysIso(2) },
-  ]);
+  // Real, admin-configurable onboarding checklist (migration 0102) —
+  // replaces what used to be two hardcoded personal_tasks. Instantiates
+  // from the org's own template (lazily seeded with those same two steps
+  // on an admin's first visit to the editor, so behavior doesn't regress
+  // for an org that's never touched onboarding settings).
+  await instantiateOnboarding(supabase, { organizationId: params.organizationId, employeeUserId: params.employeeUserId });
 
   if (params.managerEmail) {
     try {

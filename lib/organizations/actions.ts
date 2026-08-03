@@ -510,11 +510,13 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
 
   await supabase.from("organization_invites").update({ accepted_at: new Date().toISOString() }).eq("id", invite.id);
 
-  // Only for genuine Smart Hiring conversions (invite.candidate_id set) --
-  // a generic org invite (e.g. an existing employee inviting a teammate
-  // directly) isn't "a new hire", so the onboarding recipe shouldn't fire
-  // for it.
-  if (invite.candidate_id) {
+  // Broadened 2026-08-03 (per the strategic memo's Onboarding review) to
+  // fire for every invite-based join, not just genuine Smart Hiring
+  // conversions (invite.candidate_id set) as it did before — someone
+  // joining a company workspace via a direct admin invite is still
+  // genuinely starting there, and now gets the org's actual configured
+  // onboarding checklist (migration 0102) rather than nothing.
+  {
     const [{ data: org }, { data: profile }] = await Promise.all([
       supabase.from("organizations").select("name").eq("id", invite.organization_id).maybeSingle<{ name: string }>(),
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>(),
