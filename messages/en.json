@@ -531,6 +531,13 @@
     "cachedNote": "⚡ Served from cache — refreshed weekly, not re-searched on every visit.",
     "errorFallback": "Could not fetch trends"
   },
+  "recommendedLearningCard": {
+    "title": "Recommended learning",
+    "subtitle": "Real, currently-available courses on \"{topic}\" — grounded in a live web search, not invented course names.",
+    "findCourses": "Find courses",
+    "searching": "Searching…",
+    "errorFallback": "Could not fetch course recommendations"
+  },
   "planSummaryCard": {
     "nextLabel": "Next: {title}",
     "noMilestones": "No milestones yet",
