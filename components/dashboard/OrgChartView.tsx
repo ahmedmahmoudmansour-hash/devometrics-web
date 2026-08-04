@@ -258,8 +258,52 @@ export default function OrgChartView({
     });
   }
 
+  // A dedicated, one-click department picker — same underlying mechanism
+  // as the generic department filter chips in OrgChartControlBar (both
+  // write to config.filters.departments), just surfaced as the first thing
+  // on the page instead of buried inside the control bar's filter section,
+  // per Ahmed's explicit ask for a direct "pick a department" chart rather
+  // than routing through Saved Views. Deliberately single-select (unlike
+  // the control bar's multiselect chips) — picking "Sales" here replaces
+  // the department filter outright rather than adding to it.
+  function handleDepartmentChartChange(department: string) {
+    handleConfigChange({ ...config, filters: { ...config.filters, departments: department ? [department] : [] } }, presetKey);
+  }
+
+  const departmentChartOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of effectiveRows) if (r.department) set.add(r.department);
+    for (const p of positions) if (p.department) set.add(p.department);
+    return [...set].sort();
+  }, [effectiveRows, positions]);
+
+  const isSingleDepartmentActive = config.filters.departments.length === 1;
+
   return (
     <div>
+      {departmentChartOptions.length > 0 && (
+        <div className="no-print" style={{ marginBottom: 14 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+            {t("departmentChartLabel")}
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button type="button" onClick={() => handleDepartmentChartChange("")} style={departmentChipStyle(config.filters.departments.length === 0)}>
+              {t("departmentChartAll")}
+            </button>
+            {departmentChartOptions.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => handleDepartmentChartChange(d)}
+                style={departmentChipStyle(isSingleDepartmentActive && config.filters.departments[0] === d)}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <OrgChartControlBar rows={effectiveRows} config={config} activePresetKey={presetKey} onChange={handleConfigChange} />
 
       <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
@@ -463,5 +507,19 @@ function addPositionButtonStyle(): React.CSSProperties {
     fontSize: 12,
     fontWeight: 600,
     cursor: "pointer",
+  };
+}
+
+function departmentChipStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "6px 13px",
+    fontSize: 12,
+    fontWeight: 700,
+    borderRadius: 999,
+    border: active ? "1px solid var(--teal)" : "1px solid var(--border)",
+    background: active ? "var(--teal)" : "transparent",
+    color: active ? "#0A0F1E" : "var(--text-muted)",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
   };
 }

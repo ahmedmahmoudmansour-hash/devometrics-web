@@ -1830,7 +1830,9 @@
     "addVacantRole": "+ Vacant role",
     "addStructural": "+ Structural node",
     "newVacantRoleTitle": "New vacant role",
-    "newStructuralTitle": "New department"
+    "newStructuralTitle": "New department",
+    "departmentChartLabel": "Jump to a department's chart",
+    "departmentChartAll": "All (Corporate)"
   },
   "orgChartPositionCard": {
     "kindStructural": "Structural",
