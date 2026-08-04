@@ -125,6 +125,10 @@ a:focus-visible {
      break-inside keeps each card whole on one page instead of letting the
      browser's print pagination cut through an SVG or stacked chart. */
   .print-plan .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  /* Org Chart connector lines (Workstream 6) use `stroke`, which the blanket
+     `.print-plan *` color override above doesn't touch — same light/ink-
+     friendly line color as print-rule's border. */
+  .print-plan svg line { stroke: #d8dce3 !important; }
 }
 
 /* Home dashboard content grid — was a single 640px column centered inside

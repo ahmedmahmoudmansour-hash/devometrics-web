@@ -5,10 +5,21 @@ import { useTranslations } from "next-intl";
 import OrgChartView from "@/components/dashboard/OrgChartView";
 import OrgChartDepartmentView from "@/components/dashboard/OrgChartDepartmentView";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
+import type { OrgPositionRow } from "@/lib/orgChart/positions";
 
 type ViewMode = "corporate" | "department";
 
-export default function OrgChartPageClient({ rows }: { rows: WorkforceRow[] }) {
+export default function OrgChartPageClient({
+  rows,
+  nominatedUserIds,
+  positions,
+  memberManagerPositions,
+}: {
+  rows: WorkforceRow[];
+  nominatedUserIds: string[];
+  positions: OrgPositionRow[];
+  memberManagerPositions: Record<string, string>;
+}) {
   const t = useTranslations("orgChartPageClient");
   const [mode, setMode] = useState<ViewMode>("corporate");
 
@@ -25,7 +36,7 @@ export default function OrgChartPageClient({ rows }: { rows: WorkforceRow[] }) {
 
   return (
     <div>
-      <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, marginBottom: 20, gap: 2 }}>
+      <div className="no-print" style={{ display: "inline-flex", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, marginBottom: 20, gap: 2 }}>
         <button type="button" onClick={() => setMode("corporate")} style={tabStyle(mode === "corporate")}>
           {t("corporateTab")}
         </button>
@@ -34,7 +45,11 @@ export default function OrgChartPageClient({ rows }: { rows: WorkforceRow[] }) {
         </button>
       </div>
 
-      {mode === "corporate" ? <OrgChartView rows={rows} /> : <OrgChartDepartmentView rows={rows} />}
+      {mode === "corporate" ? (
+        <OrgChartView rows={rows} nominatedUserIds={nominatedUserIds} positions={positions} memberManagerPositions={memberManagerPositions} />
+      ) : (
+        <OrgChartDepartmentView rows={rows} />
+      )}
     </div>
   );
 }

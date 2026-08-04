@@ -62,15 +62,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
       }
     >
       <div style={{ display: "flex", minHeight: "100vh" }}>
-        <SidebarNav
-          savedTheme={profile?.theme}
-          isCompanyAdmin={membership?.role === "admin"}
-          isPlatformAdmin={!!profile?.is_admin}
-          isFreeTier={isFreeTier}
-          hasDirectReports={hasDirectReports}
-          hasManager={hasManager}
-          hasOrgMembership={hasOrgMembership}
-        />
+        {/* The sidebar was never excluded from print output before — every
+            existing "Download PDF" button (Plans, Employee Report, Bridge
+            content) has printed the nav chrome alongside the actual content
+            this whole time. Wrapping it here fixes that globally, not just
+            for the Org Chart's new export button. */}
+        <div className="no-print">
+          <SidebarNav
+            savedTheme={profile?.theme}
+            isCompanyAdmin={membership?.role === "admin"}
+            isPlatformAdmin={!!profile?.is_admin}
+            isFreeTier={isFreeTier}
+            hasDirectReports={hasDirectReports}
+            hasManager={hasManager}
+            hasOrgMembership={hasOrgMembership}
+          />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
       </div>
       <CommandPalette

@@ -1,173 +1,402 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { setMemberManager } from "@/lib/orgChart/actions";
-import { buildReportingForest, type OrgChartNode } from "@/lib/orgChart/tree";
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
+import { setMemberManager, setMemberManagerPosition, setPositionParent } from "@/lib/orgChart/actions";
+import { createPosition, type OrgPositionRow } from "@/lib/orgChart/positions";
+import { layout, flatten, subtreeWidth, wouldCreateCycle, CARD_W, CARD_H, LEVEL_H, type LayoutNode } from "@/lib/orgChart/tree";
+import {
+  buildMergedReportingForest,
+  pruneMergedForestForDisplay,
+  applyMergedDepthCap,
+  buildMergedManagerEdgeMap,
+  memberTag,
+  positionTag,
+  type MergedDisplayNode,
+} from "@/lib/orgChart/mergedTree";
+import { defaultViewConfig, DEFAULT_PRESET_KEY, type OrgChartViewConfig, type OrgChartPresetKey } from "@/lib/orgChart/cardConfig";
+import { listSavedViews, type OrgChartSavedView } from "@/lib/orgChart/savedViews";
+import OrgChartCard, { type DropState } from "@/components/dashboard/OrgChartCard";
+import OrgChartPositionCard from "@/components/dashboard/OrgChartPositionCard";
+import OrgChartPositionPanel from "@/components/dashboard/OrgChartPositionPanel";
+import OrgChartControlBar from "@/components/dashboard/OrgChartControlBar";
+import OrgChartSavedViewsMenu from "@/components/dashboard/OrgChartSavedViewsMenu";
+import OrgChartExportBar from "@/components/dashboard/OrgChartExportBar";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
 
-const CARD_W = 168;
-const CARD_H = 60;
-const UNIT_W = CARD_W + 32; // horizontal spacing between leaf slots
-const LEVEL_H = 110; // vertical spacing between reporting levels
 const PAD = 40;
 
-type LayoutNode = {
-  node: OrgChartNode;
-  x: number; // px, center
-  y: number; // px, top
-  children: LayoutNode[];
-};
-
-function subtreeWidth(node: OrgChartNode): number {
-  if (node.children.length === 0) return 1;
-  return node.children.reduce((sum, c) => sum + subtreeWidth(c), 0);
+function matchesFilters(
+  entity: { country: string | null; businessUnit: string | null; department: string | null },
+  filters: OrgChartViewConfig["filters"]
+): boolean {
+  if (filters.countries.length > 0 && (!entity.country || !filters.countries.includes(entity.country))) return false;
+  if (filters.businessUnits.length > 0 && (!entity.businessUnit || !filters.businessUnits.includes(entity.businessUnit))) return false;
+  if (filters.departments.length > 0 && (!entity.department || !filters.departments.includes(entity.department))) return false;
+  return true;
 }
 
-// Classic tidy-tree layout: each leaf gets one horizontal "slot," an
-// internal node's width is the sum of its children's widths, and the
-// parent centers itself above its children. Hand-rolled rather than a
-// library, same posture as every other chart in this app (charts.tsx) —
-// this is genuinely more complex than a bar/donut chart, but the algorithm
-// itself is a well-known, small one, not worth a dependency for.
-function layout(node: OrgChartNode, depth: number, xOffsetUnits: number): LayoutNode {
-  const width = subtreeWidth(node);
-  if (node.children.length === 0) {
-    return { node, x: (xOffsetUnits + width / 2) * UNIT_W, y: depth * LEVEL_H, children: [] };
-  }
-  let cursor = xOffsetUnits;
-  const children: LayoutNode[] = [];
-  for (const child of node.children) {
-    const childWidth = subtreeWidth(child);
-    children.push(layout(child, depth + 1, cursor));
-    cursor += childWidth;
-  }
-  const x = (children[0].x + children[children.length - 1].x) / 2;
-  return { node, x, y: depth * LEVEL_H, children };
+// Both cards emit drag/drop data keyed differently (OrgChartCard, untouched
+// since Workstream 6, uses `userId`; OrgChartPositionCard, new this pass,
+// uses an already-tagged `taggedId`) — this normalizes either shape into
+// one tagged id (`member:<uuid>` / `position:<uuid>`) the rest of this
+// file's merged-tree logic operates on.
+function tagFromDragData(data: Record<string, unknown> | undefined): string | null {
+  if (!data) return null;
+  if (typeof data.taggedId === "string") return data.taggedId;
+  if (typeof data.userId === "string") return memberTag(data.userId);
+  return null;
 }
 
-function flatten(layoutNode: LayoutNode, out: LayoutNode[] = []): LayoutNode[] {
-  out.push(layoutNode);
-  for (const c of layoutNode.children) flatten(c, out);
-  return out;
+function parseTag(tag: string): { kind: "member" | "position"; id: string } {
+  const idx = tag.indexOf(":");
+  return { kind: tag.slice(0, idx) as "member" | "position", id: tag.slice(idx + 1) };
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
+export default function OrgChartView({
+  rows,
+  nominatedUserIds,
+  positions,
+  memberManagerPositions,
+}: {
+  rows: WorkforceRow[];
+  nominatedUserIds: string[];
+  positions: OrgPositionRow[];
+  // userId -> positionId, for members whose manager is currently a vacant
+  // position rather than a real person. A plain object because it crosses
+  // the server->client prop boundary (Maps don't serialize) — rebuilt into
+  // a Map below.
+  memberManagerPositions: Record<string, string>;
+}) {
   const t = useTranslations("orgChartView");
+  const tPos = useTranslations("orgChartPositionCard");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const forest = useMemo(() => buildReportingForest(rows), [rows]);
+  const [config, setConfig] = useState<OrgChartViewConfig>(defaultViewConfig());
+  const [presetKey, setPresetKey] = useState<OrgChartPresetKey | null>(DEFAULT_PRESET_KEY);
+  const [expandedBranchRootIds, setExpandedBranchRootIds] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [savedViews, setSavedViews] = useState<OrgChartSavedView[]>([]);
+  const [optimisticOverrides, setOptimisticOverrides] = useState<Map<string, string | null>>(new Map());
+  const [activeDragTag, setActiveDragTag] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [lastSeenRows, setLastSeenRows] = useState(rows);
+
+  const nominatedSet = useMemo(() => new Set(nominatedUserIds), [nominatedUserIds]);
+  const memberManagerPositionsMap = useMemo(() => new Map(Object.entries(memberManagerPositions)), [memberManagerPositions]);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  useEffect(() => {
+    listSavedViews().then(setSavedViews);
+  }, []);
+
+  // Clears optimistic patches once the server's real rows land (a fresh
+  // `rows` reference after router.refresh()) — same "adjust state during
+  // render" pattern as before (Workstream 6), not an effect, to avoid an
+  // extra cascading render after commit.
+  if (rows !== lastSeenRows) {
+    setLastSeenRows(rows);
+    setOptimisticOverrides(new Map());
+  }
+
+  const effectiveRows = useMemo(() => {
+    if (optimisticOverrides.size === 0) return rows;
+    return rows.map((r) => (optimisticOverrides.has(r.userId) ? { ...r, managerUserId: optimisticOverrides.get(r.userId) ?? null } : r));
+  }, [rows, optimisticOverrides]);
+
+  const mergedEdgeMap = useMemo(
+    () => buildMergedManagerEdgeMap(effectiveRows, positions, memberManagerPositionsMap),
+    [effectiveRows, positions, memberManagerPositionsMap]
+  );
+
+  const visibleIds = useMemo(() => {
+    const hasAnyFilter = config.filters.countries.length > 0 || config.filters.businessUnits.length > 0 || config.filters.departments.length > 0;
+    if (!hasAnyFilter) {
+      return new Set([...effectiveRows.map((r) => memberTag(r.userId)), ...positions.map((p) => positionTag(p.id))]);
+    }
+    const visible = new Set<string>();
+    for (const r of effectiveRows) if (matchesFilters(r, config.filters)) visible.add(memberTag(r.userId));
+    for (const p of positions) if (matchesFilters(p, config.filters)) visible.add(positionTag(p.id));
+    return visible;
+  }, [effectiveRows, positions, config.filters]);
+
+  const forest = useMemo(
+    () => buildMergedReportingForest(effectiveRows, positions, memberManagerPositionsMap),
+    [effectiveRows, positions, memberManagerPositionsMap]
+  );
+  const prunedForest = useMemo(() => pruneMergedForestForDisplay(forest, visibleIds), [forest, visibleIds]);
+  const displayForest = useMemo(
+    () => applyMergedDepthCap(prunedForest, config.maxDepth, expandedBranchRootIds),
+    [prunedForest, config.maxDepth, expandedBranchRootIds]
+  );
 
   const laidOutRoots = useMemo(() => {
-    // Purely functional accumulation (reduce, not a mutated loop variable) —
-    // each root's tree is laid out at the running cursor position, then the
-    // cursor advances by that tree's width plus a gap, threaded through the
-    // accumulator rather than reassigned, so separate reporting trees never
-    // overlap horizontally.
-    return forest.reduce<{ laidOut: LayoutNode[]; cursor: number }>(
+    return displayForest.reduce<{ laidOut: LayoutNode<MergedDisplayNode>[]; cursor: number }>(
       (acc, root) => ({
         laidOut: [...acc.laidOut, layout(root, 0, acc.cursor)],
         cursor: acc.cursor + subtreeWidth(root) + 0.6,
       }),
       { laidOut: [], cursor: 0 }
     ).laidOut;
-  }, [forest]);
+  }, [displayForest]);
 
   const allNodes = useMemo(() => laidOutRoots.flatMap((r) => flatten(r)), [laidOutRoots]);
   const maxX = Math.max(CARD_W, ...allNodes.map((n) => n.x)) + CARD_W;
   const maxY = Math.max(0, ...allNodes.map((n) => n.y)) + CARD_H;
 
-  const selectedRow = selectedUserId ? rows.find((r) => r.userId === selectedUserId) ?? null : null;
+  const selected = selectedId ? parseTag(selectedId) : null;
+  const selectedMemberRow = selected?.kind === "member" ? effectiveRows.find((r) => r.userId === selected.id) ?? null : null;
+  const selectedPosition = selected?.kind === "position" ? positions.find((p) => p.id === selected.id) ?? null : null;
+
+  const dragged = activeDragTag ? parseTag(activeDragTag) : null;
+  const draggedMemberRow = dragged?.kind === "member" ? effectiveRows.find((r) => r.userId === dragged.id) ?? null : null;
+  const draggedPosition = dragged?.kind === "position" ? positions.find((p) => p.id === dragged.id) ?? null : null;
+
+  function dropStateFor(taggedId: string): DropState {
+    if (!activeDragTag || taggedId === activeDragTag) return "none";
+    if (wouldCreateCycle(activeDragTag, taggedId, mergedEdgeMap)) return "invalid";
+    return "valid";
+  }
+
+  // The one path unchanged from Workstream 6 — a real employee dragged
+  // onto another real employee still writes through setMemberManager
+  // exactly as it always has, with the same optimistic-patch/rollback
+  // behavior.
+  function applyReparent(employeeUserId: string, newManagerUserId: string | null) {
+    setError(null);
+    setOptimisticOverrides((prev) => new Map(prev).set(employeeUserId, newManagerUserId));
+    startTransition(async () => {
+      const result = await setMemberManager(employeeUserId, newManagerUserId);
+      if (result && "error" in result) {
+        setError(result.error);
+        setOptimisticOverrides((prev) => {
+          const next = new Map(prev);
+          next.delete(employeeUserId);
+          return next;
+        });
+      } else {
+        router.refresh();
+      }
+    });
+  }
+
+  // The three new reparent shapes (member->position, position->member,
+  // position->position) share one non-optimistic path — simpler than
+  // extending the optimistic-override model to four shapes for what's a
+  // less frequent interaction than everyday real-to-real reassignment.
+  function applyMergedReparent(draggedTag: string, targetTag: string) {
+    const d = parseTag(draggedTag);
+    const target = parseTag(targetTag);
+    if (d.kind === "member" && target.kind === "member") {
+      applyReparent(d.id, target.id);
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result =
+        d.kind === "member"
+          ? await setMemberManagerPosition(d.id, target.id)
+          : await setPositionParent(d.id, target.kind === "position" ? target.id : null, target.kind === "member" ? target.id : null);
+      if (result && "error" in result) setError(result.error);
+      else router.refresh();
+    });
+  }
+
+  function handleMemberReportsToChange(employeeUserId: string, value: string) {
+    if (!value) {
+      applyReparent(employeeUserId, null);
+      return;
+    }
+    const parsed = parseTag(value);
+    if (parsed.kind === "member") {
+      applyReparent(employeeUserId, parsed.id);
+    } else {
+      setError(null);
+      startTransition(async () => {
+        const result = await setMemberManagerPosition(employeeUserId, parsed.id);
+        if (result && "error" in result) setError(result.error);
+        else router.refresh();
+      });
+    }
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragTag(tagFromDragData(event.active.data.current as Record<string, unknown> | undefined));
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const draggedTag = tagFromDragData(event.active.data.current as Record<string, unknown> | undefined);
+    const targetTag = tagFromDragData(event.over?.data.current as Record<string, unknown> | undefined);
+    setActiveDragTag(null);
+    if (!draggedTag || !targetTag || draggedTag === targetTag) return;
+    if (wouldCreateCycle(draggedTag, targetTag, mergedEdgeMap)) return; // client pre-check — server re-validates regardless
+    applyMergedReparent(draggedTag, targetTag);
+  }
+
+  function handleConfigChange(nextConfig: OrgChartViewConfig, nextPresetKey: OrgChartPresetKey | null) {
+    setConfig(nextConfig);
+    setPresetKey(nextPresetKey);
+    setExpandedBranchRootIds(new Set());
+  }
+
+  function handleApplySavedView(view: OrgChartSavedView) {
+    const { presetKey: savedPresetKey, ...viewConfig } = view.config;
+    setConfig(viewConfig);
+    setPresetKey(savedPresetKey);
+    setExpandedBranchRootIds(new Set());
+  }
+
+  function handleAddPosition(kind: "vacant_role" | "structural") {
+    setError(null);
+    startTransition(async () => {
+      const result = await createPosition({ kind, title: kind === "vacant_role" ? t("newVacantRoleTitle") : t("newStructuralTitle") });
+      if ("error" in result) setError(result.error);
+      else router.refresh();
+    });
+  }
 
   return (
     <div>
-      <div style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 16, background: "var(--navy-mid)" }}>
-        <svg width={maxX + PAD * 2} height={maxY + PAD * 2} style={{ display: "block" }}>
-          <g transform={`translate(${PAD}, ${PAD})`}>
-            {/* connectors: vertical from parent bottom to a mid-level bus, horizontal bus spanning children, vertical bus-to-child */}
-            {allNodes.map((n) =>
-              n.children.length > 0 ? (
-                <g key={`edges-${n.node.row.userId}`} stroke="var(--border)" strokeWidth={1.5} fill="none">
-                  {(() => {
-                    const busY = n.y + CARD_H + (LEVEL_H - CARD_H) / 2;
-                    const firstX = n.children[0].x;
-                    const lastX = n.children[n.children.length - 1].x;
-                    return (
-                      <>
-                        <line x1={n.x} y1={n.y + CARD_H} x2={n.x} y2={busY} />
-                        {n.children.length > 1 && <line x1={firstX} y1={busY} x2={lastX} y2={busY} />}
-                        {n.children.map((c) => (
-                          <line key={c.node.row.userId} x1={c.x} y1={busY} x2={c.x} y2={c.y} />
-                        ))}
-                      </>
-                    );
-                  })()}
-                </g>
-              ) : null
-            )}
+      <OrgChartControlBar rows={effectiveRows} config={config} activePresetKey={presetKey} onChange={handleConfigChange} />
 
-            {allNodes.map((n) => {
-              const row = n.node.row;
-              const selected = row.userId === selectedUserId;
-              return (
-                <g
-                  key={row.userId}
-                  transform={`translate(${n.x - CARD_W / 2}, ${n.y})`}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    setSelectedUserId(row.userId);
-                    setError(null);
-                  }}
-                >
-                  <rect
-                    width={CARD_W}
-                    height={CARD_H}
-                    rx={10}
-                    fill="var(--navy)"
-                    stroke={selected ? "var(--teal)" : "var(--border)"}
-                    strokeWidth={selected ? 2 : 1}
-                  />
-                  <circle cx={26} cy={CARD_H / 2} r={14} fill="rgba(0,201,167,0.12)" stroke="rgba(0,201,167,0.3)" />
-                  <text x={26} y={CARD_H / 2 + 4} textAnchor="middle" fontSize={11} fontWeight={700} fill="var(--teal)">
-                    {initials(row.name)}
-                  </text>
-                  <text x={48} y={CARD_H / 2 - 4} fontSize={12.5} fontWeight={700} fill="var(--text)">
-                    {row.name.length > 18 ? row.name.slice(0, 17) + "…" : row.name}
-                  </text>
-                  <text x={48} y={CARD_H / 2 + 13} fontSize={10.5} fill="var(--text-muted)">
-                    {(row.title ?? t("noTitle")).length > 20 ? (row.title ?? t("noTitle")).slice(0, 19) + "…" : row.title ?? t("noTitle")}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
+      <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <OrgChartSavedViewsMenu
+            savedViews={savedViews}
+            currentConfig={config}
+            currentPresetKey={presetKey}
+            onApply={handleApplySavedView}
+            onSaved={() => listSavedViews().then(setSavedViews)}
+          />
+          <button type="button" disabled={isPending} onClick={() => handleAddPosition("vacant_role")} style={addPositionButtonStyle()}>
+            {t("addVacantRole")}
+          </button>
+          <button type="button" disabled={isPending} onClick={() => handleAddPosition("structural")} style={addPositionButtonStyle()}>
+            {t("addStructural")}
+          </button>
+        </div>
+        <OrgChartExportBar />
       </div>
 
+      {error && <p className="no-print" style={{ color: "#f87171", fontSize: 12.5, marginBottom: 8 }}>{error}</p>}
+
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="print-plan" style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 16, background: "var(--navy-mid)" }}>
+          <div style={{ position: "relative", width: maxX + PAD * 2, height: maxY + PAD * 2 }}>
+            <svg width={maxX + PAD * 2} height={maxY + PAD * 2} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+              <g transform={`translate(${PAD}, ${PAD})`}>
+                {allNodes.map((n) =>
+                  n.children.length > 0 ? (
+                    <g key={`edges-${n.node.id}`} stroke="var(--border)" strokeWidth={1.5} fill="none">
+                      {(() => {
+                        const busY = n.y + CARD_H + (LEVEL_H - CARD_H) / 2;
+                        const firstX = n.children[0].x;
+                        const lastX = n.children[n.children.length - 1].x;
+                        return (
+                          <>
+                            <line x1={n.x} y1={n.y + CARD_H} x2={n.x} y2={busY} />
+                            {n.children.length > 1 && <line x1={firstX} y1={busY} x2={lastX} y2={busY} />}
+                            {n.children.map((c) => (
+                              <line key={c.node.id} x1={c.x} y1={busY} x2={c.x} y2={c.y} />
+                            ))}
+                          </>
+                        );
+                      })()}
+                    </g>
+                  ) : null
+                )}
+              </g>
+            </svg>
+
+            <div style={{ position: "absolute", left: PAD, top: PAD }}>
+              {allNodes.map((n) => (
+                <div key={n.node.id} style={{ position: "absolute", left: n.x - CARD_W / 2, top: n.y }}>
+                  {n.node.kind === "member" ? (
+                    <OrgChartCard
+                      row={n.node.row}
+                      toggles={config.toggles}
+                      density={config.density}
+                      hasHiddenChildren={n.node.hasHiddenChildren}
+                      isSuccessionCandidate={nominatedSet.has(n.node.row.userId)}
+                      isSelected={n.node.id === selectedId}
+                      dropState={dropStateFor(n.node.id)}
+                      onSelect={(userId) => {
+                        setSelectedId(memberTag(userId));
+                        setError(null);
+                      }}
+                      onExpandBranch={(userId) =>
+                        setExpandedBranchRootIds((prev) => new Set(prev).add(memberTag(userId)))
+                      }
+                    />
+                  ) : (
+                    <OrgChartPositionCard
+                      position={n.node.position}
+                      toggles={config.toggles}
+                      density={config.density}
+                      hasHiddenChildren={n.node.hasHiddenChildren}
+                      isSelected={n.node.id === selectedId}
+                      dropState={dropStateFor(n.node.id)}
+                      onSelect={(id) => {
+                        setSelectedId(positionTag(id));
+                        setError(null);
+                      }}
+                      onExpandBranch={(id) => setExpandedBranchRootIds((prev) => new Set(prev).add(positionTag(id)))}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DragOverlay>
+          {draggedMemberRow ? (
+            <div style={{ opacity: 0.9 }}>
+              <OrgChartCard
+                row={draggedMemberRow}
+                toggles={config.toggles}
+                density={config.density}
+                hasHiddenChildren={false}
+                isSuccessionCandidate={nominatedSet.has(draggedMemberRow.userId)}
+                isSelected={false}
+                dropState="none"
+                onSelect={() => {}}
+                onExpandBranch={() => {}}
+              />
+            </div>
+          ) : draggedPosition ? (
+            <div style={{ opacity: 0.9 }}>
+              <OrgChartPositionCard
+                position={draggedPosition}
+                toggles={config.toggles}
+                density={config.density}
+                hasHiddenChildren={false}
+                isSelected={false}
+                dropState="none"
+                onSelect={() => {}}
+                onExpandBranch={() => {}}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
       {laidOutRoots.length > 1 && (
-        <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
+        <p className="no-print" style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
           {t("separateTreesNote", { count: laidOutRoots.length })}
         </p>
       )}
 
-      {selectedRow && (
-        <div style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
+      {selectedMemberRow && (
+        <div className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{selectedRow.name}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{selectedMemberRow.name}</span>
             <button
               type="button"
-              onClick={() => setSelectedUserId(null)}
+              onClick={() => setSelectedId(null)}
               style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
             >
               {t("close")}
@@ -177,16 +406,14 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <select
               disabled={isPending}
-              defaultValue={selectedRow.managerUserId ?? ""}
-              onChange={(e) => {
-                const newManagerId = e.target.value || null;
-                setError(null);
-                startTransition(async () => {
-                  const result = await setMemberManager(selectedRow.userId, newManagerId);
-                  if (result?.error) setError(result.error);
-                  else router.refresh();
-                });
-              }}
+              value={
+                selectedMemberRow.managerUserId
+                  ? `member:${selectedMemberRow.managerUserId}`
+                  : memberManagerPositionsMap.get(selectedMemberRow.userId)
+                    ? `position:${memberManagerPositionsMap.get(selectedMemberRow.userId)}`
+                    : ""
+              }
+              onChange={(e) => handleMemberReportsToChange(selectedMemberRow.userId, e.target.value)}
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
@@ -200,20 +427,41 @@ export default function OrgChartView({ rows }: { rows: WorkforceRow[] }) {
               }}
             >
               <option value="">{t("noManagerOption")}</option>
-              {rows
-                .filter((r) => r.userId !== selectedRow.userId)
+              {effectiveRows
+                .filter((r) => r.userId !== selectedMemberRow.userId)
                 .map((r) => (
-                  <option key={r.userId} value={r.userId}>
+                  <option key={`member:${r.userId}`} value={`member:${r.userId}`}>
                     {r.name}
                     {r.title ? ` — ${r.title}` : ""}
                   </option>
                 ))}
+              {positions.map((p) => (
+                <option key={`position:${p.id}`} value={`position:${p.id}`}>
+                  {p.title} ({p.kind === "structural" ? tPos("kindStructural") : tPos(`status_${p.status}`)})
+                </option>
+              ))}
             </select>
             {isPending && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("saving")}</span>}
           </div>
-          {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
         </div>
+      )}
+
+      {selectedPosition && (
+        <OrgChartPositionPanel position={selectedPosition} rows={effectiveRows} positions={positions} onClose={() => setSelectedId(null)} />
       )}
     </div>
   );
+}
+
+function addPositionButtonStyle(): React.CSSProperties {
+  return {
+    background: "transparent",
+    border: "1px solid var(--border)",
+    color: "var(--text-muted)",
+    borderRadius: 8,
+    padding: "7px 12px",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+  };
 }
