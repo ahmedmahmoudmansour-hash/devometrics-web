@@ -75,7 +75,7 @@ export default function CustomStepResponseForm({
   const [myResponse, setMyResponse] = useState<Record<string, unknown> | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  const [decision, setDecision] = useState<"approve" | "reject">("approve");
+  const [decision, setDecision] = useState<"approve" | "reject" | "">("");
   const [rating, setRating] = useState(3);
   const [comment, setComment] = useState("");
   const [text, setText] = useState("");
@@ -126,6 +126,7 @@ export default function CustomStepResponseForm({
 
   function submit() {
     setSaveError(null);
+    if (config.response_shape === "approval" && decision === "") return;
     const response: Record<string, unknown> =
       config.response_shape === "approval"
         ? { decision, comment }
@@ -181,7 +182,7 @@ export default function CustomStepResponseForm({
                 type="button"
                 onClick={draftWithAi}
                 disabled={aiLoading}
-                style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 8, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#a78bfa", cursor: "pointer", whiteSpace: "nowrap" }}
+                style={{ background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 8, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#a78bfa", cursor: aiLoading ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: aiLoading ? 0.6 : 1 }}
               >
                 {aiLoading ? t("thinking") : t("helpMeDraft")}
               </button>
@@ -193,21 +194,24 @@ export default function CustomStepResponseForm({
               value={roughNotes}
               onChange={(e) => setRoughNotes(e.target.value)}
               placeholder={t("roughNotesPlaceholder")}
-              style={{ ...inputStyle(), fontSize: 12, marginBottom: 8 }}
+              style={{ ...inputStyle(), fontSize: 12, marginBottom: 6 }}
             />
           )}
-          {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+          {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 6 }}>{aiError}</p>}
 
           {config.response_shape === "approval" && (
-            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-              <select value={decision} onChange={(e) => setDecision(e.target.value as "approve" | "reject")} style={{ ...inputStyle(), width: "auto", cursor: "pointer" }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+              <select value={decision} onChange={(e) => setDecision(e.target.value as "approve" | "reject" | "")} style={{ ...inputStyle(), width: "auto", cursor: "pointer" }}>
+                <option value="" disabled>
+                  {t("selectOutcome")}
+                </option>
                 <option value="approve">{t("approve")}</option>
                 <option value="reject">{t("reject")}</option>
               </select>
             </div>
           )}
           {config.response_shape === "rating" && (
-            <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 8 }}>
+            <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 6 }}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <option key={n} value={n}>
                   {n}
@@ -225,8 +229,19 @@ export default function CustomStepResponseForm({
           <button
             type="button"
             onClick={submit}
-            disabled={isPending}
-            style={{ marginTop: 8, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
+            disabled={isPending || (config.response_shape === "approval" && decision === "")}
+            style={{
+              marginTop: 8,
+              background: "var(--teal)",
+              color: "#0A0F1E",
+              border: "none",
+              borderRadius: 8,
+              padding: "8px 16px",
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: isPending || (config.response_shape === "approval" && decision === "") ? "not-allowed" : "pointer",
+              opacity: isPending || (config.response_shape === "approval" && decision === "") ? 0.6 : 1,
+            }}
           >
             {isPending ? t("saving") : myResponse ? t("updateResponse") : t("submitResponse")}
           </button>

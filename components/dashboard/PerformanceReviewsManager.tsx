@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { createReviewCycle, updateCycleStatus, listReviewCycles, listReviewsForCycle } from "@/lib/performanceReviews/actions";
-import { listWorkflowTemplates, cloneStarterTemplate } from "@/lib/performanceReviews/workflowActions";
+import { listWorkflowTemplates, cloneStarterTemplate, listOrganizationMembersForAssignment } from "@/lib/performanceReviews/workflowActions";
 import { STARTER_KEYS, STARTER_TEMPLATES } from "@/lib/performanceReviews/starterTemplates";
 import ImpactCycleReviewRow from "@/components/dashboard/ImpactCycleReviewRow";
 import type { PerformanceReviewCycle, ReviewListItem } from "@/lib/performanceReviews/types";
@@ -37,17 +37,34 @@ function CreateCycleForm({ organizationId, onCreated }: { organizationId: string
   const [closesAt, setClosesAt] = useState("");
   const [templateChoice, setTemplateChoice] = useState("");
   const [existingTemplates, setExistingTemplates] = useState<WorkflowTemplate[]>([]);
+  const [scopeMode, setScopeMode] = useState<"all" | "specific">("all");
+  const [roster, setRoster] = useState<{ userId: string; name: string; email: string }[]>([]);
+  const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
     listWorkflowTemplates(organizationId).then(setExistingTemplates);
+    listOrganizationMembersForAssignment(organizationId).then(setRoster);
   }, [open, organizationId]);
+
+  function toggleEmployee(userId: string) {
+    setSelectedEmployees((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (scopeMode === "specific" && selectedEmployees.size === 0) {
+      setError(t("selectAtLeastOneEmployee"));
+      return;
+    }
     startTransition(async () => {
       let workflowTemplateId: string | null = null;
       if (templateChoice.startsWith("starter:")) {
@@ -62,13 +79,16 @@ function CreateCycleForm({ organizationId, onCreated }: { organizationId: string
         workflowTemplateId = templateChoice.slice("existing:".length);
       }
 
-      const result = await createReviewCycle(name, opensAt, closesAt, workflowTemplateId);
+      const employeeUserIds = scopeMode === "specific" ? [...selectedEmployees] : null;
+      const result = await createReviewCycle(name, opensAt, closesAt, workflowTemplateId, employeeUserIds);
       if (result?.error) setError(result.error);
       else {
         setName("");
         setOpensAt("");
         setClosesAt("");
         setTemplateChoice("");
+        setScopeMode("all");
+        setSelectedEmployees(new Set());
         setOpen(false);
         onCreated();
       }
@@ -124,6 +144,44 @@ function CreateCycleForm({ organizationId, onCreated }: { organizationId: string
             </optgroup>
           )}
         </select>
+      </div>
+      <div>
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("cycleScopeLabel")}</label>
+        <div style={{ display: "flex", gap: 6, marginBottom: scopeMode === "specific" ? 10 : 0 }}>
+          {(["all", "specific"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setScopeMode(mode)}
+              style={{
+                padding: "6px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                borderRadius: 999,
+                border: scopeMode === mode ? "1px solid var(--teal)" : "1px solid var(--border)",
+                background: scopeMode === mode ? "rgba(0,201,167,0.1)" : "transparent",
+                color: scopeMode === mode ? "var(--teal)" : "var(--text-muted)",
+                cursor: "pointer",
+              }}
+            >
+              {mode === "all" ? t("cycleScopeAll") : t("cycleScopeSpecific")}
+            </button>
+          ))}
+        </div>
+        {scopeMode === "specific" && (
+          <div style={{ maxHeight: 180, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8, padding: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+            {roster.length === 0 ? (
+              <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("cycleScopeNoEmployees")}</p>
+            ) : (
+              roster.map((m) => (
+                <label key={m.userId} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--text)", cursor: "pointer", padding: "3px 4px" }}>
+                  <input type="checkbox" checked={selectedEmployees.has(m.userId)} onChange={() => toggleEmployee(m.userId)} />
+                  {m.name}
+                </label>
+              ))
+            )}
+          </div>
+        )}
       </div>
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>

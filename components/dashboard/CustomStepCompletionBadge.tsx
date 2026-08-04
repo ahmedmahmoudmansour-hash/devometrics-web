@@ -17,9 +17,13 @@ export default function CustomStepCompletionBadge({
   const t = useTranslations("customStepCompletionBadge");
   const target = minRequired ?? assignedCount;
   const done = target > 0 && submittedCount >= target;
+  const inProgress = target > 0 && submittedCount > 0 && !done;
+
+  const label = target === 0 ? t("noneAssigned") : done ? t("statusCompleted") : inProgress ? t("statusInProgress") : t("statusPending");
 
   return (
     <span
+      title={target > 0 ? t("progress", { submitted: submittedCount, total: target }) : undefined}
       style={{
         fontSize: 10.5,
         fontWeight: 700,
@@ -31,7 +35,7 @@ export default function CustomStepCompletionBadge({
         color: done ? "var(--teal)" : "var(--text-muted)",
       }}
     >
-      {target > 0 ? t("progress", { submitted: submittedCount, total: target }) : t("noneAssigned")}
+      {label}
     </span>
   );
 }

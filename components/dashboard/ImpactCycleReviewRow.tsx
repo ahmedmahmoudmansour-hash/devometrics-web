@@ -76,7 +76,7 @@ function sectionLabelStyle(): React.CSSProperties {
   return { fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" };
 }
 
-function aiButtonStyle(): React.CSSProperties {
+function aiButtonStyle(disabled?: boolean): React.CSSProperties {
   return {
     background: "rgba(167,139,250,0.1)",
     border: "1px solid rgba(167,139,250,0.3)",
@@ -85,8 +85,9 @@ function aiButtonStyle(): React.CSSProperties {
     fontSize: 11.5,
     fontWeight: 700,
     color: "#a78bfa",
-    cursor: "pointer",
+    cursor: disabled ? "not-allowed" : "pointer",
     whiteSpace: "nowrap",
+    opacity: disabled ? 0.5 : 1,
   };
 }
 
@@ -537,26 +538,32 @@ function ConclusionSection({ item, title, canClose, onChanged }: { item: ReviewL
 
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, opacity: canClose ? 1 : 0.6 }}>
         <p style={sectionLabelStyle()}>{title ?? t("conclusion")}</p>
-        <button type="button" onClick={draftWithAi} disabled={aiLoading || !canClose} style={aiButtonStyle()}>
+        <button type="button" onClick={draftWithAi} disabled={aiLoading || !canClose} style={aiButtonStyle(!canClose)}>
           {aiLoading ? t("drafting") : t("draftWithAi")}
         </button>
       </div>
-      {!canClose && <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 8 }}>{t("submitPerspectiveFirst")}</p>}
+      {!canClose && (
+        <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+          <span aria-hidden="true">🔒</span> {t("submitPerspectiveFirst")}
+        </p>
+      )}
       {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       <textarea
         value={conclusion}
         onChange={(e) => setConclusion(e.target.value)}
         placeholder={t("conclusionPlaceholder")}
-        style={{ ...inputStyle(), minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
+        disabled={!canClose}
+        style={{ ...inputStyle(), minHeight: 70, resize: "vertical", fontFamily: "inherit", opacity: canClose ? 1 : 0.5, cursor: canClose ? "text" : "not-allowed" }}
       />
       {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <button
         type="button"
         onClick={close}
         disabled={isPending || !canClose || !conclusion.trim()}
-        style={{ marginTop: 8, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending || !canClose || !conclusion.trim() ? 0.5 : 1 }}
+        title={!canClose ? t("submitPerspectiveFirst") : undefined}
+        style={{ marginTop: 8, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: !canClose ? "not-allowed" : "pointer", opacity: isPending || !canClose || !conclusion.trim() ? 0.5 : 1 }}
       >
         {isPending ? t("closing") : t("closeCycle")}
       </button>

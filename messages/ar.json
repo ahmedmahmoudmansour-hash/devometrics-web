@@ -2320,7 +2320,12 @@
     "workflowLabel": "سير العمل",
     "workflowOrgDefault": "استخدام سير العمل الافتراضي للمؤسسة",
     "workflowStartersGroup": "البدء من قالب",
-    "workflowSavedGroup": "مسارات العمل المحفوظة لديك"
+    "workflowSavedGroup": "مسارات العمل المحفوظة لديك",
+    "cycleScopeLabel": "لمن هذه الدورة؟",
+    "cycleScopeAll": "المؤسسة بأكملها",
+    "cycleScopeSpecific": "موظفون محددون",
+    "cycleScopeNoEmployees": "لا يوجد موظفون للاختيار من بينهم بعد.",
+    "selectAtLeastOneEmployee": "اختر موظفًا واحدًا على الأقل"
   },
   "workflowStarterTemplates": {
     "blank": "فارغ",
@@ -2391,8 +2396,9 @@
     "yourResponseSubmitted": "ردّك (تم الإرسال)",
     "yourResponse": "ردّك",
     "thinking": "جارٍ التفكير…",
-    "helpMeDraft": "ساعدني في صياغة هذا",
+    "helpMeDraft": "صياغة بالذكاء الاصطناعي",
     "roughNotesPlaceholder": "ملاحظات أولية اختيارية للصياغة منها",
+    "selectOutcome": "اختر النتيجة",
     "approve": "موافقة",
     "reject": "رفض",
     "textPlaceholder": "اكتب ردّك…",
@@ -2413,7 +2419,10 @@
   },
   "customStepCompletionBadge": {
     "progress": "{submitted}/{total} تم الإرسال",
-    "noneAssigned": "غير معيَّن"
+    "noneAssigned": "غير معيَّن",
+    "statusPending": "قيد الانتظار",
+    "statusInProgress": "قيد التنفيذ",
+    "statusCompleted": "مكتمل"
   },
   "companySurveysPage": {
     "backToProgress": "← العودة إلى التقدم",

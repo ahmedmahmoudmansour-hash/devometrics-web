@@ -2320,7 +2320,12 @@
     "workflowLabel": "Workflow",
     "workflowOrgDefault": "Use your org's default workflow",
     "workflowStartersGroup": "Start from a template",
-    "workflowSavedGroup": "Your saved workflows"
+    "workflowSavedGroup": "Your saved workflows",
+    "cycleScopeLabel": "Who is this for?",
+    "cycleScopeAll": "Whole organization",
+    "cycleScopeSpecific": "Specific employees",
+    "cycleScopeNoEmployees": "No employees to choose from yet.",
+    "selectAtLeastOneEmployee": "Select at least one employee"
   },
   "workflowStarterTemplates": {
     "blank": "Blank",
@@ -2391,8 +2396,9 @@
     "yourResponseSubmitted": "Your response (submitted)",
     "yourResponse": "Your response",
     "thinking": "Thinking…",
-    "helpMeDraft": "Help me draft this",
+    "helpMeDraft": "Draft with AI",
     "roughNotesPlaceholder": "Optional rough notes to draft from",
+    "selectOutcome": "Select outcome",
     "approve": "Approve",
     "reject": "Reject",
     "textPlaceholder": "Write your response…",
@@ -2413,7 +2419,10 @@
   },
   "customStepCompletionBadge": {
     "progress": "{submitted}/{total} submitted",
-    "noneAssigned": "Not assigned"
+    "noneAssigned": "Not assigned",
+    "statusPending": "Pending",
+    "statusInProgress": "In progress",
+    "statusCompleted": "Completed"
   },
   "companySurveysPage": {
     "backToProgress": "← Back to progress",

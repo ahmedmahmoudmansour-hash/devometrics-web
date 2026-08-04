@@ -42,7 +42,8 @@ export async function createReviewCycle(
   name: string,
   opensAt?: string | null,
   closesAt?: string | null,
-  workflowTemplateId?: string | null
+  workflowTemplateId?: string | null,
+  employeeUserIds?: string[] | null
 ) {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
@@ -69,8 +70,20 @@ export async function createReviewCycle(
     .maybeSingle<PerformanceReviewCycle>();
   if (error || !cycle) return { error: "Could not create cycle — try again." };
 
-  // Seeds a review row for every current org member — idempotent, so
-  // re-running (e.g. after new hires join) is safe.
+  // Scopes the cycle to specific employees (e.g. a single-person probation
+  // review) rather than the whole org — must be inserted before
+  // ensure_reviews_for_cycle's first-ever seed so it already sees the
+  // scope (migration 0109). An empty/omitted array leaves the cycle
+  // unscoped, seeding every current org member exactly as before.
+  if (employeeUserIds && employeeUserIds.length > 0) {
+    await supabase.from("performance_review_cycle_participants").insert(
+      employeeUserIds.map((employeeUserId) => ({ cycle_id: cycle.id, employee_user_id: employeeUserId }))
+    );
+  }
+
+  // Seeds a review row for every current org member (or, if scoped above,
+  // just the participants) — idempotent, so re-running (e.g. after new
+  // hires join) is safe.
   await supabase.rpc("ensure_reviews_for_cycle", { target_cycle_id: cycle.id });
 
   revalidatePath("/dashboard/company/impact-cycles");
