@@ -7,7 +7,7 @@ import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimens
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
-import EditEmployeeButton from "@/components/dashboard/EditEmployeeButton";
+import EmployeesTable from "@/components/dashboard/EmployeesTable";
 import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
@@ -104,97 +104,7 @@ export default async function CompanyEmployeesPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
                 {t("workforceSkillInventory")}
               </h2>
-              <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableName")}</th>
-                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableTitle")}</th>
-                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableDepartment")}</th>
-                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableCountry")}</th>
-                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableEmail")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tableCareerHealthScore")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }} title={t("tableRatingTooltip")}>{t("tableRating")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tableAssessments")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tablePlans")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }}>{t("tableMilestones")}</th>
-                        <th style={{ ...headStyle, textAlign: "end" }} aria-label={t("tableActionsAria")} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.rows.map((r) => (
-                        <tr key={r.userId}>
-                          <td style={cellStyle}>
-                            <Link
-                              href={`/dashboard/company/${r.userId}`}
-                              style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit" }}
-                            >
-                              <Avatar name={r.name} avatarUrl={r.avatarUrl} />
-                              <span style={{ textDecoration: "underline", textDecorationColor: "var(--border)" }}>{r.name}</span>
-                            </Link>
-                          </td>
-                          <td style={{ ...cellStyle, color: r.title ? "var(--text)" : "var(--text-muted)" }}>
-                            {r.title ?? "—"}
-                          </td>
-                          <td style={{ ...cellStyle, color: r.department ? "var(--text)" : "var(--text-muted)" }}>
-                            {r.department ?? "—"}
-                          </td>
-                          <td style={{ ...cellStyle, color: r.country ? "var(--text)" : "var(--text-muted)" }}>
-                            {r.country ?? "—"}
-                          </td>
-                          <td style={cellStyle}>{r.email}</td>
-                          <td style={{ ...cellStyle, textAlign: "end", color: "var(--teal)", fontWeight: 700 }}>
-                            {r.careerHealthScore ?? "—"}
-                          </td>
-                          <td style={{ ...cellStyle, textAlign: "end", color: r.performanceRating ? "var(--amber)" : "var(--text-muted)", fontWeight: r.performanceRating ? 700 : 400 }}>
-                            {r.performanceRating ? `${r.performanceRating}/5` : "—"}
-                          </td>
-                          <td style={{ ...cellStyle, textAlign: "end" }}>{r.assessmentsCompleted}</td>
-                          <td style={{ ...cellStyle, textAlign: "end" }}>{r.plans}</td>
-                          <td style={{ ...cellStyle, textAlign: "end" }}>
-                            {r.milestonesDone}/{r.milestonesTotal}
-                          </td>
-                          <td style={{ ...cellStyle, textAlign: "end", whiteSpace: "nowrap" }}>
-                            <Link
-                              href={`/dashboard/company/${r.userId}#assign-task`}
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: "var(--teal)",
-                                textDecoration: "none",
-                                marginInlineEnd: 14,
-                              }}
-                            >
-                              {t("assignTaskLink")}
-                            </Link>
-                            <EditEmployeeButton
-                              memberId={r.memberId}
-                              userId={r.userId}
-                              name={r.name}
-                              role={r.role}
-                              isSelf={r.userId === currentUser?.id}
-                              pendingDataDeletionAt={r.pendingDataDeletionAt}
-                              performanceRating={r.performanceRating}
-                              performanceRatingNote={r.performanceRatingNote}
-                              initial={{
-                                title: r.title,
-                                department: r.department,
-                                country: r.country,
-                                managerName: r.managerName,
-                                managerEmail: r.managerEmail,
-                                businessUnit: r.businessUnit,
-                                location: r.location,
-                                employeeId: r.employeeId,
-                              }}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <EmployeesTable rows={data.rows} currentUserId={currentUser?.id ?? null} />
             </div>
 
             {/* Capability pyramid, team average */}

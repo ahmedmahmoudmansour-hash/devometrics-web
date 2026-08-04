@@ -3,34 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { assignAssessment, removeAssignedAssessment } from "@/lib/organizations/actions";
-import { ASSESSMENTS, type AssessmentTranslator } from "@/lib/assessments/catalog";
-import { ENGLISH_PROFICIENCY_SLUG } from "@/lib/assessments/englishProficiency";
-import { COGNITIVE_ABILITY_SLUG } from "@/lib/assessments/cognitiveAbility";
-import { CASE_STUDY_EXERCISES } from "@/lib/assessments/caseStudyExercises";
-import { resolveAssignableDisplayName } from "@/lib/assessments/assignableCatalog";
-
-// English Proficiency and Cognitive Reasoning live outside ASSESSMENTS
-// (they're objective tests, not the self-report catalog — see
-// lib/assessments/englishProficiency.ts and cognitiveAbility.ts), but
-// admins should still be able to push them to someone the same way as any
-// other assessment, so they're added here rather than to the catalog
-// itself (which would wrongly route them through the Likert AssessmentForm).
-// Case Study Exercises (lib/assessments/caseStudyExercises.ts) are a
-// fourth, separate catalog — same reasoning, added here rather than
-// merged into ASSESSMENTS since they're a genuinely different exercise
-// format (timed, written, AI-scored) with their own completion table.
-function buildAssignable(t: AssessmentTranslator, tExercise: (key: string) => string) {
-  return [
-    ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: resolveAssignableDisplayName(t, tExercise, a.slug), level: a.level as string })),
-    { slug: ENGLISH_PROFICIENCY_SLUG, name: resolveAssignableDisplayName(t, tExercise, ENGLISH_PROFICIENCY_SLUG), level: "A1–C2" },
-    { slug: COGNITIVE_ABILITY_SLUG, name: resolveAssignableDisplayName(t, tExercise, COGNITIVE_ABILITY_SLUG), level: "Numerical/Verbal/Logical" },
-    ...CASE_STUDY_EXERCISES.map((e) => ({
-      slug: e.slug,
-      name: resolveAssignableDisplayName(t, tExercise, e.slug),
-      level: `${e.level} exercise`,
-    })),
-  ];
-}
+import { buildAssignableCatalog, resolveAssignableDisplayName } from "@/lib/assessments/assignableCatalog";
 
 const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -52,7 +25,7 @@ export default function AssignAssessmentForm({
   const t = useTranslations("assignAssessmentForm");
   const tCatalog = useTranslations("assessmentCatalog");
   const tExercise = useTranslations("caseStudyExercises");
-  const assignable = buildAssignable(tCatalog, tExercise);
+  const assignable = buildAssignableCatalog(tCatalog, tExercise);
   const assignedSlugs = new Set(assigned.map((a) => a.slug));
   const available = assignable.filter((a) => !assignedSlugs.has(a.slug));
   const [slug, setSlug] = useState(available[0]?.slug ?? "");

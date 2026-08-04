@@ -1,4 +1,6 @@
-import { resolveAssessmentName, resolveAssessmentDisplayName, type AssessmentTranslator } from "./catalog";
+import { ASSESSMENTS, resolveAssessmentName, resolveAssessmentDisplayName, type AssessmentTranslator } from "./catalog";
+import { ENGLISH_PROFICIENCY_SLUG } from "./englishProficiency";
+import { COGNITIVE_ABILITY_SLUG } from "./cognitiveAbility";
 import { CASE_STUDY_EXERCISES, localizeCaseStudyExercise } from "./caseStudyExercises";
 
 // Everything an admin can push to an employee via assigned_assessments
@@ -30,4 +32,26 @@ export function resolveAssignableDisplayName(
 ): string {
   const exercise = CASE_STUDY_EXERCISES.find((e) => e.slug === slug);
   return exercise ? localizeCaseStudyExercise(exercise, exerciseT).title : resolveAssessmentDisplayName(t, slug);
+}
+
+export type AssignableCatalogEntry = { slug: string; name: string; level: string };
+
+// The full list of everything an admin can push to an employee via
+// assigned_assessments — English Proficiency and Cognitive Reasoning live
+// outside ASSESSMENTS (objective tests, not the self-report catalog) and
+// Case Study Exercises are a fourth, separate catalog (timed, written,
+// AI-scored) — all three folded in here so callers get one flat list
+// instead of re-deriving it. Shared between the single-employee assign
+// form (AssignAssessmentForm.tsx) and the bulk-assign table toolbar.
+export function buildAssignableCatalog(t: AssessmentTranslator, tExercise: (key: string) => string): AssignableCatalogEntry[] {
+  return [
+    ...ASSESSMENTS.map((a) => ({ slug: a.slug, name: resolveAssignableDisplayName(t, tExercise, a.slug), level: a.level as string })),
+    { slug: ENGLISH_PROFICIENCY_SLUG, name: resolveAssignableDisplayName(t, tExercise, ENGLISH_PROFICIENCY_SLUG), level: "A1–C2" },
+    { slug: COGNITIVE_ABILITY_SLUG, name: resolveAssignableDisplayName(t, tExercise, COGNITIVE_ABILITY_SLUG), level: "Numerical/Verbal/Logical" },
+    ...CASE_STUDY_EXERCISES.map((e) => ({
+      slug: e.slug,
+      name: resolveAssignableDisplayName(t, tExercise, e.slug),
+      level: `${e.level} exercise`,
+    })),
+  ];
 }

@@ -688,6 +688,42 @@ export async function assignAssessment(employeeUserId: string, assessmentSlug: s
   return { success: true };
 }
 
+// Bulk variant of assignAssessment — one assessment pushed to several
+// specific employees at once, from the Employees table's multi-select
+// toolbar. Upsert with ignoreDuplicates (same pattern as
+// assignKnowledgeHubContent) so re-running over a mix of already-assigned
+// and new employees succeeds for the new ones instead of the whole insert
+// aborting on the first unique-constraint hit (assigned_assessments'
+// unique(employee_user_id, assessment_slug), migration 0058). RLS
+// (is_org_admin_of_user) still gates each row individually — a stray id
+// for someone outside the admin's org simply fails to insert, not the
+// whole batch.
+export async function bulkAssignAssessment(
+  employeeUserIds: string[],
+  assessmentSlug: string
+): Promise<{ success: true; assigned: number } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  if (employeeUserIds.length === 0) return { error: "Select at least one employee" };
+
+  const { error } = await supabase.from("assigned_assessments").upsert(
+    employeeUserIds.map((employeeUserId) => ({
+      employee_user_id: employeeUserId,
+      assessment_slug: assessmentSlug,
+      assigned_by: user.id,
+    })),
+    { onConflict: "employee_user_id,assessment_slug", ignoreDuplicates: true }
+  );
+  if (error) return { error: "Could not assign — the database may need migration 0058 run first." };
+
+  for (const employeeUserId of employeeUserIds) revalidatePath(`/dashboard/company/${employeeUserId}`);
+  revalidatePath("/dashboard/company/employees");
+  return { success: true, assigned: employeeUserIds.length };
+}
+
 export async function removeAssignedAssessment(employeeUserId: string, assessmentSlug: string) {
   const supabase = await createClient();
   const {
