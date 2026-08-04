@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
+import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 import type {
   KnowledgeHubContent,
   KnowledgeHubCompletion,
@@ -108,17 +109,20 @@ async function sendKnowledgeHubAssignmentEmail(
   email: string,
   contentTitle: string,
   dueDate: string | null,
-  orgName: string
+  orgName: string,
+  organizationId: string
 ): Promise<void> {
   try {
+    const override = await getEmailMessageOverride(organizationId, "knowledge_hub_assignment");
     await sendEmail(
       email,
-      `${orgName} assigned you training on Devometrics`,
+      override.subject || `${orgName} assigned you training on Devometrics`,
       renderEmail({
         preheader: `${contentTitle}${dueDate ? ` — due ${dueDate}` : ""}`,
         footerNote: "You're getting this because your organization assigned you training on Devometrics.",
         bodyHtml: `
           <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New training assigned</h2>
+          ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
             <strong>${escapeHtml(orgName)}</strong> assigned you <strong>${escapeHtml(contentTitle)}</strong> on Devometrics.
           </p>
@@ -185,13 +189,15 @@ export async function assignKnowledgeHubContent(contentId: string, employeeUserI
         .maybeSingle<{ title: string; due_date: string | null }>(),
       buildCompanyData(),
     ]);
-    if (content && company.organizationName) {
+    if (content && company.organizationName && company.organizationId) {
       const emailByUserId = new Map(company.rows.map((r) => [r.userId, r.email]));
       await Promise.allSettled(
         newlyAssignedIds
           .map((id) => emailByUserId.get(id))
           .filter((email): email is string => !!email)
-          .map((email) => sendKnowledgeHubAssignmentEmail(email, content.title, content.due_date, company.organizationName!))
+          .map((email) =>
+            sendKnowledgeHubAssignmentEmail(email, content.title, content.due_date, company.organizationName!, company.organizationId!)
+          )
       );
     }
   }

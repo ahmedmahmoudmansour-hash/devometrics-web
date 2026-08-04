@@ -84,7 +84,7 @@ export async function markCandidateHired(candidateId: string, employeeFields: Hi
     return { error: "Could not send an invite — they may already be invited to this workspace." };
   }
 
-  if (org?.name) await sendInviteEmail(candidate.email, org.name);
+  if (org?.name) await sendInviteEmail(candidate.email, org.name, company.organizationId);
 
   await moveCandidateStage(candidateId, "hired");
 

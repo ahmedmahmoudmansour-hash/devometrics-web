@@ -6,6 +6,7 @@ import { sendDueCertificationReminders } from "@/lib/certifications/sendReminder
 import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
 import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/sendReminders";
 import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
+import { sendDueOnboardingReminders, sendDueOnboardingManagerApprovalReminders } from "@/lib/onboarding/sendReminders";
 
 type ReminderTask = { title: string; date: string; overdue: boolean };
 type ReminderRow = {
@@ -25,11 +26,12 @@ type ReminderRow = {
 // due_task_reminders for why that check has to live in the database
 // function itself).
 //
-// Also sends due certification-expiry reminders (sendDueCertificationReminders)
-// and Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
-// both piggybacking on this same daily run rather than getting a separate
-// Vercel Cron entry — see each function's own comment for why (Hobby
-// plan's 2-cron cap).
+// Also sends due certification-expiry reminders (sendDueCertificationReminders),
+// Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
+// performance review and assessment reminders, and (as of 0107) onboarding
+// step / manager-approval reminders — all piggybacking on this same daily
+// run rather than getting a separate Vercel Cron entry — see each
+// function's own comment for why (Hobby plan's cron-count cap).
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
@@ -106,11 +108,15 @@ export async function GET(request: Request) {
   const knowledgeHubResult = await sendDueKnowledgeHubReminders(supabase, secret);
   const performanceReviewResult = await sendDuePerformanceReviewReminders(supabase, secret);
   const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
+  const onboardingResult = await sendDueOnboardingReminders(supabase, secret);
+  const onboardingManagerApprovalResult = await sendDueOnboardingManagerApprovalReminders(supabase, secret);
 
   return NextResponse.json({
     candidates: rows?.length ?? 0,
     performanceReviews: performanceReviewResult,
     assessments: assessmentResult,
+    onboarding: onboardingResult,
+    onboardingManagerApproval: onboardingManagerApprovalResult,
     sent,
     certifications: certResult,
     knowledgeHub: knowledgeHubResult,

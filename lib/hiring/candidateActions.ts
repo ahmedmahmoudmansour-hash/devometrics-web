@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { sendEmail } from "@/lib/email/resend";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
+import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 import { extractCompetencies } from "@/lib/gap-analysis/extract";
 import { sanitizeCompetencyScores, careerHealthScore } from "@/lib/gap-analysis/dimensions";
 import {
@@ -211,6 +214,49 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
   return { success: true };
 }
 
+// Best-effort, fired only when moving TO the interview stage. No fake
+// time/date — there is no scheduling field anywhere in the hiring schema,
+// so this is an honest "your application has moved to this stage" notice,
+// not a calendar invite. hiring_candidates.email is a raw, non-authenticated
+// address (the candidate has no Devometrics account), unlike every other
+// email in this app — deliberately no dashboard-login CTA here, since
+// there's no account to link to.
+async function sendInterviewStageEmail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  candidateEmail: string,
+  candidateName: string
+): Promise<void> {
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", organizationId)
+    .maybeSingle<{ name: string }>();
+  if (!org?.name) return;
+
+  try {
+    const override = await getEmailMessageOverride(organizationId, "interview_stage_notice");
+    const firstName = candidateName.trim().split(" ")[0] || "there";
+    await sendEmail(
+      candidateEmail,
+      override.subject || `Your application with ${org.name} has moved to the interview stage`,
+      renderEmail({
+        preheader: `Update on your application to ${org.name}`,
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0;">
+            Your application with <strong>${escapeHtml(org.name)}</strong> has moved to the interview stage. The hiring team will be in touch with next steps.
+          </p>
+        `,
+        footerNote: `You're getting this because you applied to a role at ${org.name}.`,
+      })
+    );
+  } catch (err) {
+    console.error(`Interview stage email failed for ${candidateEmail}:`, err);
+  }
+}
+
 export async function moveCandidateStage(candidateId: string, toStage: HiringStage, note?: string) {
   const { supabase, user, organizationId } = await requireAdmin();
   if (!user || !organizationId) return { error: "Not authorized" };
@@ -218,10 +264,10 @@ export async function moveCandidateStage(candidateId: string, toStage: HiringSta
 
   const { data: candidate } = await supabase
     .from("hiring_candidates")
-    .select("id, posting_id, stage")
+    .select("id, posting_id, stage, email, full_name")
     .eq("id", candidateId)
     .eq("organization_id", organizationId)
-    .maybeSingle<{ id: string; posting_id: string; stage: HiringStage }>();
+    .maybeSingle<{ id: string; posting_id: string; stage: HiringStage; email: string; full_name: string }>();
   if (!candidate) return { error: "Candidate not found" };
 
   const { error } = await supabase
@@ -238,6 +284,10 @@ export async function moveCandidateStage(candidateId: string, toStage: HiringSta
     moved_by: user.id,
     note: (note ?? "").trim().slice(0, 500),
   });
+
+  if (toStage === "interview" && candidate.email) {
+    await sendInterviewStageEmail(supabase, organizationId, candidate.email, candidate.full_name ?? "");
+  }
 
   revalidatePath(`/dashboard/company/hiring/${candidate.posting_id}`);
   revalidatePath(`/dashboard/company/hiring/${candidate.posting_id}/candidates/${candidateId}`);

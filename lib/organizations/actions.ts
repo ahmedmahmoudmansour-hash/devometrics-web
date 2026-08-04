@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
+import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 import { buildEmployeeDetail, buildCompanyData } from "@/lib/organizations/aggregate";
 import { slugify } from "@/lib/organizations/slug";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
@@ -23,15 +24,17 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // way, per checkAndConsumeInvite below).
 // Exported so lib/hiring/hireActions.ts can reuse this exact email template
 // for hire-conversion invites rather than building a second one.
-export async function sendInviteEmail(email: string, orgName: string): Promise<void> {
+export async function sendInviteEmail(email: string, orgName: string, organizationId: string): Promise<void> {
   try {
+    const override = await getEmailMessageOverride(organizationId, "employee_invite");
     await sendEmail(
       email,
-      `You've been invited to join ${orgName} on Devometrics`,
+      override.subject || `You've been invited to join ${orgName} on Devometrics`,
       renderEmail({
         preheader: `${orgName} invited you to Devometrics`,
         bodyHtml: `
           <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">You're invited</h2>
+          ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
             <strong>${escapeHtml(orgName)}</strong> has invited you to join their workspace on
             Devometrics — track your career growth alongside the rest of your team.
@@ -323,7 +326,7 @@ export async function inviteEmployee(
   });
   if (error) return { error: "Could not send invite — they may already be invited" };
 
-  if (org?.name) await sendInviteEmail(trimmed, org.name);
+  if (org?.name) await sendInviteEmail(trimmed, org.name, organizationId);
 
   revalidatePath("/dashboard/company");
   return { success: true };
@@ -414,7 +417,7 @@ export async function bulkInviteEmployees(
     .maybeSingle<{ name: string }>();
   if (org?.name) {
     const invited = results.filter((r) => r.status === "invited");
-    await Promise.allSettled(invited.map((r) => sendInviteEmail(r.email, org.name)));
+    await Promise.allSettled(invited.map((r) => sendInviteEmail(r.email, org.name, organizationId)));
   }
 
   revalidatePath("/dashboard/company");
@@ -567,6 +570,60 @@ export async function leaveOrganization() {
 // Both inserts rely on the RLS policies added in 0031 (scoped through
 // is_org_admin_of_user), not on any elevated/service-role access — an admin
 // can only ever write into a plan owned by someone in their own org.
+// Best-effort — mirrors sendKnowledgeHubAssignmentEmail's posture, a
+// failed notification shouldn't undo the assignment. Looks up the
+// EMPLOYEE's own org membership rather than the assigner's — the assigner
+// may be a manager who isn't an org admin, so their own org context isn't
+// necessarily what should drive the email's branding/override.
+async function sendMilestoneAssignmentEmail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  employeeUserId: string,
+  milestoneTitle: string,
+  targetDate: string | null
+): Promise<void> {
+  const { data: member } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", employeeUserId)
+    .maybeSingle<{ organization_id: string }>();
+  if (!member?.organization_id) return;
+
+  const [{ data: org }, { data: profile }] = await Promise.all([
+    supabase.from("organizations").select("name").eq("id", member.organization_id).maybeSingle<{ name: string }>(),
+    supabase.from("profiles").select("email, full_name").eq("id", employeeUserId).maybeSingle<{ email: string | null; full_name: string | null }>(),
+  ]);
+  if (!org?.name || !profile?.email) return;
+
+  try {
+    const override = await getEmailMessageOverride(member.organization_id, "milestone_assignment");
+    await sendEmail(
+      profile.email,
+      override.subject || `${org.name} assigned you a new goal on Devometrics`,
+      renderEmail({
+        preheader: `${milestoneTitle}${targetDate ? ` — due ${targetDate}` : ""}`,
+        footerNote: "You're getting this because your organization assigned you a goal on Devometrics.",
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New goal assigned</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
+            <strong>${escapeHtml(org.name)}</strong> assigned you <strong>${escapeHtml(milestoneTitle)}</strong> on Devometrics.
+          </p>
+          ${
+            targetDate
+              ? `<p style="font-size:13px;color:#8892a4;margin:0 0 24px;">Due by ${escapeHtml(targetDate)}</p>`
+              : `<p style="margin:0 0 24px;"></p>`
+          }
+          <p style="margin:0;">
+            <a href="https://devometrics.com/dashboard/plans" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open your plan →</a>
+          </p>
+        `,
+      })
+    );
+  } catch (err) {
+    console.error(`Milestone assignment email failed for ${profile.email}:`, err);
+  }
+}
+
 export async function assignTaskToEmployee(
   employeeUserId: string,
   planId: string | null,
@@ -600,6 +657,8 @@ export async function assignTaskToEmployee(
     assigned_by: user.id,
   });
   if (error) return { error: "Could not assign task — try again" };
+
+  await sendMilestoneAssignmentEmail(supabase, employeeUserId, title, fields.targetDate ?? null);
 
   revalidatePath(`/dashboard/company/${employeeUserId}`);
   revalidatePath("/dashboard/company/employees");

@@ -10,6 +10,14 @@ export const EMAIL_MESSAGE_TYPES = [
   "knowledge_hub_reminder",
   "performance_review_reminder",
   "assessment_reminder",
+  "knowledge_hub_assignment",
+  "employee_invite",
+  "hire_to_onboarding_manager_alert",
+  "high_potential_manager_alert",
+  "onboarding_step_reminder",
+  "onboarding_manager_approval_reminder",
+  "milestone_assignment",
+  "interview_stage_notice",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

@@ -7,6 +7,26 @@ import type { EmailMessageType, EmailMessageOverride } from "./emailMessageTypes
 const MAX_SUBJECT_LENGTH = 150;
 const MAX_MESSAGE_LENGTH = 1000;
 
+// Single-row lookup for a one-off send (invite, assignment notice, etc.) —
+// cheaper and clearer at that call site than getOrganizationEmailMessages,
+// which fetches all types for the admin settings form. Cron-based reminder
+// types don't use this — they read their override via a SQL join inside
+// the SECURITY DEFINER function itself (see migration 0101/0107), since a
+// cron request has no Supabase session to run this against at all.
+export async function getEmailMessageOverride(
+  organizationId: string,
+  emailType: EmailMessageType
+): Promise<{ subject: string | null; message: string | null }> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organization_email_messages")
+    .select("custom_subject, custom_message")
+    .eq("organization_id", organizationId)
+    .eq("email_type", emailType)
+    .maybeSingle<{ custom_subject: string | null; custom_message: string | null }>();
+  return { subject: data?.custom_subject ?? null, message: data?.custom_message ?? null };
+}
+
 export async function getOrganizationEmailMessages(
   organizationId: string
 ): Promise<Partial<Record<EmailMessageType, EmailMessageOverride>>> {

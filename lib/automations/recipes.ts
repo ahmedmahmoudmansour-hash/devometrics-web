@@ -1,6 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, escapeHtml } from "@/lib/email/template";
+import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
+import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import { instantiateOnboarding } from "@/lib/onboarding/actions";
 import { isRecipeEnabled, logAutomation, firedRecently } from "./engine";
@@ -36,13 +37,20 @@ export async function runHireToOnboarding(
 
   if (params.managerEmail) {
     try {
+      // Reads via getEmailMessageOverride, not the SQL-join pattern the
+      // cron reminders use, because this fires in the NEW EMPLOYEE's own
+      // session (not an admin's) — the table's SELECT policy had to move
+      // from admin-only to member-read (migration 0107) specifically so
+      // this read isn't silently blocked by RLS.
+      const override = await getEmailMessageOverride(params.organizationId, "hire_to_onboarding_manager_alert");
       await sendEmail(
         params.managerEmail,
-        `${params.employeeName} has joined ${params.orgName} on Devometrics`,
+        override.subject || `${params.employeeName} has joined ${params.orgName} on Devometrics`,
         renderEmail({
           preheader: `${params.employeeName} just joined — plan their 30-day check-in`,
           bodyHtml: `
             <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)} has joined</h2>
+            ${customMessageHtml(override.message)}
             <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
               They've signed up and are getting started on Devometrics. A good first move is scheduling a 30-day check-in to see how onboarding is going.
             </p>
@@ -130,13 +138,17 @@ export async function runHighPotentialToSuccession(
   if (!managerProfile?.email) return;
 
   try {
+    // Same RLS-relaxation dependency as runHireToOnboarding above — this
+    // fires in the FLAGGED EMPLOYEE's own session, not an admin's.
+    const override = await getEmailMessageOverride(params.organizationId, "high_potential_manager_alert");
     await sendEmail(
       managerProfile.email,
-      `${params.userName} flagged as High Potential on Devometrics`,
+      override.subject || `${params.userName} flagged as High Potential on Devometrics`,
       renderEmail({
         preheader: `${params.userName}'s latest Gap Analysis places them in the High Potential zone`,
         bodyHtml: `
           <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">${escapeHtml(params.userName)} — High Potential</h2>
+          ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
             Their latest Gap Analysis places them in the High Potential zone of your team's talent grid. Worth considering them for succession planning and growth opportunities.
           </p>
