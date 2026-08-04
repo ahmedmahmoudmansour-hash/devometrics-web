@@ -665,6 +665,31 @@ export async function assignTaskToEmployee(
   return { success: true };
 }
 
+// Bulk variant of assignTaskToEmployee — same milestone-per-employee shape
+// (each employee has their own development plan, resolved or lazily
+// created), so this just loops the existing single-employee action rather
+// than reinventing plan resolution or the milestone-assignment email.
+// Runs in parallel and reports how many actually succeeded rather than
+// failing the whole batch if one employee's row has a problem — same
+// "partial success is still useful" posture as bulkInviteEmployees.
+export async function bulkAssignMilestone(
+  employeeUserIds: string[],
+  fields: { title: string; description?: string; targetDate?: string }
+): Promise<{ success: true; assigned: number } | { error: string }> {
+  if (employeeUserIds.length === 0) return { error: "Select at least one employee" };
+  const title = fields.title.trim();
+  if (!title) return { error: "Goal title is required" };
+
+  const results = await Promise.all(
+    employeeUserIds.map((employeeUserId) => assignTaskToEmployee(employeeUserId, null, { ...fields, title }))
+  );
+  const assigned = results.filter((r) => "success" in r).length;
+  if (assigned === 0) return { error: "Could not assign — try again" };
+
+  revalidatePath("/dashboard/company/employees");
+  return { success: true, assigned };
+}
+
 export async function assignAssessment(employeeUserId: string, assessmentSlug: string) {
   const supabase = await createClient();
   const {

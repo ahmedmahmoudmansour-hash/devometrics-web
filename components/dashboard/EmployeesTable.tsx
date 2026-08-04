@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { bulkAssignAssessment } from "@/lib/organizations/actions";
+import { bulkAssignAssessment, bulkAssignMilestone } from "@/lib/organizations/actions";
 import { buildAssignableCatalog } from "@/lib/assessments/assignableCatalog";
 import Avatar from "@/components/Avatar";
 import EditEmployeeButton from "@/components/dashboard/EditEmployeeButton";
@@ -38,6 +38,8 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assessmentSlug, setAssessmentSlug] = useState(assignable[0]?.slug ?? "");
+  const [milestoneTitle, setMilestoneTitle] = useState("");
+  const [milestoneTargetDate, setMilestoneTargetDate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -73,6 +75,26 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
     });
   }
 
+  function handleBulkAssignMilestone() {
+    if (selected.size === 0 || !milestoneTitle.trim()) return;
+    setError(null);
+    setConfirmation(null);
+    startTransition(async () => {
+      const result = await bulkAssignMilestone([...selected], {
+        title: milestoneTitle,
+        targetDate: milestoneTargetDate || undefined,
+      });
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        setConfirmation(t("bulkAssignMilestoneConfirmation", { count: result.assigned }));
+        setSelected(new Set());
+        setMilestoneTitle("");
+        setMilestoneTargetDate("");
+      }
+    });
+  }
+
   return (
     <div>
       {selected.size > 0 && (
@@ -80,9 +102,8 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
           className="no-print"
           style={{
             display: "flex",
-            alignItems: "center",
-            gap: 10,
-            flexWrap: "wrap",
+            flexDirection: "column",
+            gap: 8,
             background: "rgba(0,201,167,0.08)",
             border: "1px solid rgba(0,201,167,0.3)",
             borderRadius: 10,
@@ -90,55 +111,114 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
             marginBottom: 10,
           }}
         >
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
-            {t("bulkAssignSelectedCount", { count: selected.size })}
-          </span>
-          <select
-            value={assessmentSlug}
-            onChange={(e) => setAssessmentSlug(e.target.value)}
-            disabled={isPending}
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8,
-              padding: "7px 10px",
-              fontSize: 12.5,
-              color: "var(--text)",
-              cursor: "pointer",
-              minWidth: 200,
-            }}
-          >
-            {assignable.map((a) => (
-              <option key={a.slug} value={a.slug}>
-                {a.name} — {a.level}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleBulkAssign}
-            style={{
-              background: "var(--teal)",
-              color: "#0A0F1E",
-              border: "none",
-              borderRadius: 8,
-              padding: "7px 16px",
-              fontSize: 12.5,
-              fontWeight: 700,
-              cursor: isPending ? "not-allowed" : "pointer",
-              opacity: isPending ? 0.6 : 1,
-            }}
-          >
-            {isPending ? t("bulkAssignAssigning") : t("bulkAssignButton")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelected(new Set())}
-            style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
-          >
-            {t("bulkAssignClearSelection")}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>
+              {t("bulkAssignSelectedCount", { count: selected.size })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
+            >
+              {t("bulkAssignClearSelection")}
+            </button>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", minWidth: 90 }}>{t("bulkAssignAssessmentLabel")}</span>
+            <select
+              value={assessmentSlug}
+              onChange={(e) => setAssessmentSlug(e.target.value)}
+              disabled={isPending}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "7px 10px",
+                fontSize: 12.5,
+                color: "var(--text)",
+                cursor: "pointer",
+                minWidth: 200,
+              }}
+            >
+              {assignable.map((a) => (
+                <option key={a.slug} value={a.slug}>
+                  {a.name} — {a.level}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleBulkAssign}
+              style={{
+                background: "var(--teal)",
+                color: "#0A0F1E",
+                border: "none",
+                borderRadius: 8,
+                padding: "7px 16px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: isPending ? "not-allowed" : "pointer",
+                opacity: isPending ? 0.6 : 1,
+              }}
+            >
+              {isPending ? t("bulkAssignAssigning") : t("bulkAssignButton")}
+            </button>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", minWidth: 90 }}>{t("bulkAssignMilestoneLabel")}</span>
+            <input
+              type="text"
+              value={milestoneTitle}
+              onChange={(e) => setMilestoneTitle(e.target.value)}
+              disabled={isPending}
+              placeholder={t("bulkAssignMilestoneTitlePlaceholder")}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "7px 10px",
+                fontSize: 12.5,
+                color: "var(--text)",
+                minWidth: 200,
+                flex: "1 1 200px",
+              }}
+            />
+            <input
+              type="date"
+              value={milestoneTargetDate}
+              onChange={(e) => setMilestoneTargetDate(e.target.value)}
+              disabled={isPending}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "7px 10px",
+                fontSize: 12.5,
+                color: "var(--text)",
+              }}
+            />
+            <button
+              type="button"
+              disabled={isPending || !milestoneTitle.trim()}
+              onClick={handleBulkAssignMilestone}
+              style={{
+                background: "var(--teal)",
+                color: "#0A0F1E",
+                border: "none",
+                borderRadius: 8,
+                padding: "7px 16px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: isPending || !milestoneTitle.trim() ? "not-allowed" : "pointer",
+                opacity: isPending || !milestoneTitle.trim() ? 0.6 : 1,
+              }}
+            >
+              {isPending ? t("bulkAssignAssigning") : t("bulkAssignButton")}
+            </button>
+          </div>
         </div>
       )}
 
