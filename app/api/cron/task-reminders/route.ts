@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
-import { sendDueCertificationReminders } from "@/lib/certifications/sendReminders";
 import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
 import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/sendReminders";
 import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
@@ -26,12 +25,15 @@ type ReminderRow = {
 // due_task_reminders for why that check has to live in the database
 // function itself).
 //
-// Also sends due certification-expiry reminders (sendDueCertificationReminders),
-// Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
+// Also sends Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
 // performance review and assessment reminders, and (as of 0107) onboarding
 // step / manager-approval reminders — all piggybacking on this same daily
 // run rather than getting a separate Vercel Cron entry — see each
 // function's own comment for why (Hobby plan's cron-count cap).
+// Certification-expiry reminders (sendDueCertificationReminders) used to
+// run here too — removed per Ahmed (Certifications reminders retired; the
+// tracking page/data are untouched, lib/certifications/sendReminders.ts
+// is just unused now, not deleted).
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
@@ -104,7 +106,6 @@ export async function GET(request: Request) {
     }
   }
 
-  const certResult = await sendDueCertificationReminders(supabase, secret);
   const knowledgeHubResult = await sendDueKnowledgeHubReminders(supabase, secret);
   const performanceReviewResult = await sendDuePerformanceReviewReminders(supabase, secret);
   const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
@@ -118,7 +119,6 @@ export async function GET(request: Request) {
     onboarding: onboardingResult,
     onboardingManagerApproval: onboardingManagerApprovalResult,
     sent,
-    certifications: certResult,
     knowledgeHub: knowledgeHubResult,
   });
 }

@@ -4,9 +4,14 @@
 // sync with the check constraint on organization_email_messages
 // (migration 0101) and every due_*_reminders SQL function's email_type
 // join condition.
+// certification_reminder deliberately removed — the reminder email itself
+// is retired (per Ahmed), but the Certifications page/tracking and any
+// existing employee data are untouched. Its SECURITY DEFINER SQL
+// functions (0101) and the check constraint value are left in place in
+// the database rather than migrated out; this array is what actually
+// controls whether the type appears anywhere in the app.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
-  "certification_reminder",
   "knowledge_hub_reminder",
   "performance_review_reminder",
   "assessment_reminder",
