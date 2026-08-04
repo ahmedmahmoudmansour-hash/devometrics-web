@@ -100,6 +100,9 @@ export default function OrgChartPositionCard({
       {toggles.showLocation && position.location && (
         <p style={{ fontSize: 10, color: "var(--text-muted)" }}>{position.location}</p>
       )}
+      {position.headcount !== null && (
+        <p style={{ fontSize: 10, fontWeight: 700, color: colors.fg }}>{t("headcountCount", { count: position.headcount })}</p>
+      )}
 
       {toggles.showPositionLinks && (position.linkedPostingTitle || position.linkedRoleTitle) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 2 }}>

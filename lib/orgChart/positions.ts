@@ -27,6 +27,8 @@ export type OrgPositionRow = {
   linkedRoleTitle: string | null;
   linkedRoleGrade: number | null;
   linkedRoleLevel: string | null;
+  headcount: number | null;
+  details: string | null;
 };
 
 type PositionSelectRow = {
@@ -42,6 +44,8 @@ type PositionSelectRow = {
   parent_member_user_id: string | null;
   linked_posting_id: string | null;
   linked_role_id: string | null;
+  headcount: number | null;
+  details: string | null;
 };
 
 function toRow(
@@ -69,11 +73,13 @@ function toRow(
     linkedRoleTitle: role?.title ?? null,
     linkedRoleGrade: role?.grade ?? null,
     linkedRoleLevel: role?.level ?? null,
+    headcount: r.headcount,
+    details: r.details,
   };
 }
 
 const POSITION_COLUMNS =
-  "id, kind, status, title, department, business_unit, country, location, parent_position_id, parent_member_user_id, linked_posting_id, linked_role_id";
+  "id, kind, status, title, department, business_unit, country, location, parent_position_id, parent_member_user_id, linked_posting_id, linked_role_id, headcount, details";
 
 // Live chart data only — status='filled' rows are excluded. A filled
 // position's slot in the tree is now represented by the real employee's
@@ -167,6 +173,8 @@ export async function createPosition(input: {
   parentMemberUserId?: string | null;
   linkedPostingId?: string | null;
   linkedRoleId?: string | null;
+  headcount?: number | null;
+  details?: string | null;
 }): Promise<{ success: true; id: string } | { error: string }> {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
@@ -196,6 +204,8 @@ export async function createPosition(input: {
       parent_member_user_id: input.parentMemberUserId ?? null,
       linked_posting_id: input.kind === "vacant_role" ? input.linkedPostingId ?? null : null,
       linked_role_id: input.kind === "vacant_role" ? input.linkedRoleId ?? null : null,
+      headcount: input.headcount ?? null,
+      details: input.details?.trim() || null,
       created_by: user.id,
     })
     .select("id")
@@ -222,6 +232,8 @@ export async function updatePosition(
     status?: Exclude<OrgPositionStatus, "filled">;
     linkedPostingId?: string | null;
     linkedRoleId?: string | null;
+    headcount?: number | null;
+    details?: string | null;
   }
 ): Promise<{ success: true } | { error: string }> {
   const data = await buildCompanyData();
@@ -241,6 +253,8 @@ export async function updatePosition(
   if (patch.status !== undefined) update.status = patch.status;
   if (patch.linkedPostingId !== undefined) update.linked_posting_id = patch.linkedPostingId;
   if (patch.linkedRoleId !== undefined) update.linked_role_id = patch.linkedRoleId;
+  if (patch.headcount !== undefined) update.headcount = patch.headcount;
+  if (patch.details !== undefined) update.details = patch.details?.trim() || null;
 
   const { error } = await supabase.from("org_positions").update(update).eq("id", id).eq("organization_id", data.organizationId);
   if (error) return { error: "Could not update this position — try again." };

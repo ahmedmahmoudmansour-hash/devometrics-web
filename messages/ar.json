@@ -1863,7 +1863,8 @@
     "postingStatus_open": "مفتوح",
     "postingStatus_closed": "مغلق",
     "fillPosition": "شغل هذا المنصب",
-    "expandBranch": "توسيع الفرع"
+    "expandBranch": "توسيع الفرع",
+    "headcountCount": "{count, plural, one {# شخص} other {# أشخاص}}"
   },
   "orgChartPositionPanel": {
     "kindStructural": "عنصر هيكلي",
@@ -1874,6 +1875,8 @@
     "businessUnit": "وحدة الأعمال",
     "country": "الدولة",
     "location": "الموقع",
+    "headcount": "عدد الموظفين",
+    "details": "التفاصيل",
     "reportsTo": "يتبع لـ",
     "noParentOption": "— بلا جهة تبعية (أعلى خط التبعية) —",
     "status": "الحالة",

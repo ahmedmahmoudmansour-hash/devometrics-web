@@ -122,7 +122,30 @@ export default function OrgChartPositionPanel({
             style={inputStyle()}
           />
         </Field>
+        <Field label={t("headcount")}>
+          <input
+            type="number"
+            min={0}
+            defaultValue={position.headcount ?? ""}
+            disabled={isPending}
+            onBlur={(e) => {
+              const trimmed = e.target.value.trim();
+              run(() => updatePosition(position.id, { headcount: trimmed === "" ? null : Math.max(0, Number(trimmed)) }));
+            }}
+            style={inputStyle()}
+          />
+        </Field>
       </div>
+
+      <Field label={t("details")}>
+        <textarea
+          defaultValue={position.details ?? ""}
+          disabled={isPending}
+          rows={3}
+          onBlur={(e) => run(() => updatePosition(position.id, { details: e.target.value || null }))}
+          style={{ ...inputStyle(), resize: "vertical" }}
+        />
+      </Field>
 
       <Field label={t("reportsTo")}>
         <select disabled={isPending} value={reportsToValue} onChange={(e) => handleReportsToChange(e.target.value)} style={inputStyle()}>

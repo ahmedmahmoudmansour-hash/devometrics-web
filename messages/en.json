@@ -1863,7 +1863,8 @@
     "postingStatus_open": "Open",
     "postingStatus_closed": "Closed",
     "fillPosition": "Fill this position",
-    "expandBranch": "Expand branch"
+    "expandBranch": "Expand branch",
+    "headcountCount": "{count, plural, one {# person} other {# people}}"
   },
   "orgChartPositionPanel": {
     "kindStructural": "Structural node",
@@ -1874,6 +1875,8 @@
     "businessUnit": "Business unit",
     "country": "Country",
     "location": "Location",
+    "headcount": "Headcount",
+    "details": "Details",
     "reportsTo": "Reports to",
     "noParentOption": "— No parent (top of a reporting line) —",
     "status": "Status",
