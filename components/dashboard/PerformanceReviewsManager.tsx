@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { createReviewCycle, updateCycleStatus, listReviewCycles, listReviewsForCycle } from "@/lib/performanceReviews/actions";
+import { listWorkflowTemplates, cloneStarterTemplate } from "@/lib/performanceReviews/workflowActions";
+import { STARTER_KEYS, STARTER_TEMPLATES } from "@/lib/performanceReviews/starterTemplates";
 import ImpactCycleReviewRow from "@/components/dashboard/ImpactCycleReviewRow";
 import type { PerformanceReviewCycle, ReviewListItem } from "@/lib/performanceReviews/types";
+import type { WorkflowTemplate } from "@/lib/performanceReviews/workflowTypes";
 
 const CYCLE_STATUS_COLOR: Record<string, string> = {
   draft: "148,163,184",
@@ -25,25 +28,47 @@ function inputStyle(): React.CSSProperties {
   };
 }
 
-function CreateCycleForm({ onCreated }: { onCreated: () => void }) {
+function CreateCycleForm({ organizationId, onCreated }: { organizationId: string; onCreated: () => void }) {
   const t = useTranslations("performanceReviewsManager");
+  const tStarters = useTranslations("workflowStarterTemplates");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [opensAt, setOpensAt] = useState("");
   const [closesAt, setClosesAt] = useState("");
+  const [templateChoice, setTemplateChoice] = useState("");
+  const [existingTemplates, setExistingTemplates] = useState<WorkflowTemplate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!open) return;
+    listWorkflowTemplates(organizationId).then(setExistingTemplates);
+  }, [open, organizationId]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await createReviewCycle(name, opensAt, closesAt);
+      let workflowTemplateId: string | null = null;
+      if (templateChoice.startsWith("starter:")) {
+        const starterKey = templateChoice.slice("starter:".length) as keyof typeof STARTER_TEMPLATES;
+        const cloneResult = await cloneStarterTemplate(organizationId, starterKey, `${name || STARTER_TEMPLATES[starterKey].labelKey} workflow`);
+        if ("error" in cloneResult) {
+          setError(cloneResult.error);
+          return;
+        }
+        workflowTemplateId = cloneResult.template.id;
+      } else if (templateChoice.startsWith("existing:")) {
+        workflowTemplateId = templateChoice.slice("existing:".length);
+      }
+
+      const result = await createReviewCycle(name, opensAt, closesAt, workflowTemplateId);
       if (result?.error) setError(result.error);
       else {
         setName("");
         setOpensAt("");
         setClosesAt("");
+        setTemplateChoice("");
         setOpen(false);
         onCreated();
       }
@@ -78,6 +103,28 @@ function CreateCycleForm({ onCreated }: { onCreated: () => void }) {
           <input type="date" style={inputStyle()} value={closesAt} onChange={(e) => setClosesAt(e.target.value)} />
         </div>
       </div>
+      <div>
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("workflowLabel")}</label>
+        <select value={templateChoice} onChange={(e) => setTemplateChoice(e.target.value)} style={{ ...inputStyle(), cursor: "pointer" }}>
+          <option value="">{t("workflowOrgDefault")}</option>
+          <optgroup label={t("workflowStartersGroup")}>
+            {STARTER_KEYS.map((key) => (
+              <option key={key} value={`starter:${key}`}>
+                {tStarters(STARTER_TEMPLATES[key].labelKey)}
+              </option>
+            ))}
+          </optgroup>
+          {existingTemplates.length > 0 && (
+            <optgroup label={t("workflowSavedGroup")}>
+              {existingTemplates.map((tpl) => (
+                <option key={tpl.id} value={`existing:${tpl.id}`}>
+                  {tpl.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </div>
       {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" disabled={isPending} style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}>
@@ -95,7 +142,7 @@ function cycleStatusLabel(t: (key: string) => string, status: "draft" | "open" |
   return t(`cycleStatus${status.charAt(0).toUpperCase()}${status.slice(1)}`);
 }
 
-export default function PerformanceReviewsManager({ initialCycles }: { initialCycles: PerformanceReviewCycle[] }) {
+export default function PerformanceReviewsManager({ initialCycles, organizationId }: { initialCycles: PerformanceReviewCycle[]; organizationId: string }) {
   const t = useTranslations("performanceReviewsManager");
   const [cycles, setCycles] = useState(initialCycles);
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(initialCycles[0]?.id ?? null);
@@ -128,7 +175,7 @@ export default function PerformanceReviewsManager({ initialCycles }: { initialCy
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <CreateCycleForm onCreated={refreshCycles} />
+        <CreateCycleForm organizationId={organizationId} onCreated={refreshCycles} />
       </div>
 
       {cycles.length === 0 ? (

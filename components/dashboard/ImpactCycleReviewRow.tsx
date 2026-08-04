@@ -27,6 +27,8 @@ import {
   type FocusAreaSuggestion,
   type CompetencyRatingSuggestion,
 } from "@/lib/performanceReviews/ai";
+import { getOrganizationCompetenciesByIds, type OrganizationCompetencyOption } from "@/lib/organizations/competencies";
+import { listOrganizationMembersForAssignment } from "@/lib/performanceReviews/workflowActions";
 import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import {
   reviewStatusLabel,
@@ -40,17 +42,22 @@ import {
   type UplineSignoff,
   type AppraisalCompetencyContext,
 } from "@/lib/performanceReviews/types";
+import type { InstanceStep, CompetencyRatingsStepConfig } from "@/lib/performanceReviews/workflowTypes";
+import CustomStepResponseForm from "./CustomStepResponseForm";
 
 // Shared by both the admin's per-cycle roster (PerformanceReviewsManager)
 // and a real reporting-line manager's "My Team" list (MyTeamReviews) — one
-// row, one set of capabilities (Manager's Perspective, Focus Areas,
-// Competencies, Conclusion), regardless of which surface is showing it.
+// row, rendering whichever steps this review's own workflow was configured
+// with (migration 0103), in that configured order. When instanceSteps is
+// empty (a database that hasn't run 0103 yet), it falls back to today's
+// original fixed section order so nothing regresses.
 // Authorization for who's actually allowed to act on a given row lives
 // entirely server-side (RLS + the RPC functions' own is_org_admin /
-// is_manager_of_user checks, migration 0078) — this component doesn't need
-// to know or care which kind of caller it's rendering for.
+// is_manager_of_user checks) — this component doesn't need to know or care
+// which kind of caller it's rendering for.
 
 const GOAL_STATUSES: GoalStatus[] = ["not_started", "in_progress", "achieved", "missed"];
+const FALLBACK_STEP_TYPES: InstanceStep["step_type"][] = ["goals", "competency_ratings", "manager_assessment", "conclusion"];
 
 function inputStyle(): React.CSSProperties {
   return {
@@ -83,10 +90,22 @@ function aiButtonStyle(): React.CSSProperties {
   };
 }
 
-function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId: string; goals: ReviewGoal[]; pastGoals: ReviewGoal[]; onChanged: () => void }) {
+function FocusAreasEditor({
+  reviewId,
+  title,
+  goals,
+  pastGoals,
+  onChanged,
+}: {
+  reviewId: string;
+  title?: string;
+  goals: ReviewGoal[];
+  pastGoals: ReviewGoal[];
+  onChanged: () => void;
+}) {
   const t = useTranslations("impactCycleReviewRow");
   const tLabels = useTranslations("performanceReviewLabels");
-  const [title, setTitle] = useState("");
+  const [titleInput, setTitleInput] = useState("");
   const [target, setTarget] = useState("");
   const [suggestions, setSuggestions] = useState<FocusAreaSuggestion[] | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -114,7 +133,7 @@ function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId:
   }
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
       {pastGoals.length > 0 && (
         <div style={{ marginBottom: 12, background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 8, padding: 10 }}>
           <p style={{ ...sectionLabelStyle(), marginBottom: 6 }}>{t("pastFocusAreas")}</p>
@@ -130,7 +149,7 @@ function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId:
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <p style={sectionLabelStyle()}>{t("focusAreas")}</p>
+        <p style={sectionLabelStyle()}>{title ?? t("focusAreas")}</p>
         <button type="button" onClick={askAi} disabled={aiLoading} style={aiButtonStyle()}>
           {aiLoading ? t("thinking") : t("suggestWithAi")}
         </button>
@@ -218,8 +237,8 @@ function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId:
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={titleInput}
+          onChange={(e) => setTitleInput(e.target.value)}
           placeholder={t("addFocusAreaPlaceholder")}
           style={{ ...inputStyle(), fontSize: 12, flex: 2, minWidth: 140 }}
         />
@@ -232,11 +251,11 @@ function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId:
         <button
           type="button"
           onClick={() => {
-            add(title, target);
-            setTitle("");
+            add(titleInput, target);
+            setTitleInput("");
             setTarget("");
           }}
-          disabled={isPending || !title.trim()}
+          disabled={isPending || !titleInput.trim()}
           style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "0 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
         >
           {t("addButton")}
@@ -248,12 +267,18 @@ function FocusAreasEditor({ reviewId, goals, pastGoals, onChanged }: { reviewId:
 
 function CompetencyRatingsEditor({
   reviewId,
+  title,
+  config,
   ratings,
+  organizationCompetencies,
   context,
   onChanged,
 }: {
   reviewId: string;
+  title?: string;
+  config?: CompetencyRatingsStepConfig;
   ratings: CompetencyRating[];
+  organizationCompetencies: OrganizationCompetencyOption[];
   context: AppraisalCompetencyContext[];
   onChanged: () => void;
 }) {
@@ -265,12 +290,14 @@ function CompetencyRatingsEditor({
   const [aiLoading, setAiLoading] = useState(false);
   const [, startTransition] = useTransition();
 
-  const ratingByDim = new Map(ratings.map((r) => [r.dimension, r]));
+  const dimensionsToShow = config && config.fixed_dimensions.length > 0 ? config.fixed_dimensions : [...COMPETENCY_DIMENSIONS];
+  const ratingByDim = new Map(ratings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => [r.dimension as string, r]));
+  const ratingByOrgCompetency = new Map(ratings.filter((r) => r.organization_competency_id).map((r) => [r.organization_competency_id as string, r]));
   const contextByDim = new Map(context.map((c) => [c.dimension, c]));
 
-  function save(dimension: string, rating: number, note: string) {
+  function save(dimension: string, rating: number, note: string, organizationCompetencyId?: string | null) {
     startTransition(async () => {
-      await setCompetencyRating(reviewId, dimension, rating, note);
+      await setCompetencyRating(reviewId, dimension, rating, note, organizationCompetencyId);
       onChanged();
     });
   }
@@ -280,7 +307,10 @@ function CompetencyRatingsEditor({
     setAiLoading(true);
     setSuggestions(null);
     startTransition(async () => {
-      const result = await suggestCompetencyRatings(reviewId);
+      const result = await suggestCompetencyRatings(reviewId, {
+        fixedDimensions: dimensionsToShow,
+        organizationCompetencyIds: organizationCompetencies.map((c) => c.id),
+      });
       setAiLoading(false);
       if ("error" in result) setAiError(result.error);
       else setSuggestions(result.suggestions);
@@ -290,16 +320,16 @@ function CompetencyRatingsEditor({
   function applyAll() {
     if (!suggestions) return;
     startTransition(async () => {
-      await Promise.all(suggestions.map((s) => setCompetencyRating(reviewId, s.dimension, s.rating, s.note)));
+      await Promise.all(suggestions.map((s) => setCompetencyRating(reviewId, s.dimension, s.rating, s.note, s.organizationCompetencyId)));
       setSuggestions(null);
       onChanged();
     });
   }
 
   return (
-    <div style={{ marginTop: 16 }}>
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <p style={sectionLabelStyle()}>{t("competencies")}</p>
+        <p style={sectionLabelStyle()}>{title ?? t("competencies")}</p>
         <button type="button" onClick={askAi} disabled={aiLoading} style={aiButtonStyle()}>
           {aiLoading ? t("thinking") : t("suggestWithAi")}
         </button>
@@ -313,15 +343,16 @@ function CompetencyRatingsEditor({
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {COMPETENCY_DIMENSIONS.map((dim) => {
+        {dimensionsToShow.map((dim) => {
           const existing = ratingByDim.get(dim);
-          const suggestion = suggestions?.find((s) => s.dimension === dim);
+          const suggestion = suggestions?.find((s) => s.dimension === dim && !s.organizationCompetencyId);
           const ctx = contextByDim.get(dim);
+          const isFixedLabel = (COMPETENCY_DIMENSIONS as readonly string[]).includes(dim);
           return (
             <div key={dim} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "6px 10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div>
-                  <span style={{ fontSize: 12, color: "var(--text)" }}>{dimensionLabel(tDim, dim)}</span>
+                  <span style={{ fontSize: 12, color: "var(--text)" }}>{isFixedLabel ? dimensionLabel(tDim, dim as (typeof COMPETENCY_DIMENSIONS)[number]) : dim}</span>
                   {ctx && (ctx.roleTarget !== null || ctx.measuredCurrent !== null) && (
                     <span style={{ fontSize: 10.5, color: "var(--text-muted)", marginInlineStart: 6 }}>
                       {ctx.measuredCurrent !== null ? t("measured", { value: ctx.measuredCurrent }) : ""}
@@ -348,12 +379,125 @@ function CompetencyRatingsEditor({
             </div>
           );
         })}
+
+        {organizationCompetencies.map((c) => {
+          const existing = ratingByOrgCompetency.get(c.id);
+          const suggestion = suggestions?.find((s) => s.organizationCompetencyId === c.id);
+          return (
+            <div key={c.id} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "6px 10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ fontSize: 12, color: "var(--text)" }}>{c.name}</span>
+                <select
+                  defaultValue={suggestion?.rating ?? existing?.rating ?? 3}
+                  onChange={(e) => save(c.mappedDimension ?? "", Number(e.target.value), existing?.note ?? suggestion?.note ?? "", c.id)}
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
+                >
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>
+                      {n} — {competencyRatingLabel(tLabels, n)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {suggestion && !existing && (
+                <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function ConclusionSection({ item, canClose, onChanged }: { item: ReviewListItem; canClose: boolean; onChanged: () => void }) {
+function ManagerAssessmentSection({
+  item,
+  title,
+  onChanged,
+}: {
+  item: ReviewListItem;
+  title?: string;
+  onChanged: () => void;
+}) {
+  const t = useTranslations("impactCycleReviewRow");
+  const tLabels = useTranslations("performanceReviewLabels");
+  const [rating, setRating] = useState(item.managerRating ?? 3);
+  const [feedback, setFeedback] = useState("");
+  const [developmentNeeds, setDevelopmentNeeds] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function save() {
+    setError(null);
+    startTransition(async () => {
+      const result = await submitManagerAssessment(item.id, rating, feedback, developmentNeeds);
+      if (result?.error) setError(result.error);
+      else onChanged();
+    });
+  }
+
+  function draftWithAi() {
+    setAiError(null);
+    setAiLoading(true);
+    startTransition(async () => {
+      const result = await draftManagerPerspective(item.id);
+      setAiLoading(false);
+      if ("error" in result) setAiError(result.error);
+      else {
+        setRating(result.rating);
+        setFeedback(result.feedback);
+        setDevelopmentNeeds(result.developmentNeeds);
+      }
+    });
+  }
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{title ?? t("managersPerspective")}</p>
+        <button type="button" onClick={draftWithAi} disabled={aiLoading} style={aiButtonStyle()}>
+          {aiLoading ? t("drafting") : t("draftWithAi")}
+        </button>
+      </div>
+      {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("ratingLabel")}</label>
+      <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <option key={n} value={n}>
+            {n} — {competencyRatingLabel(tLabels, n)}
+          </option>
+        ))}
+      </select>
+      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("feedbackLabel")}</label>
+      <textarea
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+        placeholder={t("feedbackPlaceholder")}
+        style={{ ...inputStyle(), minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
+      />
+      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 10, marginBottom: 5, display: "block" }}>{t("developmentNeedsLabel")}</label>
+      <textarea
+        value={developmentNeeds}
+        onChange={(e) => setDevelopmentNeeds(e.target.value)}
+        placeholder={t("developmentNeedsPlaceholder")}
+        style={{ ...inputStyle(), minHeight: 50, resize: "vertical", fontFamily: "inherit" }}
+      />
+      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+      <button
+        type="button"
+        onClick={save}
+        disabled={isPending}
+        style={{ marginTop: 8, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
+      >
+        {isPending ? t("saving") : t("saveManagersPerspective")}
+      </button>
+    </div>
+  );
+}
+
+function ConclusionSection({ item, title, canClose, onChanged }: { item: ReviewListItem; title?: string; canClose: boolean; onChanged: () => void }) {
   const t = useTranslations("impactCycleReviewRow");
   const [conclusion, setConclusion] = useState(item.conclusion ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -394,7 +538,7 @@ function ConclusionSection({ item, canClose, onChanged }: { item: ReviewListItem
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <p style={sectionLabelStyle()}>{t("conclusion")}</p>
+        <p style={sectionLabelStyle()}>{title ?? t("conclusion")}</p>
         <button type="button" onClick={draftWithAi} disabled={aiLoading || !canClose} style={aiButtonStyle()}>
           {aiLoading ? t("drafting") : t("draftWithAi")}
         </button>
@@ -423,7 +567,9 @@ function ConclusionSection({ item, canClose, onChanged }: { item: ReviewListItem
 // Shown only to whoever is actually in the chain (or an admin) — RLS is the
 // real gate on what data even comes back, this just renders it. A skip-level
 // manager sees an editable comment box for their own row; everyone else sees
-// whatever's already been signed, read-only.
+// whatever's already been signed, read-only. Escalation stays a separate
+// cross-cutting mechanism, not a configurable step — see migration 0103's
+// header for why.
 function UplineSignoffSection({
   reviewId,
   chain,
@@ -441,8 +587,6 @@ function UplineSignoffSection({
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
 
-  // Level 1 is the direct manager — already covered by Manager's
-  // Perspective above, not repeated here.
   const escalationChain = chain.filter((c) => c.level >= 2);
   if (escalationChain.length === 0) return null;
 
@@ -509,17 +653,12 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
   const [goals, setGoals] = useState<ReviewGoal[]>([]);
   const [pastGoals, setPastGoals] = useState<ReviewGoal[]>([]);
   const [ratings, setRatings] = useState<CompetencyRating[]>([]);
+  const [orgCompetencies, setOrgCompetencies] = useState<OrganizationCompetencyOption[]>([]);
   const [competencyContext, setCompetencyContext] = useState<AppraisalCompetencyContext[]>([]);
   const [uplineChain, setUplineChain] = useState<UplineChainEntry[]>([]);
   const [uplineSignoffs, setUplineSignoffs] = useState<UplineSignoff[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [rating, setRating] = useState(item.managerRating ?? 3);
-  const [feedback, setFeedback] = useState("");
-  const [developmentNeeds, setDevelopmentNeeds] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [organizationMembers, setOrganizationMembers] = useState<{ userId: string; name: string; email: string }[]>([]);
 
   async function loadAll() {
     const [g, pg, r, ctx, chain, signoffs, uid] = await Promise.all([
@@ -538,6 +677,13 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
     setUplineChain(chain);
     setUplineSignoffs(signoffs);
     setMyUserId(uid);
+
+    const competencyStep = item.instanceSteps.find((s) => s.step_type === "competency_ratings");
+    const orgCompetencyIds = competencyStep?.data.organization_competency_ids ?? [];
+    if (orgCompetencyIds.length > 0) setOrgCompetencies(await getOrganizationCompetenciesByIds(orgCompetencyIds));
+
+    const hasManualCustomStep = item.instanceSteps.some((s) => s.step_type === "custom" && s.data.assignment?.mode === "manual");
+    if (hasManualCustomStep) setOrganizationMembers(await listOrganizationMembersForAssignment(item.organization_id));
   }
 
   function toggle() {
@@ -546,29 +692,8 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
     if (next) loadAll();
   }
 
-  function save() {
-    setError(null);
-    startTransition(async () => {
-      const result = await submitManagerAssessment(item.id, rating, feedback, developmentNeeds);
-      if (result?.error) setError(result.error);
-      else onChanged();
-    });
-  }
-
-  function draftWithAi() {
-    setAiError(null);
-    setAiLoading(true);
-    startTransition(async () => {
-      const result = await draftManagerPerspective(item.id);
-      setAiLoading(false);
-      if ("error" in result) setAiError(result.error);
-      else {
-        setRating(result.rating);
-        setFeedback(result.feedback);
-        setDevelopmentNeeds(result.developmentNeeds);
-      }
-    });
-  }
+  const hasManagerAssessmentStep = item.instanceSteps.length === 0 || item.instanceSteps.some((s) => s.step_type === "manager_assessment");
+  const stepsToRender = item.instanceSteps.length > 0 ? item.instanceSteps : FALLBACK_STEP_TYPES.map((step_type, i) => ({ id: `fallback-${step_type}`, review_id: item.id, workflow_step_id: null, position: i, step_type, title: "", description: null, data: {}, submitted_at: null, created_at: "" }) as InstanceStep);
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 14 }}>
@@ -590,49 +715,43 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
       </div>
 
       {expanded && (
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{t("managersPerspective")}</p>
-            <button type="button" onClick={draftWithAi} disabled={aiLoading} style={aiButtonStyle()}>
-              {aiLoading ? t("drafting") : t("draftWithAi")}
-            </button>
-          </div>
-          {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
-          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("ratingLabel")}</label>
-          <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option key={n} value={n}>
-                {n} — {competencyRatingLabel(tLabels, n)}
-              </option>
-            ))}
-          </select>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("feedbackLabel")}</label>
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder={t("feedbackPlaceholder")}
-            style={{ ...inputStyle(), minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
-          />
-          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 10, marginBottom: 5, display: "block" }}>{t("developmentNeedsLabel")}</label>
-          <textarea
-            value={developmentNeeds}
-            onChange={(e) => setDevelopmentNeeds(e.target.value)}
-            placeholder={t("developmentNeedsPlaceholder")}
-            style={{ ...inputStyle(), minHeight: 50, resize: "vertical", fontFamily: "inherit" }}
-          />
-          {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
-          <button
-            type="button"
-            onClick={save}
-            disabled={isPending}
-            style={{ marginTop: 8, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
-          >
-            {isPending ? t("saving") : t("saveManagersPerspective")}
-          </button>
-
-          <FocusAreasEditor reviewId={item.id} goals={goals} pastGoals={pastGoals} onChanged={loadAll} />
-          <CompetencyRatingsEditor reviewId={item.id} ratings={ratings} context={competencyContext} onChanged={loadAll} />
-          <ConclusionSection item={item} canClose={item.managerRating !== null} onChanged={onChanged} />
+        <div>
+          {stepsToRender.map((step) => {
+            switch (step.step_type) {
+              case "manager_assessment":
+                return <ManagerAssessmentSection key={step.id} item={item} title={step.title || undefined} onChanged={onChanged} />;
+              case "goals":
+                return <FocusAreasEditor key={step.id} reviewId={item.id} title={step.title || undefined} goals={goals} pastGoals={pastGoals} onChanged={loadAll} />;
+              case "competency_ratings":
+                return (
+                  <CompetencyRatingsEditor
+                    key={step.id}
+                    reviewId={item.id}
+                    title={step.title || undefined}
+                    config={item.instanceSteps.length > 0 ? { fixed_dimensions: step.data.fixed_dimensions ?? [], organization_competency_ids: step.data.organization_competency_ids ?? [] } : undefined}
+                    ratings={ratings}
+                    organizationCompetencies={orgCompetencies}
+                    context={competencyContext}
+                    onChanged={loadAll}
+                  />
+                );
+              case "conclusion":
+                return <ConclusionSection key={step.id} item={item} title={step.title || undefined} canClose={hasManagerAssessmentStep ? item.managerRating !== null : true} onChanged={onChanged} />;
+              case "custom":
+                return (
+                  <CustomStepResponseForm
+                    key={step.id}
+                    step={step}
+                    myUserId={myUserId}
+                    isReviewedEmployee={false}
+                    canManageAssignments
+                    organizationMembers={organizationMembers}
+                  />
+                );
+              default:
+                return null;
+            }
+          })}
           <UplineSignoffSection reviewId={item.id} chain={uplineChain} signoffs={uplineSignoffs} myUserId={myUserId} onChanged={loadAll} />
         </div>
       )}

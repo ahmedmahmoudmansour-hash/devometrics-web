@@ -100,6 +100,34 @@ export async function suggestDimensionForCompetency(
   }
 }
 
+export type OrganizationCompetencyOption = { id: string; name: string; mappedDimension: string | null };
+
+// Fetches specific competencies by id — used by a competency_ratings
+// workflow step to render rows for whichever org-defined competencies it's
+// configured with (workflowTypes.ts CompetencyRatingsStepConfig), without
+// pulling the whole org framework.
+export async function getOrganizationCompetenciesByIds(ids: string[]): Promise<OrganizationCompetencyOption[]> {
+  if (ids.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organization_competencies")
+    .select("id, name, mapped_dimension")
+    .in("id", ids)
+    .returns<{ id: string; name: string; mapped_dimension: string | null }[]>();
+  return (data ?? []).map((c) => ({ id: c.id, name: c.name, mappedDimension: c.mapped_dimension }));
+}
+
+export async function listOrganizationCompetencies(organizationId: string): Promise<OrganizationCompetencyOption[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organization_competencies")
+    .select("id, name, mapped_dimension")
+    .eq("organization_id", organizationId)
+    .order("name", { ascending: true })
+    .returns<{ id: string; name: string; mapped_dimension: string | null }[]>();
+  return (data ?? []).map((c) => ({ id: c.id, name: c.name, mappedDimension: c.mapped_dimension }));
+}
+
 export async function deleteOrganizationCompetency(id: string) {
   const supabase = await createClient();
   const {

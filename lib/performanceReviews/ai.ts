@@ -215,39 +215,64 @@ export async function draftManagerPerspective(reviewId: string): Promise<{ error
   }
 }
 
-export type CompetencyRatingSuggestion = { dimension: string; rating: number; note: string };
+export type CompetencyRatingSuggestion = { dimension: string; rating: number; note: string; organizationCompetencyId?: string | null };
 
-const COMPETENCY_RATINGS_TOOL = {
-  name: "record_competency_ratings",
-  description: "Record suggested manager competency ratings (1-5) for this Impact Cycle, one per dimension.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      ratings: {
-        type: "array" as const,
-        items: {
-          type: "object" as const,
-          properties: {
-            dimension: { type: "string", enum: [...COMPETENCY_DIMENSIONS] },
-            rating: { type: "integer", minimum: 1, maximum: 5 },
-            note: { type: "string", description: "1 sentence grounding the rating in the evidence given" },
+function buildCompetencyRatingsTool(labels: string[]) {
+  return {
+    name: "record_competency_ratings",
+    description: "Record suggested manager competency ratings (1-5) for this Impact Cycle, one per dimension.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        ratings: {
+          type: "array" as const,
+          items: {
+            type: "object" as const,
+            properties: {
+              dimension: { type: "string", enum: labels },
+              rating: { type: "integer", minimum: 1, maximum: 5 },
+              note: { type: "string", description: "1 sentence grounding the rating in the evidence given" },
+            },
+            required: ["dimension", "rating", "note"],
           },
-          required: ["dimension", "rating", "note"],
         },
       },
+      required: ["ratings"],
     },
-    required: ["ratings"],
-  },
-};
+  };
+}
 
 // Starting point only — translates the measured 0-100 Gap Analysis levels
 // plus this cycle's own evidence into a 1-5 rating per dimension, but the
 // admin adjusts every one of these individually before saving (via
 // setCompetencyRating), same as every other AI suggestion in this feature.
-export async function suggestCompetencyRatings(reviewId: string): Promise<{ error: string } | { suggestions: CompetencyRatingSuggestion[] }> {
+//
+// `options` mirrors a competency_ratings step's own configured pool
+// (workflowTypes.ts CompetencyRatingsStepConfig) — when a step narrows to a
+// subset of the 8 fixed dimensions and/or includes the org's own
+// organization_competencies, the AI is only offered exactly that pool, never
+// the full 8 by default once a step has been customized.
+export async function suggestCompetencyRatings(
+  reviewId: string,
+  options?: { fixedDimensions?: string[]; organizationCompetencyIds?: string[] }
+): Promise<{ error: string } | { suggestions: CompetencyRatingSuggestion[] }> {
   const loaded = await loadReviewForAdmin(reviewId);
   if ("error" in loaded) return loaded;
   const { supabase, ctx } = loaded;
+
+  const dimensionPool = options?.fixedDimensions && options.fixedDimensions.length > 0 ? options.fixedDimensions : [...COMPETENCY_DIMENSIONS];
+
+  let orgCompetencies: { id: string; name: string }[] = [];
+  if (options?.organizationCompetencyIds && options.organizationCompetencyIds.length > 0) {
+    const { data } = await supabase
+      .from("organization_competencies")
+      .select("id, name")
+      .in("id", options.organizationCompetencyIds)
+      .returns<{ id: string; name: string }[]>();
+    orgCompetencies = data ?? [];
+  }
+  const orgCompetencyIdByName = new Map(orgCompetencies.map((c) => [c.name, c.id]));
+  const labels = [...dimensionPool, ...orgCompetencies.map((c) => c.name)];
 
   const [gapSummary, { data: self }] = await Promise.all([
     latestGapAnalysisSummary(supabase, ctx.employeeUserId),
@@ -262,8 +287,8 @@ export async function suggestCompetencyRatings(reviewId: string): Promise<{ erro
       model: "claude-sonnet-5",
       max_tokens: 1000,
       system:
-        `You are proposing starting-point manager competency ratings (1=Needs Development, 2=Developing, 3=Meets Expectations, 4=Exceeds Expectations, 5=Outstanding) for this Impact Cycle, one per dimension: ${COMPETENCY_DIMENSIONS.join(", ")}. Translate the measured Gap Analysis levels (0-100 scale) into this 1-5 scale sensibly, adjusted by their self-reflection where it adds real signal. These are drafts a manager will individually review and adjust — never invent evidence.`,
-      tools: [COMPETENCY_RATINGS_TOOL],
+        `You are proposing starting-point manager competency ratings (1=Needs Development, 2=Developing, 3=Meets Expectations, 4=Exceeds Expectations, 5=Outstanding) for this Impact Cycle, one per item in this list: ${labels.join(", ")}. Translate the measured Gap Analysis levels (0-100 scale) into this 1-5 scale sensibly for items that match a Gap Analysis dimension, adjusted by their self-reflection where it adds real signal; for any item with no direct Gap Analysis equivalent, use the self-reflection and general judgment instead. These are drafts a manager will individually review and adjust — never invent evidence.`,
+      tools: [buildCompetencyRatingsTool(labels)],
       tool_choice: { type: "tool", name: "record_competency_ratings" },
       messages: [
         {
@@ -282,13 +307,18 @@ export async function suggestCompetencyRatings(reviewId: string): Promise<{ erro
     });
     const toolUse = response.content.find((b) => b.type === "tool_use");
     if (!toolUse || toolUse.type !== "tool_use") throw new Error("No structured output");
-    const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
+    const validLabels = new Set<string>(labels);
     const rawInput = (toolUse.input as { ratings: CompetencyRatingSuggestion[] }).ratings;
     const raw = Array.isArray(rawInput) ? rawInput : [];
     return {
       suggestions: raw
-        .filter((r) => validDims.has(r.dimension))
-        .map((r) => ({ dimension: r.dimension, rating: Math.min(5, Math.max(1, Math.round(r.rating))), note: r.note ?? "" })),
+        .filter((r) => validLabels.has(r.dimension))
+        .map((r) => ({
+          dimension: r.dimension,
+          rating: Math.min(5, Math.max(1, Math.round(r.rating))),
+          note: r.note ?? "",
+          organizationCompetencyId: orgCompetencyIdByName.get(r.dimension) ?? null,
+        })),
     };
   } catch (err) {
     console.error("suggestCompetencyRatings failed:", err);

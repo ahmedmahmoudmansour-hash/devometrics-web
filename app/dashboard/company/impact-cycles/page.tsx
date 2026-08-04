@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { listReviewCycles } from "@/lib/performanceReviews/actions";
+import { getOrCreateDefaultWorkflowTemplate } from "@/lib/performanceReviews/workflowActions";
+import { listOrganizationCompetencies } from "@/lib/organizations/competencies";
 import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import PerformanceReviewsManager from "@/components/dashboard/PerformanceReviewsManager";
 import EscalationLevelsSetting from "@/components/dashboard/EscalationLevelsSetting";
+import PerformanceReviewWorkflowEditor from "@/components/dashboard/PerformanceReviewWorkflowEditor";
 
 export const metadata = { title: "Impact Cycles — Devometrics" };
 
@@ -57,12 +60,42 @@ export default async function ImpactCyclesPage() {
             </p>
           </div>
         ) : (
-          <>
-            <EscalationLevelsSetting organizationId={data.organizationId!} initialLevels={escalationLevels} />
-            <PerformanceReviewsManager initialCycles={cycles} />
-          </>
+          <WorkflowSection organizationId={data.organizationId!} escalationLevels={escalationLevels} cycles={cycles} />
         )}
       </div>
     </div>
+  );
+}
+
+async function WorkflowSection({
+  organizationId,
+  escalationLevels,
+  cycles,
+}: {
+  organizationId: string;
+  escalationLevels: number;
+  cycles: Awaited<ReturnType<typeof listReviewCycles>>["cycles"];
+}) {
+  const [templateResult, organizationCompetencies] = await Promise.all([
+    getOrCreateDefaultWorkflowTemplate(organizationId),
+    listOrganizationCompetencies(organizationId),
+  ]);
+
+  return (
+    <>
+      <EscalationLevelsSetting organizationId={organizationId} initialLevels={escalationLevels} />
+      {"error" in templateResult ? null : (
+        <div style={{ marginTop: 20 }}>
+          <PerformanceReviewWorkflowEditor
+            templateId={templateResult.template.id}
+            initialSteps={templateResult.steps}
+            organizationCompetencyOptions={organizationCompetencies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+        </div>
+      )}
+      <div style={{ marginTop: 20 }}>
+        <PerformanceReviewsManager initialCycles={cycles} organizationId={organizationId} />
+      </div>
+    </>
   );
 }

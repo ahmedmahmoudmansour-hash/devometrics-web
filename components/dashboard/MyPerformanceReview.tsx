@@ -7,6 +7,7 @@ import { submitSelfAssessment, acknowledgeReview } from "@/lib/performanceReview
 import { helpDraftReflection } from "@/lib/performanceReviews/ai";
 import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail } from "@/lib/performanceReviews/types";
 import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import CustomStepResponseForm from "./CustomStepResponseForm";
 
 const GOAL_STATUS_COLOR: Record<string, string> = {
   not_started: "148,163,184",
@@ -47,7 +48,8 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   const tLabels = useTranslations("performanceReviewLabels");
   const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
-  const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs } = detail;
+  const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs, instanceSteps } = detail;
+  const customSteps = instanceSteps.filter((s) => s.step_type === "custom");
 
   const [selfRating, setSelfRating] = useState(self?.rating ?? 3);
   const [selfReflection, setSelfReflection] = useState(self?.reflection ?? "");
@@ -275,6 +277,16 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       ) : (
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("managerHasntShared")}</p>
+        </div>
+      )}
+
+      {customSteps.length > 0 && (
+        <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
+          {customSteps.map((step, i) => (
+            <div key={step.id} style={i === 0 ? { marginTop: -16, paddingTop: 0, borderTop: "none" } : undefined}>
+              <CustomStepResponseForm step={step} myUserId={review.employee_user_id} isReviewedEmployee canManageAssignments={false} />
+            </div>
+          ))}
         </div>
       )}
 

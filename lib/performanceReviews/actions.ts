@@ -17,6 +17,8 @@ import type {
   UplineSignoff,
   AppraisalCompetencyContext,
 } from "./types";
+import { getInstanceSteps, getInstanceStepsForReviews } from "./instanceSteps";
+import type { CustomStepCompletion, CustomStepAggregate } from "./workflowTypes";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -36,7 +38,12 @@ export async function listReviewCycles(): Promise<{ cycles: PerformanceReviewCyc
   return { cycles: cycles ?? [] };
 }
 
-export async function createReviewCycle(name: string, opensAt?: string | null, closesAt?: string | null) {
+export async function createReviewCycle(
+  name: string,
+  opensAt?: string | null,
+  closesAt?: string | null,
+  workflowTemplateId?: string | null
+) {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
   const supabase = await createClient();
@@ -56,6 +63,7 @@ export async function createReviewCycle(name: string, opensAt?: string | null, c
       created_by: user.id,
       opens_at: opensAt?.trim() || null,
       closes_at: closesAt?.trim() || null,
+      workflow_template_id: workflowTemplateId || null,
     })
     .select()
     .maybeSingle<PerformanceReviewCycle>();
@@ -118,6 +126,7 @@ export async function listReviewsForCycle(cycleId: string): Promise<ReviewListIt
   ]);
   const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r.rating]));
   const managerByReview = new Map((managerRows ?? []).map((r) => [r.review_id, r.rating]));
+  const stepsByReview = await getInstanceStepsForReviews(reviewIds);
 
   return reviews
     .map((r) => ({
@@ -126,6 +135,7 @@ export async function listReviewsForCycle(cycleId: string): Promise<ReviewListIt
       employeeEmail: profileById.get(r.employee_user_id)?.email ?? "",
       selfRating: selfByReview.get(r.id) ?? null,
       managerRating: managerByReview.get(r.id) ?? null,
+      instanceSteps: stepsByReview.get(r.id) ?? [],
     }))
     .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
 }
@@ -186,6 +196,7 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
   ]);
   const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r.rating]));
   const managerByReview = new Map((managerRows ?? []).map((r) => [r.review_id, r.rating]));
+  const stepsByReview = await getInstanceStepsForReviews(reviewIds);
 
   const items: ReviewListItem[] = picked
     .map((r) => {
@@ -197,6 +208,7 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
         selfRating: selfByReview.get(r.id) ?? null,
         managerRating: managerByReview.get(r.id) ?? null,
         cycleName: performance_review_cycles.name,
+        instanceSteps: stepsByReview.get(r.id) ?? [],
       };
     })
     .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
@@ -206,19 +218,21 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
 
 export async function submitManagerAssessment(reviewId: string, rating: number, feedback: string, developmentNeeds: string) {
   const supabase = await createClient();
+  // development_needs now travels inside the RPC's own SECURITY DEFINER
+  // upsert (migration 0103) — it used to be written via a plain client
+  // .update() here, but that table has never had an INSERT/UPDATE RLS
+  // policy for anyone, so the field silently never persisted. Fixed at the
+  // source instead of papered over.
   const { error } = await supabase.rpc("submit_manager_assessment", {
     target_review_id: reviewId,
     p_rating: rating,
     p_feedback: feedback.trim(),
+    p_development_needs: developmentNeeds.trim() || null,
   });
   if (error) {
     console.error("submitManagerAssessment failed:", error);
     return { error: "Could not save — try again." };
   }
-  // development_needs isn't part of submit_manager_assessment's RPC surface
-  // (that function's job is the rating + the performance_rating sync) — a
-  // plain update here, same admin RLS policy already covers this table.
-  await supabase.from("performance_review_manager_assessments").update({ development_needs: developmentNeeds.trim() || null }).eq("review_id", reviewId);
 
   revalidatePath("/dashboard/company/impact-cycles");
   return { success: true };
@@ -330,13 +344,20 @@ export async function getCompetencyRatings(reviewId: string): Promise<Competency
   return data ?? [];
 }
 
-export async function setCompetencyRating(reviewId: string, dimension: string, rating: number, note: string) {
+export async function setCompetencyRating(
+  reviewId: string,
+  dimension: string,
+  rating: number,
+  note: string,
+  organizationCompetencyId?: string | null
+) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_competency_rating", {
     target_review_id: reviewId,
     p_dimension: dimension,
     p_rating: rating,
     p_note: note.trim() || null,
+    p_organization_competency_id: organizationCompetencyId ?? null,
   });
   if (error) {
     console.error("setCompetencyRating failed:", error);
@@ -393,7 +414,7 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
   });
   const { performance_review_cycles: cycle, ...review } = sorted[0];
 
-  const [{ data: self }, { data: manager }, { data: goals }, { data: competencyRatings }, pastGoals, { data: profile }, uplineSignoffs] = await Promise.all([
+  const [{ data: self }, { data: manager }, { data: goals }, { data: competencyRatings }, pastGoals, { data: profile }, uplineSignoffs, instanceSteps] = await Promise.all([
     supabase.from("performance_review_self_assessments").select("*").eq("review_id", review.id).maybeSingle<SelfAssessment>(),
     supabase.from("performance_review_manager_assessments").select("*").eq("review_id", review.id).maybeSingle<ManagerAssessment>(),
     supabase.from("performance_review_goals").select("*").eq("review_id", review.id).order("created_at").returns<ReviewGoal[]>(),
@@ -401,6 +422,7 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
     fetchPastGoals(supabase, review.id),
     supabase.from("profiles").select("full_name, email").eq("id", user.id).maybeSingle<{ full_name: string | null; email: string }>(),
     getUplineSignoffs(review.id),
+    getInstanceSteps(review.id),
   ]);
 
   return {
@@ -415,6 +437,7 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
       employeeName: profile?.full_name ?? "You",
       employeeEmail: profile?.email ?? "",
       uplineSignoffs: uplineSignoffs.filter((s) => s.signed_off_at !== null),
+      instanceSteps,
     },
   };
 }
@@ -592,4 +615,140 @@ export async function getAppraisalCompetencyContext(reviewId: string): Promise<A
     roleTarget: roleTargetByDim.get(dimension) ?? null,
     measuredCurrent: measuredByDim.get(dimension) ?? null,
   }));
+}
+
+// ---------- Generic custom steps ----------
+//
+// Every custom step (Peer Feedback, HR Review, Executive Approval, ...)
+// reuses this same generic mechanism — see migration 0103's Part 4. Writes
+// only ever happen through the RPCs below, mirroring the rest of this file.
+
+export async function assignCustomStepResponder(instanceStepId: string, assigneeUserId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("assign_custom_step_responder", {
+    target_instance_step_id: instanceStepId,
+    p_assignee_user_id: assigneeUserId,
+  });
+  if (error) {
+    console.error("assignCustomStepResponder failed:", error);
+    return { error: error.message?.includes("maximum") ? error.message : "Could not assign — try again." };
+  }
+  revalidatePath("/dashboard/company/impact-cycles");
+  revalidatePath("/dashboard/my-team");
+  return { success: true };
+}
+
+export async function unassignCustomStepResponder(instanceStepId: string, assigneeUserId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("unassign_custom_step_responder", {
+    target_instance_step_id: instanceStepId,
+    p_assignee_user_id: assigneeUserId,
+  });
+  if (error) {
+    console.error("unassignCustomStepResponder failed:", error);
+    return { error: "Could not remove — try again." };
+  }
+  revalidatePath("/dashboard/company/impact-cycles");
+  revalidatePath("/dashboard/my-team");
+  return { success: true };
+}
+
+export async function getMyCustomStepAssignments(instanceStepId: string): Promise<{ assigneeUserId: string; assigneeName: string }[]> {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("performance_review_custom_step_assignments")
+    .select("assignee_user_id")
+    .eq("instance_step_id", instanceStepId)
+    .returns<{ assignee_user_id: string }[]>();
+  if (!rows || rows.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", rows.map((r) => r.assignee_user_id))
+    .returns<{ id: string; full_name: string | null }[]>();
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]));
+
+  return rows.map((r) => ({ assigneeUserId: r.assignee_user_id, assigneeName: nameById.get(r.assignee_user_id) ?? "Unknown" }));
+}
+
+export async function submitCustomStepResponse(instanceStepId: string, response: Record<string, unknown>) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("submit_custom_step_response", {
+    target_instance_step_id: instanceStepId,
+    p_response: response,
+  });
+  if (error) {
+    console.error("submitCustomStepResponse failed:", error);
+    return { error: "Could not save your response — try again." };
+  }
+  revalidatePath("/dashboard/company/impact-cycles");
+  revalidatePath("/dashboard/my-team");
+  revalidatePath("/dashboard/impact-cycle");
+  return { success: true };
+}
+
+export async function getMyCustomStepResponse(instanceStepId: string): Promise<Record<string, unknown> | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("performance_review_custom_step_responses")
+    .select("response, submitted_at")
+    .eq("instance_step_id", instanceStepId)
+    .eq("responder_user_id", user.id)
+    .maybeSingle<{ response: Record<string, unknown>; submitted_at: string | null }>();
+  return data?.submitted_at ? data.response : null;
+}
+
+export async function getCustomStepCompletion(instanceStepId: string): Promise<CustomStepCompletion | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("get_custom_step_completion", { target_instance_step_id: instanceStepId })
+    .maybeSingle<CustomStepCompletion>();
+  if (error) return null;
+  return data ?? null;
+}
+
+// Attributed view (admin/manager/upline) — every response with its
+// responder's name, used to render "who said what" for non-anonymized
+// custom steps.
+export async function getCustomStepResponses(instanceStepId: string): Promise<{ responderUserId: string; responderName: string; response: Record<string, unknown>; submittedAt: string | null }[]> {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("performance_review_custom_step_responses")
+    .select("responder_user_id, response, submitted_at")
+    .eq("instance_step_id", instanceStepId)
+    .returns<{ responder_user_id: string; response: Record<string, unknown>; submitted_at: string | null }[]>();
+  if (!rows || rows.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", rows.map((r) => r.responder_user_id))
+    .returns<{ id: string; full_name: string | null }[]>();
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]));
+
+  return rows.map((r) => ({
+    responderUserId: r.responder_user_id,
+    responderName: nameById.get(r.responder_user_id) ?? "Unknown",
+    response: r.response,
+    submittedAt: r.submitted_at,
+  }));
+}
+
+// Anonymized pooled view for the reviewed employee on peer/360 steps — see
+// get_custom_step_aggregate_for_employee (0103) for the anonymity guarantee
+// (no responder identity ever selected, 3-respondent floor before anything
+// is returned).
+export async function getCustomStepAggregateForEmployee(instanceStepId: string): Promise<CustomStepAggregate | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("get_custom_step_aggregate_for_employee", { target_instance_step_id: instanceStepId })
+    .maybeSingle<CustomStepAggregate>();
+  if (error) return null;
+  return data ?? null;
 }

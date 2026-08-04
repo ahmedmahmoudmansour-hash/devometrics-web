@@ -64,6 +64,7 @@ export type AiUsageFeature =
   | "candidate_interview_assessment"
   | "candidate_ranking"
   | "performance_review_ai"
+  | "custom_step_ai"
   | "succession_ranking"
   | "employee_assessment_summary"
   | "case_study_scoring"

@@ -1,3 +1,5 @@
+import type { InstanceStep } from "./workflowTypes";
+
 export type ReviewCycleStatus = "draft" | "open" | "closed";
 
 export type PerformanceReviewCycle = {
@@ -9,6 +11,7 @@ export type PerformanceReviewCycle = {
   opens_at: string | null;
   closes_at: string | null;
   created_at: string;
+  workflow_template_id: string | null;
 };
 
 export type ReviewStatus = "not_started" | "self_submitted" | "manager_submitted" | "acknowledged" | "closed";
@@ -78,9 +81,10 @@ export function goalStatusLabel(t: Translator, status: GoalStatus): string {
 
 export type CompetencyRating = {
   review_id: string;
-  dimension: string;
+  dimension: string | null;
   rating: number;
   note: string | null;
+  organization_competency_id: string | null;
 };
 
 export type ReviewListItem = PerformanceReview & {
@@ -93,6 +97,11 @@ export type ReviewListItem = PerformanceReview & {
   // per-cycle roster doesn't need this since every row is already the same
   // cycle by construction.
   cycleName?: string;
+  // This review's configured step list (migration 0103), in position order
+  // — drives which section editors ImpactCycleReviewRow renders and in what
+  // order, instead of a hardcoded fixed sequence. Empty on a database that
+  // hasn't run migration 0103 yet.
+  instanceSteps: InstanceStep[];
 };
 
 export type ReviewDetail = {
@@ -109,6 +118,7 @@ export type ReviewDetail = {
   // rows, since a not-yet-signed skip-level entry isn't "his relevant part"
   // yet.
   uplineSignoffs: UplineSignoff[];
+  instanceSteps: InstanceStep[];
 };
 
 // One link in the Org Chart's manager_user_id chain above an employee —
