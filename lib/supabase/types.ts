@@ -32,6 +32,9 @@ export type Profile = {
   // Added in migration 0059 — optional/defensive like the other recently-added
   // flags, may be absent until that migration has run.
   pending_data_deletion_at?: string | null;
+  // Added in migration 0112 — optional/defensive like the other
+  // recently-added flags, may be absent until that migration has run.
+  is_disabled?: boolean;
   // Added in migration 0065 — opt-in, defaults false at the DB level; may
   // be absent (undefined) until that migration has run.
   share_big_five_with_admin?: boolean;

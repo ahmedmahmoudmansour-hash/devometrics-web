@@ -8,6 +8,7 @@ import {
   updateUserSubscriptionTier,
   platformAdminScheduleDataDeletion,
   platformAdminCancelDataDeletion,
+  setUserDisabled,
 } from "@/lib/admin/profiles";
 import type { PilotRow } from "@/lib/admin/aggregate";
 import type { SubscriptionTier } from "@/lib/billing/subscriptionTier";
@@ -236,6 +237,56 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
   );
 }
 
+// Blocks/restores login+use of the app — separate from DataDeletionCell,
+// which wipes content but leaves login intact. Instantly reversible (one
+// click either direction), so this gets a plain confirm() rather than
+// DataDeletionCell's type-to-confirm treatment, which is reserved for the
+// genuinely irreversible action.
+function AccessCell({ row }: { row: PilotRow }) {
+  const t = useTranslations("adminPilotTable");
+  const router = useRouter();
+  const [isDisabled, setIsDisabled] = useState(row.isDisabled);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function toggle() {
+    const next = !isDisabled;
+    if (next && !window.confirm(t("accessDisableConfirm", { name: row.name }))) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await setUserDisabled(row.userId, next);
+      if ("error" in result) setError(result.error);
+      else {
+        setIsDisabled(next);
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={toggle}
+        style={{
+          background: isDisabled ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.05)",
+          border: "1px solid " + (isDisabled ? "rgba(248,113,113,0.4)" : "var(--border)"),
+          borderRadius: 6,
+          padding: "5px 10px",
+          fontSize: 11,
+          fontWeight: 700,
+          color: isDisabled ? "#f87171" : "var(--text)",
+          cursor: "pointer",
+        }}
+      >
+        {isPending ? t("accessUpdating") : isDisabled ? t("accessDisabledLabel") : t("accessEnabledLabel")}
+      </button>
+      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+    </div>
+  );
+}
+
 export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
   const t = useTranslations("adminPilotTable");
   const locale = useLocale();
@@ -258,12 +309,13 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
               <th style={{ ...headStyle, textAlign: "right" }}>{t("colAiSpendThisMonth")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colMonthlyAiBudget")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colData")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colAccess")}</th>
             </tr>
           </thead>
           <tbody>
             {initial.length === 0 ? (
               <tr>
-                <td style={cellStyle} colSpan={12}>
+                <td style={cellStyle} colSpan={13}>
                   {t("noParticipants")}
                 </td>
               </tr>
@@ -301,6 +353,9 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
                     </td>
                     <td style={cellStyle}>
                       <DataDeletionCell row={r} />
+                    </td>
+                    <td style={cellStyle}>
+                      <AccessCell row={r} />
                     </td>
                   </tr>
                 );

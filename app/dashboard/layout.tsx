@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/dashboard/SidebarNav";
 import CommandPalette from "@/components/dashboard/CommandPalette";
@@ -29,14 +30,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .maybeSingle<{ role: string; manager_user_id: string | null; organizations: { brand_color: string | null } | null }>(),
     supabase
       .from("profiles")
-      .select("is_admin, theme, subscription_tier, premium_trial_expires_at")
+      .select("is_admin, theme, subscription_tier, premium_trial_expires_at, is_disabled")
       .eq("id", user.id)
-      .maybeSingle<{ is_admin: boolean | null; theme: string | null; subscription_tier: string | null; premium_trial_expires_at: string | null }>(),
+      .maybeSingle<{ is_admin: boolean | null; theme: string | null; subscription_tier: string | null; premium_trial_expires_at: string | null; is_disabled: boolean | null }>(),
     // Isolated defensive count — degrades to "no reports" rather than
     // breaking the whole layout if 0072's manager_user_id column isn't
     // migrated yet on this database.
     supabase.from("organization_members").select("*", { count: "exact", head: true }).eq("manager_user_id", user.id),
   ]);
+  // A disabled account keeps its login (this app has no service-role key
+  // to revoke it) but is blocked from every dashboard route right here —
+  // the one place every dashboard page already does a per-request profile
+  // lookup, so this can't be bypassed by landing on a different page.
+  if (profile?.is_disabled) {
+    await supabase.auth.signOut();
+    redirect("/login?disabled=1");
+  }
+
   const hasDirectReports = (directReportCount ?? 0) > 0;
   const hasManager = !!membership?.manager_user_id;
   const hasOrgMembership = !!membership;

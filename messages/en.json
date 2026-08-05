@@ -4880,6 +4880,7 @@
     "colAiSpendThisMonth": "AI spend this month",
     "colMonthlyAiBudget": "Monthly AI budget",
     "colData": "Data",
+    "colAccess": "Access",
     "noParticipants": "No pilot participants yet.",
     "individualLabel": "— individual —",
     "dataDeleteButton": "Delete data",
@@ -4888,7 +4889,11 @@
     "dataScheduling": "Scheduling…",
     "dataCancelButton": "Cancel",
     "dataCancelling": "Cancelling…",
-    "dataScheduled": "Scheduled for {date}"
+    "dataScheduled": "Scheduled for {date}",
+    "accessEnabledLabel": "Enabled",
+    "accessDisabledLabel": "Disabled",
+    "accessUpdating": "Updating…",
+    "accessDisableConfirm": "Block {name} from logging in? They can be re-enabled anytime."
   },
   "createCompanyWorkspaceForm": {
     "title": "Create a company workspace",

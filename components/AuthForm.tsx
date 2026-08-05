@@ -58,7 +58,13 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [accountType, setAccountType] = useState<"individual" | "company">("individual");
-  const [error, setError] = useState<string | null>(null);
+  // Surfaces the reason for the redirect from DashboardLayout's is_disabled
+  // check — that check signs the user out and lands them back here with
+  // ?disabled=1, so without this they'd just see an empty login form with
+  // no explanation for why they were suddenly logged out.
+  const [error, setError] = useState<string | null>(
+    searchParams.get("disabled") === "1" ? "Your account has been disabled. Contact support@devometrics.com if you believe this is a mistake." : null
+  );
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);

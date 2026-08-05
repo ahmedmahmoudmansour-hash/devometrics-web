@@ -20,6 +20,7 @@ export type PilotRow = {
   subscriptionTier: SubscriptionTier;
   effectiveTier: SubscriptionTier;
   pendingDataDeletionAt: string | null;
+  isDisabled: boolean;
 };
 
 // Admin-only aggregation for the pilot tracking view. Relies entirely on the
@@ -137,6 +138,7 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
       subscriptionTier: p.subscription_tier,
       effectiveTier: effectiveSubscriptionTier(p),
       pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
+      isDisabled: p.is_disabled ?? false,
     };
   });
 

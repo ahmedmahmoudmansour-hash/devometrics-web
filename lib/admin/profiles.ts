@@ -86,6 +86,37 @@ export async function platformAdminCancelDataDeletion(targetUserId: string): Pro
   return { success: true };
 }
 
+// Blocks/restores login+use of the app without touching any of the user's
+// content — the opposite of platformAdminScheduleDataDeletion above, which
+// wipes content but leaves login intact. Goes through the same "Platform
+// admins can update any profile" RLS policy (migration 0091) as
+// updateUserSubscriptionTier below; migration 0112 extends the
+// self-escalation guard (0092) to cover this new column so a disabled
+// user can't just flip their own flag back via a direct client update.
+export async function setUserDisabled(userId: string, disabled: boolean): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: ownProfile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single<{ is_admin: boolean }>();
+  if (!ownProfile?.is_admin) return { error: "Not authorized" };
+
+  const { error } = await supabase.from("profiles").update({ is_disabled: disabled }).eq("id", userId);
+  if (error) {
+    console.error("setUserDisabled failed:", error);
+    return { error: "Could not update — the database may need migration 0112 run first." };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true };
+}
+
 const VALID_TIERS: SubscriptionTier[] = ["free", "premium", "enterprise"];
 
 // Grants/revokes premium the same way the documented manual SQL fix does

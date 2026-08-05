@@ -18,6 +18,11 @@ What's new:
 - Assessment assignments now email you immediately — with a due date, if one's set, that shows up right on your calendar alongside your goals.
 - Bulk assignment for admins — assign one assessment or goal to a whole group at once, with one email per person, not a group blast.
 - Scoped performance review cycles — admins can now run a cycle for a single employee (e.g. a probation review) instead of it defaulting to the whole company.
+- Workforce Analytics charts — career health trends, headcount trends, and the 9-box talent grid, in both Strategic and Operational views.
+- Job Architecture — AI-generated job descriptions and grading, tied into your org chart and hiring pipeline.
+- Hiring & onboarding tracking — the full candidate pipeline from posting to hire, plus onboarding step tracking for new hires.
+- AI-assisted appraisals — draft responses and role-based prompts inside Impact Cycles, not just static forms.
+- Accountability Groups — peer groups with their own group-scoped AI assistant for check-ins and support.
 - Faster dashboards — the Workforce Analytics and Employees pages load noticeably quicker, especially for larger teams.
 - A cleaner navigation — the company admin section is now grouped by what you're actually trying to do, instead of one long row of tabs.
 

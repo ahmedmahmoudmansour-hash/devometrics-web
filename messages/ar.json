@@ -4880,6 +4880,7 @@
     "colAiSpendThisMonth": "إنفاق الذكاء الاصطناعي هذا الشهر",
     "colMonthlyAiBudget": "الميزانية الشهرية للذكاء الاصطناعي",
     "colData": "البيانات",
+    "colAccess": "الوصول",
     "noParticipants": "لا يوجد مشاركون في التجربة بعد.",
     "individualLabel": "— فردي —",
     "dataDeleteButton": "حذف البيانات",
@@ -4888,7 +4889,11 @@
     "dataScheduling": "جارٍ الجدولة…",
     "dataCancelButton": "إلغاء",
     "dataCancelling": "جارٍ الإلغاء…",
-    "dataScheduled": "مجدول في {date}"
+    "dataScheduled": "مجدول في {date}",
+    "accessEnabledLabel": "مفعّل",
+    "accessDisabledLabel": "معطّل",
+    "accessUpdating": "جارٍ التحديث…",
+    "accessDisableConfirm": "حظر {name} من تسجيل الدخول؟ يمكن إعادة تفعيله في أي وقت."
   },
   "createCompanyWorkspaceForm": {
     "title": "إنشاء مساحة عمل لشركة",
