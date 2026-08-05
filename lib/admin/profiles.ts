@@ -38,6 +38,54 @@ export async function updateProfileAiBudget(userId: string, budgetUsd: number | 
   return { success: true };
 }
 
+// Platform-wide equivalent of admin_schedule_employee_data_deletion
+// (migration 0066), which only works when the caller is that specific
+// employee's own org admin. This works on any user platform-wide, gated
+// by the caller's own is_admin flag via the SECURITY DEFINER function
+// (migration 0111) — same 30-day-grace-period, same daily purge cron
+// (migration 0059) as every other path into this deletion mechanism. Does
+// NOT delete the login itself — no service_role key in this app means
+// that's a Supabase Dashboard action only, never something server code
+// here can do.
+export async function platformAdminScheduleDataDeletion(
+  targetUserId: string
+): Promise<{ error: string } | { success: true; deletionAt: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data, error } = await supabase.rpc("platform_admin_schedule_data_deletion", {
+    target_user_id: targetUserId,
+    grace_days: 30,
+  });
+  if (error) {
+    console.error("platformAdminScheduleDataDeletion failed:", error);
+    return { error: "Could not schedule deletion — the database may need migration 0111 run first." };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true, deletionAt: data as string };
+}
+
+export async function platformAdminCancelDataDeletion(targetUserId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.rpc("platform_admin_cancel_data_deletion", { target_user_id: targetUserId });
+  if (error) {
+    console.error("platformAdminCancelDataDeletion failed:", error);
+    return { error: "Could not cancel — try again." };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true };
+}
+
 const VALID_TIERS: SubscriptionTier[] = ["free", "premium", "enterprise"];
 
 // Grants/revokes premium the same way the documented manual SQL fix does

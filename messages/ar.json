@@ -4810,7 +4810,7 @@
   "platformAnnouncementForm": {
     "openButton": "إرسال إعلان لكل المنصة",
     "title": "بريد إعلان المنصة",
-    "description": "يرسل بريدًا واحدًا إلى كل مستخدم مسجَّل في المنصة بأكملها. أرسل دائمًا نسخة تجريبية لنفسك أولًا، واكتب SEND ALL للتأكيد قبل إرساله للجميع.",
+    "description": "يرسل بريدًا إما إلى كل مستخدم مسجَّل أو إلى أشخاص محددين تختارهم. أرسل دائمًا نسخة تجريبية لنفسك أولًا، واكتب SEND للتأكيد قبل الإرسال.",
     "subjectLabel": "الموضوع",
     "messageLabel": "الرسالة",
     "ctaUrlLabel": "رابط الزر",
@@ -4820,9 +4820,14 @@
     "testSentConfirmation": "تم إرسال النسخة التجريبية — تحقق من بريدك الوارد.",
     "loadingCount": "جارٍ تحميل عدد المستلمين…",
     "recipientCount": "{count, plural, one {سيُرسل هذا إلى # مستخدم مسجَّل.} other {سيُرسل هذا إلى # مستخدمين مسجَّلين.}}",
-    "confirmInstructions": "اكتب SEND ALL أدناه للتأكيد — سيُرسل هذا فورًا بمجرد الضغط على الزر، إلى كل مستخدم موضح أعلاه.",
-    "confirmAria": "اكتب SEND ALL للتأكيد",
-    "sendAllButton": "{count, plural, one {إرسال إلى # مستخدم} other {إرسال إلى # مستخدمين}}",
+    "audienceAll": "كل المستخدمين",
+    "audienceSelected": "اختيار مستخدمين محددين",
+    "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني…",
+    "loadingRecipients": "جارٍ تحميل المستخدمين…",
+    "noMatchingRecipients": "لا يوجد مستخدمون مطابقون لهذا البحث.",
+    "confirmInstructions": "اكتب SEND أدناه للتأكيد — سيُرسل هذا فورًا بمجرد الضغط على الزر، إلى كل من هو موضح أعلاه.",
+    "confirmAria": "اكتب SEND للتأكيد",
+    "sendButton": "{count, plural, one {إرسال إلى # مستخدم} other {إرسال إلى # مستخدمين}}",
     "sendResult": "{sent, plural, one {أُرسل إلى # مستخدم} other {أُرسل إلى # مستخدمين}}{failed, plural, =0 {.} other { — فشل {failed}.}}"
   },
   "adminInquiriesPage": {
@@ -4874,8 +4879,16 @@
     "colJoined": "تاريخ الانضمام",
     "colAiSpendThisMonth": "إنفاق الذكاء الاصطناعي هذا الشهر",
     "colMonthlyAiBudget": "الميزانية الشهرية للذكاء الاصطناعي",
+    "colData": "البيانات",
     "noParticipants": "لا يوجد مشاركون في التجربة بعد.",
-    "individualLabel": "— فردي —"
+    "individualLabel": "— فردي —",
+    "dataDeleteButton": "حذف البيانات",
+    "dataConfirmAria": "اكتب {email} لتأكيد حذف البيانات",
+    "dataConfirmButton": "تأكيد",
+    "dataScheduling": "جارٍ الجدولة…",
+    "dataCancelButton": "إلغاء",
+    "dataCancelling": "جارٍ الإلغاء…",
+    "dataScheduled": "مجدول في {date}"
   },
   "createCompanyWorkspaceForm": {
     "title": "إنشاء مساحة عمل لشركة",

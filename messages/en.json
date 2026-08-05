@@ -4810,7 +4810,7 @@
   "platformAnnouncementForm": {
     "openButton": "Send a platform-wide announcement",
     "title": "Platform announcement email",
-    "description": "Sends one email to every registered user across the whole platform. Always send yourself a test first, and type SEND ALL to confirm before it goes to everyone.",
+    "description": "Sends an email either to every registered user or to specific people you pick. Always send yourself a test first, and type SEND to confirm before it goes out.",
     "subjectLabel": "Subject",
     "messageLabel": "Message",
     "ctaUrlLabel": "Button link",
@@ -4820,9 +4820,14 @@
     "testSentConfirmation": "Test sent — check your inbox.",
     "loadingCount": "Loading recipient count…",
     "recipientCount": "{count, plural, one {This will send to # registered user.} other {This will send to # registered users.}}",
-    "confirmInstructions": "Type SEND ALL below to confirm — this sends immediately once you click the button, to every user shown above.",
-    "confirmAria": "Type SEND ALL to confirm",
-    "sendAllButton": "{count, plural, one {Send to # user} other {Send to # users}}",
+    "audienceAll": "All users",
+    "audienceSelected": "Choose specific users",
+    "searchPlaceholder": "Search by name or email…",
+    "loadingRecipients": "Loading users…",
+    "noMatchingRecipients": "No users match that search.",
+    "confirmInstructions": "Type SEND below to confirm — this sends immediately once you click the button, to everyone shown above.",
+    "confirmAria": "Type SEND to confirm",
+    "sendButton": "{count, plural, one {Send to # user} other {Send to # users}}",
     "sendResult": "{sent, plural, one {Sent to # user} other {Sent to # users}}{failed, plural, =0 {.} other { — {failed} failed.}}"
   },
   "adminInquiriesPage": {
@@ -4874,8 +4879,16 @@
     "colJoined": "Joined",
     "colAiSpendThisMonth": "AI spend this month",
     "colMonthlyAiBudget": "Monthly AI budget",
+    "colData": "Data",
     "noParticipants": "No pilot participants yet.",
-    "individualLabel": "— individual —"
+    "individualLabel": "— individual —",
+    "dataDeleteButton": "Delete data",
+    "dataConfirmAria": "Type {email} to confirm data deletion",
+    "dataConfirmButton": "Confirm",
+    "dataScheduling": "Scheduling…",
+    "dataCancelButton": "Cancel",
+    "dataCancelling": "Cancelling…",
+    "dataScheduled": "Scheduled for {date}"
   },
   "createCompanyWorkspaceForm": {
     "title": "Create a company workspace",

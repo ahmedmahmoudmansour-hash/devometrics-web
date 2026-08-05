@@ -87,6 +87,67 @@ export async function countAnnouncementRecipients(): Promise<number | null> {
   return count ?? 0;
 }
 
+export type AnnouncementRecipient = { id: string; name: string; email: string };
+
+// Full id/name/email list for the "choose specific users" picker — same
+// admin-gated query as countAnnouncementRecipients, just with rows instead
+// of a count.
+export async function listAnnouncementRecipients(): Promise<AnnouncementRecipient[]> {
+  const { user, error } = await requireAdmin();
+  if (error || !user) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .not("email", "is", null)
+    .order("full_name", { ascending: true })
+    .returns<{ id: string; full_name: string | null; email: string }[]>();
+  return (data ?? []).map((p) => ({ id: p.id, name: p.full_name?.trim() || p.email, email: p.email }));
+}
+
+// Same as sendAnnouncementToAllUsers but scoped to an explicit id list —
+// used by the "choose specific users" picker instead of "send to
+// everyone." Looks up name/email fresh server-side rather than trusting
+// whatever the client last rendered, so a stale picker selection can't
+// silently email the wrong address.
+export async function sendAnnouncementToSelectedUsers(
+  userIds: string[],
+  subject: string,
+  message: string,
+  ctaUrl: string,
+  ctaLabel: string
+): Promise<{ success: true; sent: number; failed: number } | { error: string }> {
+  const { user, error } = await requireAdmin();
+  if (error || !user) return { error: error ?? "Not authorized" };
+  if (!subject.trim() || !message.trim()) return { error: "Subject and message are required" };
+  if (userIds.length === 0) return { error: "Select at least one recipient" };
+
+  const supabase = await createClient();
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .in("id", userIds)
+    .not("email", "is", null)
+    .returns<{ full_name: string | null; email: string | null }[]>();
+
+  const recipients = (profiles ?? []).filter((p): p is { full_name: string | null; email: string } => !!p.email);
+  if (recipients.length === 0) return { error: "No recipients found" };
+
+  const results = await Promise.allSettled(
+    recipients.map((r) =>
+      sendEmail(
+        r.email,
+        subject,
+        renderAnnouncementHtml(r.full_name?.trim().split(/\s+/)[0] ?? "there", subject, message, ctaUrl, ctaLabel)
+      )
+    )
+  );
+
+  const sent = results.filter((r) => r.status === "fulfilled").length;
+  const failed = results.length - sent;
+  return { success: true, sent, failed };
+}
+
 // The real send — every registered user on the platform, one personalized
 // email each. Best-effort per recipient (Promise.allSettled, same posture
 // as every bulk-assign action in this app): one bad email address doesn't

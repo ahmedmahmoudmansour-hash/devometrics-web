@@ -19,6 +19,7 @@ export type PilotRow = {
   spendThisMonthUsd: number;
   subscriptionTier: SubscriptionTier;
   effectiveTier: SubscriptionTier;
+  pendingDataDeletionAt: string | null;
 };
 
 // Admin-only aggregation for the pilot tracking view. Relies entirely on the
@@ -135,6 +136,7 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
       spendThisMonthUsd: spendByUser.get(p.id) ?? 0,
       subscriptionTier: p.subscription_tier,
       effectiveTier: effectiveSubscriptionTier(p),
+      pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
     };
   });
 

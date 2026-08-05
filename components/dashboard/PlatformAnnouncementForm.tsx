@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { sendAnnouncementTestEmail, sendAnnouncementToAllUsers, countAnnouncementRecipients } from "@/lib/admin/broadcast";
+import {
+  sendAnnouncementTestEmail,
+  sendAnnouncementToAllUsers,
+  sendAnnouncementToSelectedUsers,
+  countAnnouncementRecipients,
+  listAnnouncementRecipients,
+  type AnnouncementRecipient,
+} from "@/lib/admin/broadcast";
 
 const DEFAULT_SUBJECT = "New features are live — try them and tell us what you think (by Sat, Aug 8)";
 const DEFAULT_MESSAGE = `We've shipped a batch of updates to Devometrics and would love your eyes on them before we lock in what's next.
@@ -28,13 +35,19 @@ const inputStyle: React.CSSProperties = {
   fontFamily: "inherit",
 };
 
+type Audience = "all" | "selected";
+
 export default function PlatformAnnouncementForm() {
   const t = useTranslations("platformAnnouncementForm");
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [ctaUrl, setCtaUrl] = useState("https://devometrics.com/dashboard");
   const [ctaLabel, setCtaLabel] = useState("Open Devometrics");
+  const [audience, setAudience] = useState<Audience>("all");
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [recipients, setRecipients] = useState<AnnouncementRecipient[] | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [testSent, setTestSent] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number } | null>(null);
@@ -48,7 +61,31 @@ export default function PlatformAnnouncementForm() {
     }
   }, [expanded, recipientCount]);
 
-  const confirmMatches = confirmText.trim().toUpperCase() === "SEND ALL";
+  useEffect(() => {
+    if (audience === "selected" && recipients === null) {
+      listAnnouncementRecipients().then(setRecipients);
+    }
+  }, [audience, recipients]);
+
+  const filteredRecipients = useMemo(() => {
+    if (!recipients) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return recipients;
+    return recipients.filter((r) => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+  }, [recipients, search]);
+
+  const targetCount = audience === "all" ? recipientCount ?? 0 : selectedIds.size;
+  const confirmMatches = confirmText.trim().toUpperCase() === "SEND";
+  const canSend = confirmMatches && targetCount > 0;
+
+  function toggleRecipient(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function handleTest() {
     setError(null);
@@ -59,11 +96,14 @@ export default function PlatformAnnouncementForm() {
     });
   }
 
-  function handleSendAll() {
+  function handleSend() {
     setError(null);
     setResult(null);
     startTransition(async () => {
-      const res = await sendAnnouncementToAllUsers(subject, message, ctaUrl, ctaLabel);
+      const res =
+        audience === "all"
+          ? await sendAnnouncementToAllUsers(subject, message, ctaUrl, ctaLabel)
+          : await sendAnnouncementToSelectedUsers([...selectedIds], subject, message, ctaUrl, ctaLabel);
       if ("error" in res) setError(res.error);
       else {
         setResult({ sent: res.sent, failed: res.failed });
@@ -143,9 +183,60 @@ export default function PlatformAnnouncementForm() {
             {testSent && <span style={{ fontSize: 12.5, color: "var(--teal)" }}>{t("testSentConfirmation")}</span>}
           </div>
 
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            {recipientCount === null ? t("loadingCount") : t("recipientCount", { count: recipientCount })}
-          </p>
+          {/* Audience toggle */}
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["all", "selected"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setAudience(mode)}
+                style={{
+                  background: audience === mode ? "var(--teal)" : "rgba(255,255,255,0.05)",
+                  border: "1px solid " + (audience === mode ? "var(--teal)" : "var(--border)"),
+                  borderRadius: 100,
+                  padding: "6px 16px",
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: audience === mode ? "#0A0F1E" : "var(--text)",
+                  cursor: "pointer",
+                }}
+              >
+                {mode === "all" ? t("audienceAll") : t("audienceSelected")}
+              </button>
+            ))}
+          </div>
+
+          {audience === "all" ? (
+            <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
+              {recipientCount === null ? t("loadingCount") : t("recipientCount", { count: recipientCount })}
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("searchPlaceholder")}
+                style={inputStyle}
+              />
+              <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8, padding: 8 }}>
+                {recipients === null ? (
+                  <p style={{ fontSize: 12.5, color: "var(--text-muted)", padding: 8 }}>{t("loadingRecipients")}</p>
+                ) : filteredRecipients.length === 0 ? (
+                  <p style={{ fontSize: 12.5, color: "var(--text-muted)", padding: 8 }}>{t("noMatchingRecipients")}</p>
+                ) : (
+                  filteredRecipients.map((r) => (
+                    <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", fontSize: 13, color: "var(--text)", cursor: "pointer" }}>
+                      <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleRecipient(r.id)} />
+                      <span>{r.name}</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{r.email}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+              <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("recipientCount", { count: selectedIds.size })}</p>
+            </div>
+          )}
 
           <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>{t("confirmInstructions")}</p>
@@ -154,14 +245,14 @@ export default function PlatformAnnouncementForm() {
                 type="text"
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="SEND ALL"
+                placeholder="SEND"
                 aria-label={t("confirmAria")}
                 style={{ ...inputStyle, width: 220 }}
               />
               <button
                 type="button"
-                disabled={isPending || !confirmMatches}
-                onClick={handleSendAll}
+                disabled={isPending || !canSend}
+                onClick={handleSend}
                 style={{
                   background: "rgba(248,113,113,0.12)",
                   border: "1px solid rgba(248,113,113,0.4)",
@@ -170,11 +261,11 @@ export default function PlatformAnnouncementForm() {
                   fontSize: 13,
                   fontWeight: 700,
                   color: "#f87171",
-                  cursor: confirmMatches ? "pointer" : "not-allowed",
-                  opacity: isPending || !confirmMatches ? 0.5 : 1,
+                  cursor: canSend ? "pointer" : "not-allowed",
+                  opacity: isPending || !canSend ? 0.5 : 1,
                 }}
               >
-                {isPending ? t("sending") : t("sendAllButton", { count: recipientCount ?? 0 })}
+                {isPending ? t("sending") : t("sendButton", { count: targetCount })}
               </button>
             </div>
           </div>

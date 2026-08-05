@@ -20,7 +20,7 @@ export default async function AdminPage() {
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <div className="admin-wide-content">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
           <div>
             <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>

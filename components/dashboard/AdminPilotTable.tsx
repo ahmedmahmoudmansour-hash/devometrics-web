@@ -3,12 +3,17 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { updateProfileAiBudget, updateUserSubscriptionTier } from "@/lib/admin/profiles";
+import {
+  updateProfileAiBudget,
+  updateUserSubscriptionTier,
+  platformAdminScheduleDataDeletion,
+  platformAdminCancelDataDeletion,
+} from "@/lib/admin/profiles";
 import type { PilotRow } from "@/lib/admin/aggregate";
 import type { SubscriptionTier } from "@/lib/billing/subscriptionTier";
 
 const cellStyle: React.CSSProperties = {
-  padding: "10px 14px",
+  padding: "8px 10px",
   fontSize: 13,
   borderBottom: "1px solid var(--border)",
   color: "var(--text)",
@@ -121,6 +126,116 @@ function SubscriptionTierCell({ row }: { row: PilotRow }) {
   );
 }
 
+// Platform-admin equivalent of DeleteCompanyButton's own three-state
+// pattern (default -> type-to-confirm -> scheduled), condensed to fit a
+// table cell. Wipes the user's activity/content via the same 30-day
+// grace-period mechanism as their own self-service "delete my data" —
+// it does not remove their login, which this app has no service-role key
+// to do server-side.
+function DataDeletionCell({ row }: { row: PilotRow }) {
+  const t = useTranslations("adminPilotTable");
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [scheduledFor, setScheduledFor] = useState(row.pendingDataDeletionAt);
+  const matches = confirmText.trim().toLowerCase() === row.email.toLowerCase();
+
+  if (scheduledFor) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={{ fontSize: 11, color: "#f87171", fontWeight: 700 }}>
+          {t("dataScheduled", { date: new Date(scheduledFor).toLocaleDateString() })}
+        </span>
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() =>
+            startTransition(async () => {
+              const result = await platformAdminCancelDataDeletion(row.userId);
+              if ("error" in result) setError(result.error);
+              else {
+                setScheduledFor(null);
+                router.refresh();
+              }
+            })
+          }
+          style={{ background: "none", border: "none", padding: 0, fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+        >
+          {isPending ? t("dataCancelling") : t("dataCancelButton")}
+        </button>
+        {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      </div>
+    );
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        style={{ background: "none", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+      >
+        {t("dataDeleteButton")}
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
+      <input
+        type="text"
+        value={confirmText}
+        onChange={(e) => setConfirmText(e.target.value)}
+        placeholder={row.email}
+        aria-label={t("dataConfirmAria", { email: row.email })}
+        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "var(--text)", outline: "none" }}
+      />
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          type="button"
+          disabled={isPending || !matches}
+          onClick={() =>
+            startTransition(async () => {
+              const result = await platformAdminScheduleDataDeletion(row.userId);
+              if ("error" in result) setError(result.error);
+              else {
+                setScheduledFor(result.deletionAt);
+                router.refresh();
+              }
+            })
+          }
+          style={{
+            background: "rgba(248,113,113,0.12)",
+            border: "1px solid rgba(248,113,113,0.4)",
+            borderRadius: 6,
+            padding: "5px 10px",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#f87171",
+            cursor: matches ? "pointer" : "not-allowed",
+            opacity: isPending || !matches ? 0.5 : 1,
+          }}
+        >
+          {isPending ? t("dataScheduling") : t("dataConfirmButton")}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setConfirming(false);
+            setConfirmText("");
+          }}
+          style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "5px 10px", fontSize: 11, color: "var(--text-muted)", cursor: "pointer" }}
+        >
+          {t("dataCancelButton")}
+        </button>
+      </div>
+      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+    </div>
+  );
+}
+
 export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
   const t = useTranslations("adminPilotTable");
   const locale = useLocale();
@@ -142,12 +257,13 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
               <th style={{ ...headStyle, textAlign: "right" }}>{t("colJoined")}</th>
               <th style={{ ...headStyle, textAlign: "right" }}>{t("colAiSpendThisMonth")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colMonthlyAiBudget")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colData")}</th>
             </tr>
           </thead>
           <tbody>
             {initial.length === 0 ? (
               <tr>
-                <td style={cellStyle} colSpan={11}>
+                <td style={cellStyle} colSpan={12}>
                   {t("noParticipants")}
                 </td>
               </tr>
@@ -182,6 +298,9 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
                     </td>
                     <td style={cellStyle}>
                       <AiBudgetCell row={r} />
+                    </td>
+                    <td style={cellStyle}>
+                      <DataDeletionCell row={r} />
                     </td>
                   </tr>
                 );

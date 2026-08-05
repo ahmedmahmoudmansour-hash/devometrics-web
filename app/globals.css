@@ -187,6 +187,20 @@ a:focus-visible {
   }
 }
 
+/* The platform admin page's Pilot Tracking table has 11 columns — wider
+   than any other table in the app — so it gets its own, larger cap rather
+   than reusing .dashboard-wide-content's 1300px ceiling, which still
+   wasn't enough to avoid horizontal scroll on a real monitor. */
+.admin-wide-content {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+@media (min-width: 1600px) {
+  .admin-wide-content {
+    max-width: 1700px;
+  }
+}
+
 /* Dashboard header stacks vertically on narrow viewports instead of
    squeezing a title and 7+ nav pills onto one justified row. */
 @media (max-width: 640px) {
