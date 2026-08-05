@@ -28,7 +28,7 @@ export default async function JobArchitecturePage() {
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <div className="dashboard-wide-content">
         <div style={{ marginBottom: 24 }}>
           <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
             {t("backToProgress")}

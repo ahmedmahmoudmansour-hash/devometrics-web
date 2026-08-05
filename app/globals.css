@@ -159,6 +159,34 @@ a:focus-visible {
   }
 }
 
+/* On large monitors the 760+260 pair above leaves several hundred px of
+   dead space on either side (verified against real 1650-1930px screenshots
+   — the fixed-width grid barely used half the space next to the sidebar).
+   Widen once there's room to do so without starving the sidebar. */
+@media (min-width: 1600px) {
+  .dashboard-content-grid {
+    grid-template-columns: 940px 300px;
+    gap: 40px;
+  }
+}
+
+/* Same fixed-width-on-wide-screens problem as .dashboard-content-grid
+   above, independently hardcoded as inline maxWidth:1000 across 7 data-dense
+   admin pages (Analytics, Impact Cycles, Exit Interviews, Hiring, Scorecard,
+   Job Architecture, platform Admin Inquiries) — those pages render charts
+   and tables that benefit from the extra room, unlike prose pages (blog,
+   marketing) which correctly keep a narrow reading width and don't use
+   this class. */
+.dashboard-wide-content {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+@media (min-width: 1600px) {
+  .dashboard-wide-content {
+    max-width: 1300px;
+  }
+}
+
 /* Dashboard header stacks vertically on narrow viewports instead of
    squeezing a title and 7+ nav pills onto one justified row. */
 @media (max-width: 640px) {
