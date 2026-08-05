@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -10,6 +10,32 @@ export default function PlatformChatWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Defers showing the bubble while the marketing homepage's hero (#hero)
+  // is in view — on mobile, the hero's own content (mascot, headline,
+  // subheadline, CTA, caption) overflows one screen height, so this
+  // fixed bottom-right bubble was overlapping the hero's last line of copy
+  // (confirmed via direct measurement: chat button 736-788px vs caption
+  // 760-780px on a 375x812 viewport). Padding on the hero couldn't fix
+  // this — that content comes before any trailing padding in document
+  // flow — so instead the bubble just stays out of the way until the
+  // visitor scrolls past the hero. Pages without a #hero (every other
+  // route) are unaffected — the ref never finds a target, so `hidden`
+  // never flips true.
+  const [hiddenForHero, setHiddenForHero] = useState(false);
+
+  useEffect(() => {
+    const hero = document.getElementById("hero");
+    if (!hero) return;
+    // No manual initial setState here — IntersectionObserver fires its
+    // callback once immediately upon observe() with the current
+    // intersection state, which is enough to set hiddenForHero correctly
+    // without a synchronous setState in the effect body.
+    const observer = new IntersectionObserver(([entry]) => setHiddenForHero(entry.isIntersecting), { threshold: 0 });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
+  if (hiddenForHero) return null;
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
