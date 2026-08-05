@@ -1,6 +1,6 @@
 -- ============================================================
 -- DEVOMETRICS — PENDING MIGRATIONS IN ONE PASTE
--- 0089 through 0110 confirmed applied. Two remain, run in order:
+-- 0089 through 0110 confirmed applied. Three remain, run in order:
 --
 -- 0111: Lets a platform admin (profiles.is_admin = true) schedule data
 -- deletion for ANY user across the whole platform — the existing
@@ -11,6 +11,11 @@
 -- app without touching their data) and extends 0092's self-escalation
 -- guard to cover it, so a disabled user can't just flip their own flag
 -- back via a direct client update.
+--
+-- 0113: Org-level equivalent of 0112 — organizations.is_disabled blocks
+-- every member of a company workspace at once, since Enterprise has no
+-- "free" fallback tier to downgrade a lapsed payment into the way
+-- individual accounts do.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run.
@@ -135,3 +140,25 @@ create policy "Users can update their own profile"
       id, is_admin, subscription_tier, premium_trial_expires_at, monthly_ai_budget_usd, is_disabled
     )
   );
+
+-- 0113: Org-level equivalent of 0112's profiles.is_disabled
+--
+-- Enterprise has no "free" fallback tier (it's Custom/sales-priced, no
+-- self-serve downgrade path — confirmed against the pricing page copy),
+-- so a lapsed enterprise payment can't be handled the same way the
+-- individual LemonSqueezy webhook handles it (downgrade to free). The
+-- only sensible failure mode for a company account is blocking the whole
+-- workspace, not one person — disabling a single admin's profile
+-- (migration 0112) wouldn't lock out the rest of the company.
+--
+-- Goes through the existing "Platform admins can update organizations"
+-- policy (migration 0079, no column restrictions) — same pattern as
+-- seat_limit and monthly_ai_budget_usd already use, no new SECURITY
+-- DEFINER function needed.
+--
+-- Deliberately manual-only for now, not wired to any billing webhook —
+-- enterprise deals are sold via "Talk to sales" (custom/invoiced), not a
+-- self-serve subscription with lifecycle events to react to.
+
+alter table public.organizations
+  add column if not exists is_disabled boolean not null default false;

@@ -4857,9 +4857,14 @@
     "colSeatLimit": "Seat limit",
     "colAiSpendThisMonth": "AI spend this month",
     "colMonthlyAiBudget": "Monthly AI budget",
+    "colAccess": "Access",
     "overLabel": "over",
     "hideButton": "Hide",
-    "byEmployeeButton": "By employee"
+    "byEmployeeButton": "By employee",
+    "accessEnabledLabel": "Enabled",
+    "accessDisabledLabel": "Disabled",
+    "accessUpdating": "Updating…",
+    "accessDisableConfirm": "Block every member of {name} from logging in? They can be re-enabled anytime."
   },
   "adminPilotTable": {
     "unlimitedPlaceholder": "Unlimited",

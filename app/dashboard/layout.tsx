@@ -25,9 +25,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [{ data: membership }, { data: profile }, { count: directReportCount }] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("role, manager_user_id, organizations(brand_color)")
+      .select("role, manager_user_id, organizations(brand_color, is_disabled)")
       .eq("user_id", user.id)
-      .maybeSingle<{ role: string; manager_user_id: string | null; organizations: { brand_color: string | null } | null }>(),
+      .maybeSingle<{ role: string; manager_user_id: string | null; organizations: { brand_color: string | null; is_disabled: boolean | null } | null }>(),
     supabase
       .from("profiles")
       .select("is_admin, theme, subscription_tier, premium_trial_expires_at, is_disabled")
@@ -38,11 +38,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // migrated yet on this database.
     supabase.from("organization_members").select("*", { count: "exact", head: true }).eq("manager_user_id", user.id),
   ]);
-  // A disabled account keeps its login (this app has no service-role key
-  // to revoke it) but is blocked from every dashboard route right here —
-  // the one place every dashboard page already does a per-request profile
-  // lookup, so this can't be bypassed by landing on a different page.
-  if (profile?.is_disabled) {
+  // A disabled account (0112) or a disabled company workspace (0113) both
+  // keep their login (this app has no service-role key to revoke it) but
+  // are blocked from every dashboard route right here — the one place
+  // every dashboard page already does a per-request profile/membership
+  // lookup, so this can't be bypassed by landing on a different page. Org
+  // disable exists separately because enterprise has no "free" fallback
+  // tier — blocking one admin's profile wouldn't lock out the rest of a
+  // company that stopped paying.
+  if (profile?.is_disabled || membership?.organizations?.is_disabled) {
     await supabase.auth.signOut();
     redirect("/login?disabled=1");
   }

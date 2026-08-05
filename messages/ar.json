@@ -4857,9 +4857,14 @@
     "colSeatLimit": "حد المقاعد",
     "colAiSpendThisMonth": "إنفاق الذكاء الاصطناعي هذا الشهر",
     "colMonthlyAiBudget": "الميزانية الشهرية للذكاء الاصطناعي",
+    "colAccess": "الوصول",
     "overLabel": "تجاوز",
     "hideButton": "إخفاء",
-    "byEmployeeButton": "حسب الموظف"
+    "byEmployeeButton": "حسب الموظف",
+    "accessEnabledLabel": "مفعّل",
+    "accessDisabledLabel": "معطّل",
+    "accessUpdating": "جارٍ التحديث…",
+    "accessDisableConfirm": "حظر جميع أعضاء {name} من تسجيل الدخول؟ يمكن إعادة تفعيلهم في أي وقت."
   },
   "adminPilotTable": {
     "unlimitedPlaceholder": "غير محدود",

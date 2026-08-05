@@ -13,6 +13,7 @@ export type AdminOrganizationRow = {
   seatLimit: number | null;
   monthlyAiBudgetUsd: number | null;
   spendThisMonthUsd: number;
+  isDisabled: boolean;
 };
 
 // Platform-admin-only: how many seats each company has, and how many
@@ -37,9 +38,9 @@ export async function buildAdminOrganizations(): Promise<{ isAdmin: boolean; row
 
   const { data: orgs } = await supabase
     .from("organizations")
-    .select("id, name, seat_limit")
+    .select("id, name, seat_limit, is_disabled")
     .order("name", { ascending: true })
-    .returns<{ id: string; name: string; seat_limit: number | null }[]>();
+    .returns<{ id: string; name: string; seat_limit: number | null; is_disabled: boolean | null }[]>();
   if (!orgs || orgs.length === 0) return { isAdmin: true, rows: [] };
 
   const { data: members } = await supabase
@@ -84,6 +85,7 @@ export async function buildAdminOrganizations(): Promise<{ isAdmin: boolean; row
     seatLimit: o.seat_limit,
     monthlyAiBudgetUsd: budgetByOrg.get(o.id) ?? null,
     spendThisMonthUsd: spendByOrg.get(o.id) ?? 0,
+    isDisabled: o.is_disabled ?? false,
   }));
 
   return { isAdmin: true, rows };
@@ -115,6 +117,37 @@ export async function updateOrgSeatLimit(organizationId: string, seatLimit: numb
   if (error) {
     console.error("updateOrgSeatLimit failed:", error);
     return { error: "Could not update — the database may need migration 0079 run first." };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true };
+}
+
+// Blocks/restores every member of a company workspace at once — enterprise
+// has no "free" fallback tier the way individual accounts do (Enterprise is
+// Custom/sales-priced, no self-serve downgrade path), so a lapsed payment
+// can't be handled by downgrading like the LemonSqueezy webhook does for
+// individuals. Manual only for now: enterprise deals are sold via "Talk to
+// sales" (invoiced, not a self-serve subscription), so there's no billing
+// webhook to react to automatically yet.
+export async function setOrganizationDisabled(organizationId: string, disabled: boolean): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: ownProfile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single<{ is_admin: boolean }>();
+  if (!ownProfile?.is_admin) return { error: "Not authorized" };
+
+  const { error } = await supabase.from("organizations").update({ is_disabled: disabled }).eq("id", organizationId);
+  if (error) {
+    console.error("setOrganizationDisabled failed:", error);
+    return { error: "Could not update — the database may need migration 0113 run first." };
   }
 
   revalidatePath("/dashboard/admin");

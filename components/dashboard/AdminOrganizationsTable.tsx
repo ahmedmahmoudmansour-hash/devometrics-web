@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { updateOrgSeatLimit, updateOrgAiBudget, getOrgMemberAiSpend } from "@/lib/admin/organizations";
+import { updateOrgSeatLimit, updateOrgAiBudget, getOrgMemberAiSpend, setOrganizationDisabled } from "@/lib/admin/organizations";
 import type { AdminOrganizationRow, OrgMemberSpendRow } from "@/lib/admin/organizations";
 
 const cellStyle: React.CSSProperties = {
@@ -181,6 +181,55 @@ function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
   );
 }
 
+// Blocks/restores every member of the workspace at once — separate from
+// AdminPilotTable's per-user AccessCell, which only ever affects one
+// person. Same instant-reversibility posture (plain confirm(), not
+// type-to-confirm): flip it back any time.
+function OrgAccessCell({ org }: { org: AdminOrganizationRow }) {
+  const t = useTranslations("adminOrganizationsTable");
+  const router = useRouter();
+  const [isDisabled, setIsDisabled] = useState(org.isDisabled);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function toggle() {
+    const next = !isDisabled;
+    if (next && !window.confirm(t("accessDisableConfirm", { name: org.name }))) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await setOrganizationDisabled(org.id, next);
+      if ("error" in result) setError(result.error);
+      else {
+        setIsDisabled(next);
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={toggle}
+        style={{
+          background: isDisabled ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.05)",
+          border: "1px solid " + (isDisabled ? "rgba(248,113,113,0.4)" : "var(--border)"),
+          borderRadius: 6,
+          padding: "5px 10px",
+          fontSize: 11,
+          fontWeight: 700,
+          color: isDisabled ? "#f87171" : "var(--text)",
+          cursor: "pointer",
+        }}
+      >
+        {isPending ? t("accessUpdating") : isDisabled ? t("accessDisabledLabel") : t("accessEnabledLabel")}
+      </button>
+      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+    </div>
+  );
+}
+
 export default function AdminOrganizationsTable({ initial }: { initial: AdminOrganizationRow[] }) {
   const t = useTranslations("adminOrganizationsTable");
   const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
@@ -210,6 +259,7 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colSeatLimit")}</th>
               <th style={{ ...headStyle, textAlign: "right" }}>{t("colAiSpendThisMonth")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colMonthlyAiBudget")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colAccess")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}></th>
             </tr>
           </thead>
@@ -232,6 +282,9 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                     <AiBudgetCell org={org} />
                   </td>
                   <td style={cellStyle}>
+                    <OrgAccessCell org={org} />
+                  </td>
+                  <td style={cellStyle}>
                     <button
                       type="button"
                       onClick={() => setExpandedOrgId(isExpanded ? null : org.id)}
@@ -252,7 +305,7 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                 </tr>
                 {isExpanded && (
                   <tr>
-                    <td colSpan={6} style={{ padding: 0, borderBottom: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
+                    <td colSpan={7} style={{ padding: 0, borderBottom: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
                       <EmployeeSpendPanel organizationId={org.id} />
                     </td>
                   </tr>
