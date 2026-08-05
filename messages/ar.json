@@ -1360,7 +1360,12 @@
     "scorecard": "بطاقة الأداء",
     "surveys": "الاستبيانات",
     "exitInterviews": "مقابلات الخروج",
-    "analytics": "التحليلات"
+    "analytics": "التحليلات",
+    "groupOverview": "نظرة عامة",
+    "groupStructure": "الهيكل",
+    "groupTalent": "المواهب",
+    "groupHiringGrowth": "التوظيف والتطوير",
+    "groupPerformanceFeedback": "الأداء والتغذية الراجعة"
   },
   "companyOnboardingPage": {
     "backToProgress": "← العودة إلى التقدم",

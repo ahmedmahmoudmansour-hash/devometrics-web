@@ -1360,7 +1360,12 @@
     "scorecard": "Scorecard",
     "surveys": "Surveys",
     "exitInterviews": "Exit Interviews",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "groupOverview": "Overview",
+    "groupStructure": "Structure",
+    "groupTalent": "Talent",
+    "groupHiringGrowth": "Hiring & Growth",
+    "groupPerformanceFeedback": "Performance & Feedback"
   },
   "companyOnboardingPage": {
     "backToProgress": "← Back to progress",

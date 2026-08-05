@@ -3,44 +3,88 @@ import { getTranslations } from "next-intl/server";
 
 type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews" | "onboarding";
 
+// Grouped into 5 clusters of 3 instead of one flat row — at 15 items the
+// flat version wrapped to 2 lines of equal-weight links with no way to
+// scan them (verified against a live screenshot). Mirrors the grouping
+// pattern SidebarNav.tsx already uses (uppercase section label above a
+// cluster of items) rather than inventing a new convention. Grouping is by
+// what an admin is actually trying to do, not by when each feature shipped:
+// Overview (who's here, the big picture), Structure (how the org is
+// shaped), Talent (who's ready for what), Hiring & Growth (bringing people
+// in and up to speed), Performance & Feedback (ongoing review/listening
+// loops). Every item is still exactly one click away — this is a visual
+// reorganization, not a drill-down menu.
+const GROUPS: { labelKey: string; tabs: TabKey[] }[] = [
+  { labelKey: "groupOverview", tabs: ["profile", "employees", "analytics"] },
+  { labelKey: "groupStructure", tabs: ["orgChart", "jobArchitecture", "competencies"] },
+  { labelKey: "groupTalent", tabs: ["highPotential", "succession", "scorecard"] },
+  { labelKey: "groupHiringGrowth", tabs: ["hiring", "onboarding", "knowledgeHub"] },
+  { labelKey: "groupPerformanceFeedback", tabs: ["performanceReviews", "surveys", "exitInterviews"] },
+];
+
 export default async function CompanyNavTabs({ active }: { active: TabKey }) {
   const t = await getTranslations("companyNavTabs");
-  const tabs: { key: TabKey; label: string; href: string }[] = [
-    { key: "profile", label: t("profile"), href: "/dashboard/company" },
-    { key: "employees", label: t("employees"), href: "/dashboard/company/employees" },
-    { key: "jobArchitecture", label: t("jobArchitecture"), href: "/dashboard/company/job-architecture" },
-    { key: "hiring", label: t("hiring"), href: "/dashboard/company/hiring" },
-    { key: "onboarding", label: t("onboarding"), href: "/dashboard/company/onboarding" },
-    { key: "orgChart", label: t("orgChart"), href: "/dashboard/company/org-chart" },
-    { key: "competencies", label: t("competencies"), href: "/dashboard/company/competencies" },
-    { key: "performanceReviews", label: t("performanceReviews"), href: "/dashboard/company/impact-cycles" },
-    { key: "knowledgeHub", label: t("knowledgeHub"), href: "/dashboard/company/knowledge-hub" },
-    { key: "highPotential", label: t("highPotential"), href: "/dashboard/company/high-potential" },
-    { key: "succession", label: t("succession"), href: "/dashboard/company/succession" },
-    { key: "scorecard", label: t("scorecard"), href: "/dashboard/company/scorecard" },
-    { key: "surveys", label: t("surveys"), href: "/dashboard/company/surveys" },
-    { key: "exitInterviews", label: t("exitInterviews"), href: "/dashboard/company/exit-interviews" },
-    { key: "analytics", label: t("analytics"), href: "/dashboard/company/analytics" },
-  ];
+  const hrefByTab: Record<TabKey, string> = {
+    profile: "/dashboard/company",
+    employees: "/dashboard/company/employees",
+    jobArchitecture: "/dashboard/company/job-architecture",
+    hiring: "/dashboard/company/hiring",
+    onboarding: "/dashboard/company/onboarding",
+    orgChart: "/dashboard/company/org-chart",
+    competencies: "/dashboard/company/competencies",
+    performanceReviews: "/dashboard/company/impact-cycles",
+    knowledgeHub: "/dashboard/company/knowledge-hub",
+    highPotential: "/dashboard/company/high-potential",
+    succession: "/dashboard/company/succession",
+    scorecard: "/dashboard/company/scorecard",
+    surveys: "/dashboard/company/surveys",
+    exitInterviews: "/dashboard/company/exit-interviews",
+    analytics: "/dashboard/company/analytics",
+  };
 
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: "1px solid var(--border)", flexWrap: "wrap" }}>
-      {tabs.map((tab) => (
-        <Link
-          key={tab.key}
-          href={tab.href}
-          style={{
-            padding: "10px 4px",
-            marginBottom: -1,
-            fontSize: 14,
-            fontWeight: 700,
-            textDecoration: "none",
-            color: active === tab.key ? "var(--teal)" : "var(--text-muted)",
-            borderBottom: active === tab.key ? "2px solid var(--teal)" : "2px solid transparent",
-          }}
-        >
-          {tab.label}
-        </Link>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "16px 28px",
+        marginBottom: 24,
+        paddingBottom: 14,
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
+      {GROUPS.map((group) => (
+        <div key={group.labelKey} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <p
+            style={{
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+              margin: 0,
+            }}
+          >
+            {t(group.labelKey)}
+          </p>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {group.tabs.map((key) => (
+              <Link
+                key={key}
+                href={hrefByTab[key]}
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  color: active === key ? "var(--teal)" : "var(--text)",
+                }}
+              >
+                {t(key)}
+              </Link>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
