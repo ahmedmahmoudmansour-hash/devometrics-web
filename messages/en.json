@@ -4807,6 +4807,24 @@
     "exportToExcel": "Export to Excel",
     "scopeNotice": "Scoped to this pilot cohort only — not a multi-tenant company workspace. Everyone here shares one admin view; per-company data isolation is a separate, larger build for after the pilot."
   },
+  "platformAnnouncementForm": {
+    "openButton": "Send a platform-wide announcement",
+    "title": "Platform announcement email",
+    "description": "Sends one email to every registered user across the whole platform. Always send yourself a test first, and type SEND ALL to confirm before it goes to everyone.",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "ctaUrlLabel": "Button link",
+    "ctaLabelLabel": "Button text",
+    "sendTestButton": "Send test to myself",
+    "sending": "Sending…",
+    "testSentConfirmation": "Test sent — check your inbox.",
+    "loadingCount": "Loading recipient count…",
+    "recipientCount": "{count, plural, one {This will send to # registered user.} other {This will send to # registered users.}}",
+    "confirmInstructions": "Type SEND ALL below to confirm — this sends immediately once you click the button, to every user shown above.",
+    "confirmAria": "Type SEND ALL to confirm",
+    "sendAllButton": "{count, plural, one {Send to # user} other {Send to # users}}",
+    "sendResult": "{sent, plural, one {Sent to # user} other {Sent to # users}}{failed, plural, =0 {.} other { — {failed} failed.}}"
+  },
   "adminInquiriesPage": {
     "backToAdmin": "← Back to admin",
     "title": "Contact inquiries",

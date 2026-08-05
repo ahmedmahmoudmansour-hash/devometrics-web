@@ -6,6 +6,7 @@ import { buildAdminOrganizations } from "@/lib/admin/organizations";
 import AdminOrganizationsTable from "@/components/dashboard/AdminOrganizationsTable";
 import AdminPilotTable from "@/components/dashboard/AdminPilotTable";
 import CreateCompanyWorkspaceForm from "@/components/dashboard/CreateCompanyWorkspaceForm";
+import PlatformAnnouncementForm from "@/components/dashboard/PlatformAnnouncementForm";
 
 export default async function AdminPage() {
   const t = await getTranslations("adminPage");
@@ -72,6 +73,8 @@ export default async function AdminPage() {
         </p>
 
         <CreateCompanyWorkspaceForm />
+
+        <PlatformAnnouncementForm />
 
         <AdminOrganizationsTable initial={orgRows} />
 

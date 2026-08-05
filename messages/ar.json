@@ -4807,6 +4807,24 @@
     "exportToExcel": "تصدير إلى إكسل",
     "scopeNotice": "يقتصر هذا على مجموعة هذه التجربة التجريبية فقط — وليس مساحة عمل متعددة الشركات. يشترك الجميع هنا في عرض مشرف واحد؛ عزل بيانات كل شركة على حدة هو بناء أكبر منفصل لما بعد التجربة."
   },
+  "platformAnnouncementForm": {
+    "openButton": "إرسال إعلان لكل المنصة",
+    "title": "بريد إعلان المنصة",
+    "description": "يرسل بريدًا واحدًا إلى كل مستخدم مسجَّل في المنصة بأكملها. أرسل دائمًا نسخة تجريبية لنفسك أولًا، واكتب SEND ALL للتأكيد قبل إرساله للجميع.",
+    "subjectLabel": "الموضوع",
+    "messageLabel": "الرسالة",
+    "ctaUrlLabel": "رابط الزر",
+    "ctaLabelLabel": "نص الزر",
+    "sendTestButton": "إرسال نسخة تجريبية لنفسي",
+    "sending": "جارٍ الإرسال…",
+    "testSentConfirmation": "تم إرسال النسخة التجريبية — تحقق من بريدك الوارد.",
+    "loadingCount": "جارٍ تحميل عدد المستلمين…",
+    "recipientCount": "{count, plural, one {سيُرسل هذا إلى # مستخدم مسجَّل.} other {سيُرسل هذا إلى # مستخدمين مسجَّلين.}}",
+    "confirmInstructions": "اكتب SEND ALL أدناه للتأكيد — سيُرسل هذا فورًا بمجرد الضغط على الزر، إلى كل مستخدم موضح أعلاه.",
+    "confirmAria": "اكتب SEND ALL للتأكيد",
+    "sendAllButton": "{count, plural, one {إرسال إلى # مستخدم} other {إرسال إلى # مستخدمين}}",
+    "sendResult": "{sent, plural, one {أُرسل إلى # مستخدم} other {أُرسل إلى # مستخدمين}}{failed, plural, =0 {.} other { — فشل {failed}.}}"
+  },
   "adminInquiriesPage": {
     "backToAdmin": "← العودة إلى الإدارة",
     "title": "استفسارات التواصل",
