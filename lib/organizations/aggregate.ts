@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type {
@@ -95,7 +96,7 @@ export type CompanyData = {
 
 const LEADERSHIP_DIMENSIONS: CompetencyDimension[] = ["Leadership", "Strategic Thinking", "People Management"];
 
-export async function buildCompanyData(): Promise<CompanyData> {
+async function buildCompanyDataUncached(): Promise<CompanyData> {
   const empty: CompanyData = {
     isOrgAdmin: false,
     organizationId: null,
@@ -137,28 +138,41 @@ export async function buildCompanyData(): Promise<CompanyData> {
 
   if (!membership || membership.role !== "admin") return empty;
 
-  // Fetched separately, deliberately isolated from the query above — these
-  // columns were added in a later migration, and a missing column here must
-  // never break the core admin-access check that the rest of this dashboard
-  // depends on. If the migration hasn't run yet, this just silently yields
-  // nulls instead of taking down the whole page.
-  const { data: contactFields } = await supabase
-    .from("organizations")
-    .select(
-      "platform_contact_name, platform_contact_email, finance_contact_name, finance_contact_email, logo_url, brand_color, pending_deletion_at"
-    )
-    .eq("id", membership.organization_id)
-    .maybeSingle<{
-      platform_contact_name: string | null;
-      platform_contact_email: string | null;
-      finance_contact_name: string | null;
-      finance_contact_email: string | null;
-      logo_url: string | null;
-      brand_color: string | null;
-      pending_deletion_at: string | null;
-    }>();
-
-  const [{ data: members }, { data: invites }, { data: competencies }] = await Promise.all([
+  // Every query below only depends on membership.organization_id, so they
+  // run as one Promise.all batch instead of the sequential round-trips this
+  // used to be. Each stays a SEPARATE narrow select (rather than one wide
+  // organization_members.select("*")) deliberately: several of these
+  // columns were added in later migrations, and a missing column on one
+  // must never break another — a Supabase query error surfaces as `data:
+  // null` on that destructured result, not a thrown rejection, so grouping
+  // them into Promise.all preserves that same per-query isolation while
+  // paying for one round trip instead of five.
+  const [
+    { data: contactFields },
+    { data: members },
+    { data: invites },
+    { data: competencies },
+    { data: memberLocations },
+    { data: inviteLocations },
+    { data: memberHrFields },
+    { data: memberPerformance },
+    { data: memberManagers },
+  ] = await Promise.all([
+    supabase
+      .from("organizations")
+      .select(
+        "platform_contact_name, platform_contact_email, finance_contact_name, finance_contact_email, logo_url, brand_color, pending_deletion_at"
+      )
+      .eq("id", membership.organization_id)
+      .maybeSingle<{
+        platform_contact_name: string | null;
+        platform_contact_email: string | null;
+        finance_contact_name: string | null;
+        finance_contact_email: string | null;
+        logo_url: string | null;
+        brand_color: string | null;
+        pending_deletion_at: string | null;
+      }>(),
     supabase
       .from("organization_members")
       .select("id, user_id, title, role, created_at")
@@ -180,12 +194,9 @@ export async function buildCompanyData(): Promise<CompanyData> {
       .eq("organization_id", membership.organization_id)
       .order("created_at", { ascending: true })
       .returns<OrganizationCompetency[]>(),
-  ]);
-
-  // department/country (migration 0048) fetched separately, same reasoning
-  // as contactFields above — a missing column here must never take down the
-  // members/invites lists the rest of this dashboard depends on.
-  const [{ data: memberLocations }, { data: inviteLocations }] = await Promise.all([
+    // department/country (migration 0048) — a missing column here must
+    // never take down the members/invites lists the rest of this dashboard
+    // depends on.
     supabase
       .from("organization_members")
       .select("user_id, department, country")
@@ -197,39 +208,36 @@ export async function buildCompanyData(): Promise<CompanyData> {
       .eq("organization_id", membership.organization_id)
       .is("accepted_at", null)
       .returns<{ id: string; department: string | null; country: string | null }[]>(),
+    // manager/business unit/location/archived (migration 0049) — before
+    // that migration runs, this yields nothing and every member simply
+    // shows as active with blank HR fields.
+    supabase
+      .from("organization_members")
+      .select("id, user_id, manager_name, manager_email, business_unit, location, employee_id, archived")
+      .eq("organization_id", membership.organization_id)
+      .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; employee_id: string | null; archived: boolean }[]>(),
+    // Performance rating (migration 0068) — same isolated-query pattern: a
+    // missing column before that migration runs just yields nothing, and
+    // every member shows as unrated rather than breaking the roster.
+    supabase
+      .from("organization_members")
+      .select("user_id, performance_rating, performance_rating_note, performance_rating_updated_at")
+      .eq("organization_id", membership.organization_id)
+      .returns<{ user_id: string; performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }[]>(),
+    // Reporting lines (migration 0072) — same isolated-query pattern: a
+    // missing column before that migration runs just yields nothing, and
+    // every member shows as unplaced in the reporting line rather than
+    // breaking the roster.
+    supabase
+      .from("organization_members")
+      .select("user_id, manager_user_id")
+      .eq("organization_id", membership.organization_id)
+      .returns<{ user_id: string; manager_user_id: string | null }[]>(),
   ]);
   const locationByMemberUser = new Map((memberLocations ?? []).map((m) => [m.user_id, m]));
   const locationByInviteId = new Map((inviteLocations ?? []).map((i) => [i.id, i]));
-
-  // manager/business unit/location/archived (migration 0049) — same
-  // isolated-query pattern again: before that migration runs, this yields
-  // nothing and every member simply shows as active with blank HR fields.
-  const { data: memberHrFields } = await supabase
-    .from("organization_members")
-    .select("id, user_id, manager_name, manager_email, business_unit, location, employee_id, archived")
-    .eq("organization_id", membership.organization_id)
-    .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; employee_id: string | null; archived: boolean }[]>();
   const hrByMemberUser = new Map((memberHrFields ?? []).map((m) => [m.user_id, m]));
-
-  // Performance rating (migration 0068) — same isolated-query pattern: a
-  // missing column before that migration runs just yields nothing, and
-  // every member shows as unrated rather than breaking the roster.
-  const { data: memberPerformance } = await supabase
-    .from("organization_members")
-    .select("user_id, performance_rating, performance_rating_note, performance_rating_updated_at")
-    .eq("organization_id", membership.organization_id)
-    .returns<{ user_id: string; performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }[]>();
   const performanceByMemberUser = new Map((memberPerformance ?? []).map((m) => [m.user_id, m]));
-
-  // Reporting lines (migration 0072) — same isolated-query pattern: a
-  // missing column before that migration runs just yields nothing, and
-  // every member shows as unplaced in the reporting line rather than
-  // breaking the roster.
-  const { data: memberManagers } = await supabase
-    .from("organization_members")
-    .select("user_id, manager_user_id")
-    .eq("organization_id", membership.organization_id)
-    .returns<{ user_id: string; manager_user_id: string | null }[]>();
   const managerByMemberUser = new Map((memberManagers ?? []).map((m) => [m.user_id, m.manager_user_id]));
 
   const pendingInvites = (invites ?? []).map((invite) => ({
@@ -390,6 +398,19 @@ export async function buildCompanyData(): Promise<CompanyData> {
     organizationCompetencies,
   };
 }
+
+// buildCompanyData() is the load-bearing "am I an org admin, what's my
+// org" fetch used across 40+ call sites — pages, aggregate modules
+// (hiring, retention, succession), and server actions. Several of those
+// call sites independently call it on the same request (e.g. the
+// analytics page also pulls in buildHiringOverview and
+// listHighFlightRiskEmployees, each of which calls this internally) —
+// wrapping it in React's cache() dedupes those into a single execution
+// per request instead of repeating the full ~9-round-trip roster fetch
+// 2-3x on one page load. Safe because the function is a pure read with no
+// arguments and no side effects; cache() only memoizes for the lifetime
+// of one request/render, never across requests.
+export const buildCompanyData = cache(buildCompanyDataUncached);
 
 export type EmployeeDetail = {
   isAuthorized: boolean;

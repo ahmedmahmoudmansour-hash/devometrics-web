@@ -31,22 +31,10 @@ function linearTrendPerDay(points: { days: number; score: number }[]): number {
   return numerator / denominator;
 }
 
-// Projects when (if ever, at the current trend) a candidate's measured
-// Career Health Score reaches READY_THRESHOLD. Grounded entirely in their
-// own recorded snapshot history — never a guess dressed up as a number.
-// Requires the caller to already be verified as an org admin of this
-// employee (RLS on career_health_snapshots enforces the same, as a second
-// layer — see migration 0061).
-export async function forecastReadiness(userId: string): Promise<ReadinessForecast> {
-  const supabase = await createClient();
-  const { data: snapshots } = await supabase
-    .from("career_health_snapshots")
-    .select("score, recorded_at")
-    .eq("user_id", userId)
-    .order("recorded_at", { ascending: true })
-    .returns<{ score: number; recorded_at: string }[]>();
-
-  if (!snapshots || snapshots.length < MIN_SNAPSHOTS) return { status: "insufficient_data" };
+// Pure — the actual trend/readiness math, factored out so both the
+// single-candidate and batched entry points below share one implementation.
+function forecastFromSnapshots(snapshots: { score: number; recorded_at: string }[]): ReadinessForecast {
+  if (snapshots.length < MIN_SNAPSHOTS) return { status: "insufficient_data" };
 
   const first = new Date(snapshots[0].recorded_at).getTime();
   const last = new Date(snapshots[snapshots.length - 1].recorded_at).getTime();
@@ -68,4 +56,51 @@ export async function forecastReadiness(userId: string): Promise<ReadinessForeca
 
   const monthsToReady = Math.ceil((READY_THRESHOLD - currentScore) / (perDay * 30));
   return { status: "forecast", trendPerMonth, monthsToReady, readyNow: false };
+}
+
+// Projects when (if ever, at the current trend) a candidate's measured
+// Career Health Score reaches READY_THRESHOLD. Grounded entirely in their
+// own recorded snapshot history — never a guess dressed up as a number.
+// Requires the caller to already be verified as an org admin of this
+// employee (RLS on career_health_snapshots enforces the same, as a second
+// layer — see migration 0061).
+export async function forecastReadiness(userId: string): Promise<ReadinessForecast> {
+  const supabase = await createClient();
+  const { data: snapshots } = await supabase
+    .from("career_health_snapshots")
+    .select("score, recorded_at")
+    .eq("user_id", userId)
+    .order("recorded_at", { ascending: true })
+    .returns<{ score: number; recorded_at: string }[]>();
+
+  return forecastFromSnapshots(snapshots ?? []);
+}
+
+// Batched sibling of forecastReadiness — one query for every candidate
+// instead of one round trip each (the succession board can easily have
+// 10-20 candidates across all roles). Same RLS boundary applies: a caller
+// only ever gets back snapshots for users their admin scope actually
+// covers, same as the single-candidate version.
+export async function forecastReadinessBatch(userIds: string[]): Promise<Record<string, ReadinessForecast>> {
+  if (userIds.length === 0) return {};
+  const supabase = await createClient();
+  const { data: snapshots } = await supabase
+    .from("career_health_snapshots")
+    .select("user_id, score, recorded_at")
+    .in("user_id", userIds)
+    .order("recorded_at", { ascending: true })
+    .returns<{ user_id: string; score: number; recorded_at: string }[]>();
+
+  const byUser = new Map<string, { score: number; recorded_at: string }[]>();
+  for (const s of snapshots ?? []) {
+    const list = byUser.get(s.user_id) ?? [];
+    list.push({ score: s.score, recorded_at: s.recorded_at });
+    byUser.set(s.user_id, list);
+  }
+
+  const result: Record<string, ReadinessForecast> = {};
+  for (const userId of userIds) {
+    result[userId] = forecastFromSnapshots(byUser.get(userId) ?? []);
+  }
+  return result;
 }

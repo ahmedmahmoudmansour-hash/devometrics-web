@@ -44,8 +44,7 @@ export default async function EmployeeDetailPage({
   const tExercise = await getTranslations("caseStudyExercises");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
-  const data = await buildEmployeeDetail(userId);
-  const flightRisk = await getLatestFlightRiskScore(userId);
+  const [data, flightRisk] = await Promise.all([buildEmployeeDetail(userId), getLatestFlightRiskScore(userId)]);
   if (!data.isAuthorized || !data.profile) redirect("/dashboard/company");
 
   const {

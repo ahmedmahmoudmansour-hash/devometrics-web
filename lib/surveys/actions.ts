@@ -104,24 +104,34 @@ export async function listOrgSurveys(): Promise<OrgSurveySummary[]> {
     .order("created_at", { ascending: false })
     .returns<{ id: string; title: string; theme: string; created_at: string }[]>();
   if (!surveys) return [];
+  const surveyIds = surveys.map((s) => s.id);
 
-  const summaries = await Promise.all(
-    surveys.map(async (s) => {
-      const [{ count: assignedCount }, { data: responseCount }] = await Promise.all([
-        supabase.from("survey_assignments").select("id", { count: "exact", head: true }).eq("survey_id", s.id),
-        supabase.rpc("get_survey_response_count", { p_survey_id: s.id }),
-      ]);
-      return {
-        id: s.id,
-        title: s.title,
-        theme: s.theme,
-        createdAt: s.created_at,
-        assignedCount: assignedCount ?? 0,
-        responseCount: (responseCount as number | null) ?? 0,
-      };
-    })
-  );
-  return summaries;
+  // assignedCount batched into one query (grouped in JS) instead of one
+  // round trip per survey. responseCount still goes through the
+  // get_survey_response_count RPC per survey — that function's own
+  // is_org_admin gate is what actually enforces "only admins see real
+  // counts" (migration 0041), so replicating that check here in app code
+  // to batch it would duplicate a security decision outside its RLS
+  // boundary rather than just optimize a read.
+  const [{ data: assignmentRows }, responseCounts] = await Promise.all([
+    surveyIds.length
+      ? supabase.from("survey_assignments").select("survey_id").in("survey_id", surveyIds).returns<{ survey_id: string }[]>()
+      : Promise.resolve({ data: [] as { survey_id: string }[] }),
+    Promise.all(surveys.map((s) => supabase.rpc("get_survey_response_count", { p_survey_id: s.id }))),
+  ]);
+  const assignedCountBySurvey = new Map<string, number>();
+  for (const row of assignmentRows ?? []) {
+    assignedCountBySurvey.set(row.survey_id, (assignedCountBySurvey.get(row.survey_id) ?? 0) + 1);
+  }
+
+  return surveys.map((s, i) => ({
+    id: s.id,
+    title: s.title,
+    theme: s.theme,
+    createdAt: s.created_at,
+    assignedCount: assignedCountBySurvey.get(s.id) ?? 0,
+    responseCount: (responseCounts[i].data as number | null) ?? 0,
+  }));
 }
 
 export type SurveyResults =

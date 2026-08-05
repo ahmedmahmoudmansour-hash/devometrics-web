@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import SuccessionBoard from "@/components/dashboard/SuccessionBoard";
-import { forecastReadiness, type ReadinessForecast } from "@/lib/succession/forecast";
+import { forecastReadinessBatch } from "@/lib/succession/forecast";
 import type { SuccessionRole, SuccessionNomination } from "@/lib/supabase/types";
 
 export const metadata = { title: "Succession — Devometrics" };
@@ -49,10 +49,7 @@ export default async function SuccessionPage() {
   for (const r of roles ?? []) {
     for (const c of r.report?.candidates ?? []) candidateIds.add(c.userId);
   }
-  const forecastEntries = await Promise.all(
-    [...candidateIds].map(async (id) => [id, await forecastReadiness(id)] as const)
-  );
-  const forecastsByUserId = Object.fromEntries(forecastEntries) as Record<string, ReadinessForecast>;
+  const forecastsByUserId = await forecastReadinessBatch([...candidateIds]);
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>

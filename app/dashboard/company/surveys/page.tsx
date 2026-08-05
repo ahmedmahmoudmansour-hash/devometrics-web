@@ -9,10 +9,9 @@ import SurveyResultsCard from "@/components/dashboard/SurveyResultsCard";
 
 export default async function CompanySurveysPage() {
   const t = await getTranslations("companySurveysPage");
-  const data = await buildCompanyData();
+  const [data, surveys] = await Promise.all([buildCompanyData(), listOrgSurveys()]);
   if (!data.isOrgAdmin) redirect("/dashboard");
 
-  const surveys = await listOrgSurveys();
   const employees = data.rows.map((r) => ({ userId: r.userId, name: r.name }));
 
   return (
