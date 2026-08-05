@@ -99,7 +99,13 @@ grant execute on function public.platform_admin_cancel_data_deletion(uuid) to au
 alter table public.profiles
   add column if not exists is_disabled boolean not null default false;
 
--- Signature is changing (5 params instead of 4), so this needs a drop
+-- The self-update policy itself must be dropped before the function it
+-- depends on can be — Postgres refuses to drop a function a live policy
+-- still references, `if exists` or not. Recreated below once the new
+-- 6-param function exists.
+drop policy if exists "Users can update their own profile" on public.profiles;
+
+-- Signature is changing (6 params instead of 5), so this needs a drop
 -- first — `create or replace` can't change a function's parameter list.
 drop function if exists public.profile_admin_fields_unchanged(uuid, boolean, text, timestamptz, numeric);
 
@@ -130,7 +136,6 @@ as $$
     );
 $$;
 
-drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id)
