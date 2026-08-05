@@ -38,6 +38,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assessmentSlug, setAssessmentSlug] = useState(assignable[0]?.slug ?? "");
+  const [assessmentDueDate, setAssessmentDueDate] = useState("");
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [milestoneTargetDate, setMilestoneTargetDate] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -63,14 +64,14 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
     if (selected.size === 0 || !assessmentSlug) return;
     setError(null);
     setConfirmation(null);
-    const count = selected.size;
     startTransition(async () => {
-      const result = await bulkAssignAssessment([...selected], assessmentSlug);
+      const result = await bulkAssignAssessment([...selected], assessmentSlug, assessmentDueDate || null);
       if ("error" in result) {
         setError(result.error);
       } else {
-        setConfirmation(t("bulkAssignConfirmation", { count }));
+        setConfirmation(t("bulkAssignConfirmation", { count: result.assigned }));
         setSelected(new Set());
+        setAssessmentDueDate("");
       }
     });
   }
@@ -147,6 +148,21 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
                 </option>
               ))}
             </select>
+            <input
+              type="date"
+              value={assessmentDueDate}
+              onChange={(e) => setAssessmentDueDate(e.target.value)}
+              disabled={isPending}
+              title={t("bulkAssignAssessmentDueDateLabel")}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "7px 10px",
+                fontSize: 12.5,
+                color: "var(--text)",
+              }}
+            />
             <button
               type="button"
               disabled={isPending}

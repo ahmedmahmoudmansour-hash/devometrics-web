@@ -29,6 +29,7 @@ export default function AssignAssessmentForm({
   const assignedSlugs = new Set(assigned.map((a) => a.slug));
   const available = assignable.filter((a) => !assignedSlugs.has(a.slug));
   const [slug, setSlug] = useState(available[0]?.slug ?? "");
+  const [dueDate, setDueDate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -37,8 +38,9 @@ export default function AssignAssessmentForm({
     if (!slug) return;
     setError(null);
     startTransition(async () => {
-      const result = await assignAssessment(employeeUserId, slug);
+      const result = await assignAssessment(employeeUserId, slug, dueDate || null);
       if (result?.error) setError(result.error);
+      else setDueDate("");
     });
   }
 
@@ -84,6 +86,13 @@ export default function AssignAssessmentForm({
               </option>
             ))}
           </select>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            title={t("dueDateLabel")}
+            style={{ ...inputStyle, flex: "0 1 160px", cursor: "pointer" }}
+          />
           <button
             type="submit"
             disabled={isPending}

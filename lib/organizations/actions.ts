@@ -14,6 +14,7 @@ import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessment
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
 import { runHireToOnboarding } from "@/lib/automations/recipes";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -690,7 +691,62 @@ export async function bulkAssignMilestone(
   return { success: true, assigned };
 }
 
-export async function assignAssessment(employeeUserId: string, assessmentSlug: string) {
+// Same posture as sendMilestoneAssignmentEmail right above — best-effort,
+// never blocks the underlying assignment, looks up the EMPLOYEE's own org
+// membership (not the assigner's) so the email's branding/override always
+// matches who's receiving it.
+async function sendAssessmentAssignmentEmail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  employeeUserId: string,
+  assessmentSlug: string,
+  dueDate: string | null
+): Promise<void> {
+  const { data: member } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", employeeUserId)
+    .maybeSingle<{ organization_id: string }>();
+  if (!member?.organization_id) return;
+
+  const [{ data: org }, { data: profile }] = await Promise.all([
+    supabase.from("organizations").select("name").eq("id", member.organization_id).maybeSingle<{ name: string }>(),
+    supabase.from("profiles").select("email, full_name").eq("id", employeeUserId).maybeSingle<{ email: string | null; full_name: string | null }>(),
+  ]);
+  if (!org?.name || !profile?.email) return;
+
+  const assessmentTitle = resolveAssignableName(assessmentSlug);
+
+  try {
+    const override = await getEmailMessageOverride(member.organization_id, "assessment_assignment");
+    await sendEmail(
+      profile.email,
+      override.subject || `${org.name} assigned you a new assessment on Devometrics`,
+      renderEmail({
+        preheader: `${assessmentTitle}${dueDate ? ` — due ${dueDate}` : ""}`,
+        footerNote: "You're getting this because your organization assigned you an assessment on Devometrics.",
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New assessment assigned</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
+            <strong>${escapeHtml(org.name)}</strong> assigned you <strong>${escapeHtml(assessmentTitle)}</strong> on Devometrics.
+          </p>
+          ${
+            dueDate
+              ? `<p style="font-size:13px;color:#8892a4;margin:0 0 24px;">Due by ${escapeHtml(dueDate)}</p>`
+              : `<p style="margin:0 0 24px;"></p>`
+          }
+          <p style="margin:0;">
+            <a href="https://devometrics.com/dashboard/assessments" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open your assessments →</a>
+          </p>
+        `,
+      })
+    );
+  } catch (err) {
+    console.error(`Assessment assignment email failed for ${profile.email}:`, err);
+  }
+}
+
+export async function assignAssessment(employeeUserId: string, assessmentSlug: string, dueDate?: string | null) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -701,6 +757,7 @@ export async function assignAssessment(employeeUserId: string, assessmentSlug: s
     employee_user_id: employeeUserId,
     assessment_slug: assessmentSlug,
     assigned_by: user.id,
+    due_date: dueDate || null,
   });
   if (error) {
     // Unique constraint violation (already assigned) shouldn't read as a
@@ -709,23 +766,27 @@ export async function assignAssessment(employeeUserId: string, assessmentSlug: s
     return { error: "Could not assign — the database may need migration 0058 run first." };
   }
 
+  await sendAssessmentAssignmentEmail(supabase, employeeUserId, assessmentSlug, dueDate ?? null);
+
   revalidatePath(`/dashboard/company/${employeeUserId}`);
   return { success: true };
 }
 
 // Bulk variant of assignAssessment — one assessment pushed to several
 // specific employees at once, from the Employees table's multi-select
-// toolbar. Upsert with ignoreDuplicates (same pattern as
-// assignKnowledgeHubContent) so re-running over a mix of already-assigned
-// and new employees succeeds for the new ones instead of the whole insert
-// aborting on the first unique-constraint hit (assigned_assessments'
-// unique(employee_user_id, assessment_slug), migration 0058). RLS
-// (is_org_admin_of_user) still gates each row individually — a stray id
-// for someone outside the admin's org simply fails to insert, not the
-// whole batch.
+// toolbar. Diffs out who already has this assessment BEFORE upserting
+// (same pattern as assignKnowledgeHubContent, lib/knowledgeHub/actions.ts)
+// so the assignment-notice email only ever reaches genuinely newly-assigned
+// people — one separate email per recipient, never a combined digest, and
+// never a repeat notice to someone re-selected who was already assigned.
+// Upsert still covers everyone with ignoreDuplicates (same pattern as
+// before) so RLS (is_org_admin_of_user) gates each row individually — a
+// stray id for someone outside the admin's org simply fails to insert, not
+// the whole batch.
 export async function bulkAssignAssessment(
   employeeUserIds: string[],
-  assessmentSlug: string
+  assessmentSlug: string,
+  dueDate?: string | null
 ): Promise<{ success: true; assigned: number } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -734,19 +795,37 @@ export async function bulkAssignAssessment(
   if (!user) return { error: "Not authenticated" };
   if (employeeUserIds.length === 0) return { error: "Select at least one employee" };
 
+  const { data: existing } = await supabase
+    .from("assigned_assessments")
+    .select("employee_user_id")
+    .eq("assessment_slug", assessmentSlug)
+    .in("employee_user_id", employeeUserIds)
+    .returns<{ employee_user_id: string }[]>();
+  const alreadyAssigned = new Set((existing ?? []).map((r) => r.employee_user_id));
+  const newlyAssignedIds = employeeUserIds.filter((id) => !alreadyAssigned.has(id));
+
   const { error } = await supabase.from("assigned_assessments").upsert(
     employeeUserIds.map((employeeUserId) => ({
       employee_user_id: employeeUserId,
       assessment_slug: assessmentSlug,
       assigned_by: user.id,
+      due_date: dueDate || null,
     })),
     { onConflict: "employee_user_id,assessment_slug", ignoreDuplicates: true }
   );
   if (error) return { error: "Could not assign — the database may need migration 0058 run first." };
 
+  if (newlyAssignedIds.length > 0) {
+    await Promise.allSettled(
+      newlyAssignedIds.map((employeeUserId) =>
+        sendAssessmentAssignmentEmail(supabase, employeeUserId, assessmentSlug, dueDate ?? null)
+      )
+    );
+  }
+
   for (const employeeUserId of employeeUserIds) revalidatePath(`/dashboard/company/${employeeUserId}`);
   revalidatePath("/dashboard/company/employees");
-  return { success: true, assigned: employeeUserIds.length };
+  return { success: true, assigned: newlyAssignedIds.length };
 }
 
 export async function removeAssignedAssessment(employeeUserId: string, assessmentSlug: string) {

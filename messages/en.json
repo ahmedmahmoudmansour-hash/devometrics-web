@@ -1559,6 +1559,7 @@
     "type_onboarding_manager_approval_reminder": "Onboarding approval reminder",
     "type_milestone_assignment": "Goal assignment notice",
     "type_interview_stage_notice": "Interview stage notice",
+    "type_assessment_assignment": "Assessment assignment notice",
     "hint_task_reminder": "Sent when someone has an overdue or due-today task in Tasks & Calendar.",
     "hint_certification_reminder": "Sent when a tracked certification has expired or is expiring within 30 days.",
     "hint_knowledge_hub_reminder": "Sent when assigned training is due within 7 days and hasn't been completed.",
@@ -1572,6 +1573,7 @@
     "hint_onboarding_manager_approval_reminder": "Sent to a manager when one of their reports has an onboarding step waiting on their approval.",
     "hint_milestone_assignment": "Sent immediately when an admin or manager assigns someone a new goal or milestone.",
     "hint_interview_stage_notice": "Sent to a candidate when their application moves to the interview stage.",
+    "hint_assessment_assignment": "Sent immediately when an admin assigns someone a new assessment.",
     "subjectLabel": "Subject (optional)",
     "subjectPlaceholder": "Leave blank to use the default subject",
     "messageLabel": "Message (optional)",
@@ -1624,6 +1626,7 @@
     "bulkAssignClearSelection": "Clear",
     "bulkAssignConfirmation": "{count, plural, one {Assigned to # employee.} other {Assigned to # employees.}}",
     "bulkAssignAssessmentLabel": "Assessment",
+    "bulkAssignAssessmentDueDateLabel": "Due date (optional)",
     "bulkAssignMilestoneLabel": "Goal",
     "bulkAssignMilestoneTitlePlaceholder": "Goal title",
     "bulkAssignMilestoneConfirmation": "{count, plural, one {Assigned to # employee.} other {Assigned to # employees.}}",
@@ -1738,7 +1741,8 @@
     "pending": "Pending",
     "remove": "Remove",
     "assign": "Assign",
-    "allAssigned": "All assessments are already assigned."
+    "allAssigned": "All assessments are already assigned.",
+    "dueDateLabel": "Due date (optional)"
   },
   "employeeReportExportBar": {
     "downloadPdf": "Download as PDF"

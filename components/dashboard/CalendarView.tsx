@@ -348,8 +348,8 @@ export default function CalendarView({
                   {DAY_LABELS[i]} {day.slice(8, 10)}
                 </p>
                 {dayDeadlines.map((d) => (
-                  <p key={d.milestoneId} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 700, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    🏁 {d.title}
+                  <p key={d.id} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 700, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {d.type === "assessment" ? "📝" : "🏁"} {d.title}
                   </p>
                 ))}
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -411,7 +411,7 @@ export default function CalendarView({
                   onClick={() => handleDayClick(day)}
                   role="button"
                   tabIndex={0}
-                  title={[...dayDeadlines.map((d) => `🏁 ${d.title}`), ...dayTasks.map((t) => t.title)].join("\n") || undefined}
+                  title={[...dayDeadlines.map((d) => `${d.type === "assessment" ? "📝" : "🏁"} ${d.title}`), ...dayTasks.map((t) => t.title)].join("\n") || undefined}
                   style={{
                     border:
                       quickAddDay === day
@@ -427,7 +427,12 @@ export default function CalendarView({
                   }}
                 >
                   <p style={{ fontSize: 10.5, color: isToday ? "var(--teal)" : "var(--text-muted)", fontWeight: 700 }}>{day.slice(8, 10)}</p>
-                  {dayDeadlines.length > 0 && <p style={{ fontSize: 12, lineHeight: 1 }}>🏁</p>}
+                  {dayDeadlines.length > 0 && (
+                    <p style={{ fontSize: 12, lineHeight: 1 }}>
+                      {dayDeadlines.some((d) => d.type === "milestone") ? "🏁" : ""}
+                      {dayDeadlines.some((d) => d.type === "assessment") ? "📝" : ""}
+                    </p>
+                  )}
                   {dayTasks.length > 0 && (
                     <p style={{ fontSize: 10, color: "var(--text-muted)" }}>
                       {doneCount}/{dayTasks.length}
@@ -470,8 +475,8 @@ export default function CalendarView({
                 <p style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{t("noDeadlines")}</p>
               ) : (
                 m.deadlines.map((d) => (
-                  <p key={d.milestoneId} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    🏁 {d.title}
+                  <p key={d.id} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {d.type === "assessment" ? "📝" : "🏁"} {d.title}
                   </p>
                 ))
               )}

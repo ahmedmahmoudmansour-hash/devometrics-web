@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { breakdownIntoSteps } from "./breakdown";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { PersonalTask, PersonalSubtask, TaskRecurring, TaskPriority } from "./types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -120,7 +121,11 @@ export async function listOverdueTasks(): Promise<PersonalTask[]> {
   return data ?? [];
 }
 
-export type WeekDeadline = { milestoneId: string; title: string; date: string };
+// id/type generalized (was { milestoneId, title, date }) to let this same
+// shape carry assessment due dates alongside milestone target dates —
+// milestoneId was only ever used as a React key in CalendarView.tsx, never
+// in click/navigation logic, so widening it to a generic id is safe.
+export type WeekDeadline = { id: string; title: string; date: string; type: "milestone" | "assessment" };
 
 // Generic date-range fetch backing all three calendar granularities (week,
 // month, year) — the client component slices/groups this same data rather
@@ -162,11 +167,29 @@ export async function listCalendarRange(
         .returns<{ id: string; title: string; target_date: string }[]>()
     : { data: [] as { id: string; title: string; target_date: string }[] };
 
-  const deadlines: WeekDeadline[] = (milestones ?? []).map((m) => ({
-    milestoneId: m.id,
-    title: m.title,
-    date: m.target_date,
-  }));
+  const { data: assessmentDeadlines } = await supabase
+    .from("assigned_assessments")
+    .select("id, assessment_slug, due_date")
+    .eq("employee_user_id", user.id)
+    .not("due_date", "is", null)
+    .gte("due_date", startStr)
+    .lte("due_date", endStr)
+    .returns<{ id: string; assessment_slug: string; due_date: string }[]>();
+
+  const deadlines: WeekDeadline[] = [
+    ...(milestones ?? []).map((m) => ({
+      id: m.id,
+      title: m.title,
+      date: m.target_date,
+      type: "milestone" as const,
+    })),
+    ...(assessmentDeadlines ?? []).map((a) => ({
+      id: a.id,
+      title: resolveAssignableName(a.assessment_slug),
+      date: a.due_date,
+      type: "assessment" as const,
+    })),
+  ];
 
   return { tasks: tasks ?? [], deadlines };
 }

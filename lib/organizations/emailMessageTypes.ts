@@ -23,6 +23,7 @@ export const EMAIL_MESSAGE_TYPES = [
   "onboarding_manager_approval_reminder",
   "milestone_assignment",
   "interview_stage_notice",
+  "assessment_assignment",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

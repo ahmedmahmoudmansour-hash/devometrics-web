@@ -1559,6 +1559,7 @@
     "type_onboarding_manager_approval_reminder": "تذكير بموافقة التهيئة",
     "type_milestone_assignment": "إشعار تعيين هدف",
     "type_interview_stage_notice": "إشعار مرحلة المقابلة",
+    "type_assessment_assignment": "إشعار تعيين تقييم",
     "hint_task_reminder": "تُرسل عندما تكون هناك مهمة متأخرة أو مستحقة اليوم في المهام والتقويم.",
     "hint_certification_reminder": "تُرسل عندما تنتهي صلاحية شهادة متتبَّعة أو تقترب من الانتهاء خلال 30 يومًا.",
     "hint_knowledge_hub_reminder": "تُرسل عندما يكون تدريب مُعيَّن مستحقًا خلال 7 أيام ولم يُكمل بعد.",
@@ -1572,6 +1573,7 @@
     "hint_onboarding_manager_approval_reminder": "تُرسل إلى المدير عندما تكون إحدى خطوات تهيئة أحد تابعيه بانتظار موافقته.",
     "hint_milestone_assignment": "تُرسل فور تعيين مسؤول أو مدير هدفًا أو معلمًا جديدًا لموظف.",
     "hint_interview_stage_notice": "تُرسل إلى المرشح عندما ينتقل طلبه إلى مرحلة المقابلة.",
+    "hint_assessment_assignment": "تُرسل فور تعيين مسؤول تقييمًا جديدًا لموظف.",
     "subjectLabel": "الموضوع (اختياري)",
     "subjectPlaceholder": "اتركه فارغًا لاستخدام الموضوع الافتراضي",
     "messageLabel": "الرسالة (اختياري)",
@@ -1624,6 +1626,7 @@
     "bulkAssignClearSelection": "مسح",
     "bulkAssignConfirmation": "{count, plural, one {تم التعيين لـ # موظف.} other {تم التعيين لـ # موظفين.}}",
     "bulkAssignAssessmentLabel": "التقييم",
+    "bulkAssignAssessmentDueDateLabel": "تاريخ الاستحقاق (اختياري)",
     "bulkAssignMilestoneLabel": "الهدف",
     "bulkAssignMilestoneTitlePlaceholder": "عنوان الهدف",
     "bulkAssignMilestoneConfirmation": "{count, plural, one {تم التعيين لـ # موظف.} other {تم التعيين لـ # موظفين.}}",
@@ -1738,7 +1741,8 @@
     "pending": "قيد الانتظار",
     "remove": "إزالة",
     "assign": "تكليف",
-    "allAssigned": "جميع التقييمات مكلَّفة بالفعل."
+    "allAssigned": "جميع التقييمات مكلَّفة بالفعل.",
+    "dueDateLabel": "تاريخ الاستحقاق (اختياري)"
   },
   "employeeReportExportBar": {
     "downloadPdf": "تنزيل كملف PDF"
