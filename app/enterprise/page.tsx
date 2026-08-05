@@ -7,6 +7,8 @@ import PlatformChatWidget from "@/components/PlatformChatWidget";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
 import Reveal from "@/components/Reveal";
+import DecisionsSection from "@/components/DecisionsSection";
+import Methodology from "@/components/Methodology";
 import { levelBg, levelText } from "@/lib/ui/levelColor";
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import {
@@ -197,14 +199,30 @@ export default async function EnterprisePage() {
                 color: "var(--text-muted)",
                 lineHeight: 1.7,
                 maxWidth: 600,
-                margin: "0 auto 40px",
+                margin: "0 auto 20px",
               }}
             >
               {t("heroSubtext")}
             </p>
+            <p
+              style={{
+                fontSize: 13.5,
+                color: "var(--text-muted)",
+                lineHeight: 1.6,
+                maxWidth: 560,
+                margin: "0 auto 40px",
+                opacity: 0.8,
+              }}
+            >
+              {t("heroArchitectureNote")}
+            </p>
+            {/* Self-serve and sales-assisted paths side by side — the page's
+                own "How it works" section says signup takes under a minute
+                with no sales call required, so "Talk to sales" can't be the
+                only CTA without contradicting that claim. */}
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <Link
-                href="/contact?type=sales"
+                href="/signup"
                 style={{
                   background: "var(--teal)",
                   color: "#0A0F1E",
@@ -216,10 +234,10 @@ export default async function EnterprisePage() {
                   letterSpacing: "0.01em",
                 }}
               >
-                {t("talkToSales")}
+                {t("ctaSetup")}
               </Link>
-              <a
-                href="#capabilities"
+              <Link
+                href="/contact?type=sales"
                 style={{
                   color: "var(--text)",
                   textDecoration: "none",
@@ -230,11 +248,23 @@ export default async function EnterprisePage() {
                   borderRadius: 10,
                 }}
               >
-                {t("ctaSeeIncluded")}
-              </a>
+                {t("talkToSales")}
+              </Link>
             </div>
+            <p style={{ marginTop: 16 }}>
+              <a href="#capabilities" style={{ color: "var(--teal)", textDecoration: "none", fontSize: 13.5, fontWeight: 600 }}>
+                {t("ctaSeeIncluded")} →
+              </a>
+            </p>
           </div>
         </section>
+
+        <Reveal>
+          <DecisionsSection namespace="enterpriseDecisions" />
+        </Reveal>
+        <Reveal>
+          <Methodology />
+        </Reveal>
 
         <Reveal>
         <section style={{ padding: "0 24px 100px", maxWidth: 1100, margin: "0 auto" }}>
@@ -302,9 +332,117 @@ export default async function EnterprisePage() {
             </div>
           </div>
 
+          {/* Turns the raw score table into the actual point of it: not
+              "here are some numbers" but "here's the decision this
+              surfaces" — the exact gap between a competency graph and a
+              decision engine. */}
+          <div
+            style={{
+              background: "rgba(0,201,167,0.06)",
+              border: "1px solid rgba(0,201,167,0.2)",
+              borderRadius: 16,
+              padding: "24px 28px",
+              marginBottom: 32,
+              display: "flex",
+              gap: 16,
+              alignItems: "flex-start",
+            }}
+          >
+            <span
+              className="mono"
+              style={{
+                flexShrink: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                color: "var(--teal)",
+                background: "rgba(0,201,167,0.12)",
+                border: "1px solid rgba(0,201,167,0.3)",
+                borderRadius: 100,
+                padding: "4px 12px",
+                textTransform: "uppercase",
+              }}
+            >
+              {t("sampleInsightLabel")}
+            </span>
+            <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7 }}>{t("sampleInsightText")}</p>
+          </div>
+
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, display: "flex", justifyContent: "center" }}>
             <CapabilityPyramid dimensionLevels={SAMPLE_AVERAGES} />
           </div>
+        </section>
+        </Reveal>
+
+        <Reveal>
+        <section style={{ padding: "0 24px 100px", maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
+              {t("successionLabel")}
+            </span>
+            <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
+              {t("successionHeadline")}
+            </h2>
+            <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 16, maxWidth: 640, margin: "16px auto 0", lineHeight: 1.7 }}>
+              {t("successionSubtext")}
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              { name: "Priya Kapoor", fit: 68, reasoning: t("successionRank1Reasoning"), gap: t("successionRank1Gap") },
+              { name: "Amara Osei", fit: 65, reasoning: t("successionRank2Reasoning"), gap: t("successionRank2Gap") },
+              { name: "Daniel Mensah", fit: 44, reasoning: t("successionRank3Reasoning"), gap: t("successionRank3Gap") },
+            ].map((c, i) => (
+              <div
+                key={c.name}
+                style={{
+                  background: "var(--navy-mid)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  padding: "22px 26px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 20,
+                }}
+              >
+                <div
+                  className="mono"
+                  style={{
+                    flexShrink: 0,
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    color: i === 0 ? "#0A0F1E" : "var(--text)",
+                    background: i === 0 ? "var(--teal)" : "rgba(255,255,255,0.06)",
+                    border: i === 0 ? "none" : "1px solid var(--border)",
+                  }}
+                >
+                  {i + 1}
+                </div>
+                <Avatar name={c.name} avatarUrl={null} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{c.name}</span>
+                    <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)" }}>
+                      {t("successionFitLabel", { percent: c.fit })}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 4 }}>{c.reasoning}</p>
+                  <p style={{ fontSize: 12.5, color: "var(--amber)", lineHeight: 1.6 }}>{c.gap}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginTop: 24, maxWidth: 600, marginInline: "auto", lineHeight: 1.7 }}>
+            {t("successionDisclaimer")}
+          </p>
         </section>
         </Reveal>
 
@@ -435,7 +573,7 @@ export default async function EnterprisePage() {
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link
-              href="/contact?type=sales"
+              href="/signup"
               style={{
                 background: "var(--teal)",
                 color: "#0A0F1E",
@@ -445,6 +583,20 @@ export default async function EnterprisePage() {
                 padding: "14px 28px",
                 borderRadius: 10,
                 letterSpacing: "0.01em",
+              }}
+            >
+              {t("ctaSetup")}
+            </Link>
+            <Link
+              href="/contact?type=sales"
+              style={{
+                color: "var(--text)",
+                textDecoration: "none",
+                fontSize: 15,
+                fontWeight: 600,
+                padding: "14px 20px",
+                border: "1px solid var(--border)",
+                borderRadius: 10,
               }}
             >
               {t("talkToSales")}

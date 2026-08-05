@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
+import DecisionsSection from "@/components/DecisionsSection";
 import HowItWorks from "@/components/HowItWorks";
 import Features from "@/components/Features";
 import SkillRadar from "@/components/SkillRadar";
@@ -25,16 +26,19 @@ export default async function Home() {
       <main>
         <Hero />
         <Reveal>
-          <HowItWorks />
+          <DecisionsSection namespace="individualDecisions" />
+        </Reveal>
+        <Reveal>
+          <Methodology />
         </Reveal>
         <Reveal>
           <SkillRadar />
         </Reveal>
         <Reveal>
-          <Features />
+          <HowItWorks />
         </Reveal>
         <Reveal>
-          <Methodology />
+          <Features />
         </Reveal>
         <Reveal>
           <Pricing initialRegion={region} />

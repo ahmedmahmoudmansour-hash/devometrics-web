@@ -168,10 +168,44 @@ export default function SkillRadar() {
             })}
           </div>
 
+          {/* The decision, not just the delta — this is the difference
+              between a chart and an answer. AI states a confidence level
+              alongside the recommendation rather than pretending certainty,
+              matching bullet3's "confidence score surfaced, not hidden" —
+              this makes that claim visible instead of just asserted. */}
+          <div
+            style={{
+              marginTop: 24,
+              background: "rgba(0,201,167,0.06)",
+              border: "1px solid rgba(0,201,167,0.2)",
+              borderRadius: 12,
+              padding: "16px 18px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+              <span
+                className="mono"
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  color: "var(--teal)",
+                  textTransform: "uppercase",
+                }}
+              >
+                {t("insightLabel")}
+              </span>
+              <span className="mono" style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>
+                {t("confidenceLabel", { percent: 91 })}
+              </span>
+            </div>
+            <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{t("insightText")}</p>
+          </div>
+
           {/* Career Health Score */}
           <div
             style={{
-              marginTop: 28,
+              marginTop: 20,
               paddingTop: 24,
               borderTop: "1px solid var(--border)",
               display: "flex",

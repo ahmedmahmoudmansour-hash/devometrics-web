@@ -15,12 +15,12 @@ export default function Features() {
     { title: t("f5Title"), description: t("f5Description", { count: ASSESSMENTS.length }) },
     { title: t("f6Title"), description: t("f6Description") },
     { title: t("f7Title"), description: t("f7Description") },
-    { title: t("f8Title"), description: t("f8Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
-    { title: t("f9Title"), description: t("f9Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
-    { title: t("f10Title"), description: t("f10Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
-    { title: t("f11Title"), description: t("f11Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f8Title"), description: t("f8Description") },
+    { title: t("f9Title"), description: t("f9Description") },
+    { title: t("f10Title"), description: t("f10Description") },
+    { title: t("f11Title"), description: t("f11Description") },
     { title: t("f12Title"), description: t("f12Description") },
-    { title: t("f13Title"), description: t("f13Description"), tag: t("tagNew"), tagColor: "var(--teal)" },
+    { title: t("f13Title"), description: t("f13Description") },
     { title: t("f14Title"), description: t("f14Description"), href: "/enterprise" },
   ];
 
