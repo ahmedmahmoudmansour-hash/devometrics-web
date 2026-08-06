@@ -122,7 +122,9 @@ export async function POST(request: Request) {
     supabase.from("coach_grow_memory").select("*").eq("user_id", user.id).maybeSingle<CoachGrowMemory>(),
   ]);
 
-  if (effectiveSubscriptionTier(profile ?? null) === "free" && !(await isRateLimitExempt(supabase, user.id))) {
+  const membership = await getMyOrganizationMembership();
+
+  if (effectiveSubscriptionTier(profile ?? null, !!membership) === "free" && !(await isRateLimitExempt(supabase, user.id))) {
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
@@ -142,7 +144,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const membership = await getMyOrganizationMembership();
   const organizationId = membership?.organization_id ?? null;
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) {

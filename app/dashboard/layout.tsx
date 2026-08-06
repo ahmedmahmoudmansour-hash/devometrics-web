@@ -64,7 +64,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             premium_trial_expires_at: profile.premium_trial_expires_at,
             is_admin: !!profile.is_admin,
           }
-        : null
+        : null,
+      hasOrgMembership
     ) === "free";
 
   return (

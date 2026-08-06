@@ -22,6 +22,7 @@ import { inferRoleContext } from "@/lib/gap-analysis/inferRoleContext";
 import { extractCompetencies } from "@/lib/gap-analysis/extract";
 import { careerHealthScore } from "@/lib/gap-analysis/dimensions";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import {
   MAX_TARGET_ROLE_LENGTH,
   MAX_CV_LENGTH,
@@ -113,7 +114,7 @@ export async function generatePlanFromAnalysis(analysisId: string, horizon: Hori
   // Server-side enforcement, not just a hidden UI option — a Free-plan
   // request for any other horizon silently gets capped to 30-day rather
   // than trusting the client to only ever ask for what it's allowed.
-  const subscriptionTier = effectiveSubscriptionTier(profile ?? null);
+  const subscriptionTier = effectiveSubscriptionTier(profile ?? null, await hasOrganizationMembership(supabase, user.id));
   const effectiveHorizon: Horizon = subscriptionTier === "free" ? "30-day" : horizon;
 
   const result = await topGapsForAnalysis(supabase, analysisId, user.id, effectiveHorizon);
@@ -200,7 +201,7 @@ export async function generatePlanFromSelections(
 
   // Same server-side cap as generatePlanFromAnalysis — a Free-plan request
   // for any other horizon is capped to 30-day regardless of what was asked.
-  const subscriptionTier = effectiveSubscriptionTier(profile ?? null);
+  const subscriptionTier = effectiveSubscriptionTier(profile ?? null, await hasOrganizationMembership(supabase, user.id));
   const effectiveHorizon: Horizon = subscriptionTier === "free" ? "30-day" : horizon;
 
   const { data: plan } = await supabase

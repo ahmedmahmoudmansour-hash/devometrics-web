@@ -6,6 +6,7 @@ import { getCustomScenario } from "@/lib/roleplay/customScenarios";
 import RoleplayChat from "@/components/dashboard/RoleplayChat";
 import PremiumGate from "@/components/dashboard/PremiumGate";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import type { Profile, RoleplaySession } from "@/lib/supabase/types";
 
 export default async function CustomScenarioPage({
@@ -25,7 +26,7 @@ export default async function CustomScenarioPage({
   const scenario = await getCustomScenario(id, user.id);
   if (!scenario) notFound();
 
-  const [{ data: latest }, { data: profile }] = await Promise.all([
+  const [{ data: latest }, { data: profile }, hasOrgMembership] = await Promise.all([
     supabase
       .from("roleplay_sessions")
       .select("*")
@@ -36,6 +37,7 @@ export default async function CustomScenarioPage({
       .limit(1)
       .maybeSingle<RoleplaySession>(),
     supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
+    hasOrganizationMembership(supabase, user.id),
   ]);
 
   return (
@@ -47,7 +49,7 @@ export default async function CustomScenarioPage({
           </Link>
         </div>
         <PremiumGate
-          tier={effectiveSubscriptionTier(profile ?? null)}
+          tier={effectiveSubscriptionTier(profile ?? null, hasOrgMembership)}
           feature={t("premiumFeature")}
           description={t("premiumDescription")}
         >

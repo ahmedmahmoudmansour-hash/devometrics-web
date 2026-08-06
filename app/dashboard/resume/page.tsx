@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import ResumeIntelligenceFlow from "@/components/dashboard/ResumeIntelligenceFlow";
 import PremiumGate from "@/components/dashboard/PremiumGate";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import type { Profile, ResumeAnalysis } from "@/lib/supabase/types";
 
 export default async function ResumePage() {
@@ -15,7 +16,7 @@ export default async function ResumePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: latest }, { data: profile }] = await Promise.all([
+  const [{ data: latest }, { data: profile }, hasOrgMembership] = await Promise.all([
     supabase
       .from("resume_analyses")
       .select("*")
@@ -24,6 +25,7 @@ export default async function ResumePage() {
       .limit(1)
       .maybeSingle<ResumeAnalysis>(),
     supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
+    hasOrganizationMembership(supabase, user.id),
   ]);
 
   return (
@@ -38,7 +40,7 @@ export default async function ResumePage() {
           </h1>
         </div>
         <PremiumGate
-          tier={effectiveSubscriptionTier(profile ?? null)}
+          tier={effectiveSubscriptionTier(profile ?? null, hasOrgMembership)}
           feature={t("premiumFeature")}
           description={t("premiumDescription")}
         >

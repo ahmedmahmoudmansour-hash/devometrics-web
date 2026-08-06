@@ -265,7 +265,7 @@ export default async function DashboardPage() {
               />
             ))}
             <NewPlanForm
-              subscriptionTier={effectiveSubscriptionTier(profile ?? null)}
+              subscriptionTier={effectiveSubscriptionTier(profile ?? null, !!membership)}
               existingPlanCount={(plans ?? []).length}
               personalization={{
                 location: profile?.location ?? "",
@@ -277,7 +277,7 @@ export default async function DashboardPage() {
             />
           </DashboardSection>
 
-          {effectiveSubscriptionTier(profile ?? null) === "free" && !profile?.upgrade_prompt_dismissed && (
+          {effectiveSubscriptionTier(profile ?? null, !!membership) === "free" && !profile?.upgrade_prompt_dismissed && (
             <DismissibleUpgradePrompt>
               <UpgradeToPremiumCard />
               <PremiumTrialForm />

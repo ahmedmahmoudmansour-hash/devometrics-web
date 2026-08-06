@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { FREE_ASSESSMENT_LIMIT } from "@/lib/limits";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import { runLowScoreToReassessment } from "@/lib/automations/recipes";
 import type { CaseStudyResponse, Profile } from "@/lib/supabase/types";
 
@@ -27,7 +28,7 @@ export async function saveAssessmentResult(
     .eq("id", user.id)
     .single<Profile>();
 
-  if (effectiveSubscriptionTier(profile ?? null) === "free") {
+  if (effectiveSubscriptionTier(profile ?? null, await hasOrganizationMembership(supabase, user.id)) === "free") {
     const { data: existing } = await supabase
       .from("assessment_results")
       .select("assessment_slug")

@@ -136,7 +136,7 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
       monthlyAiBudgetUsd: budgetByUser.get(p.id) ?? null,
       spendThisMonthUsd: spendByUser.get(p.id) ?? 0,
       subscriptionTier: p.subscription_tier,
-      effectiveTier: effectiveSubscriptionTier(p),
+      effectiveTier: effectiveSubscriptionTier(p, orgNameByUser.has(p.id)),
       pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
       isDisabled: p.is_disabled ?? false,
     };

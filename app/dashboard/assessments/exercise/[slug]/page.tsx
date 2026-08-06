@@ -6,6 +6,7 @@ import { getCaseStudyExercise, localizeCaseStudyExercise } from "@/lib/assessmen
 import ExerciseAttempt from "@/components/dashboard/ExerciseAttempt";
 import PremiumGate from "@/components/dashboard/PremiumGate";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import type { LevelSection } from "@/lib/assessments/catalog";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -35,7 +36,10 @@ export default async function ExercisePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single<Profile>();
+  const [{ data: profile }, hasOrgMembership] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
+    hasOrganizationMembership(supabase, user.id),
+  ]);
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -46,7 +50,7 @@ export default async function ExercisePage({
           </Link>
         </div>
         <PremiumGate
-          tier={effectiveSubscriptionTier(profile ?? null)}
+          tier={effectiveSubscriptionTier(profile ?? null, hasOrgMembership)}
           feature={t("premiumFeatureName")}
           description={t("premiumFeatureDescription")}
         >

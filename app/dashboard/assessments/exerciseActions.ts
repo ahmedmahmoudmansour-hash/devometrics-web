@@ -8,6 +8,7 @@ import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { CASE_STUDY_RATE_LIMIT_WINDOW_MINUTES, CASE_STUDY_RATE_LIMIT_MAX_RUNS } from "@/lib/limits";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -28,7 +29,7 @@ export async function startExerciseAttempt(slug: string) {
     .select("subscription_tier, premium_trial_expires_at, is_admin")
     .eq("id", user.id)
     .single<Profile>();
-  if (effectiveSubscriptionTier(profile ?? null) === "free") {
+  if (effectiveSubscriptionTier(profile ?? null, await hasOrganizationMembership(supabase, user.id)) === "free") {
     return { error: "Timed case-study exercises are a Premium feature — upgrade to attempt this one." };
   }
 

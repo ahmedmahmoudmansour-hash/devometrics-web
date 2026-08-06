@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import type { Profile } from "@/lib/supabase/types";
 
 const MAX_FIELD_LENGTH = 2000;
@@ -25,7 +26,7 @@ export async function createCustomScenario(fields: {
     .select("subscription_tier, premium_trial_expires_at, is_admin")
     .eq("id", user.id)
     .single<Profile>();
-  if (effectiveSubscriptionTier(profile ?? null) === "free") {
+  if (effectiveSubscriptionTier(profile ?? null, await hasOrganizationMembership(supabase, user.id)) === "free") {
     return { error: "Custom scenarios are a Premium feature — upgrade to create one." };
   }
 

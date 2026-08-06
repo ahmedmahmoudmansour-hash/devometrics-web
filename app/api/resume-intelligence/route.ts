@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     .select("subscription_tier, premium_trial_expires_at, is_admin")
     .eq("id", user.id)
     .single<Profile>();
-  if (effectiveSubscriptionTier(profile ?? null) === "free") {
+  const membership = await getMyOrganizationMembership();
+  if (effectiveSubscriptionTier(profile ?? null, !!membership) === "free") {
     return NextResponse.json(
       { error: "Resume Intelligence is a Premium feature — upgrade to run this analysis." },
       { status: 403 }
@@ -77,7 +78,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const membership = await getMyOrganizationMembership();
   const organizationId = membership?.organization_id ?? null;
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) {
