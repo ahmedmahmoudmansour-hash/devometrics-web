@@ -1044,7 +1044,8 @@
     "backToProgress": "← Back to progress",
     "title": "Resume Intelligence",
     "premiumFeature": "Resume Intelligence",
-    "premiumDescription": "ATS score, achievement score, keyword matches, and weak-bullet analysis against a real target role — upgrade to Premium to run it."
+    "premiumDescription": "ATS score, achievement score, keyword matches, and weak-bullet analysis against a real target role — upgrade to Premium to run it.",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "resumeIntelligenceFlow": {
     "formTitle": "Run a resume analysis",
@@ -1242,7 +1243,8 @@
   "coachPage": {
     "backToProgress": "← Back to progress",
     "title": "AI Career Coach",
-    "bookSessions": "📅 Book sessions"
+    "bookSessions": "📅 Book sessions",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "coachBookPage": {
     "backToCoaching": "← Back to coaching",
@@ -1406,7 +1408,8 @@
     "groupStructure": "Structure",
     "groupTalent": "Talent",
     "groupHiringGrowth": "Hiring & Growth",
-    "groupPerformanceFeedback": "Performance & Feedback"
+    "groupPerformanceFeedback": "Performance & Feedback",
+    "permissions": "Permissions"
   },
   "companyOnboardingPage": {
     "backToProgress": "← Back to progress",
@@ -1428,13 +1431,16 @@
     "chooseDocument": "Choose a Knowledge Hub document…",
     "dueOffsetLabel": "Due (days after joining):",
     "titleRequired": "Give this step a title",
-    "addStep": "Add step"
+    "addStep": "Add step",
+    "saveStep": "Save",
+    "cancelEdit": "Cancel"
   },
   "myOnboardingPage": {
     "backToProgress": "← Back to progress",
     "title": "Onboarding",
     "description": "Your getting-started checklist — set up by your organization, just for you.",
-    "noneYet": "Nothing assigned yet — check back after your first day, or ask your admin if you were expecting an onboarding checklist."
+    "noneYet": "Nothing assigned yet — check back after your first day, or ask your admin if you were expecting an onboarding checklist.",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "myOnboardingChecklist": {
     "title": "Your checklist",
@@ -1627,7 +1633,9 @@
     "messageScopeNote": "This replaces only the intro paragraph — the itemized list of what's due and the action button are always included automatically.",
     "save": "Save",
     "saved": "Saved",
-    "useDefault": "Clear and use default"
+    "useDefault": "Clear and use default",
+    "type_knowledge_hub_content_updated": "Training content updated notice",
+    "hint_knowledge_hub_content_updated": "Sent when an admin edits already-assigned Knowledge Hub content and chooses to notify learners."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",
@@ -1831,7 +1839,8 @@
     "backToProgress": "← Back to progress",
     "title": "Job Architecture",
     "description": "Define your functional families, the roles within them, and each role's grade and required competency profile — the structural spine that turns \"development needed\" into a real gap against a real role, and powers vertical and horizontal career paths. AI can propose a grade and competency profile from a role's responsibilities; you review and edit before saving.",
-    "migrationNotEnabled": "Job Architecture isn't enabled on this database yet — the <code>0067_job_architecture.sql</code> migration needs to be run in the Supabase SQL Editor first."
+    "migrationNotEnabled": "Job Architecture isn't enabled on this database yet — the <code>0067_job_architecture.sql</code> migration needs to be run in the Supabase SQL Editor first.",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "jobArchitectureManager": {
     "trackIc": "Individual contributor",
@@ -2006,7 +2015,8 @@
     "unassignedDept": "Unassigned"
   },
   "companyCompetenciesPage": {
-    "backToProgress": "← Back to progress"
+    "backToProgress": "← Back to progress",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "organizationCompetencyBuilder": {
     "notMappedToScoredDimension": "Not mapped to a scored dimension",
@@ -2060,7 +2070,8 @@
     "title": "Impact Cycle",
     "description": "Your Reflection, your manager's Perspective once they've shared it, and any Focus Areas set for this cycle.",
     "notEnabledYet": "Impact Cycles isn't enabled on this database yet — the <code>0076_performance_appraisals.sql</code> migration needs to be run in the Supabase SQL Editor first.",
-    "noneYet": "No Impact Cycle yet — this shows up once your organization's admin starts one for your team."
+    "noneYet": "No Impact Cycle yet — this shows up once your organization's admin starts one for your team.",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "companyImpactCyclesPage": {
     "backToProgress": "← Back to progress",
@@ -2650,7 +2661,8 @@
     "colAttempts": "Attempts",
     "actionsAriaLabel": "Actions",
     "completed": "Completed",
-    "notStarted": "Not started"
+    "notStarted": "Not started",
+    "noLongerAssigned": "Completed previously — no longer assigned"
   },
   "editKnowledgeHubContentForm": {
     "edit": "Edit",
@@ -2667,7 +2679,21 @@
     "archiveThisContentButton": "Archive this content",
     "saving": "Saving…",
     "save": "Save",
-    "archiveNote": "Archiving hides this from active lists but keeps everyone's completion history intact — it doesn't delete anything."
+    "archiveNote": "Archiving hides this from active lists but keeps everyone's completion history intact — it doesn't delete anything.",
+    "notifyLearnersLabel": "Notify enrolled learners about this update",
+    "restoreButton": "Restore from archive",
+    "restoring": "Restoring…",
+    "deleteThisContentQuestion": "Permanently delete? This can't be undone.",
+    "yesDelete": "Yes, delete permanently",
+    "deleting": "Deleting…",
+    "deleteThisContentButton": "Delete permanently",
+    "deleteNote": "Deleting is only possible if no one has completed this item yet — otherwise archive it instead to keep that history.",
+    "showHistory": "Show edit history",
+    "hideHistory": "Hide edit history",
+    "loadingHistory": "Loading…",
+    "noHistory": "No edits recorded yet.",
+    "versionMeta": "Previous version — edited {date} by {editor}",
+    "unknownEditor": "someone no longer on this workspace"
   },
   "assignKnowledgeHubContentModal": {
     "everyoneAssigned": "Everyone is already assigned",
@@ -2701,7 +2727,8 @@
     "completedScore": "Completed — {percent}%",
     "completed": "Completed",
     "overdue": "Overdue",
-    "notStarted": "Not started"
+    "notStarted": "Not started",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "knowledgeHubContentPage": {
     "backToKnowledgeHub": "← Back to Knowledge Hub"
@@ -2864,7 +2891,8 @@
     "backToProgress": "← Back to progress",
     "title": "Career Paths",
     "description": "Where you can realistically go from here — mapped from your actual profile, gap analysis, and stated ambitions. Each role shows how ready you are today, what it requires, and what would close the distance. A decision aid, not a verdict.",
-    "migrationNotice": "Career Paths isn't enabled on this database yet — the <code>0049_notes_career_paths_hr_fields.sql</code> migration needs to be run in the Supabase SQL Editor first."
+    "migrationNotice": "Career Paths isn't enabled on this database yet — the <code>0049_notes_career_paths_hr_fields.sql</code> migration needs to be run in the Supabase SQL Editor first.",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "careerPathsView": {
     "readinessToday": "Readiness today",
@@ -3066,7 +3094,8 @@
     "createYourOwnScenario": "Create your own scenario",
     "completedTryAgain": "Completed — try again →",
     "inProgress": "In progress →",
-    "notStarted": "Not started"
+    "notStarted": "Not started",
+    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "roleplayScenarioPage": {
     "allScenarios": "← All scenarios",
@@ -4805,7 +4834,10 @@
     "avgScoreSuffix": " · avg Career Health Score {score}",
     "contactInquiries": "Contact inquiries",
     "exportToExcel": "Export to Excel",
-    "scopeNotice": "Scoped to this pilot cohort only — not a multi-tenant company workspace. Everyone here shares one admin view; per-company data isolation is a separate, larger build for after the pilot."
+    "scopeNotice": "Scoped to this pilot cohort only — not a multi-tenant company workspace. Everyone here shares one admin view; per-company data isolation is a separate, larger build for after the pilot.",
+    "pendingInvitesTitle": "{count, plural, one {# pending invite} other {# pending invites}}",
+    "pendingInvitesDescription": "Invited but never logged in — these people have no account yet, so they don't appear in the participant table below.",
+    "revokeInvite": "Revoke"
   },
   "platformAnnouncementForm": {
     "openButton": "Send a platform-wide announcement",
@@ -4842,6 +4874,10 @@
   },
   "adminOrganizationsTable": {
     "unlimitedPlaceholder": "Unlimited",
+    "package_starter": "Starter",
+    "package_growth": "Growth",
+    "package_scale": "Scale",
+    "packageTooltip": "${perSeat}/seat × {seats} seats",
     "loadingEllipsis": "Loading…",
     "notAuthorized": "Not authorized",
     "couldNotLoadSpend": "Could not load employee spend",
@@ -4996,5 +5032,70 @@
     "generatedOn": "Generated {date}",
     "contributingFactorsLabel": "Contributing factors",
     "suggestedActionsLabel": "Suggested actions"
+  },
+  "companyPermissionsPage": {
+    "backToProgress": "← Back to progress",
+    "title": "Feature Permissions",
+    "description": "Restrict specific modules for individual employees or a whole department — everything is enabled by default, so a restriction here is always an explicit opt-out, never an allow-list.",
+    "addRestrictionTitle": "Add a restriction",
+    "featureLabel": "Feature",
+    "feature_ai_coaching": "AI Coaching",
+    "feature_roleplay": "Roleplay / Interview Practice",
+    "feature_resume_intelligence": "Resume Intelligence (ATS optimization)",
+    "feature_career_development": "Career Development",
+    "feature_knowledge_hub": "Knowledge Hub",
+    "feature_job_architecture": "Job Architecture",
+    "feature_competency_management": "Competency Management",
+    "scopeLabel": "Applies to",
+    "scopeUser": "One employee",
+    "scopeDepartment": "A whole department",
+    "employeeLabel": "Employee",
+    "departmentLabel": "Department",
+    "noDepartments": "No departments recorded yet — add employee department info first.",
+    "addButton": "Add restriction",
+    "adding": "Adding…",
+    "pickEmployeeError": "Choose an employee first",
+    "pickDepartmentError": "Choose a department first",
+    "currentRestrictionsTitle": "{count, plural, =0 {No active restrictions} one {# active restriction} other {# active restrictions}}",
+    "noRestrictions": "Every feature is available to everyone in your company right now.",
+    "unknownUser": "(unknown employee)",
+    "removeButton": "Remove",
+    "feature_onboarding": "Onboarding",
+    "feature_performance_review": "Performance Reviews"
+  },
+  "featureEmailComposer": {
+    "openButton": "Send an email",
+    "title": "Compose an email",
+    "close": "Close",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "recipientsLabel": "Recipients",
+    "recipientMode_all": "Everyone",
+    "recipientMode_department": "By department",
+    "recipientMode_individual": "Choose people",
+    "noDepartments": "No departments recorded yet — add employee department info first.",
+    "searchPlaceholder": "Search by name or email…",
+    "recipientCount": "{count, plural, =0 {No recipients selected} one {# recipient} other {# recipients}}",
+    "scheduleLabel": "When",
+    "sendNow": "Send now",
+    "scheduleForLater": "Schedule for later",
+    "showPreview": "Show preview",
+    "hidePreview": "Hide preview",
+    "previewSubjectLabel": "Subject",
+    "previewBodyLabel": "Message",
+    "previewEmptySubject": "(no subject yet)",
+    "previewEmptyBody": "(no message yet)",
+    "noRecipientsError": "Select at least one recipient",
+    "pickTimeError": "Choose a date and time first",
+    "sending": "Sending…",
+    "sendButton": "Send",
+    "scheduleButton": "Schedule",
+    "sentConfirmation": "Sent to {count, plural, one {# person} other {# people}}.",
+    "scheduledConfirmation": "Scheduled for {count, plural, one {# person} other {# people}}.",
+    "showHistory": "Show send history ({count})",
+    "hideHistory": "Hide send history",
+    "noHistory": "Nothing sent from here yet.",
+    "historySent": "Sent {date} — {count, plural, one {# recipient} other {# recipients}}{failed, plural, =0 {} other {, # failed}}",
+    "historyScheduled": "Scheduled for {date} — {count, plural, one {# recipient} other {# recipients}}"
   }
 }

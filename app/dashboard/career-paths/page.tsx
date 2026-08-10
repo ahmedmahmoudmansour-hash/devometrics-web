@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import CareerPathsView from "@/components/dashboard/CareerPathsView";
+import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import type { CareerPaths } from "@/lib/supabase/types";
 
 export const metadata = { title: "Career Paths — Devometrics" };
@@ -14,6 +17,9 @@ export default async function CareerPathsPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
 
   // error is non-null when migration 0049 hasn't been run (missing table) —
   // show a setup notice instead of a broken page.
@@ -38,7 +44,9 @@ export default async function CareerPathsPage() {
           </p>
         </div>
 
-        {error ? (
+        {restricted.has("career_development") ? (
+          <FeatureRestrictedNotice message={t("restrictedNotice")} />
+        ) : error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
               {t.rich("migrationNotice", { code: (chunks) => <code style={{ color: "var(--teal)" }}>{chunks}</code> })}

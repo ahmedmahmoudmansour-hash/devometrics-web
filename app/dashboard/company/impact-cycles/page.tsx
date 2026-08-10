@@ -10,6 +10,8 @@ import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import PerformanceReviewsManager from "@/components/dashboard/PerformanceReviewsManager";
 import EscalationLevelsSetting from "@/components/dashboard/EscalationLevelsSetting";
 import PerformanceReviewWorkflowEditor from "@/components/dashboard/PerformanceReviewWorkflowEditor";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "Impact Cycles — Devometrics" };
 
@@ -50,6 +52,15 @@ export default async function ImpactCyclesPage() {
         </div>
 
         <CompanyNavTabs active="performanceReviews" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="performance_review"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "performance_review")}
+          />
+        )}
 
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

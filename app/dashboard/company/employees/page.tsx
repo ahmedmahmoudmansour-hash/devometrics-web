@@ -8,6 +8,8 @@ import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
 import EmployeesTable from "@/components/dashboard/EmployeesTable";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
@@ -99,6 +101,15 @@ export default async function CompanyEmployeesPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {data.organizationId && (
+              <FeatureEmailComposer
+                organizationId={data.organizationId}
+                featureKey="assessment"
+                employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+                initialHistory={await listFeatureEmailHistory(data.organizationId, "assessment")}
+              />
+            )}
+
             {/* Workforce skill inventory */}
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>

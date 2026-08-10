@@ -1044,7 +1044,8 @@
     "backToProgress": "← العودة إلى التقدم",
     "title": "ذكاء السيرة الذاتية",
     "premiumFeature": "ذكاء السيرة الذاتية",
-    "premiumDescription": "درجة توافق ATS، ودرجة الإنجاز، وتطابق الكلمات المفتاحية، وتحليل النقاط الضعيفة مقابل دور مستهدف حقيقي — قم بالترقية إلى بريميوم لتشغيله."
+    "premiumDescription": "درجة توافق ATS، ودرجة الإنجاز، وتطابق الكلمات المفتاحية، وتحليل النقاط الضعيفة مقابل دور مستهدف حقيقي — قم بالترقية إلى بريميوم لتشغيله.",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "resumeIntelligenceFlow": {
     "formTitle": "أجرِ تحليل سيرة ذاتية",
@@ -1242,7 +1243,8 @@
   "coachPage": {
     "backToProgress": "← العودة إلى التقدم",
     "title": "المدرّب المهني بالذكاء الاصطناعي",
-    "bookSessions": "📅 احجز جلسات"
+    "bookSessions": "📅 احجز جلسات",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "coachBookPage": {
     "backToCoaching": "← العودة إلى التدريب",
@@ -1406,7 +1408,8 @@
     "groupStructure": "الهيكل",
     "groupTalent": "المواهب",
     "groupHiringGrowth": "التوظيف والتطوير",
-    "groupPerformanceFeedback": "الأداء والتغذية الراجعة"
+    "groupPerformanceFeedback": "الأداء والتغذية الراجعة",
+    "permissions": "الصلاحيات"
   },
   "companyOnboardingPage": {
     "backToProgress": "← العودة إلى التقدم",
@@ -1428,13 +1431,16 @@
     "chooseDocument": "اختر مستندًا من مركز المعرفة…",
     "dueOffsetLabel": "الاستحقاق (أيام بعد الانضمام):",
     "titleRequired": "أعطِ هذه الخطوة عنوانًا",
-    "addStep": "أضف الخطوة"
+    "addStep": "أضف الخطوة",
+    "saveStep": "حفظ",
+    "cancelEdit": "إلغاء"
   },
   "myOnboardingPage": {
     "backToProgress": "← العودة إلى التقدم",
     "title": "التأهيل",
     "description": "قائمة البدء الخاصة بك — أعدّتها مؤسستك، خصيصًا لك.",
-    "noneYet": "لم يُعيَّن لك شيء بعد — تحقق مرة أخرى بعد يومك الأول، أو اسأل المسؤول إن كنت تتوقع قائمة تأهيل."
+    "noneYet": "لم يُعيَّن لك شيء بعد — تحقق مرة أخرى بعد يومك الأول، أو اسأل المسؤول إن كنت تتوقع قائمة تأهيل.",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "myOnboardingChecklist": {
     "title": "قائمتك",
@@ -1627,7 +1633,9 @@
     "messageScopeNote": "هذا يستبدل فقرة المقدمة فقط — قائمة العناصر المستحقة وزر الإجراء يُدرجان تلقائيًا دائمًا.",
     "save": "حفظ",
     "saved": "تم الحفظ",
-    "useDefault": "مسح واستخدام الافتراضي"
+    "useDefault": "مسح واستخدام الافتراضي",
+    "type_knowledge_hub_content_updated": "إشعار تحديث محتوى التدريب",
+    "hint_knowledge_hub_content_updated": "يُرسل عندما يعدّل المسؤول محتوى مركز المعرفة المُسنَد بالفعل ويختار إشعار المتدربين."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "مُجدولة للحذف في {date}",
@@ -1831,7 +1839,8 @@
     "backToProgress": "← العودة إلى التقدم",
     "title": "الهيكل الوظيفي",
     "description": "حدد فئاتك الوظيفية، والأدوار ضمن كل فئة، ودرجة كل دور وملف الكفاءات المطلوبة له — العمود الفقري الهيكلي الذي يحوّل «التطوير المطلوب» إلى فجوة حقيقية مقابل دور حقيقي، ويُشغّل المسارات الوظيفية الرأسية والأفقية. يمكن للذكاء الاصطناعي اقتراح درجة وملف كفاءات من مسؤوليات الدور؛ وتقوم أنت بالمراجعة والتعديل قبل الحفظ.",
-    "migrationNotEnabled": "الهيكل الوظيفي غير مفعّل على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0067_job_architecture.sql</code> في محرر SQL الخاص بـ Supabase أولاً."
+    "migrationNotEnabled": "الهيكل الوظيفي غير مفعّل على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0067_job_architecture.sql</code> في محرر SQL الخاص بـ Supabase أولاً.",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "jobArchitectureManager": {
     "trackIc": "مساهم فردي",
@@ -2006,7 +2015,8 @@
     "unassignedDept": "غير محدد"
   },
   "companyCompetenciesPage": {
-    "backToProgress": "← العودة إلى التقدم"
+    "backToProgress": "← العودة إلى التقدم",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "organizationCompetencyBuilder": {
     "notMappedToScoredDimension": "غير مرتبطة ببُعد مُقيَّم",
@@ -2060,7 +2070,8 @@
     "title": "دورة الأداء",
     "description": "انطباعك الذاتي، ومنظور مديرك بمجرد أن يشاركه، وأي مجالات تركيز محددة لهذه الدورة.",
     "notEnabledYet": "دورات الأداء غير مفعّلة على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0076_performance_appraisals.sql</code> في محرر SQL الخاص بـ Supabase أولاً.",
-    "noneYet": "لا توجد دورة أداء بعد — تظهر هذه بمجرد أن يبدأ مسؤول مؤسستك واحدة لفريقك."
+    "noneYet": "لا توجد دورة أداء بعد — تظهر هذه بمجرد أن يبدأ مسؤول مؤسستك واحدة لفريقك.",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "companyImpactCyclesPage": {
     "backToProgress": "← العودة إلى التقدم",
@@ -2650,7 +2661,8 @@
     "colAttempts": "المحاولات",
     "actionsAriaLabel": "إجراءات",
     "completed": "مكتمل",
-    "notStarted": "لم يبدأ"
+    "notStarted": "لم يبدأ",
+    "noLongerAssigned": "أكمل سابقاً — لم يعد معيّناً"
   },
   "editKnowledgeHubContentForm": {
     "edit": "تعديل",
@@ -2667,7 +2679,21 @@
     "archiveThisContentButton": "أرشفة هذا المحتوى",
     "saving": "جارٍ الحفظ…",
     "save": "حفظ",
-    "archiveNote": "الأرشفة تخفي هذا من القوائم النشطة لكنها تحافظ على سجل إكمال الجميع سليمًا — لا تحذف أي شيء."
+    "archiveNote": "الأرشفة تخفي هذا من القوائم النشطة لكنها تحافظ على سجل إكمال الجميع سليمًا — لا تحذف أي شيء.",
+    "notifyLearnersLabel": "إشعار المتدربين المسجَّلين بهذا التحديث",
+    "restoreButton": "استعادة من الأرشيف",
+    "restoring": "جارٍ الاستعادة…",
+    "deleteThisContentQuestion": "حذف نهائي؟ لا يمكن التراجع عن هذا.",
+    "yesDelete": "نعم، احذف نهائيًا",
+    "deleting": "جارٍ الحذف…",
+    "deleteThisContentButton": "حذف نهائي",
+    "deleteNote": "الحذف ممكن فقط إذا لم يُكمله أحد بعد — وإلا فأرشفه بدلاً من ذلك للحفاظ على هذا السجل.",
+    "showHistory": "عرض سجل التعديلات",
+    "hideHistory": "إخفاء سجل التعديلات",
+    "loadingHistory": "جارٍ التحميل…",
+    "noHistory": "لا توجد تعديلات مسجَّلة بعد.",
+    "versionMeta": "نسخة سابقة — عُدّلت {date} بواسطة {editor}",
+    "unknownEditor": "شخص لم يعد ضمن مساحة العمل هذه"
   },
   "assignKnowledgeHubContentModal": {
     "everyoneAssigned": "تم التعيين للجميع بالفعل",
@@ -2701,7 +2727,8 @@
     "completedScore": "مكتمل — {percent}%",
     "completed": "مكتمل",
     "overdue": "متأخر",
-    "notStarted": "لم يبدأ"
+    "notStarted": "لم يبدأ",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "knowledgeHubContentPage": {
     "backToKnowledgeHub": "← العودة إلى مركز المعرفة"
@@ -2864,7 +2891,8 @@
     "backToProgress": "← العودة إلى التقدم",
     "title": "المسارات المهنية",
     "description": "إلى أين يمكنك الذهاب واقعيًا من هنا — مرسومة من ملفك الشخصي الفعلي، وتحليل الفجوة، وطموحاتك المعلنة. يوضح كل دور مدى استعدادك له اليوم، وما يتطلبه، وما الذي قد يقلّص المسافة. أداة مساعدة على القرار، لا حكمًا نهائيًا.",
-    "migrationNotice": "المسارات المهنية غير مفعّلة على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0049_notes_career_paths_hr_fields.sql</code> في محرر SQL الخاص بـ Supabase أولًا."
+    "migrationNotice": "المسارات المهنية غير مفعّلة على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0049_notes_career_paths_hr_fields.sql</code> في محرر SQL الخاص بـ Supabase أولًا.",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "careerPathsView": {
     "readinessToday": "الاستعداد اليوم",
@@ -3066,7 +3094,8 @@
     "createYourOwnScenario": "أنشئ سيناريو خاصًا بك",
     "completedTryAgain": "مكتمل — حاول مجددًا →",
     "inProgress": "قيد التقدم →",
-    "notStarted": "لم يبدأ"
+    "notStarted": "لم يبدأ",
+    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "roleplayScenarioPage": {
     "allScenarios": "← جميع السيناريوهات",
@@ -4805,7 +4834,10 @@
     "avgScoreSuffix": " · متوسط درجة الصحة المهنية {score}",
     "contactInquiries": "استفسارات التواصل",
     "exportToExcel": "تصدير إلى إكسل",
-    "scopeNotice": "يقتصر هذا على مجموعة هذه التجربة التجريبية فقط — وليس مساحة عمل متعددة الشركات. يشترك الجميع هنا في عرض مشرف واحد؛ عزل بيانات كل شركة على حدة هو بناء أكبر منفصل لما بعد التجربة."
+    "scopeNotice": "يقتصر هذا على مجموعة هذه التجربة التجريبية فقط — وليس مساحة عمل متعددة الشركات. يشترك الجميع هنا في عرض مشرف واحد؛ عزل بيانات كل شركة على حدة هو بناء أكبر منفصل لما بعد التجربة.",
+    "pendingInvitesTitle": "{count, plural, one {# دعوة معلّقة} other {# دعوات معلّقة}}",
+    "pendingInvitesDescription": "تمت دعوتهم لكن لم يسجلوا الدخول بعد — لا يملك هؤلاء حسابًا بعد، لذلك لا يظهرون في جدول المشاركين أدناه.",
+    "revokeInvite": "إلغاء الدعوة"
   },
   "platformAnnouncementForm": {
     "openButton": "إرسال إعلان لكل المنصة",
@@ -4842,6 +4874,10 @@
   },
   "adminOrganizationsTable": {
     "unlimitedPlaceholder": "غير محدود",
+    "package_starter": "أساسي",
+    "package_growth": "نمو",
+    "package_scale": "توسّع",
+    "packageTooltip": "${perSeat} للمقعد × {seats} مقعدًا",
     "loadingEllipsis": "جارٍ التحميل…",
     "notAuthorized": "غير مصرح",
     "couldNotLoadSpend": "تعذّر تحميل إنفاق الموظفين",
@@ -4996,5 +5032,70 @@
     "generatedOn": "تم الإنشاء في {date}",
     "contributingFactorsLabel": "العوامل المساهمة",
     "suggestedActionsLabel": "الإجراءات المقترحة"
+  },
+  "companyPermissionsPage": {
+    "backToProgress": "← العودة إلى التقدم",
+    "title": "صلاحيات الميزات",
+    "description": "قيّد وحدات محددة لموظفين بعينهم أو لقسم كامل — كل شيء مفعّل افتراضيًا، لذا فإن أي تقييد هنا هو دائمًا استثناء صريح، وليس قائمة سماح.",
+    "addRestrictionTitle": "إضافة تقييد",
+    "featureLabel": "الميزة",
+    "feature_ai_coaching": "التدريب بالذكاء الاصطناعي",
+    "feature_roleplay": "تمثيل الأدوار / التدريب على المقابلات",
+    "feature_resume_intelligence": "ذكاء السيرة الذاتية (تحسين ATS)",
+    "feature_career_development": "التطور المهني",
+    "feature_knowledge_hub": "مركز المعرفة",
+    "feature_job_architecture": "هيكلة الوظائف",
+    "feature_competency_management": "إدارة الكفاءات",
+    "scopeLabel": "ينطبق على",
+    "scopeUser": "موظف واحد",
+    "scopeDepartment": "قسم كامل",
+    "employeeLabel": "الموظف",
+    "departmentLabel": "القسم",
+    "noDepartments": "لا توجد أقسام مسجلة بعد — أضف معلومات قسم الموظف أولاً.",
+    "addButton": "إضافة تقييد",
+    "adding": "جارٍ الإضافة…",
+    "pickEmployeeError": "اختر موظفًا أولاً",
+    "pickDepartmentError": "اختر قسمًا أولاً",
+    "currentRestrictionsTitle": "{count, plural, =0 {لا توجد تقييدات نشطة} one {تقييد نشط واحد} other {# تقييدات نشطة}}",
+    "noRestrictions": "كل ميزة متاحة حاليًا لجميع أفراد شركتك.",
+    "unknownUser": "(موظف غير معروف)",
+    "removeButton": "إزالة",
+    "feature_onboarding": "التأهيل",
+    "feature_performance_review": "تقييمات الأداء"
+  },
+  "featureEmailComposer": {
+    "openButton": "إرسال بريد إلكتروني",
+    "title": "إنشاء بريد إلكتروني",
+    "close": "إغلاق",
+    "subjectLabel": "الموضوع",
+    "messageLabel": "الرسالة",
+    "recipientsLabel": "المستلمون",
+    "recipientMode_all": "الجميع",
+    "recipientMode_department": "حسب القسم",
+    "recipientMode_individual": "اختيار أشخاص",
+    "noDepartments": "لا توجد أقسام مسجلة بعد — أضف معلومات قسم الموظف أولاً.",
+    "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني…",
+    "recipientCount": "{count, plural, =0 {لم يتم اختيار مستلمين} one {مستلم واحد} other {# مستلمين}}",
+    "scheduleLabel": "التوقيت",
+    "sendNow": "إرسال الآن",
+    "scheduleForLater": "جدولة لوقت لاحق",
+    "showPreview": "عرض المعاينة",
+    "hidePreview": "إخفاء المعاينة",
+    "previewSubjectLabel": "الموضوع",
+    "previewBodyLabel": "الرسالة",
+    "previewEmptySubject": "(لا يوجد موضوع بعد)",
+    "previewEmptyBody": "(لا توجد رسالة بعد)",
+    "noRecipientsError": "اختر مستلمًا واحدًا على الأقل",
+    "pickTimeError": "اختر التاريخ والوقت أولاً",
+    "sending": "جارٍ الإرسال…",
+    "sendButton": "إرسال",
+    "scheduleButton": "جدولة",
+    "sentConfirmation": "تم الإرسال إلى {count, plural, one {# شخص} other {# أشخاص}}.",
+    "scheduledConfirmation": "تمت الجدولة لـ {count, plural, one {# شخص} other {# أشخاص}}.",
+    "showHistory": "عرض سجل الإرسال ({count})",
+    "hideHistory": "إخفاء سجل الإرسال",
+    "noHistory": "لم يُرسل شيء من هنا بعد.",
+    "historySent": "أُرسل {date} — {count, plural, one {# مستلم} other {# مستلمين}}{failed, plural, =0 {} other {، # فشل}}",
+    "historyScheduled": "مجدول لـ {date} — {count, plural, one {# مستلم} other {# مستلمين}}"
   }
 }

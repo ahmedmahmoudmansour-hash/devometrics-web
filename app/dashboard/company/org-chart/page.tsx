@@ -6,6 +6,8 @@ import { getNominatedUserIds } from "@/lib/orgChart/successionStatus";
 import { listPositions, listMemberManagerPositions } from "@/lib/orgChart/positions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import OrgChartPageClient from "@/components/dashboard/OrgChartPageClient";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "Org Chart — Devometrics" };
 
@@ -42,6 +44,17 @@ export default async function OrgChartPage() {
         <div className="no-print">
           <CompanyNavTabs active="orgChart" />
         </div>
+
+        {data.organizationId && (
+          <div className="no-print">
+            <FeatureEmailComposer
+              organizationId={data.organizationId}
+              featureKey="org_chart"
+              employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+              initialHistory={await listFeatureEmailHistory(data.organizationId, "org_chart")}
+            />
+          </div>
+        )}
 
         {data.rows.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

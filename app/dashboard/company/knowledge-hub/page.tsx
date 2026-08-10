@@ -5,6 +5,8 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import KnowledgeHubUploadForm from "@/components/dashboard/KnowledgeHubUploadForm";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import type { KnowledgeHubContent } from "@/lib/supabase/types";
 
 export default async function CompanyKnowledgeHubPage() {
@@ -12,6 +14,7 @@ export default async function CompanyKnowledgeHubPage() {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
+  const emailHistory = await listFeatureEmailHistory(data.organizationId, "knowledge_hub");
   const supabase = await createClient();
   const { data: allContent } = await supabase
     .from("knowledge_hub_content")
@@ -41,16 +44,28 @@ export default async function CompanyKnowledgeHubPage() {
       ])
     : [{ data: [] }, { data: [] }];
 
-  const assignedCountByContent = new Map<string, number>();
-  for (const a of assignments ?? []) {
-    assignedCountByContent.set(a.content_id, (assignedCountByContent.get(a.content_id) ?? 0) + 1);
+  // "Assigned" here is the union of currently-assigned and ever-completed
+  // employees per content — completions are kept forever even after
+  // someone's unassigned (see lib/knowledgeHub/actions.ts's
+  // getKnowledgeHubContentReport), so a completion can never outnumber
+  // "assigned" the way it would if this only counted current assignments.
+  function addToSetMap(map: Map<string, Set<string>>, key: string, value: string) {
+    const set = map.get(key) ?? new Set<string>();
+    set.add(value);
+    map.set(key, set);
   }
+
+  const assignedEmployeesByContent = new Map<string, Set<string>>();
+  for (const a of assignments ?? []) addToSetMap(assignedEmployeesByContent, a.content_id, a.employee_user_id);
+
   const completedEmployeesByContent = new Map<string, Set<string>>();
   for (const c of completions ?? []) {
-    const set = completedEmployeesByContent.get(c.content_id) ?? new Set<string>();
-    set.add(c.employee_user_id);
-    completedEmployeesByContent.set(c.content_id, set);
+    addToSetMap(completedEmployeesByContent, c.content_id, c.employee_user_id);
+    addToSetMap(assignedEmployeesByContent, c.content_id, c.employee_user_id);
   }
+
+  const assignedCountByContent = new Map<string, number>();
+  for (const [contentId, set] of assignedEmployeesByContent) assignedCountByContent.set(contentId, set.size);
 
   const cellStyle: React.CSSProperties = {
     padding: "10px 14px",
@@ -88,6 +103,13 @@ export default async function CompanyKnowledgeHubPage() {
         <div style={{ marginBottom: 24 }}>
           <KnowledgeHubUploadForm organizationId={data.organizationId} />
         </div>
+
+        <FeatureEmailComposer
+          organizationId={data.organizationId}
+          featureKey="knowledge_hub"
+          employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+          initialHistory={emailHistory}
+        />
 
         {content.length === 0 ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

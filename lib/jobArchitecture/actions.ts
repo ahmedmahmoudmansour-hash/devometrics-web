@@ -6,11 +6,18 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import type { RoleTrack } from "@/lib/supabase/types";
 
 const MAX_NAME = 120;
 const MAX_TEXT = 4000;
 
+// Single choke point every exported function in this file goes through —
+// adding the job_architecture restriction check here means every mutation
+// (family/role/transition CRUD, JD generation, role grading) is covered
+// without having to remember to add it to each one individually. Treated
+// the same as "not an org admin at all": a restricted admin gets exactly
+// the same null-user result an unauthenticated caller would.
 async function requireAdmin() {
   const supabase = await createClient();
   const {
@@ -19,6 +26,8 @@ async function requireAdmin() {
   if (!user) return { supabase, user: null, organizationId: null };
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { supabase, user: null, organizationId: null };
+  const restricted = await listMyRestrictedFeatures(supabase, data.organizationId);
+  if (restricted.has("job_architecture")) return { supabase, user: null, organizationId: null };
   return { supabase, user, organizationId: data.organizationId };
 }
 

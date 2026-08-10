@@ -30,7 +30,13 @@ export async function POST(request: Request) {
   try {
     const { audio } = await synthesizeSpeechAzure(text, voice as NamedVoice, locale === "ar" ? "ar" : "en");
     return new NextResponse(audio, { headers: { "Content-Type": "audio/mpeg" } });
-  } catch {
+  } catch (err) {
+    // Was a bare catch {} — a real Azure failure (expired key, exhausted
+    // quota, region misconfigured) left no trace anywhere but the client's
+    // generic "temporarily unavailable" message, making a live outage
+    // undiagnosable after the fact. Logged server-side now so a recurrence
+    // shows up in the deployment's function logs with the actual cause.
+    console.error("Azure TTS synthesis failed:", err);
     return NextResponse.json({ error: "Voice narration is temporarily unavailable" }, { status: 502 });
   }
 }

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/dashboard/SidebarNav";
 import CommandPalette from "@/components/dashboard/CommandPalette";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 
 // Single place where an enterprise workspace's accent color reaches every
 // dashboard page — every page already renders with var(--teal), so
@@ -25,9 +26,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [{ data: membership }, { data: profile }, { count: directReportCount }] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("role, manager_user_id, organizations(brand_color, is_disabled)")
+      .select("role, manager_user_id, organization_id, organizations(brand_color, is_disabled)")
       .eq("user_id", user.id)
-      .maybeSingle<{ role: string; manager_user_id: string | null; organizations: { brand_color: string | null; is_disabled: boolean | null } | null }>(),
+      .maybeSingle<{ role: string; manager_user_id: string | null; organization_id: string; organizations: { brand_color: string | null; is_disabled: boolean | null } | null }>(),
     supabase
       .from("profiles")
       .select("is_admin, theme, subscription_tier, premium_trial_expires_at, is_disabled")
@@ -54,6 +55,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const hasDirectReports = (directReportCount ?? 0) > 0;
   const hasManager = !!membership?.manager_user_id;
   const hasOrgMembership = !!membership;
+  // Array, not the Set listMyRestrictedFeatures() returns — Set instances
+  // aren't part of the RSC serialization boundary, and SidebarNav/
+  // CommandPalette are both Client Components.
+  const restrictedFeatures = [...(await listMyRestrictedFeatures(supabase, membership?.organization_id ?? null))];
 
   const brandColor = membership?.organizations?.brand_color ?? null;
   const isFreeTier =
@@ -91,6 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             hasDirectReports={hasDirectReports}
             hasManager={hasManager}
             hasOrgMembership={hasOrgMembership}
+            restrictedFeatures={restrictedFeatures}
           />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>

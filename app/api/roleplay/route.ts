@@ -16,6 +16,7 @@ import {
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { AssessmentResult, Profile, RoleplayMessage, RoleplaySession } from "@/lib/supabase/types";
 
@@ -41,6 +42,10 @@ export async function POST(request: Request) {
       { error: "The Interview Simulator is a Premium feature — upgrade to practice scenarios." },
       { status: 403 }
     );
+  }
+  const restricted = await listMyRestrictedFeatures(supabase, membership?.organization_id ?? null);
+  if (restricted.has("roleplay")) {
+    return NextResponse.json({ error: "Roleplay practice has been restricted for your account by your company administrator." }, { status: 403 });
   }
 
   const { scenarioSlug, sessionId, message, endScenario } = (await request.json()) as {

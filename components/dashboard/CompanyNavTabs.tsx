@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews" | "onboarding";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews" | "onboarding" | "permissions";
 
 // Grouped into 5 clusters of 3 instead of one flat row — at 15 items the
 // flat version wrapped to 2 lines of equal-weight links with no way to
@@ -15,7 +15,7 @@ type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart
 // loops). Every item is still exactly one click away — this is a visual
 // reorganization, not a drill-down menu.
 const GROUPS: { labelKey: string; tabs: TabKey[] }[] = [
-  { labelKey: "groupOverview", tabs: ["profile", "employees", "analytics"] },
+  { labelKey: "groupOverview", tabs: ["profile", "employees", "analytics", "permissions"] },
   { labelKey: "groupStructure", tabs: ["orgChart", "jobArchitecture", "competencies"] },
   { labelKey: "groupTalent", tabs: ["highPotential", "succession", "scorecard"] },
   { labelKey: "groupHiringGrowth", tabs: ["hiring", "onboarding", "knowledgeHub"] },
@@ -40,6 +40,7 @@ export default async function CompanyNavTabs({ active }: { active: TabKey }) {
     surveys: "/dashboard/company/surveys",
     exitInterviews: "/dashboard/company/exit-interviews",
     analytics: "/dashboard/company/analytics",
+    permissions: "/dashboard/company/permissions",
   };
 
   return (

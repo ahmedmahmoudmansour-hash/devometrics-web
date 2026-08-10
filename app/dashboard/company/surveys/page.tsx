@@ -6,6 +6,8 @@ import { listOrgSurveys } from "@/lib/surveys/actions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import SurveyBuilder from "@/components/dashboard/SurveyBuilder";
 import SurveyResultsCard from "@/components/dashboard/SurveyResultsCard";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export default async function CompanySurveysPage() {
   const t = await getTranslations("companySurveysPage");
@@ -13,6 +15,7 @@ export default async function CompanySurveysPage() {
   if (!data.isOrgAdmin) redirect("/dashboard");
 
   const employees = data.rows.map((r) => ({ userId: r.userId, name: r.name }));
+  const emailHistory = data.organizationId ? await listFeatureEmailHistory(data.organizationId, "survey") : [];
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -27,6 +30,15 @@ export default async function CompanySurveysPage() {
         </div>
 
         <CompanyNavTabs active="surveys" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="survey"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={emailHistory}
+          />
+        )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {employees.length === 0 ? (

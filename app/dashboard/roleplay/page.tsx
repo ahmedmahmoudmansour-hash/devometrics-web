@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { ROLEPLAY_SCENARIOS, localizeScenario } from "@/lib/roleplay/scenarios";
 import { LEVEL_SECTIONS, type LevelSection, assessmentDisplayNameByName } from "@/lib/assessments/catalog";
 import DeleteScenarioButton from "@/components/dashboard/DeleteScenarioButton";
+import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import type { CustomScenario, RoleplaySession } from "@/lib/supabase/types";
 
 const SECTION_ICON: Record<LevelSection, string> = {
@@ -30,6 +33,24 @@ export default async function RoleplayListPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("roleplay")) {
+    return (
+      <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ marginBottom: 24 }}>
+            <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
+              {t("backToProgress")}
+            </Link>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>{t("title")}</h1>
+          </div>
+          <FeatureRestrictedNotice message={t("restrictedNotice")} />
+        </div>
+      </div>
+    );
+  }
 
   const { data: sessions } = await supabase
     .from("roleplay_sessions")

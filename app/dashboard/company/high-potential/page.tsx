@@ -7,6 +7,8 @@ import Avatar from "@/components/Avatar";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
 import { zoneLabel as translatedZoneLabel } from "@/lib/organizations/nineBoxZones";
 import { NineBoxLegend } from "@/components/dashboard/charts";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "High Potential Pool — Devometrics" };
 
@@ -86,6 +88,15 @@ export default async function HighPotentialPoolPage() {
         </div>
 
         <CompanyNavTabs active="highPotential" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="high_potential"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "high_potential")}
+          />
+        )}
 
         {data.rows.length === 0 ? (
           <div style={card}>

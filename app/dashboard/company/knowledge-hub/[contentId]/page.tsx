@@ -100,7 +100,7 @@ export default async function KnowledgeHubContentDetailPage({
           <AssignKnowledgeHubContentModal
             contentId={contentId}
             employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email }))}
-            alreadyAssignedUserIds={report.rows.map((r) => r.employeeUserId)}
+            alreadyAssignedUserIds={report.rows.filter((r) => r.assignmentId).map((r) => r.employeeUserId)}
           />
         </div>
 
@@ -132,6 +132,9 @@ export default async function KnowledgeHubContentDetailPage({
                       <td style={cellStyle}>
                         <div>{r.name}</div>
                         <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.email}</div>
+                        {!r.assignmentId && (
+                          <div style={{ fontSize: 11, color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{t("noLongerAssigned")}</div>
+                        )}
                         {content.completion_type === "exam" && (
                           <KnowledgeHubAttemptHistory contentId={contentId} employeeUserId={r.employeeUserId} attemptCount={r.examAttempts} />
                         )}
@@ -169,7 +172,7 @@ export default async function KnowledgeHubContentDetailPage({
                         </td>
                       )}
                       <td style={{ ...cellStyle, textAlign: "right" }}>
-                        <RemoveKnowledgeHubAssignmentButton assignmentId={r.assignmentId} contentId={contentId} />
+                        {r.assignmentId && <RemoveKnowledgeHubAssignmentButton assignmentId={r.assignmentId} contentId={contentId} />}
                       </td>
                     </tr>
                   ))}

@@ -24,6 +24,7 @@ export const EMAIL_MESSAGE_TYPES = [
   "milestone_assignment",
   "interview_stage_notice",
   "assessment_assignment",
+  "knowledge_hub_content_updated",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

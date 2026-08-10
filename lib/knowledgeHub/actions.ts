@@ -230,6 +230,117 @@ export async function archiveKnowledgeHubContent(contentId: string) {
   return { success: true };
 }
 
+// Restores a previously-archived item to the active list — the missing
+// other half of archiveKnowledgeHubContent below. archived_at is the only
+// thing that changes; the row (and its completion history) was never
+// touched by archiving in the first place, so this is a pure un-hide.
+export async function unarchiveKnowledgeHubContent(contentId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("knowledge_hub_content")
+    .update({ archived_at: null })
+    .eq("id", contentId)
+    .select("id");
+  if (error) {
+    return { error: "Could not restore — the database may need migration 0085 run first." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to restore this content." };
+  }
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+// A real delete — distinct from archiveKnowledgeHubContent above, which is
+// deliberately a soft-hide. Only permitted when NO ONE has completed this
+// item yet: knowledge_hub_content cascades to knowledge_hub_completions
+// (0084), and a real delete on content with real completion history would
+// silently destroy that compliance audit trail. Content nobody's touched
+// yet has nothing to protect, so a genuine mistaken upload can be fully
+// removed rather than left as permanent archived clutter.
+export async function deleteKnowledgeHubContent(contentId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("knowledge_hub_completions")
+    .select("id", { count: "exact", head: true })
+    .eq("content_id", contentId);
+  if ((count ?? 0) > 0) {
+    return { error: "Someone has completed this content in the past (even if no longer assigned), so it can't be permanently deleted — archive it instead to preserve that history." };
+  }
+
+  const { data, error } = await supabase.from("knowledge_hub_content").delete().eq("id", contentId).select("id");
+  if (error) return { error: "Could not delete this content." };
+  if (!data || data.length === 0) return { error: "Not authorized to delete this content." };
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+export type KnowledgeHubContentVersion = {
+  id: string;
+  title: string;
+  description: string | null;
+  passingScorePercent: number;
+  maxAttempts: number | null;
+  dueDate: string | null;
+  editedByName: string | null;
+  editedAt: string;
+};
+
+// Read-only history for the detail page's admin view — every snapshot
+// updateKnowledgeHubContent wrote, newest first.
+export async function listKnowledgeHubContentVersions(contentId: string): Promise<KnowledgeHubContentVersion[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("knowledge_hub_content_versions")
+    .select("id, title, description, passing_score_percent, max_attempts, due_date, edited_at, profiles(full_name)")
+    .eq("content_id", contentId)
+    .order("edited_at", { ascending: false })
+    .returns<
+      { id: string; title: string; description: string | null; passing_score_percent: number; max_attempts: number | null; due_date: string | null; edited_at: string; profiles: { full_name: string | null } | null }[]
+    >();
+
+  return (data ?? []).map((v) => ({
+    id: v.id,
+    title: v.title,
+    description: v.description,
+    passingScorePercent: v.passing_score_percent,
+    maxAttempts: v.max_attempts,
+    dueDate: v.due_date,
+    editedByName: v.profiles?.full_name ?? null,
+    editedAt: v.edited_at,
+  }));
+}
+
+// Best-effort — mirrors sendKnowledgeHubAssignmentEmail's posture exactly;
+// a failed notification never blocks the edit that triggered it.
+async function sendKnowledgeHubUpdateEmail(email: string, contentTitle: string, orgName: string, organizationId: string): Promise<void> {
+  try {
+    const override = await getEmailMessageOverride(organizationId, "knowledge_hub_content_updated");
+    await sendEmail(
+      email,
+      override.subject || `${orgName} updated your assigned training`,
+      renderEmail({
+        preheader: contentTitle,
+        footerNote: "You're getting this because your organization assigned you this training on Devometrics.",
+        bodyHtml: `
+          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Training content updated</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
+            <strong>${escapeHtml(orgName)}</strong> made an update to <strong>${escapeHtml(contentTitle)}</strong>, which you're assigned. Worth a look if you've already started or completed it.
+          </p>
+          <p style="margin:0;">
+            <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
+          </p>
+        `,
+      })
+    );
+  } catch (err) {
+    console.error(`Knowledge Hub update email failed for ${email}:`, err);
+  }
+}
+
 export async function updateKnowledgeHubContent(
   contentId: string,
   fields: {
@@ -238,11 +349,26 @@ export async function updateKnowledgeHubContent(
     passingScorePercent: number;
     maxAttempts: number | null;
     dueDate: string | null;
-  }
+  },
+  notifyLearners = false
 ) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
   const title = fields.title.trim();
   if (!title) return { error: "Title is required" };
+
+  // Snapshot BEFORE the update — this is what the item looked like right
+  // up until this edit, not the new values (which are already recoverable
+  // from the live row).
+  const { data: before } = await supabase
+    .from("knowledge_hub_content")
+    .select("organization_id, title, description, passing_score_percent, max_attempts, due_date")
+    .eq("id", contentId)
+    .maybeSingle<{ organization_id: string; title: string; description: string | null; passing_score_percent: number; max_attempts: number | null; due_date: string | null }>();
 
   const { data, error } = await supabase
     .from("knowledge_hub_content")
@@ -260,6 +386,39 @@ export async function updateKnowledgeHubContent(
   }
   if (!data || data.length === 0) {
     return { error: "Not authorized to edit this content." };
+  }
+
+  if (before) {
+    const { error: versionError } = await supabase.from("knowledge_hub_content_versions").insert({
+      content_id: contentId,
+      organization_id: before.organization_id,
+      title: before.title,
+      description: before.description,
+      passing_score_percent: before.passing_score_percent,
+      max_attempts: before.max_attempts,
+      due_date: before.due_date,
+      edited_by: user.id,
+    });
+    // Never fails the edit itself — version history is a nice-to-have
+    // audit trail, not a gate on being able to fix a typo. Logged so a
+    // silently-missing 0115 migration is at least visible server-side.
+    if (versionError) console.error("knowledge_hub_content_versions insert failed (non-fatal):", versionError);
+
+    if (notifyLearners) {
+      const [{ data: assignments }, company] = await Promise.all([
+        supabase.from("knowledge_hub_assignments").select("employee_user_id").eq("content_id", contentId).returns<{ employee_user_id: string }[]>(),
+        buildCompanyData(),
+      ]);
+      if (assignments && assignments.length > 0 && company.organizationName && company.organizationId) {
+        const emailByUserId = new Map(company.rows.map((r) => [r.userId, r.email]));
+        await Promise.allSettled(
+          assignments
+            .map((a) => emailByUserId.get(a.employee_user_id))
+            .filter((email): email is string => !!email)
+            .map((email) => sendKnowledgeHubUpdateEmail(email, title, company.organizationName!, company.organizationId!))
+        );
+      }
+    }
   }
 
   revalidatePath("/dashboard/company/knowledge-hub");
@@ -284,7 +443,11 @@ export type KnowledgeHubReportRow = {
   employeeUserId: string;
   name: string;
   email: string;
-  assignmentId: string;
+  // Null when this person completed the content in the past but is no
+  // longer currently assigned (their assignment row was removed) — the
+  // completion record is kept forever, so they still show up here, but
+  // there's no active assignment left to remove.
+  assignmentId: string | null;
   status: "not_started" | "completed";
   completedAt: string | null;
   scorePercent: number | null;
@@ -341,7 +504,14 @@ export async function getKnowledgeHubContentReport(contentId: string): Promise<K
       .returns<KnowledgeHubCompletion[]>(),
   ]);
 
-  const employeeIds = (assignments ?? []).map((a) => a.employee_user_id);
+  const assignmentIdByEmployee = new Map((assignments ?? []).map((a) => [a.employee_user_id, a.id]));
+
+  // Completions are append-only history — someone who completed this and
+  // was later unassigned still needs to show up here, otherwise the
+  // completion count and the assigned count silently disagree (a real
+  // person completed it, but they'd vanish from the list). The row set is
+  // the union of "currently assigned" and "has ever completed this."
+  const employeeIds = Array.from(new Set([...(assignments ?? []).map((a) => a.employee_user_id), ...(completions ?? []).map((c) => c.employee_user_id)]));
   const nameByUserId = new Map(company.rows.filter((r) => employeeIds.includes(r.userId)).map((r) => [r.userId, r]));
 
   // Latest completion per employee — completions are append-only (full
@@ -355,19 +525,19 @@ export async function getKnowledgeHubContentReport(contentId: string): Promise<K
     }
   }
 
-  const rows: KnowledgeHubReportRow[] = (assignments ?? []).map((a) => {
-    const person = nameByUserId.get(a.employee_user_id);
-    const completion = latestCompletionByEmployee.get(a.employee_user_id);
+  const rows: KnowledgeHubReportRow[] = employeeIds.map((employeeUserId) => {
+    const person = nameByUserId.get(employeeUserId);
+    const completion = latestCompletionByEmployee.get(employeeUserId);
     return {
-      employeeUserId: a.employee_user_id,
+      employeeUserId,
       name: person?.name ?? "Unknown",
       email: person?.email ?? "",
-      assignmentId: a.id,
+      assignmentId: assignmentIdByEmployee.get(employeeUserId) ?? null,
       status: completion ? "completed" : "not_started",
       completedAt: completion?.completed_at ?? null,
       scorePercent: completion?.score_percent ?? null,
       passed: completion?.passed ?? null,
-      examAttempts: examAttemptsByEmployee.get(a.employee_user_id) ?? 0,
+      examAttempts: examAttemptsByEmployee.get(employeeUserId) ?? 0,
     };
   });
 

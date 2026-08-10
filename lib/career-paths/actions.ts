@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
-import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { CareerPathBranch, GapAnalysis, Profile } from "@/lib/supabase/types";
@@ -96,6 +97,12 @@ export async function generateCareerPaths(): Promise<{ error?: string; success?:
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("career_development")) {
+    return { error: "Career Development has been restricted for your account by your company administrator." };
+  }
+
   const [{ data: profile }, { data: analysis }, { data: existing }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single<Profile>(),
     supabase
@@ -140,8 +147,6 @@ export async function generateCareerPaths(): Promise<{ error?: string; success?:
     return { error: "There's nothing to build a map from yet — fill in your career profile or run a Gap Analysis first." };
   }
 
-  const membership = await getMyOrganizationMembership();
-  const organizationId = membership?.organization_id ?? null;
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 

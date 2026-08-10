@@ -4,13 +4,16 @@ import { Briefcase } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import HiringPostingsManager from "@/components/dashboard/HiringPostingsManager";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { buildHiringOverview } from "@/lib/hiring/aggregate";
+import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "Hiring — Devometrics" };
 
 export default async function HiringPage() {
   const t = await getTranslations("hiringPage");
-  const data = await buildHiringOverview();
+  const [data, company] = await Promise.all([buildHiringOverview(), buildCompanyData()]);
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
   return (
@@ -30,6 +33,15 @@ export default async function HiringPage() {
         </div>
 
         <CompanyNavTabs active="hiring" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="hiring"
+            employees={company.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "hiring")}
+          />
+        )}
 
         <HiringPostingsManager postings={data.postings} linkableRoles={data.linkableRoles} />
       </div>

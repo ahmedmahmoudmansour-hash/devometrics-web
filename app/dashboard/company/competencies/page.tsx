@@ -1,14 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import OrganizationCompetencyBuilder from "@/components/dashboard/OrganizationCompetencyBuilder";
+import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export default async function CompanyCompetenciesPage() {
   const t = await getTranslations("companyCompetenciesPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
+
+  const supabase = await createClient();
+  const restricted = await listMyRestrictedFeatures(supabase, data.organizationId);
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -25,11 +33,24 @@ export default async function CompanyCompetenciesPage() {
         <CompanyNavTabs active="competencies" />
 
         {data.organizationId && (
-          <OrganizationCompetencyBuilder
+          <FeatureEmailComposer
             organizationId={data.organizationId}
-            competencies={data.organizationCompetencies}
-            dimensionAverages={data.dimensionAverages}
+            featureKey="competency_management"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "competency_management")}
           />
+        )}
+
+        {restricted.has("competency_management") ? (
+          <FeatureRestrictedNotice message={t("restrictedNotice")} />
+        ) : (
+          data.organizationId && (
+            <OrganizationCompetencyBuilder
+              organizationId={data.organizationId}
+              competencies={data.organizationCompetencies}
+              dimensionAverages={data.dimensionAverages}
+            />
+          )
         )}
       </div>
     </div>

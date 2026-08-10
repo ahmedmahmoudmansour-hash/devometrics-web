@@ -14,6 +14,7 @@ import {
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type {
   AssessmentResult,
@@ -145,6 +146,11 @@ export async function POST(request: Request) {
   }
 
   const organizationId = membership?.organization_id ?? null;
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("ai_coaching")) {
+    return NextResponse.json({ error: "AI Coaching has been restricted for your account by your company administrator." }, { status: 403 });
+  }
+
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) {
     return NextResponse.json({ error: budgetCheck.error }, { status: 403 });

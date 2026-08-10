@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import type {
   PerformanceReviewCycle,
   PerformanceReview,
@@ -231,6 +233,9 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
 
 export async function submitManagerAssessment(reviewId: string, rating: number, feedback: string, developmentNeeds: string) {
   const supabase = await createClient();
+  const restrictedError = await performanceReviewRestrictedError(supabase);
+  if (restrictedError) return { error: restrictedError };
+
   // development_needs now travels inside the RPC's own SECURITY DEFINER
   // upsert (migration 0103) — it used to be written via a plain client
   // .update() here, but that table has never had an INSERT/UPDATE RLS
@@ -455,8 +460,28 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
   };
 }
 
+// Shared by every mutating action below — the module's RPCs all rely on
+// their own SECURITY DEFINER auth.uid() context and never took a `user`
+// param before, so this is the one place that needs to actually fetch the
+// caller to check their restriction status.
+async function performanceReviewRestrictedError(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return "Not authenticated";
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("performance_review")) {
+    return "Performance Reviews have been restricted for your account by your company administrator.";
+  }
+  return null;
+}
+
 export async function submitSelfAssessment(reviewId: string, rating: number, reflection: string) {
   const supabase = await createClient();
+  const restrictedError = await performanceReviewRestrictedError(supabase);
+  if (restrictedError) return { error: restrictedError };
+
   const { error } = await supabase.rpc("submit_self_assessment", {
     target_review_id: reviewId,
     p_rating: rating,
@@ -472,6 +497,9 @@ export async function submitSelfAssessment(reviewId: string, rating: number, ref
 
 export async function acknowledgeReview(reviewId: string, comment: string) {
   const supabase = await createClient();
+  const restrictedError = await performanceReviewRestrictedError(supabase);
+  if (restrictedError) return { error: restrictedError };
+
   const { error } = await supabase.rpc("acknowledge_review", {
     target_review_id: reviewId,
     p_comment: comment.trim(),

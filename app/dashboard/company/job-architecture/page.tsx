@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import JobArchitectureManager from "@/components/dashboard/JobArchitectureManager";
+import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import type { JobFamily, JobRole, RoleCompetencyRequirement, RoleTransition } from "@/lib/supabase/types";
 
 export const metadata = { title: "Job Architecture — Devometrics" };
@@ -15,6 +19,7 @@ export default async function JobArchitecturePage() {
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
   const supabase = await createClient();
+  const restricted = await listMyRestrictedFeatures(supabase, data.organizationId);
 
   // All four reads are additive tables (migration 0067) — a query error
   // before it's run yields null, which the client renders as an empty,
@@ -43,7 +48,18 @@ export default async function JobArchitecturePage() {
 
         <CompanyNavTabs active="jobArchitecture" />
 
-        {error ? (
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="job_architecture"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "job_architecture")}
+          />
+        )}
+
+        {restricted.has("job_architecture") ? (
+          <FeatureRestrictedNotice message={t("restrictedNotice")} />
+        ) : error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", padding: 28, borderRadius: 16 }}>
             <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
               {t.rich("migrationNotEnabled", {

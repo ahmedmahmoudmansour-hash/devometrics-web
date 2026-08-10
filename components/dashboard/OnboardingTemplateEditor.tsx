@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { ListChecks, Library, UserCheck, ChevronUp, ChevronDown, X } from "lucide-react";
+import { ListChecks, Library, UserCheck, ChevronUp, ChevronDown, X, Pencil } from "lucide-react";
 import {
   addOnboardingTemplateStep,
+  updateOnboardingTemplateStep,
   deleteOnboardingTemplateStep,
   moveOnboardingTemplateStep,
 } from "@/lib/onboarding/actions";
@@ -45,6 +46,13 @@ export default function OnboardingTemplateEditor({
   const [dueOffsetDays, setDueOffsetDays] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editKnowledgeHubContentId, setEditKnowledgeHubContentId] = useState("");
+  const [editDueOffsetDays, setEditDueOffsetDays] = useState(0);
+  const [editError, setEditError] = useState<string | null>(null);
 
   function resetForm() {
     setStepType("task");
@@ -108,6 +116,54 @@ export default function OnboardingTemplateEditor({
     });
   }
 
+  function startEdit(step: OnboardingTemplateStep) {
+    setEditingStepId(step.id);
+    setEditTitle(step.title);
+    setEditDescription(step.description ?? "");
+    setEditKnowledgeHubContentId(step.knowledge_hub_content_id ?? "");
+    setEditDueOffsetDays(step.due_offset_days);
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingStepId(null);
+    setEditError(null);
+  }
+
+  function saveEdit(stepId: string) {
+    setEditError(null);
+    if (!editTitle.trim()) {
+      setEditError(t("titleRequired"));
+      return;
+    }
+    startTransition(async () => {
+      const result = await updateOnboardingTemplateStep(stepId, {
+        title: editTitle,
+        description: editDescription,
+        knowledgeHubContentId: editKnowledgeHubContentId || null,
+        dueOffsetDays: editDueOffsetDays,
+      });
+      if (result?.error) {
+        setEditError(result.error);
+        return;
+      }
+      setSteps((prev) =>
+        prev.map((s) =>
+          s.id === stepId
+            ? {
+                ...s,
+                title: editTitle.trim(),
+                description: editDescription.trim() || null,
+                knowledge_hub_content_id: s.step_type === "knowledge_hub" ? editKnowledgeHubContentId || null : null,
+                due_offset_days: editDueOffsetDays,
+              }
+            : s
+        )
+      );
+      setEditingStepId(null);
+    });
+  }
+
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("title")}</h2>
@@ -119,6 +175,61 @@ export default function OnboardingTemplateEditor({
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
           {steps.map((step, i) => {
             const Icon = STEP_ICON[step.step_type];
+            if (editingStepId === step.id) {
+              return (
+                <div key={step.id} style={{ display: "flex", flexDirection: "column", gap: 8, border: "1px solid var(--teal)", borderRadius: 10, padding: 12 }}>
+                  <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder={t("titlePlaceholder")} maxLength={200} style={inputStyle} />
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder={t("descriptionPlaceholder")}
+                    maxLength={1000}
+                    rows={2}
+                    style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                  />
+                  {step.step_type === "knowledge_hub" && (
+                    <select value={editKnowledgeHubContentId} onChange={(e) => setEditKnowledgeHubContentId(e.target.value)} style={inputStyle}>
+                      <option value="">{t("chooseDocument")}</option>
+                      {knowledgeHubOptions.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.title}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <label style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("dueOffsetLabel")}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={180}
+                      value={editDueOffsetDays}
+                      onChange={(e) => setEditDueOffsetDays(Number(e.target.value))}
+                      style={{ ...inputStyle, width: 80 }}
+                    />
+                  </div>
+                  {editError && <p style={{ color: "#f87171", fontSize: 12.5 }}>{editError}</p>}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(step.id)}
+                      disabled={isPending}
+                      style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
+                    >
+                      {t("saveStep")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      disabled={isPending}
+                      style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
+                    >
+                      {t("cancelEdit")}
+                    </button>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={step.id} style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px" }}>
                 <Icon size={15} />
@@ -128,6 +239,9 @@ export default function OnboardingTemplateEditor({
                     {t(`type_${step.step_type}`)} · {t("dueOffset", { days: step.due_offset_days })}
                   </p>
                 </div>
+                <button type="button" onClick={() => startEdit(step)} disabled={isPending} style={iconBtnStyle}>
+                  <Pencil size={13} />
+                </button>
                 <button type="button" onClick={() => handleMove(step.id, "up")} disabled={i === 0 || isPending} style={iconBtnStyle}>
                   <ChevronUp size={14} />
                 </button>

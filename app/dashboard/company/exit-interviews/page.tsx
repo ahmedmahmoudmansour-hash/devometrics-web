@@ -8,6 +8,8 @@ import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import ExitInterviewForm from "@/components/dashboard/ExitInterviewForm";
 import ExitInterviewAnalysisPanel from "@/components/dashboard/ExitInterviewAnalysisPanel";
 import DeleteExitInterviewButton from "@/components/dashboard/DeleteExitInterviewButton";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "Exit Interviews — Devometrics" };
 
@@ -46,6 +48,15 @@ export default async function ExitInterviewsPage() {
         </div>
 
         <CompanyNavTabs active="exitInterviews" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="exit_interviews"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "exit_interviews")}
+          />
+        )}
 
         <ExitInterviewForm />
 

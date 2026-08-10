@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import SuccessionBoard from "@/components/dashboard/SuccessionBoard";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { forecastReadinessBatch } from "@/lib/succession/forecast";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import type { SuccessionRole, SuccessionNomination } from "@/lib/supabase/types";
 
 export const metadata = { title: "Succession — Devometrics" };
@@ -67,6 +69,15 @@ export default async function SuccessionPage() {
         </div>
 
         <CompanyNavTabs active="succession" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="succession"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "succession")}
+          />
+        )}
 
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", padding: 28, borderRadius: 16 }}>

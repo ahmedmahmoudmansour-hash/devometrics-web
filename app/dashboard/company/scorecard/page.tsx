@@ -6,6 +6,8 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { computeLearningGrowthMetrics } from "@/lib/companyScorecard/learningGrowth";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import ScorecardKpiQuadrant from "@/components/dashboard/ScorecardKpiQuadrant";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import type { ScorecardKpi, ScorecardPerspective } from "@/lib/supabase/types";
 
 export const metadata = { title: "Company Scorecard — Devometrics" };
@@ -52,6 +54,15 @@ export default async function CompanyScorecardPage() {
         </div>
 
         <CompanyNavTabs active="scorecard" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="scorecard"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "scorecard")}
+          />
+        )}
 
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", padding: 28, borderRadius: 16 }}>

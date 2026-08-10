@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import { suggestCompetencyDimension } from "./suggestDimension";
 import { getMyOrganizationMembership } from "./actions";
+import { listMyRestrictedFeatures } from "./featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 function isValidDimension(value: string): value is CompetencyDimension {
@@ -26,6 +27,11 @@ export async function createOrganizationCompetency(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("competency_management")) {
+    return { error: "Competency Management has been restricted for your account by your company administrator." };
+  }
 
   const name = fields.name.trim();
   if (!name) return { error: "Competency name is required" };
@@ -88,6 +94,10 @@ export async function suggestDimensionForCompetency(
 
   const membership = await getMyOrganizationMembership();
   const organizationId = membership?.organization_id ?? null;
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("competency_management")) {
+    return { error: "Competency Management has been restricted for your account by your company administrator." };
+  }
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 

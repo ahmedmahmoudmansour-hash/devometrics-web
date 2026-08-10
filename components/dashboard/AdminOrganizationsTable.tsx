@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { updateOrgSeatLimit, updateOrgAiBudget, getOrgMemberAiSpend, setOrganizationDisabled } from "@/lib/admin/organizations";
 import type { AdminOrganizationRow, OrgMemberSpendRow } from "@/lib/admin/organizations";
+import { AI_BUDGET_PACKAGES, packageBudgetForSeats } from "@/lib/aiUsage/budgetPackages";
 
 const cellStyle: React.CSSProperties = {
   padding: "10px 14px",
@@ -77,9 +78,9 @@ function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function save() {
+  function commit(newValue: string) {
     setError(null);
-    const trimmed = value.trim();
+    const trimmed = newValue.trim();
     const parsed = trimmed === "" ? null : Number(trimmed);
     if (parsed === org.monthlyAiBudgetUsd) return;
     startTransition(async () => {
@@ -89,30 +90,68 @@ function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
     });
   }
 
+  // Seat count actually used to size a package: the higher of seatLimit
+  // (what was sold) and memberCount (who's actually there) — a deal sized
+  // for 20 seats that's grown to 25 real members shouldn't get a budget
+  // computed off the stale, smaller number.
+  const seats = Math.max(org.seatLimit ?? 0, org.memberCount, 1);
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>$</span>
-      <input
-        type="number"
-        min={0}
-        step={0.01}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={save}
-        placeholder={t("unlimitedPlaceholder")}
-        disabled={isPending}
-        style={{
-          width: 90,
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid var(--border)",
-          borderRadius: 6,
-          padding: "5px 8px",
-          fontSize: 12,
-          color: "var(--text)",
-          outline: "none",
-        }}
-      />
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>$</span>
+        <input
+          type="number"
+          min={0}
+          step={0.01}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => commit(value)}
+          placeholder={t("unlimitedPlaceholder")}
+          disabled={isPending}
+          style={{
+            width: 90,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: "5px 8px",
+            fontSize: 12,
+            color: "var(--text)",
+            outline: "none",
+          }}
+        />
+        {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {AI_BUDGET_PACKAGES.map((pkg) => {
+          const amount = packageBudgetForSeats(pkg.perSeatUsd, seats);
+          return (
+            <button
+              key={pkg.id}
+              type="button"
+              title={t("packageTooltip", { perSeat: pkg.perSeatUsd.toFixed(2), seats })}
+              disabled={isPending}
+              onClick={() => {
+                setValue(String(amount));
+                commit(String(amount));
+              }}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid var(--border)",
+                borderRadius: 5,
+                padding: "2px 6px",
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t(`package_${pkg.id}`)} ${amount}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import type { OnboardingTemplate, OnboardingTemplateStep, OnboardingInstanceStep, OnboardingStepType } from "./types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -25,27 +27,61 @@ export async function getOrCreateDefaultOnboardingTemplate(
 ): Promise<{ error: string } | { template: OnboardingTemplate; steps: OnboardingTemplateStep[] }> {
   const supabase = await createClient();
 
-  const { data: existing, error: readError } = await supabase
+  // Ordered + limit(1) rather than .maybeSingle() — resilient to more than
+  // one is_default=true row for this org (migration 0117's unique index
+  // prevents new duplicates, but this stays defensive rather than crashing
+  // with PGRST116 if one ever slips through, e.g. on a database that
+  // hasn't run 0117 yet).
+  const { data: existingRows, error: readError } = await supabase
     .from("onboarding_templates")
     .select("*")
     .eq("organization_id", organizationId)
     .eq("is_default", true)
-    .maybeSingle<OnboardingTemplate>();
-  if (readError) return { error: "not_migrated" };
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .returns<OnboardingTemplate[]>();
+  if (readError) {
+    console.error("getOrCreateDefaultOnboardingTemplate read failed:", readError);
+    return { error: "not_migrated" };
+  }
 
-  let template = existing;
+  let template = existingRows?.[0] ?? null;
   if (!template) {
     const { data: created, error: createError } = await supabase
       .from("onboarding_templates")
       .insert({ organization_id: organizationId, name: "Default onboarding", is_default: true })
       .select()
       .single<OnboardingTemplate>();
-    if (createError || !created) return { error: "not_migrated" };
-    template = created;
-    await supabase.from("onboarding_template_steps").insert([
-      { template_id: template.id, position: 0, step_type: "task", title: "Complete your profile", due_offset_days: 0 },
-      { template_id: template.id, position: 1, step_type: "task", title: "Take your first assessment in the Assessment Center", due_offset_days: 2 },
-    ]);
+    if (createError || !created) {
+      // 23505 = unique violation on migration 0117's one-default-per-org
+      // index — another request already created it between our read and
+      // this insert; re-read instead of surfacing a false "not migrated".
+      if (createError?.code === "23505") {
+        const { data: raceWinner } = await supabase
+          .from("onboarding_templates")
+          .select("*")
+          .eq("organization_id", organizationId)
+          .eq("is_default", true)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .returns<OnboardingTemplate[]>();
+        if (raceWinner?.[0]) {
+          template = raceWinner[0];
+        } else {
+          console.error("getOrCreateDefaultOnboardingTemplate create failed:", createError);
+          return { error: "not_migrated" };
+        }
+      } else {
+        console.error("getOrCreateDefaultOnboardingTemplate create failed:", createError);
+        return { error: "not_migrated" };
+      }
+    } else {
+      template = created;
+      await supabase.from("onboarding_template_steps").insert([
+        { template_id: template.id, position: 0, step_type: "task", title: "Complete your profile", due_offset_days: 0 },
+        { template_id: template.id, position: 1, step_type: "task", title: "Take your first assessment in the Assessment Center", due_offset_days: 2 },
+      ]);
+    }
   }
 
   const { data: steps } = await supabase
@@ -81,6 +117,32 @@ export async function addOnboardingTemplateStep(
     due_offset_days: Math.max(0, Math.min(180, Math.round(input.dueOffsetDays))),
   });
   if (error) return { error: "Could not add this step — the database may need migration 0102 run first." };
+
+  revalidatePath("/dashboard/company/onboarding");
+  return { success: true };
+}
+
+// Editing title/description/due date/document link on an already-added
+// step — addOnboardingTemplateStep only ever inserts, and there was no way
+// to change a step after the fact short of deleting and re-adding it.
+export async function updateOnboardingTemplateStep(
+  stepId: string,
+  input: { title: string; description?: string; knowledgeHubContentId?: string | null; dueOffsetDays: number }
+) {
+  const supabase = await createClient();
+  const title = input.title.trim().slice(0, MAX_TITLE);
+  if (!title) return { error: "Give this step a title" };
+
+  const { error } = await supabase
+    .from("onboarding_template_steps")
+    .update({
+      title,
+      description: input.description?.trim().slice(0, MAX_DESCRIPTION) || null,
+      knowledge_hub_content_id: input.knowledgeHubContentId || null,
+      due_offset_days: Math.max(0, Math.min(180, Math.round(input.dueOffsetDays))),
+    })
+    .eq("id", stepId);
+  if (error) return { error: "Could not update this step — try again." };
 
   revalidatePath("/dashboard/company/onboarding");
   return { success: true };
@@ -238,6 +300,12 @@ export async function completeMyOnboardingStep(stepId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("onboarding")) {
+    return { error: "Onboarding has been restricted for your account by your company administrator." };
+  }
+
   const { error } = await supabase
     .from("onboarding_instance_steps")
     .update({ completed_at: new Date().toISOString(), completed_by: user.id })
@@ -261,6 +329,12 @@ export async function approveOnboardingStep(stepId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const restricted = await listMyRestrictedFeatures(supabase, organizationId);
+  if (restricted.has("onboarding")) {
+    return { error: "Onboarding has been restricted for your account by your company administrator." };
+  }
 
   const { error } = await supabase
     .from("onboarding_instance_steps")

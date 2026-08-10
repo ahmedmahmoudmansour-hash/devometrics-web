@@ -6,6 +6,8 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { getOrCreateDefaultOnboardingTemplate } from "@/lib/onboarding/actions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import OnboardingTemplateEditor from "@/components/dashboard/OnboardingTemplateEditor";
+import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import type { KnowledgeHubContent } from "@/lib/supabase/types";
 
 export const metadata = { title: "Onboarding — Devometrics" };
@@ -40,6 +42,15 @@ export default async function CompanyOnboardingPage() {
         </div>
 
         <CompanyNavTabs active="onboarding" />
+
+        {data.organizationId && (
+          <FeatureEmailComposer
+            organizationId={data.organizationId}
+            featureKey="onboarding"
+            employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+            initialHistory={await listFeatureEmailHistory(data.organizationId, "onboarding")}
+          />
+        )}
 
         {"error" in templateResult ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

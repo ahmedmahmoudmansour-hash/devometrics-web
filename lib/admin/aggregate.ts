@@ -3,6 +3,14 @@ import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { effectiveSubscriptionTier, type SubscriptionTier } from "@/lib/billing/subscriptionTier";
 import type { AssessmentResult, DevelopmentPlan, GapAnalysis, Milestone, Profile } from "@/lib/supabase/types";
 
+export type PendingInviteRow = {
+  id: string;
+  email: string;
+  title: string | null;
+  organizationName: string;
+  invitedAt: string;
+};
+
 export type PilotRow = {
   userId: string;
   name: string;
@@ -27,21 +35,21 @@ export type PilotRow = {
 // "Admins can view all X" RLS policies added in migration 0013 — there is no
 // service_role key in this app, so this only works for a user whose profile
 // row has is_admin = true, and returns nothing extra for anyone else.
-export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotRow[] }> {
+export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotRow[]; pendingInvites: PendingInviteRow[] }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { isAdmin: false, rows: [] };
+  if (!user) return { isAdmin: false, rows: [], pendingInvites: [] };
 
   const { data: ownProfile } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
     .single<{ is_admin: boolean }>();
-  if (!ownProfile?.is_admin) return { isAdmin: false, rows: [] };
+  if (!ownProfile?.is_admin) return { isAdmin: false, rows: [], pendingInvites: [] };
 
-  const [{ data: profiles }, { data: analyses }, { data: results }, { data: plans }, { data: memberships }] =
+  const [{ data: profiles }, { data: analyses }, { data: results }, { data: plans }, { data: memberships }, { data: invites }] =
     await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: true }).returns<Profile[]>(),
       supabase
@@ -55,7 +63,28 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
         .from("organization_members")
         .select("user_id, organizations(name)")
         .returns<{ user_id: string; organizations: { name: string } }[]>(),
+      // Invited but never signed up (no auth.users row yet) never gets a
+      // profiles row, so the main profiles-driven query above can never
+      // surface them — this is the only query in this function that reads
+      // organization_invites instead, relying on 0081's "Platform admins
+      // can manage any organization's invites" policy rather than the
+      // is_org_admin-scoped one every other reader of this table is
+      // limited to.
+      supabase
+        .from("organization_invites")
+        .select("id, email, title, created_at, organizations(name)")
+        .is("accepted_at", null)
+        .order("created_at", { ascending: false })
+        .returns<{ id: string; email: string; title: string | null; created_at: string; organizations: { name: string } }[]>(),
     ]);
+
+  const pendingInvites: PendingInviteRow[] = (invites ?? []).map((i) => ({
+    id: i.id,
+    email: i.email,
+    title: i.title,
+    organizationName: i.organizations.name,
+    invitedAt: i.created_at,
+  }));
 
   const orgNameByUser = new Map<string, string>();
   for (const m of memberships ?? []) {
@@ -142,5 +171,5 @@ export async function buildPilotRows(): Promise<{ isAdmin: boolean; rows: PilotR
     };
   });
 
-  return { isAdmin: true, rows };
+  return { isAdmin: true, rows, pendingInvites };
 }

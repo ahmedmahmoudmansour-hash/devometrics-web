@@ -5,12 +5,13 @@ import { buildPilotRows } from "@/lib/admin/aggregate";
 import { buildAdminOrganizations } from "@/lib/admin/organizations";
 import AdminOrganizationsTable from "@/components/dashboard/AdminOrganizationsTable";
 import AdminPilotTable from "@/components/dashboard/AdminPilotTable";
+import AdminPendingInvites from "@/components/dashboard/AdminPendingInvites";
 import CreateCompanyWorkspaceForm from "@/components/dashboard/CreateCompanyWorkspaceForm";
 import PlatformAnnouncementForm from "@/components/dashboard/PlatformAnnouncementForm";
 
 export default async function AdminPage() {
   const t = await getTranslations("adminPage");
-  const [{ isAdmin, rows }, { rows: orgRows }] = await Promise.all([buildPilotRows(), buildAdminOrganizations()]);
+  const [{ isAdmin, rows, pendingInvites }, { rows: orgRows }] = await Promise.all([buildPilotRows(), buildAdminOrganizations()]);
   if (!isAdmin) redirect("/dashboard");
 
   const withScore = rows.filter((r) => r.careerHealthScore !== null);
@@ -77,6 +78,8 @@ export default async function AdminPage() {
         <PlatformAnnouncementForm />
 
         <AdminOrganizationsTable initial={orgRows} />
+
+        <AdminPendingInvites initial={pendingInvites} />
 
         <AdminPilotTable initial={rows} />
       </div>

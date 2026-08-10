@@ -11,6 +11,7 @@ import {
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
+import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
       { error: "Resume Intelligence is a Premium feature — upgrade to run this analysis." },
       { status: 403 }
     );
+  }
+  const restricted = await listMyRestrictedFeatures(supabase, membership?.organization_id ?? null);
+  if (restricted.has("resume_intelligence")) {
+    return NextResponse.json({ error: "Resume Intelligence has been restricted for your account by your company administrator." }, { status: 403 });
   }
 
   const { resumeText, targetRole, consent } = (await request.json()) as {

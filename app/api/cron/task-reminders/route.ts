@@ -6,6 +6,7 @@ import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
 import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/sendReminders";
 import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
 import { sendDueOnboardingReminders, sendDueOnboardingManagerApprovalReminders } from "@/lib/onboarding/sendReminders";
+import { sendDueScheduledFeatureEmails } from "@/lib/organizations/featureEmails";
 
 type ReminderTask = { title: string; date: string; overdue: boolean };
 type ReminderRow = {
@@ -111,6 +112,7 @@ export async function GET(request: Request) {
   const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
   const onboardingResult = await sendDueOnboardingReminders(supabase, secret);
   const onboardingManagerApprovalResult = await sendDueOnboardingManagerApprovalReminders(supabase, secret);
+  const scheduledFeatureEmailsResult = await sendDueScheduledFeatureEmails(supabase, secret);
 
   return NextResponse.json({
     candidates: rows?.length ?? 0,
@@ -120,5 +122,6 @@ export async function GET(request: Request) {
     onboardingManagerApproval: onboardingManagerApprovalResult,
     sent,
     knowledgeHub: knowledgeHubResult,
+    scheduledFeatureEmails: scheduledFeatureEmailsResult,
   });
 }

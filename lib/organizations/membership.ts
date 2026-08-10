@@ -16,3 +16,20 @@ export async function hasOrganizationMembership(
     .eq("user_id", userId);
   return (count ?? 0) > 0;
 }
+
+// Same calling convention as hasOrganizationMembership — for call sites
+// that need the actual organization_id (e.g. to check feature restrictions
+// via list_my_restricted_features) rather than just a yes/no. Individual
+// accounts (no membership row) get null, same as every other org-scoped
+// check in this app.
+export async function getMyOrganizationId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", userId)
+    .maybeSingle<{ organization_id: string }>();
+  return data?.organization_id ?? null;
+}

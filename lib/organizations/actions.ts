@@ -425,6 +425,11 @@ export async function bulkInviteEmployees(
   return { results };
 }
 
+// RLS decides who's actually allowed to delete which row — org admins via
+// 0017's is_org_admin-scoped policy, platform admins via 0081's is_admin()
+// one that covers every organization. Both the company page and the
+// platform admin page call this same action, so both get revalidated
+// rather than picking one and leaving the other stale.
 export async function revokeInvite(inviteId: string) {
   const supabase = await createClient();
   const {
@@ -434,6 +439,7 @@ export async function revokeInvite(inviteId: string) {
 
   await supabase.from("organization_invites").delete().eq("id", inviteId);
   revalidatePath("/dashboard/company");
+  revalidatePath("/dashboard/admin");
 }
 
 // Called on every dashboard load for users with no org membership yet —

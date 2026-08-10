@@ -39,6 +39,9 @@ type NavItem = {
   icon: React.ComponentType<{ size?: number }>;
   accent?: "teal" | "amber";
   premium?: boolean;
+  // Matches a RestrictableFeature key (lib/organizations/featureAccess.ts)
+  // — items without one are never hidden by a feature restriction.
+  featureKey?: string;
 };
 
 // Grouped by what the user is trying to DO, not by when features shipped —
@@ -61,13 +64,13 @@ function buildSections(
         { href: "/dashboard/discovery", labelKey: "discovery", icon: Compass },
         { href: "/dashboard/gap-analysis", labelKey: "gapAnalysis", icon: Target },
         { href: "/dashboard/assessments", labelKey: "assessments", icon: ClipboardList },
-        { href: "/dashboard/resume", labelKey: "resume", icon: FileText, premium: true },
+        { href: "/dashboard/resume", labelKey: "resume", icon: FileText, premium: true, featureKey: "resume_intelligence" },
         { href: "/dashboard/scorecard", labelKey: "scorecard", icon: LineChart },
         // Only shown to someone with an actual manager assigned in the Org
         // Chart — with no manager, this page can never have anything on it
         // (no one to give a Manager's Perspective), so the link is just
         // permanent clutter otherwise, not a real feature they can use.
-        ...(hasManager ? [{ href: "/dashboard/impact-cycle", labelKey: "impactCycle", icon: ClipboardCheck }] : []),
+        ...(hasManager ? [{ href: "/dashboard/impact-cycle", labelKey: "impactCycle", icon: ClipboardCheck, featureKey: "performance_review" }] : []),
         // Only shown to a real reporting-line manager (migration 0078) —
         // an individual contributor with no reports has nothing to do here.
         ...(hasDirectReports ? [{ href: "/dashboard/my-team", labelKey: "myTeam", icon: Users }] : []),
@@ -76,9 +79,9 @@ function buildSections(
     {
       labelKey: "growSection",
       items: [
-        { href: "/dashboard/coach", labelKey: "aiCoach", icon: Sparkles },
-        { href: "/dashboard/roleplay", labelKey: "practiceScenarios", icon: Drama, premium: true },
-        { href: "/dashboard/career-paths", labelKey: "careerPaths", icon: Route },
+        { href: "/dashboard/coach", labelKey: "aiCoach", icon: Sparkles, featureKey: "ai_coaching" },
+        { href: "/dashboard/roleplay", labelKey: "practiceScenarios", icon: Drama, premium: true, featureKey: "roleplay" },
+        { href: "/dashboard/career-paths", labelKey: "careerPaths", icon: Route, featureKey: "career_development" },
         { href: "/dashboard/plans", labelKey: "myDevelopment", icon: MilestoneIcon },
         { href: "/dashboard/journey", labelKey: "myJourney", icon: History },
       ],
@@ -96,7 +99,7 @@ function buildSections(
         { href: "/dashboard/accountability", labelKey: "accountabilityGroups", icon: Users },
         // Only relevant to someone actually part of a company workspace —
         // an individual account will never have anything assigned here.
-        ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library }] : []),
+        ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library, featureKey: "knowledge_hub" }] : []),
       ],
     },
   ];
@@ -110,6 +113,7 @@ export default function SidebarNav({
   hasDirectReports,
   hasManager,
   hasOrgMembership,
+  restrictedFeatures = [],
 }: {
   savedTheme?: string | null;
   isCompanyAdmin: boolean;
@@ -118,10 +122,15 @@ export default function SidebarNav({
   hasDirectReports: boolean;
   hasManager: boolean;
   hasOrgMembership: boolean;
+  restrictedFeatures?: string[];
 }) {
   const t = useTranslations("sidebarNav");
   const pathname = usePathname();
-  const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership);
+  const restrictedSet = new Set(restrictedFeatures);
+  const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership).map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.featureKey || !restrictedSet.has(item.featureKey)),
+  }));
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
