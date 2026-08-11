@@ -14,6 +14,7 @@ export type AdminOrganizationRow = {
   monthlyAiBudgetUsd: number | null;
   spendThisMonthUsd: number;
   isDisabled: boolean;
+  pendingDeletionAt: string | null;
 };
 
 // Platform-admin-only: how many seats each company has, and how many
@@ -38,9 +39,9 @@ export async function buildAdminOrganizations(): Promise<{ isAdmin: boolean; row
 
   const { data: orgs } = await supabase
     .from("organizations")
-    .select("id, name, seat_limit, is_disabled")
+    .select("id, name, seat_limit, is_disabled, pending_deletion_at")
     .order("name", { ascending: true })
-    .returns<{ id: string; name: string; seat_limit: number | null; is_disabled: boolean | null }[]>();
+    .returns<{ id: string; name: string; seat_limit: number | null; is_disabled: boolean | null; pending_deletion_at: string | null }[]>();
   if (!orgs || orgs.length === 0) return { isAdmin: true, rows: [] };
 
   const { data: members } = await supabase
@@ -86,6 +87,7 @@ export async function buildAdminOrganizations(): Promise<{ isAdmin: boolean; row
     monthlyAiBudgetUsd: budgetByOrg.get(o.id) ?? null,
     spendThisMonthUsd: spendByOrg.get(o.id) ?? 0,
     isDisabled: o.is_disabled ?? false,
+    pendingDeletionAt: o.pending_deletion_at,
   }));
 
   return { isAdmin: true, rows };
@@ -331,6 +333,52 @@ export async function createCompanyWorkspace(fields: {
     );
   } catch (err) {
     console.error(`Founding-admin invite email failed for ${adminEmail}:`, err);
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true };
+}
+
+// Platform-wide equivalent of deleteOrganization (lib/organizations/actions.ts),
+// which only works when the caller is that specific org's own admin. Goes
+// through the platform_admin_schedule_organization_deletion RPC (migration
+// 0119), gated by the caller's own is_admin flag — same 30-day grace
+// period and daily purge cron (purge_scheduled_organization_deletions,
+// migration 0059) as every other path into this deletion mechanism, so a
+// mistaken click is still recoverable via cancel within the window.
+export async function platformAdminScheduleOrganizationDeletion(
+  organizationId: string
+): Promise<{ error: string } | { success: true; deletionAt: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data, error } = await supabase.rpc("platform_admin_schedule_organization_deletion", {
+    target_org_id: organizationId,
+    grace_days: 30,
+  });
+  if (error) {
+    console.error("platformAdminScheduleOrganizationDeletion failed:", error);
+    return { error: "Could not schedule deletion — the database may need migration 0119 run first." };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { success: true, deletionAt: data as string };
+}
+
+export async function platformAdminCancelOrganizationDeletion(organizationId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase.rpc("platform_admin_cancel_organization_deletion", { target_org_id: organizationId });
+  if (error) {
+    console.error("platformAdminCancelOrganizationDeletion failed:", error);
+    return { error: "Could not cancel — try again." };
   }
 
   revalidatePath("/dashboard/admin");

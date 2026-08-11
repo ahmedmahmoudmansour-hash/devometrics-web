@@ -4900,7 +4900,12 @@
     "accessEnabledLabel": "مفعّل",
     "accessDisabledLabel": "معطّل",
     "accessUpdating": "جارٍ التحديث…",
-    "accessDisableConfirm": "حظر جميع أعضاء {name} من تسجيل الدخول؟ يمكن إعادة تفعيلهم في أي وقت."
+    "accessDisableConfirm": "حظر جميع أعضاء {name} من تسجيل الدخول؟ يمكن إعادة تفعيلهم في أي وقت.",
+    "colDelete": "حذف",
+    "deleteButton": "حذف مساحة العمل",
+    "deleteConfirm": "جدولة {name} للحذف خلال 30 يومًا؟ يستمر الجميع في هذه المساحة في العمل بشكل طبيعي حتى ذلك الحين — يمكنك الإلغاء في أي وقت قبل انتهاء المهلة.",
+    "deletionScheduledFor": "الحذف في {date}",
+    "cancelDeleteButton": "إلغاء الحذف"
   },
   "adminPilotTable": {
     "unlimitedPlaceholder": "غير محدود",

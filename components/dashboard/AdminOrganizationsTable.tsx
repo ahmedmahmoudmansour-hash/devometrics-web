@@ -3,7 +3,14 @@
 import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { updateOrgSeatLimit, updateOrgAiBudget, getOrgMemberAiSpend, setOrganizationDisabled } from "@/lib/admin/organizations";
+import {
+  updateOrgSeatLimit,
+  updateOrgAiBudget,
+  getOrgMemberAiSpend,
+  setOrganizationDisabled,
+  platformAdminScheduleOrganizationDeletion,
+  platformAdminCancelOrganizationDeletion,
+} from "@/lib/admin/organizations";
 import type { AdminOrganizationRow, OrgMemberSpendRow } from "@/lib/admin/organizations";
 import { AI_BUDGET_PACKAGES, packageBudgetForSeats } from "@/lib/aiUsage/budgetPackages";
 
@@ -269,6 +276,96 @@ function OrgAccessCell({ org }: { org: AdminOrganizationRow }) {
   );
 }
 
+// Platform-wide company cleanup — same 30-day grace period and
+// cancel-any-time posture as everything else that touches
+// pending_deletion_at (see migration 0119), so a mistaken click on the
+// wrong test company is still recoverable. Deliberately a plain confirm()
+// naming the company, not type-to-confirm — this schedules a reversible
+// grace period, it doesn't delete anything immediately.
+function DeleteOrgCell({ org }: { org: AdminOrganizationRow }) {
+  const t = useTranslations("adminOrganizationsTable");
+  const router = useRouter();
+  const [pendingDeletionAt, setPendingDeletionAt] = useState(org.pendingDeletionAt);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function scheduleDelete() {
+    if (!window.confirm(t("deleteConfirm", { name: org.name }))) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await platformAdminScheduleOrganizationDeletion(org.id);
+      if ("error" in result) setError(result.error);
+      else {
+        setPendingDeletionAt(result.deletionAt);
+        router.refresh();
+      }
+    });
+  }
+
+  function cancelDelete() {
+    setError(null);
+    startTransition(async () => {
+      const result = await platformAdminCancelOrganizationDeletion(org.id);
+      if ("error" in result) setError(result.error);
+      else {
+        setPendingDeletionAt(null);
+        router.refresh();
+      }
+    });
+  }
+
+  if (pendingDeletionAt) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={{ fontSize: 10.5, color: "#f87171" }}>
+          {t("deletionScheduledFor", { date: new Date(pendingDeletionAt).toLocaleDateString() })}
+        </span>
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={cancelDelete}
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: "5px 10px",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "var(--text)",
+            cursor: "pointer",
+          }}
+        >
+          {isPending ? t("accessUpdating") : t("cancelDeleteButton")}
+        </button>
+        {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={scheduleDelete}
+        style={{
+          background: "transparent",
+          border: "1px solid rgba(248,113,113,0.4)",
+          borderRadius: 6,
+          padding: "5px 10px",
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#f87171",
+          cursor: "pointer",
+        }}
+      >
+        {isPending ? t("accessUpdating") : t("deleteButton")}
+      </button>
+      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+    </div>
+  );
+}
+
 export default function AdminOrganizationsTable({ initial }: { initial: AdminOrganizationRow[] }) {
   const t = useTranslations("adminOrganizationsTable");
   const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
@@ -299,6 +396,7 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
               <th style={{ ...headStyle, textAlign: "right" }}>{t("colAiSpendThisMonth")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colMonthlyAiBudget")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}>{t("colAccess")}</th>
+              <th style={{ ...headStyle, textAlign: "left" }}>{t("colDelete")}</th>
               <th style={{ ...headStyle, textAlign: "left" }}></th>
             </tr>
           </thead>
@@ -324,6 +422,9 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                     <OrgAccessCell org={org} />
                   </td>
                   <td style={cellStyle}>
+                    <DeleteOrgCell org={org} />
+                  </td>
+                  <td style={cellStyle}>
                     <button
                       type="button"
                       onClick={() => setExpandedOrgId(isExpanded ? null : org.id)}
@@ -344,7 +445,7 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                 </tr>
                 {isExpanded && (
                   <tr>
-                    <td colSpan={7} style={{ padding: 0, borderBottom: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
+                    <td colSpan={8} style={{ padding: 0, borderBottom: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
                       <EmployeeSpendPanel organizationId={org.id} />
                     </td>
                   </tr>

@@ -4900,7 +4900,12 @@
     "accessEnabledLabel": "Enabled",
     "accessDisabledLabel": "Disabled",
     "accessUpdating": "Updating…",
-    "accessDisableConfirm": "Block every member of {name} from logging in? They can be re-enabled anytime."
+    "accessDisableConfirm": "Block every member of {name} from logging in? They can be re-enabled anytime.",
+    "colDelete": "Delete",
+    "deleteButton": "Delete workspace",
+    "deleteConfirm": "Schedule {name} for deletion in 30 days? Everyone in this workspace keeps working normally until then — you can cancel any time before the grace period ends.",
+    "deletionScheduledFor": "Deleting on {date}",
+    "cancelDeleteButton": "Cancel deletion"
   },
   "adminPilotTable": {
     "unlimitedPlaceholder": "Unlimited",
