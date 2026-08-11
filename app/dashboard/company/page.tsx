@@ -63,13 +63,35 @@ export default async function CompanyProfilePage() {
     }).length;
 
     const withManager = data.rows.filter((r) => r.managerUserId).length;
+    // Same order as CompanyNavTabs' 5 groups (Overview, Structure, Talent,
+    // Hiring & Growth, Performance & Feedback) — this grid used to be in an
+    // unrelated ad-hoc order, which read as inconsistent with the nav
+    // directly above it. Profile and Permissions are deliberately not
+    // tiles here (Profile IS this page; Permissions is a config screen,
+    // not a feature with its own stat to show), same reasoning as before.
     widgets = [
+      // Overview
       {
         key: "employees",
         label: t("employeesLabel"),
         href: "/dashboard/company/employees",
         icon: COMPANY_WIDGET_ICONS.Users,
         stat: t("employeesStat", { count: data.rows.length }),
+      },
+      {
+        key: "analytics",
+        label: t("analyticsLabel"),
+        href: "/dashboard/company/analytics",
+        icon: COMPANY_WIDGET_ICONS.BarChart3,
+        stat: t("analyticsStat"),
+      },
+      // Structure
+      {
+        key: "orgChart",
+        label: t("orgChartLabel"),
+        href: "/dashboard/company/org-chart",
+        icon: COMPANY_WIDGET_ICONS.ListTree,
+        stat: t("orgChartStat", { withManager, total: data.rows.length }),
       },
       {
         key: "jobArchitecture",
@@ -79,43 +101,13 @@ export default async function CompanyProfilePage() {
         stat: jobRoleCount !== null ? t("jobArchitectureStat", { count: jobRoleCount }) : t("jobArchitectureStatEmpty"),
       },
       {
-        key: "hiring",
-        label: t("hiringLabel"),
-        href: "/dashboard/company/hiring",
-        icon: COMPANY_WIDGET_ICONS.Briefcase,
-        stat: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
-      },
-      {
-        key: "orgChart",
-        label: t("orgChartLabel"),
-        href: "/dashboard/company/org-chart",
-        icon: COMPANY_WIDGET_ICONS.ListTree,
-        stat: t("orgChartStat", { withManager, total: data.rows.length }),
-      },
-      {
         key: "competencies",
         label: t("competenciesLabel"),
         href: "/dashboard/company/competencies",
         icon: COMPANY_WIDGET_ICONS.SlidersHorizontal,
         stat: t("competenciesStat", { count: data.organizationCompetencies.length }),
       },
-      {
-        key: "performanceReviews",
-        label: t("performanceReviewsLabel"),
-        href: "/dashboard/company/impact-cycles",
-        icon: COMPANY_WIDGET_ICONS.ClipboardCheck,
-        stat: reviewCycleCount !== null ? t("performanceReviewsStat", { count: reviewCycleCount }) : t("performanceReviewsStatEmpty"),
-      },
-      {
-        key: "knowledgeHub",
-        label: t("knowledgeHubLabel"),
-        href: "/dashboard/company/knowledge-hub",
-        icon: COMPANY_WIDGET_ICONS.Library,
-        stat:
-          knowledgeHubContentCount !== null
-            ? t("knowledgeHubStat", { count: knowledgeHubContentCount })
-            : t("knowledgeHubStatEmpty"),
-      },
+      // Talent
       {
         key: "highPotential",
         label: t("highPotentialLabel"),
@@ -137,6 +129,39 @@ export default async function CompanyProfilePage() {
         icon: COMPANY_WIDGET_ICONS.Gauge,
         stat: scorecardKpiCount !== null ? t("scorecardStat", { count: scorecardKpiCount }) : t("scorecardStatEmpty"),
       },
+      // Hiring & Growth
+      {
+        key: "hiring",
+        label: t("hiringLabel"),
+        href: "/dashboard/company/hiring",
+        icon: COMPANY_WIDGET_ICONS.Briefcase,
+        stat: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
+      },
+      {
+        key: "onboarding",
+        label: t("onboardingLabel"),
+        href: "/dashboard/company/onboarding",
+        icon: COMPANY_WIDGET_ICONS.ListChecks,
+        stat: t("onboardingStat"),
+      },
+      {
+        key: "knowledgeHub",
+        label: t("knowledgeHubLabel"),
+        href: "/dashboard/company/knowledge-hub",
+        icon: COMPANY_WIDGET_ICONS.Library,
+        stat:
+          knowledgeHubContentCount !== null
+            ? t("knowledgeHubStat", { count: knowledgeHubContentCount })
+            : t("knowledgeHubStatEmpty"),
+      },
+      // Performance & Feedback
+      {
+        key: "performanceReviews",
+        label: t("performanceReviewsLabel"),
+        href: "/dashboard/company/impact-cycles",
+        icon: COMPANY_WIDGET_ICONS.ClipboardCheck,
+        stat: reviewCycleCount !== null ? t("performanceReviewsStat", { count: reviewCycleCount }) : t("performanceReviewsStatEmpty"),
+      },
       {
         key: "surveys",
         label: t("surveysLabel"),
@@ -150,13 +175,6 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/exit-interviews",
         icon: COMPANY_WIDGET_ICONS.UserMinus,
         stat: exitInterviewCount !== null ? t("exitInterviewsStat", { count: exitInterviewCount }) : t("exitInterviewsStatEmpty"),
-      },
-      {
-        key: "analytics",
-        label: t("analyticsLabel"),
-        href: "/dashboard/company/analytics",
-        icon: COMPANY_WIDGET_ICONS.BarChart3,
-        stat: t("analyticsStat"),
       },
     ];
   }
@@ -264,10 +282,14 @@ export default async function CompanyProfilePage() {
                     <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>{t("overviewLeadershipReadinessHint")}</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {data.leadershipReadiness.slice(0, 5).map((r) => (
-                        <div key={r.userId} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                        <Link
+                          key={r.userId}
+                          href={`/dashboard/company/${r.userId}`}
+                          style={{ display: "flex", justifyContent: "space-between", fontSize: 13, textDecoration: "none" }}
+                        >
                           <span style={{ color: "var(--text)" }}>{r.name}</span>
                           <span className="mono" style={{ color: "var(--teal)", fontWeight: 700 }}>{r.score}</span>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>

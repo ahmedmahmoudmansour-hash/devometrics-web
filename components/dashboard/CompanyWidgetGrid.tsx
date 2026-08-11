@@ -13,6 +13,7 @@ import {
   Library,
   Briefcase,
   UserMinus,
+  ListChecks,
 } from "lucide-react";
 
 export type CompanyWidget = {
@@ -92,4 +93,5 @@ export const COMPANY_WIDGET_ICONS = {
   Library,
   Briefcase,
   UserMinus,
+  ListChecks,
 };

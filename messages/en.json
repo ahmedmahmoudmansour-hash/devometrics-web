@@ -1520,7 +1520,9 @@
     "attentionOpenPostingsNoCandidates": "{count, plural, one {# open posting has} other {# open postings have}} no candidates yet",
     "attentionHighFlightRisk": "{name} flagged as a high flight risk ({score}/100)",
     "attentionExitInterviewInsight": "Exit interview insight: {summary}",
-    "attentionExitInterviewTrendsReady": "{count, plural, one {# exit interview is} other {# exit interviews are}} recorded — enough to run root-cause trend analysis"
+    "attentionExitInterviewTrendsReady": "{count, plural, one {# exit interview is} other {# exit interviews are}} recorded — enough to run root-cause trend analysis",
+    "onboardingLabel": "Onboarding",
+    "onboardingStat": "Build your new-hire checklist"
   },
   "inviteCodeDisplay": {
     "label": "Invite code:",

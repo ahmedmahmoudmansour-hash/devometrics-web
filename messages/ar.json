@@ -1520,7 +1520,9 @@
     "attentionOpenPostingsNoCandidates": "{count, plural, one {وظيفة مفتوحة واحدة ليس لديها} other {# وظائف مفتوحة ليس لديها}} مرشحون بعد",
     "attentionHighFlightRisk": "{name} مُصنّف بمخاطر مغادرة عالية ({score}/100)",
     "attentionExitInterviewInsight": "رؤية من مقابلات الخروج: {summary}",
-    "attentionExitInterviewTrendsReady": "{count, plural, one {تم تسجيل مقابلة خروج واحدة} other {تم تسجيل # مقابلات خروج}} — كافية لتشغيل تحليل اتجاهات الأسباب الجذرية"
+    "attentionExitInterviewTrendsReady": "{count, plural, one {تم تسجيل مقابلة خروج واحدة} other {تم تسجيل # مقابلات خروج}} — كافية لتشغيل تحليل اتجاهات الأسباب الجذرية",
+    "onboardingLabel": "التأهيل",
+    "onboardingStat": "إنشاء قائمة تأهيل الموظفين الجدد"
   },
   "inviteCodeDisplay": {
     "label": "رمز الدعوة:",
