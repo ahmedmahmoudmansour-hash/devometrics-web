@@ -140,7 +140,29 @@ export function useVoicePlayback() {
               });
               if (isStale()) return;
             }
-            const blob = await synthesisQueue[index];
+            let blob: Blob;
+            try {
+              blob = await synthesisQueue[index];
+            } catch (err) {
+              if (isStale()) return;
+              console.error("Voice synthesis failed for one chunk:", err);
+              if (isFirst) {
+                // Nothing has played yet — surface it the same way a
+                // playback failure does, instead of leaving `loading`
+                // stuck true forever (the bug this replaces: a stuck
+                // loading flag made CoachChat's mic-vs-coach-speaking
+                // guard treat the coach as permanently still talking,
+                // silently dropping every word the user said afterward).
+                callbacks?.onFirstChunkFailed?.();
+                setLoading(false);
+                setPlaying(false);
+                setError(err instanceof Error ? err.message : "Could not play audio");
+              }
+              // Skip just this sentence and keep going — one bad chunk
+              // shouldn't silently kill the rest of the reply's audio.
+              index++;
+              continue;
+            }
             if (isStale()) return;
             const url = URL.createObjectURL(blob);
             objectUrlsRef.current.push(url);
@@ -173,7 +195,14 @@ export function useVoicePlayback() {
             index++;
           }
         } finally {
-          if (!isStale()) setPlaying(false);
+          // Unconditional safety net, not just the happy-path resets above —
+          // covers every exit from this loop (a reply with zero
+          // synthesizable sentences, an unexpected throw, etc.) so `loading`
+          // can never get stuck true past this stream's lifetime.
+          if (!isStale()) {
+            setPlaying(false);
+            setLoading(false);
+          }
         }
       }
 
