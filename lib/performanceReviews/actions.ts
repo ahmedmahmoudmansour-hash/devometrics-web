@@ -231,6 +231,74 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
   return { items };
 }
 
+export type PendingProbationAcceptance = {
+  reviewId: string;
+  employeeUserId: string;
+  employeeName: string;
+  cycleName: string;
+  createdAt: string;
+};
+
+// Same "RLS is the real boundary" posture as listMyDirectReportReviews —
+// scoped to the caller's own direct reports via manager_user_id, no admin
+// gate. Only ever returns probation reviews still awaiting THIS manager's
+// acceptance (migration 0122) — once accepted, a review drops out of this
+// list on its own (the underlying row no longer matches the filter).
+export async function getPendingProbationAcceptances(): Promise<PendingProbationAcceptance[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: reports } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("manager_user_id", user.id)
+    .returns<{ user_id: string }[]>();
+  if (!reports || reports.length === 0) return [];
+
+  const reportIds = reports.map((r) => r.user_id);
+  const { data: reviews } = await supabase
+    .from("performance_reviews")
+    .select("id, employee_user_id, created_at, performance_review_cycles(name)")
+    .in("employee_user_id", reportIds)
+    .eq("requires_hiring_manager_acceptance", true)
+    .is("hiring_manager_accepted_at", null)
+    .returns<{ id: string; employee_user_id: string; created_at: string; performance_review_cycles: { name: string } }[]>();
+  if (!reviews || reviews.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", reviews.map((r) => r.employee_user_id))
+    .returns<{ id: string; full_name: string | null }[]>();
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+
+  return reviews.map((r) => ({
+    reviewId: r.id,
+    employeeUserId: r.employee_user_id,
+    employeeName: nameById.get(r.employee_user_id) ?? "Unknown",
+    cycleName: r.performance_review_cycles.name,
+    createdAt: r.created_at,
+  }));
+}
+
+// Calls accept_probation_review (migration 0122) — the RPC does its own
+// is_manager_of_user/is_org_admin check (RLS is bypassed inside a SECURITY
+// DEFINER function), so this is a thin, defense-in-depth wrapper, not the
+// real authorization boundary.
+export async function acceptProbationReview(reviewId: string): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_probation_review", { target_review_id: reviewId });
+  if (error) {
+    console.error("acceptProbationReview failed:", error);
+    return { error: "Could not accept — the database may need migration 0122 run first." };
+  }
+  revalidatePath("/dashboard/my-team");
+  return { success: true };
+}
+
 export async function submitManagerAssessment(reviewId: string, rating: number, feedback: string, developmentNeeds: string) {
   const supabase = await createClient();
   const restrictedError = await performanceReviewRestrictedError(supabase);
@@ -423,8 +491,14 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
   if (error) return { detail: null, error: "not_migrated" };
   if (!reviews || reviews.length === 0) return { detail: null };
 
+  // Probation acceptance gate (migration 0122) — a review the hiring
+  // manager hasn't accepted yet simply doesn't exist as far as the
+  // employee's own view is concerned; they see nothing until it's accepted.
+  const visible = reviews.filter((r) => !(r.requires_hiring_manager_acceptance && !r.hiring_manager_accepted_at));
+  if (visible.length === 0) return { detail: null };
+
   // Prefer an open cycle; otherwise the most recently created one.
-  const sorted = [...reviews].sort((a, b) => {
+  const sorted = [...visible].sort((a, b) => {
     const aOpen = a.performance_review_cycles.status === "open" ? 1 : 0;
     const bOpen = b.performance_review_cycles.status === "open" ? 1 : 0;
     if (aOpen !== bOpen) return bOpen - aOpen;

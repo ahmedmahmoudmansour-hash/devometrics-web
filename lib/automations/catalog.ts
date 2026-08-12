@@ -6,13 +6,18 @@
 // shown on the toggle UI (translated at the UI layer via
 // t(`workflowAutomation.recipes.${key}...`), same "stable key, translate
 // at display" split used throughout this codebase.
-export type RecipeKey = "hire_to_onboarding" | "low_score_to_reassessment" | "high_potential_to_succession";
+export type RecipeKey = "hire_to_onboarding" | "hire_to_probation" | "low_score_to_reassessment" | "high_potential_to_succession";
 
 export const RECIPES: { key: RecipeKey; title: string; description: string }[] = [
   {
     key: "hire_to_onboarding",
     title: "New hire welcome",
     description: "When a hired candidate joins, automatically assign them any Knowledge Hub content flagged for new hires and email their manager to schedule a 30-day check-in.",
+  },
+  {
+    key: "hire_to_probation",
+    title: "New hire probation review",
+    description: "When a hired candidate joins, automatically start a single-employee probation review for them — hidden from the new hire until their hiring manager reviews and accepts it.",
   },
   {
     key: "low_score_to_reassessment",

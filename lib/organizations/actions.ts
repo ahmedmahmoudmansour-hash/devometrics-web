@@ -12,7 +12,7 @@ import { slugify } from "@/lib/organizations/slug";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
-import { runHireWelcome } from "@/lib/automations/recipes";
+import { runHireWelcome, runHireToProbation } from "@/lib/automations/recipes";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
@@ -537,6 +537,11 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
       employeeName: profile?.full_name || user.email,
       orgName: org?.name ?? "your new workspace",
       managerEmail: invite.manager_email ?? null,
+    });
+    await runHireToProbation(supabase, {
+      organizationId: invite.organization_id,
+      employeeUserId: user.id,
+      employeeName: profile?.full_name || user.email,
     });
   }
 

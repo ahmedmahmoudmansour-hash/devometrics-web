@@ -36,6 +36,14 @@ export type PerformanceReview = {
   manager_closed_at: string | null;
   manager_closed_by: string | null;
   created_at: string;
+  // Probation acceptance gate (migration 0122) — set true only by
+  // create_automated_review_cycle for the probation_review starter. While
+  // true and hiring_manager_accepted_at is null, the review is hidden from
+  // the employee entirely (see getMyCurrentReview) so a new hire never sees
+  // a probation review exists until their hiring manager accepts it.
+  requires_hiring_manager_acceptance: boolean;
+  hiring_manager_accepted_at: string | null;
+  hiring_manager_accepted_by: string | null;
 };
 
 export type SelfAssessment = {

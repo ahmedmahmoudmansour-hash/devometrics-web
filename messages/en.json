@@ -2084,6 +2084,12 @@
     "teamPulseCareerHealth": "Career Health",
     "teamPulseTopGap": "Biggest gap: {dimension} ({gap} pts short of target)"
   },
+  "probationAcceptanceCard": {
+    "title": "Probation reviews awaiting your acceptance",
+    "hint": "A new hire's probation review stays hidden from them until you review and accept it here.",
+    "readyFor": "Ready for {name}",
+    "acceptButton": "Review & accept"
+  },
   "myPerformanceReview": {
     "yourReflection": "Your Reflection",
     "helpMeWriteThis": "✨ Help me write this",
@@ -4963,6 +4969,10 @@
       "hire_to_onboarding": {
         "title": "New hire welcome",
         "description": "When a hired candidate joins, automatically assign them any Knowledge Hub content flagged for new hires and email their manager to schedule a 30-day check-in."
+      },
+      "hire_to_probation": {
+        "title": "New hire probation review",
+        "description": "When a hired candidate joins, automatically start a single-employee probation review for them — hidden from the new hire until their hiring manager reviews and accepts it."
       },
       "low_score_to_reassessment": {
         "title": "Low assessment score follow-up",

@@ -2,10 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { listMyDirectReportReviews } from "@/lib/performanceReviews/actions";
+import { listMyDirectReportReviews, getPendingProbationAcceptances } from "@/lib/performanceReviews/actions";
 import { listMyTeamPulse } from "@/lib/organizations/teamPulse";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import MyTeamReviews from "@/components/dashboard/MyTeamReviews";
+import ProbationAcceptanceCard from "@/components/dashboard/ProbationAcceptanceCard";
 import { ScoreBar } from "@/components/dashboard/charts";
 
 export const metadata = { title: "My Team — Devometrics" };
@@ -25,6 +26,7 @@ export default async function MyTeamPage() {
 
   const { items, error } = await listMyDirectReportReviews();
   const { members: pulseMembers } = await listMyTeamPulse();
+  const pendingProbationAcceptances = await getPendingProbationAcceptances();
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -70,6 +72,8 @@ export default async function MyTeamPage() {
             </div>
           </div>
         )}
+
+        <ProbationAcceptanceCard initial={pendingProbationAcceptances} />
 
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

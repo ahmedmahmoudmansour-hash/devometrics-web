@@ -4,6 +4,7 @@ import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template
 import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import { listNewHireContentIds, assignKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
+import { createAutomatedSingleEmployeeCycle } from "@/lib/performanceReviews/cycleAutomation";
 import { isRecipeEnabled, logAutomation, firedRecently } from "./engine";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -70,6 +71,39 @@ export async function runHireWelcome(
     recipeKey: "hire_to_onboarding",
     subjectUserId: params.employeeUserId,
     summary: `${newHireContentIds.length} new-hire Knowledge Hub document(s) assigned${params.managerEmail ? " and manager notified" : ""}.`,
+  });
+}
+
+// Fires from inside checkAndConsumeInvite() — same self-scoped-session
+// posture as runHireWelcome above. Starts a single-employee probation
+// review hidden from the new hire until their hiring manager accepts it
+// (requires_hiring_manager_acceptance, migration 0122) — HR schedules this
+// automation once per org; the hiring manager reviews and accepts the
+// generated template per-hire; HR/admins can still view or accept it at
+// any time, same "admin can always do what a manager can do" posture used
+// throughout this schema.
+export async function runHireToProbation(
+  supabase: SupabaseServerClient,
+  params: { organizationId: string; employeeUserId: string; employeeName: string }
+): Promise<void> {
+  const enabled = await isRecipeEnabled(supabase, params.organizationId, "hire_to_probation");
+  if (!enabled) return;
+
+  const result = await createAutomatedSingleEmployeeCycle(supabase, {
+    employeeUserId: params.employeeUserId,
+    starterKey: "probation_review",
+    cycleName: `${params.employeeName} — Probation Review`,
+  });
+  if ("error" in result) {
+    console.error("runHireToProbation failed:", result.error);
+    return;
+  }
+
+  await logAutomation(supabase, {
+    organizationId: params.organizationId,
+    recipeKey: "hire_to_probation",
+    subjectUserId: params.employeeUserId,
+    summary: "Probation review cycle created, pending hiring-manager acceptance.",
   });
 }
 
