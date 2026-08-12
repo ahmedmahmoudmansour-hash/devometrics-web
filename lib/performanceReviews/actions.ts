@@ -21,6 +21,8 @@ import type {
 } from "./types";
 import { getInstanceSteps, getInstanceStepsForReviews } from "./instanceSteps";
 import type { CustomStepCompletion, CustomStepAggregate } from "./workflowTypes";
+import { createAutomatedSingleEmployeeCycle } from "./cycleAutomation";
+import { isRecipeEnabled, firedRecently, logAutomation } from "@/lib/automations/engine";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -136,10 +138,14 @@ export async function listReviewsForCycle(cycleId: string): Promise<ReviewListIt
 
   const reviewIds = reviews.map((r) => r.id);
   const [{ data: selfRows }, { data: managerRows }] = await Promise.all([
-    supabase.from("performance_review_self_assessments").select("review_id, rating").in("review_id", reviewIds).returns<{ review_id: string; rating: number | null }[]>(),
+    supabase
+      .from("performance_review_self_assessments")
+      .select("review_id, rating, reflection, key_strengths, recommendations, development_areas")
+      .in("review_id", reviewIds)
+      .returns<{ review_id: string; rating: number | null; reflection: string | null; key_strengths: string | null; recommendations: string | null; development_areas: string | null }[]>(),
     supabase.from("performance_review_manager_assessments").select("review_id, rating").in("review_id", reviewIds).returns<{ review_id: string; rating: number | null }[]>(),
   ]);
-  const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r.rating]));
+  const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r]));
   const managerByReview = new Map((managerRows ?? []).map((r) => [r.review_id, r.rating]));
   const stepsByReview = await getInstanceStepsForReviews(reviewIds);
 
@@ -148,7 +154,11 @@ export async function listReviewsForCycle(cycleId: string): Promise<ReviewListIt
       ...r,
       employeeName: profileById.get(r.employee_user_id)?.full_name ?? "Unknown",
       employeeEmail: profileById.get(r.employee_user_id)?.email ?? "",
-      selfRating: selfByReview.get(r.id) ?? null,
+      selfRating: selfByReview.get(r.id)?.rating ?? null,
+      selfReflection: selfByReview.get(r.id)?.reflection ?? null,
+      selfKeyStrengths: selfByReview.get(r.id)?.key_strengths ?? null,
+      selfRecommendations: selfByReview.get(r.id)?.recommendations ?? null,
+      selfDevelopmentAreas: selfByReview.get(r.id)?.development_areas ?? null,
       managerRating: managerByReview.get(r.id) ?? null,
       instanceSteps: stepsByReview.get(r.id) ?? [],
     }))
@@ -206,10 +216,14 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
 
   const reviewIds = picked.map((r) => r.id);
   const [{ data: selfRows }, { data: managerRows }] = await Promise.all([
-    supabase.from("performance_review_self_assessments").select("review_id, rating").in("review_id", reviewIds).returns<{ review_id: string; rating: number | null }[]>(),
+    supabase
+      .from("performance_review_self_assessments")
+      .select("review_id, rating, reflection, key_strengths, recommendations, development_areas")
+      .in("review_id", reviewIds)
+      .returns<{ review_id: string; rating: number | null; reflection: string | null; key_strengths: string | null; recommendations: string | null; development_areas: string | null }[]>(),
     supabase.from("performance_review_manager_assessments").select("review_id, rating").in("review_id", reviewIds).returns<{ review_id: string; rating: number | null }[]>(),
   ]);
-  const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r.rating]));
+  const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r]));
   const managerByReview = new Map((managerRows ?? []).map((r) => [r.review_id, r.rating]));
   const stepsByReview = await getInstanceStepsForReviews(reviewIds);
 
@@ -220,7 +234,11 @@ export async function listMyDirectReportReviews(): Promise<{ items: ReviewListIt
         ...review,
         employeeName: profileById.get(r.employee_user_id)?.full_name ?? "Unknown",
         employeeEmail: profileById.get(r.employee_user_id)?.email ?? "",
-        selfRating: selfByReview.get(r.id) ?? null,
+        selfRating: selfByReview.get(r.id)?.rating ?? null,
+        selfReflection: selfByReview.get(r.id)?.reflection ?? null,
+        selfKeyStrengths: selfByReview.get(r.id)?.key_strengths ?? null,
+        selfRecommendations: selfByReview.get(r.id)?.recommendations ?? null,
+        selfDevelopmentAreas: selfByReview.get(r.id)?.development_areas ?? null,
         managerRating: managerByReview.get(r.id) ?? null,
         cycleName: performance_review_cycles.name,
         instanceSteps: stepsByReview.get(r.id) ?? [],
@@ -318,6 +336,63 @@ export async function submitManagerAssessment(reviewId: string, rating: number, 
   if (error) {
     console.error("submitManagerAssessment failed:", error);
     return { error: "Could not save — try again." };
+  }
+
+  // Mid-year trigger (Part 5(e)) — a below-standard manager rating starts a
+  // lighter mid-year check-in cycle ~6 months out, reusing Part 4's shared
+  // automated-cycle helper (create_automated_review_cycle, migration 0122).
+  // Dedup-guarded per employee (not per review — a resubmitted low rating on
+  // the same review shouldn't spawn a second cycle) the same way
+  // runHighPotentialToSuccession guards against re-firing on every rerun.
+  // Best-effort: any failure here must never surface as a failure of the
+  // manager's actual submission, which already succeeded above.
+  if (rating < 2) {
+    try {
+      const { data: review } = await supabase
+        .from("performance_reviews")
+        .select("organization_id, employee_user_id")
+        .eq("id", reviewId)
+        .maybeSingle<{ organization_id: string; employee_user_id: string }>();
+      if (review) {
+        const enabled = await isRecipeEnabled(supabase, review.organization_id, "low_manager_rating_to_midyear");
+        if (enabled) {
+          const alreadyFired = await firedRecently(supabase, {
+            organizationId: review.organization_id,
+            recipeKey: "low_manager_rating_to_midyear",
+            subjectUserId: review.employee_user_id,
+            days: 300,
+          });
+          if (!alreadyFired) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", review.employee_user_id)
+              .maybeSingle<{ full_name: string | null }>();
+            const opensAt = new Date();
+            opensAt.setMonth(opensAt.getMonth() + 6);
+            const cycleName = `${profile?.full_name ?? "Employee"} — Mid-Year Check-in`;
+            const created = await createAutomatedSingleEmployeeCycle(supabase, {
+              employeeUserId: review.employee_user_id,
+              starterKey: "mid_year_checkin",
+              cycleName,
+              opensAt: opensAt.toISOString().slice(0, 10),
+            });
+            if ("error" in created) {
+              console.error("submitManagerAssessment: mid-year trigger failed:", created.error);
+            } else {
+              await logAutomation(supabase, {
+                organizationId: review.organization_id,
+                recipeKey: "low_manager_rating_to_midyear",
+                subjectUserId: review.employee_user_id,
+                summary: "Mid-year check-in cycle scheduled after a below-standard manager rating.",
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("submitManagerAssessment: mid-year trigger failed (non-fatal):", err);
+    }
   }
 
   revalidatePath("/dashboard/company/impact-cycles");
@@ -551,7 +626,14 @@ async function performanceReviewRestrictedError(supabase: Awaited<ReturnType<typ
   return null;
 }
 
-export async function submitSelfAssessment(reviewId: string, rating: number, reflection: string) {
+export async function submitSelfAssessment(
+  reviewId: string,
+  rating: number,
+  reflection: string,
+  keyStrengths: string,
+  recommendations: string,
+  developmentAreas: string
+) {
   const supabase = await createClient();
   const restrictedError = await performanceReviewRestrictedError(supabase);
   if (restrictedError) return { error: restrictedError };
@@ -560,10 +642,13 @@ export async function submitSelfAssessment(reviewId: string, rating: number, ref
     target_review_id: reviewId,
     p_rating: rating,
     p_reflection: reflection.trim(),
+    p_key_strengths: keyStrengths.trim() || null,
+    p_recommendations: recommendations.trim() || null,
+    p_development_areas: developmentAreas.trim() || null,
   });
   if (error) {
     console.error("submitSelfAssessment failed:", error);
-    return { error: "Could not save — try again." };
+    return { error: "Could not save — the database may need migration 0123 run first." };
   }
   revalidatePath("/dashboard/impact-cycle");
   return { success: true };

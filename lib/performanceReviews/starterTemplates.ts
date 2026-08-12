@@ -15,6 +15,7 @@ export type StarterKey =
   | "annual_review"
   | "quarterly_checkin"
   | "probation_review"
+  | "mid_year_checkin"
   | "sales_performance_review"
   | "executive_review"
   | "leadership_review"
@@ -82,6 +83,23 @@ export const STARTER_TEMPLATES: Record<StarterKey, StarterTemplate> = {
         assignment: { mode: "role", role: "org_admin" },
       }),
       core("conclusion", "Outcome"),
+    ],
+  },
+  // Steps mirrored exactly in migration 0122's create_automated_review_cycle
+  // SQL — the mid-year trigger (a manager rating below standard, see
+  // submitManagerAssessment) materializes cycles from this key via that
+  // SECURITY DEFINER RPC, not via cloneStarterTemplate, so the two must stay
+  // in lockstep. Lighter than the full annual cycle (no competency
+  // ratings) — a 6-months-out check-in, not a full re-review.
+  mid_year_checkin: {
+    key: "mid_year_checkin",
+    labelKey: "midYearCheckin",
+    descriptionKey: "midYearCheckinDescription",
+    steps: [
+      core("self_assessment", "Self-Reflection"),
+      core("goals", "Goals & Progress"),
+      core("manager_assessment", "Manager's Perspective"),
+      core("conclusion", "Conclusion"),
     ],
   },
   sales_performance_review: {

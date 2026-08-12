@@ -6,7 +6,12 @@
 // shown on the toggle UI (translated at the UI layer via
 // t(`workflowAutomation.recipes.${key}...`), same "stable key, translate
 // at display" split used throughout this codebase.
-export type RecipeKey = "hire_to_onboarding" | "hire_to_probation" | "low_score_to_reassessment" | "high_potential_to_succession";
+export type RecipeKey =
+  | "hire_to_onboarding"
+  | "hire_to_probation"
+  | "low_score_to_reassessment"
+  | "high_potential_to_succession"
+  | "low_manager_rating_to_midyear";
 
 export const RECIPES: { key: RecipeKey; title: string; description: string }[] = [
   {
@@ -28,5 +33,10 @@ export const RECIPES: { key: RecipeKey; title: string; description: string }[] =
     key: "high_potential_to_succession",
     title: "High-potential flag to manager",
     description: "When someone's Gap Analysis places them in the High Potential zone, email their manager to consider them for succession planning.",
+  },
+  {
+    key: "low_manager_rating_to_midyear",
+    title: "Low rating to mid-year check-in",
+    description: "When a manager's Impact Cycle rating for someone is below standard, automatically schedule a lighter mid-year check-in cycle for them about 6 months out.",
   },
 ];

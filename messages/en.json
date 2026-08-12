@@ -2100,6 +2100,17 @@
     "howWouldYouRate": "How would you rate this cycle? (1–5)",
     "reflectionLabel": "Reflection",
     "reflectionPlaceholder": "What went well, what was hard, what you want to focus on next…",
+    "keyStrengthsLabel": "Key strengths",
+    "keyStrengthsPlaceholder": "What you'd point to as your strongest work or qualities this cycle…",
+    "developmentAreasLabel": "Development areas",
+    "developmentAreasPlaceholder": "Where you'd like to grow or improve next…",
+    "recommendationsLabel": "Recommendations",
+    "recommendationsPlaceholder": "Support, resources, or changes that would help you going forward…",
+    "cycleTimeline": {
+      "opensIn": "Opens in {days, plural, one {# day} other {# days}}",
+      "closesIn": "Closes in {days, plural, =0 {today} one {# day} other {# days}}",
+      "overdueBy": "Overdue by {days, plural, one {# day} other {# days}}"
+    },
     "saving": "Saving…",
     "updateReflection": "Update your Reflection",
     "submitReflection": "Submit your Reflection",
@@ -2118,7 +2129,7 @@
     "confirmAndCloseButton": "Confirm & close it out",
     "developmentNeeds": "Development needs",
     "managerHasntShared": "Your manager hasn't shared their Perspective yet.",
-    "uplineReview": "Upline review",
+    "uplineReview": "Department Head Review",
     "level": "· level {level}",
     "conclusion": "Conclusion",
     "cycleClosed": "Cycle closed {date}."
@@ -2159,10 +2170,10 @@
     "conclusionPlaceholder": "A short closing summary both sides can see — what happened this cycle, what's next.",
     "closing": "Closing…",
     "closeCycle": "Close cycle",
-    "uplineReview": "Upline review",
+    "uplineReview": "Department Head Review",
     "level": "· level {level}",
     "coSigned": "Co-signed {date}",
-    "coSignCommentPlaceholder": "Optional comment — you're seeing this as a skip-level manager…",
+    "coSignCommentPlaceholder": "Optional comment — you're seeing this as a department head…",
     "updateCoSign": "Update co-sign",
     "coSign": "Co-sign",
     "cycleNamePrefix": " — {cycleName}",
@@ -2177,7 +2188,13 @@
     "developmentNeedsLabel": "Development needs",
     "developmentNeedsPlaceholder": "What skill-building or support would help them grow from here…",
     "saving": "Saving…",
-    "saveManagersPerspective": "Save Manager's Perspective"
+    "saveManagersPerspective": "Save Manager's Perspective",
+    "selfAssessmentTitle": "Self-Reflection",
+    "selfAssessmentNoneYet": "Nothing submitted yet.",
+    "reflectionLabel": "Reflection",
+    "keyStrengthsLabel": "Key strengths",
+    "developmentAreasLabel": "Development areas",
+    "recommendationsLabel": "Recommendations"
   },
   "nineBoxZones": {
     "gridAriaLabel": "Nine-box talent grid",
@@ -2376,6 +2393,11 @@
     "cycleStatusDraft": "draft",
     "cycleStatusOpen": "open",
     "cycleStatusClosed": "closed",
+    "cycleTimeline": {
+      "opensIn": "Opens in {days, plural, one {# day} other {# days}}",
+      "closesIn": "Closes in {days, plural, =0 {today} one {# day} other {# days}}",
+      "overdueBy": "Overdue by {days, plural, one {# day} other {# days}}"
+    },
     "loading": "Loading…",
     "noEmployeesInCycle": "No employees in this cycle yet.",
     "workflowLabel": "Workflow",
@@ -2399,6 +2421,8 @@
     "quarterlyCheckinDescription": "A lighter 3-step cycle for a quick quarterly pulse — self-check, this quarter's focus, manager check-in.",
     "probationReview": "Probation Review",
     "probationReviewDescription": "A short cycle for a probation decision: manager assessment, HR sign-off, outcome.",
+    "midYearCheckin": "Mid-Year Check-in",
+    "midYearCheckinDescription": "A lighter cycle for a mid-point check-in: self-reflection, goals & progress, manager's perspective, conclusion.",
     "salesPerformanceReview": "Sales Performance Review",
     "salesPerformanceReviewDescription": "Weighted toward quota and pipeline goals with sales-relevant competencies.",
     "executiveReview": "Executive Review",
@@ -4981,6 +5005,10 @@
       "high_potential_to_succession": {
         "title": "High-potential flag to manager",
         "description": "When someone's Gap Analysis places them in the High Potential zone, email their manager to consider them for succession planning."
+      },
+      "low_manager_rating_to_midyear": {
+        "title": "Low rating to mid-year check-in",
+        "description": "When a manager's Impact Cycle rating for someone is below standard, automatically schedule a lighter mid-year check-in cycle for them about 6 months out."
       }
     }
   },

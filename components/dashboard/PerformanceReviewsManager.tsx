@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { createReviewCycle, updateCycleStatus, listReviewCycles, listReviewsForCycle } from "@/lib/performanceReviews/actions";
 import { listWorkflowTemplates, cloneStarterTemplate, listOrganizationMembersForAssignment } from "@/lib/performanceReviews/workflowActions";
 import { STARTER_KEYS, STARTER_TEMPLATES } from "@/lib/performanceReviews/starterTemplates";
+import { describeCycleTimeline, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
 import ImpactCycleReviewRow from "@/components/dashboard/ImpactCycleReviewRow";
 import type { PerformanceReviewCycle, ReviewListItem } from "@/lib/performanceReviews/types";
 import type { WorkflowTemplate } from "@/lib/performanceReviews/workflowTypes";
@@ -297,6 +298,14 @@ export default function PerformanceReviewsManager({ initialCycles, organizationI
                   {cycleStatusLabel(t, s)}
                 </button>
               ))}
+              {(() => {
+                const timeline = describeCycleTimeline(selectedCycle.opens_at, selectedCycle.closes_at);
+                return timeline ? (
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: TIMELINE_TONE_COLOR[timeline.tone] }}>
+                    {t(`cycleTimeline.${timeline.key}`, { days: timeline.days })}
+                  </span>
+                ) : null;
+              })()}
             </div>
           )}
 

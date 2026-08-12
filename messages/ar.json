@@ -2100,6 +2100,17 @@
     "howWouldYouRate": "كيف تقيّم هذه الدورة؟ (1–5)",
     "reflectionLabel": "الانطباع الذاتي",
     "reflectionPlaceholder": "ما الذي سار بشكل جيد، وما كان صعبًا، وما الذي تريد التركيز عليه بعد ذلك…",
+    "keyStrengthsLabel": "نقاط القوة الرئيسية",
+    "keyStrengthsPlaceholder": "ما تعتبره أقوى أعمالك أو صفاتك في هذه الدورة…",
+    "developmentAreasLabel": "مجالات التطوير",
+    "developmentAreasPlaceholder": "أين تودّ أن تنمو أو تتحسن لاحقًا…",
+    "recommendationsLabel": "التوصيات",
+    "recommendationsPlaceholder": "الدعم أو الموارد أو التغييرات التي قد تساعدك مستقبلاً…",
+    "cycleTimeline": {
+      "opensIn": "تبدأ خلال {days, plural, one {# يوم} other {# أيام}}",
+      "closesIn": "تنتهي خلال {days, plural, =0 {اليوم} one {# يوم} other {# أيام}}",
+      "overdueBy": "متأخرة بـ {days, plural, one {# يوم} other {# أيام}}"
+    },
     "saving": "جارٍ الحفظ…",
     "updateReflection": "تحديث انطباعك الذاتي",
     "submitReflection": "تقديم انطباعك الذاتي",
@@ -2118,7 +2129,7 @@
     "confirmAndCloseButton": "التأكيد والإغلاق",
     "developmentNeeds": "احتياجات التطوير",
     "managerHasntShared": "لم يشارك مديرك منظوره بعد.",
-    "uplineReview": "مراجعة الإدارة العليا",
+    "uplineReview": "مراجعة رئيس القسم",
     "level": "· المستوى {level}",
     "conclusion": "الخلاصة",
     "cycleClosed": "أُغلقت الدورة في {date}."
@@ -2159,10 +2170,10 @@
     "conclusionPlaceholder": "ملخص ختامي قصير يمكن للطرفين رؤيته — ما حدث في هذه الدورة، وما التالي.",
     "closing": "جارٍ الإغلاق…",
     "closeCycle": "إغلاق الدورة",
-    "uplineReview": "مراجعة الإدارة العليا",
+    "uplineReview": "مراجعة رئيس القسم",
     "level": "· المستوى {level}",
     "coSigned": "تم التوقيع المشترك {date}",
-    "coSignCommentPlaceholder": "تعليق اختياري — أنت ترى هذا كمدير على مستوى أعلى…",
+    "coSignCommentPlaceholder": "تعليق اختياري — أنت ترى هذا كرئيس قسم…",
     "updateCoSign": "تحديث التوقيع المشترك",
     "coSign": "توقيع مشترك",
     "cycleNamePrefix": " — {cycleName}",
@@ -2177,7 +2188,13 @@
     "developmentNeedsLabel": "احتياجات التطوير",
     "developmentNeedsPlaceholder": "أي بناء مهارات أو دعم قد يساعدهم على النمو من هنا…",
     "saving": "جارٍ الحفظ…",
-    "saveManagersPerspective": "حفظ منظور المدير"
+    "saveManagersPerspective": "حفظ منظور المدير",
+    "selfAssessmentTitle": "التأمل الذاتي",
+    "selfAssessmentNoneYet": "لم يُقدَّم شيء بعد.",
+    "reflectionLabel": "الانطباع",
+    "keyStrengthsLabel": "نقاط القوة الرئيسية",
+    "developmentAreasLabel": "مجالات التطوير",
+    "recommendationsLabel": "التوصيات"
   },
   "nineBoxZones": {
     "gridAriaLabel": "شبكة المواهب التسعية",
@@ -2376,6 +2393,11 @@
     "cycleStatusDraft": "مسودة",
     "cycleStatusOpen": "مفتوحة",
     "cycleStatusClosed": "مغلقة",
+    "cycleTimeline": {
+      "opensIn": "تبدأ خلال {days, plural, one {# يوم} other {# أيام}}",
+      "closesIn": "تنتهي خلال {days, plural, =0 {اليوم} one {# يوم} other {# أيام}}",
+      "overdueBy": "متأخرة بـ {days, plural, one {# يوم} other {# أيام}}"
+    },
     "loading": "جارٍ التحميل…",
     "noEmployeesInCycle": "لا يوجد موظفون في هذه الدورة بعد.",
     "workflowLabel": "سير العمل",
@@ -2399,6 +2421,8 @@
     "quarterlyCheckinDescription": "دورة أخف من 3 خطوات لمتابعة ربع سنوية سريعة — تقييم ذاتي سريع، تركيز هذا الربع، متابعة مع المدير.",
     "probationReview": "مراجعة فترة التجربة",
     "probationReviewDescription": "دورة قصيرة لقرار فترة التجربة: تقييم المدير، اعتماد الموارد البشرية، النتيجة.",
+    "midYearCheckin": "مراجعة منتصف العام",
+    "midYearCheckinDescription": "دورة أخف لمتابعة منتصف المدة: انطباع ذاتي، الأهداف والتقدم، منظور المدير، الخلاصة.",
     "salesPerformanceReview": "مراجعة أداء المبيعات",
     "salesPerformanceReviewDescription": "تركّز على أهداف الحصة والمسار البيعي مع كفاءات ذات صلة بالمبيعات.",
     "executiveReview": "مراجعة تنفيذية",
@@ -4981,6 +5005,10 @@
       "high_potential_to_succession": {
         "title": "إشعار المدير بذوي الإمكانات العالية",
         "description": "عندما يضع تحليل الفجوة لأحدهم في منطقة الإمكانات العالية، يُرسل بريد إلكتروني لمديره للنظر فيه لتخطيط التعاقب الوظيفي."
+      },
+      "low_manager_rating_to_midyear": {
+        "title": "تقييم منخفض إلى مراجعة منتصف العام",
+        "description": "عندما يكون تقييم المدير لأحدهم في دورة الأداء أقل من المستوى المطلوب، تُجدوَل تلقائيًا دورة مراجعة منتصف عام أخف له بعد نحو 6 أشهر."
       }
     }
   },

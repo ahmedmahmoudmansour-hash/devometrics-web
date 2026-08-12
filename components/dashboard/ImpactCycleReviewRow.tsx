@@ -57,7 +57,10 @@ import CustomStepResponseForm from "./CustomStepResponseForm";
 // which kind of caller it's rendering for.
 
 const GOAL_STATUSES: GoalStatus[] = ["not_started", "in_progress", "achieved", "missed"];
-const FALLBACK_STEP_TYPES: InstanceStep["step_type"][] = ["goals", "competency_ratings", "manager_assessment", "conclusion"];
+// self_assessment added here alongside the SelfAssessmentSection read-only
+// view above — it was deliberately absent before (the step type rendered
+// nothing, so including it in the fallback order would have been a no-op).
+const FALLBACK_STEP_TYPES: InstanceStep["step_type"][] = ["self_assessment", "goals", "competency_ratings", "manager_assessment", "conclusion"];
 
 function inputStyle(): React.CSSProperties {
   return {
@@ -411,6 +414,38 @@ function CompetencyRatingsEditor({
   );
 }
 
+// Read-only — the employee's own self-authored fields (rating/reflection
+// live on ManagerAssessmentSection's own defaulting instead, see below).
+// Previously this step type rendered nothing at all here (fell through the
+// switch's default case); the employee's reflection was never visible to
+// an admin/manager anywhere except indirectly via the numeric selfRating
+// badge in the row header.
+function SelfAssessmentSection({ item, title }: { item: ReviewListItem; title?: string }) {
+  const t = useTranslations("impactCycleReviewRow");
+  const fields: { label: string; value: string | null }[] = [
+    { label: t("reflectionLabel"), value: item.selfReflection },
+    { label: t("keyStrengthsLabel"), value: item.selfKeyStrengths },
+    { label: t("developmentAreasLabel"), value: item.selfDevelopmentAreas },
+    { label: t("recommendationsLabel"), value: item.selfRecommendations },
+  ].filter((f) => f.value);
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+      <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{title ?? t("selfAssessmentTitle")}</p>
+      {fields.length === 0 ? (
+        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("selfAssessmentNoneYet")}</p>
+      ) : (
+        fields.map((f) => (
+          <div key={f.label} style={{ marginBottom: 10 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</p>
+            <p style={{ fontSize: 13, color: "var(--text)", marginTop: 4, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{f.value}</p>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 function ManagerAssessmentSection({
   item,
   title,
@@ -422,7 +457,14 @@ function ManagerAssessmentSection({
 }) {
   const t = useTranslations("impactCycleReviewRow");
   const tLabels = useTranslations("performanceReviewLabels");
-  const [rating, setRating] = useState(item.managerRating ?? 3);
+  // Defaults from the employee's own self-rating rather than a flat 3 —
+  // matches the CEO's framing verbatim ("manager can verify the employee
+  // self-score"). Still falls back to 3 when no self-assessment exists yet
+  // (e.g. the manager submits before the employee does). The manager's
+  // eventual submitted rating is stored as its own independent value either
+  // way — this only changes the form's starting point, never overwrites
+  // anything.
+  const [rating, setRating] = useState(item.managerRating ?? item.selfRating ?? 3);
   const [feedback, setFeedback] = useState("");
   const [developmentNeeds, setDevelopmentNeeds] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -725,6 +767,8 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
         <div>
           {stepsToRender.map((step) => {
             switch (step.step_type) {
+              case "self_assessment":
+                return <SelfAssessmentSection key={step.id} item={item} title={step.title || undefined} />;
               case "manager_assessment":
                 return <ManagerAssessmentSection key={step.id} item={item} title={step.title || undefined} onChanged={onChanged} />;
               case "goals":

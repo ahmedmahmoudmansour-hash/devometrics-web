@@ -50,6 +50,9 @@ export type SelfAssessment = {
   review_id: string;
   rating: number | null;
   reflection: string | null;
+  key_strengths: string | null;
+  recommendations: string | null;
+  development_areas: string | null;
   submitted_at: string | null;
   updated_at: string;
 };
@@ -99,6 +102,10 @@ export type ReviewListItem = PerformanceReview & {
   employeeName: string;
   employeeEmail: string;
   selfRating: number | null;
+  selfReflection: string | null;
+  selfKeyStrengths: string | null;
+  selfRecommendations: string | null;
+  selfDevelopmentAreas: string | null;
   managerRating: number | null;
   // Only set on the manager's "My Team" list, which spans whichever cycle
   // each direct report's most recent review happens to be in — the admin's

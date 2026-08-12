@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { submitSelfAssessment, acknowledgeReview } from "@/lib/performanceReviews/actions";
 import { helpDraftReflection } from "@/lib/performanceReviews/ai";
 import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail } from "@/lib/performanceReviews/types";
+import { describeCycleTimeline, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
 import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import CustomStepResponseForm from "./CustomStepResponseForm";
 
@@ -53,6 +54,9 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
 
   const [selfRating, setSelfRating] = useState(self?.rating ?? 3);
   const [selfReflection, setSelfReflection] = useState(self?.reflection ?? "");
+  const [keyStrengths, setKeyStrengths] = useState(self?.key_strengths ?? "");
+  const [recommendations, setRecommendations] = useState(self?.recommendations ?? "");
+  const [developmentAreas, setDevelopmentAreas] = useState(self?.development_areas ?? "");
   const [selfError, setSelfError] = useState<string | null>(null);
   const [selfPending, startSelfTransition] = useTransition();
 
@@ -68,7 +72,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   function saveSelf() {
     setSelfError(null);
     startSelfTransition(async () => {
-      const result = await submitSelfAssessment(review.id, selfRating, selfReflection);
+      const result = await submitSelfAssessment(review.id, selfRating, selfReflection, keyStrengths, recommendations, developmentAreas);
       if (result?.error) setSelfError(result.error);
       else router.refresh();
     });
@@ -101,7 +105,18 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div>
           <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{cycle.name}</p>
-          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{reviewStatusLabel(tLabels, review.status)}</p>
+          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            {reviewStatusLabel(tLabels, review.status)}
+            {(() => {
+              const timeline = describeCycleTimeline(cycle.opens_at, cycle.closes_at);
+              return timeline ? (
+                <span style={{ color: TIMELINE_TONE_COLOR[timeline.tone], fontWeight: 700 }}>
+                  {" "}
+                  · {t(`cycleTimeline.${timeline.key}`, { days: timeline.days })}
+                </span>
+              ) : null;
+            })()}
+          </p>
         </div>
       </div>
 
@@ -150,6 +165,27 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
           onChange={(e) => setSelfReflection(e.target.value)}
           placeholder={t("reflectionPlaceholder")}
           style={{ ...inputStyle(), minHeight: 90, resize: "vertical", fontFamily: "inherit" }}
+        />
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, marginTop: 12, display: "block" }}>{t("keyStrengthsLabel")}</label>
+        <textarea
+          value={keyStrengths}
+          onChange={(e) => setKeyStrengths(e.target.value)}
+          placeholder={t("keyStrengthsPlaceholder")}
+          style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
+        />
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, marginTop: 12, display: "block" }}>{t("developmentAreasLabel")}</label>
+        <textarea
+          value={developmentAreas}
+          onChange={(e) => setDevelopmentAreas(e.target.value)}
+          placeholder={t("developmentAreasPlaceholder")}
+          style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
+        />
+        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, marginTop: 12, display: "block" }}>{t("recommendationsLabel")}</label>
+        <textarea
+          value={recommendations}
+          onChange={(e) => setRecommendations(e.target.value)}
+          placeholder={t("recommendationsPlaceholder")}
+          style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
         />
         {selfError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{selfError}</p>}
         <button
