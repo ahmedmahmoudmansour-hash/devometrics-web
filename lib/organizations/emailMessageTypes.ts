@@ -15,6 +15,9 @@
 // (migration 0120) — hire_to_onboarding_manager_alert is KEPT: that's the
 // unrelated "new hire joined, here's your manager notification" email,
 // still sent by runHireWelcome (lib/automations/recipes.ts).
+// probation_review_ready_alert / midyear_checkin_scheduled_alert (0124) —
+// added on a UX audit pass after the 5-part program shipped without any
+// notification for either automation firing at all.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -28,6 +31,8 @@ export const EMAIL_MESSAGE_TYPES = [
   "interview_stage_notice",
   "assessment_assignment",
   "knowledge_hub_content_updated",
+  "probation_review_ready_alert",
+  "midyear_checkin_scheduled_alert",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

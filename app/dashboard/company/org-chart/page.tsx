@@ -68,6 +68,7 @@ export default async function OrgChartPage() {
             nominatedUserIds={nominatedUserIds}
             positions={positions}
             memberManagerPositions={memberManagerPositions}
+            organizationName={data.organizationName ?? "your workspace"}
           />
         )}
       </div>

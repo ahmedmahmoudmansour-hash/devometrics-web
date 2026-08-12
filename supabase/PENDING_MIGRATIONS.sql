@@ -1,19 +1,13 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0120 THROUGH 0123
+-- DEVOMETRICS -- PENDING MIGRATIONS: 0120 THROUGH 0124
 --
--- Everything through 0119 has been confirmed applied already
--- (0114-0119 were confirmed run this same session) -- this file
--- is reset to just the new batch below rather than re-pasting
--- the full history again. Every statement is idempotent (create
--- table/policy/function if-not-exists or or-replace patterns),
--- so re-running any part that already succeeded is still safe.
+-- Everything through 0119 has been confirmed applied already.
+-- 0120-0123 are the 5-part program's original batch; 0124 is a
+-- UX-audit follow-up (two more customizable alert emails) added
+-- right after. Every statement is idempotent, so re-running any
+-- part that already succeeded is still safe.
 --
--- Apply in this exact order -- 0122 depends on 0120's
--- knowledge_hub_content shape only loosely, but 0121/0122/0123
--- each reference tables/columns from earlier in this same batch
--- (0122's create_automated_review_cycle assumes 0109's
--- performance_review_cycle_participants and 0103's workflow
--- tables already exist -- both already applied).
+-- Apply in this exact order.
 --
 -- How to run: Supabase Dashboard -> SQL Editor -> paste this
 -- entire file -> Run. If anything errors partway, copy the exact
@@ -435,3 +429,34 @@ $$;
 
 revoke all on function public.submit_self_assessment(uuid, integer, text, text, text, text) from public;
 grant execute on function public.submit_self_assessment(uuid, integer, text, text, text, text) to authenticated;
+
+-- ============================================================
+-- 0124_probation_and_midyear_alert_emails.sql
+-- ============================================================
+-- 0124: Two more customizable automation-fired alert emails
+--
+-- UX audit follow-up on the 2026-08-11 5-part program: neither the
+-- hire_to_probation nor the low_manager_rating_to_midyear automation
+-- (both shipped without an audit pass) actually told anyone anything —
+-- a probation review sat silently on My Team until a manager happened to
+-- visit, and a mid-year check-in appeared for an employee with zero
+-- explanation. Adds two more manager/employee alert emails, same
+-- customizable-via-org-settings pattern as hire_to_onboarding_manager_alert
+-- and high_potential_manager_alert. Same named-constraint widening pattern
+-- 0107/0110/0115 established specifically so this never needs to guess a
+-- Postgres-generated constraint name.
+
+alter table public.organization_email_messages
+  drop constraint if exists organization_email_messages_email_type_check;
+alter table public.organization_email_messages
+  add constraint organization_email_messages_email_type_check
+  check (email_type in (
+    'task_reminder', 'certification_reminder', 'knowledge_hub_reminder',
+    'performance_review_reminder', 'assessment_reminder',
+    'knowledge_hub_assignment', 'employee_invite',
+    'hire_to_onboarding_manager_alert', 'high_potential_manager_alert',
+    'onboarding_step_reminder', 'onboarding_manager_approval_reminder',
+    'milestone_assignment', 'interview_stage_notice', 'assessment_assignment',
+    'knowledge_hub_content_updated', 'probation_review_ready_alert',
+    'midyear_checkin_scheduled_alert'
+  ));

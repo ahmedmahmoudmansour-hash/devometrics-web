@@ -23,6 +23,9 @@ import { getInstanceSteps, getInstanceStepsForReviews } from "./instanceSteps";
 import type { CustomStepCompletion, CustomStepAggregate } from "./workflowTypes";
 import { createAutomatedSingleEmployeeCycle } from "./cycleAutomation";
 import { isRecipeEnabled, firedRecently, logAutomation } from "@/lib/automations/engine";
+import { sendEmail } from "@/lib/email/resend";
+import { renderEmail, customMessageHtml } from "@/lib/email/template";
+import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -365,9 +368,9 @@ export async function submitManagerAssessment(reviewId: string, rating: number, 
           if (!alreadyFired) {
             const { data: profile } = await supabase
               .from("profiles")
-              .select("full_name")
+              .select("full_name, email")
               .eq("id", review.employee_user_id)
-              .maybeSingle<{ full_name: string | null }>();
+              .maybeSingle<{ full_name: string | null; email: string | null }>();
             const opensAt = new Date();
             opensAt.setMonth(opensAt.getMonth() + 6);
             const cycleName = `${profile?.full_name ?? "Employee"} — Mid-Year Check-in`;
@@ -380,11 +383,39 @@ export async function submitManagerAssessment(reviewId: string, rating: number, 
             if ("error" in created) {
               console.error("submitManagerAssessment: mid-year trigger failed:", created.error);
             } else {
+              // UX audit follow-up: this used to fire with zero notice at
+              // all — an employee could stumble on the cycle later with no
+              // context for why it exists. Worded neutrally/supportively
+              // rather than exposing the low rating that triggered it —
+              // this is a standard scheduled check-in from the employee's
+              // side, not a disciplinary notice.
+              if (profile?.email) {
+                try {
+                  const override = await getEmailMessageOverride(review.organization_id, "midyear_checkin_scheduled_alert");
+                  await sendEmail(
+                    profile.email,
+                    override.subject || "A mid-year check-in has been scheduled for you",
+                    renderEmail({
+                      preheader: "A lighter check-in cycle to support your progress",
+                      bodyHtml: `
+                        <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">A mid-year check-in is on your calendar</h2>
+                        ${customMessageHtml(override.message)}
+                        <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+                          Your manager has scheduled an additional check-in about 6 months out to support your progress — a lighter version of your regular review, with the same self-reflection and goals steps.
+                        </p>
+                      `,
+                      footerNote: "Sent automatically because your workspace has the \"Low rating to mid-year check-in\" automation turned on.",
+                    })
+                  );
+                } catch (err) {
+                  console.error("submitManagerAssessment: employee email failed (non-fatal):", err);
+                }
+              }
               await logAutomation(supabase, {
                 organizationId: review.organization_id,
                 recipeKey: "low_manager_rating_to_midyear",
                 subjectUserId: review.employee_user_id,
-                summary: "Mid-year check-in cycle scheduled after a below-standard manager rating.",
+                summary: `Mid-year check-in cycle scheduled after a below-standard manager rating${profile?.email ? " (employee notified)" : ""}.`,
               });
             }
           }
@@ -572,11 +603,48 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
   const visible = reviews.filter((r) => !(r.requires_hiring_manager_acceptance && !r.hiring_manager_accepted_at));
   if (visible.length === 0) return { detail: null };
 
-  // Prefer an open cycle; otherwise the most recently created one.
+  // Picks the one review that's shown as "your current review" — this page
+  // only ever surfaces a single review, so the tie-break order matters a
+  // lot more than it looks. Originally just "prefer open, else most
+  // recently created," which had a real bug: an automated cycle (probation
+  // hire-day, or Part 5's mid-year trigger) is created with status='open'
+  // and is by definition newer than whatever the employee was already
+  // partway through, so it would silently outrank and hide an in-progress
+  // review the moment it fired. Fixed by ranking real progress first:
+  // 1. A review the employee has actually started outranks a fresh one —
+  //    an automated trigger must never bury work already in flight.
+  // 2. Among equally-progressed reviews, prefer an open cycle.
+  // 3. Among those, prefer whichever is due soonest (opens_at ascending;
+  //    no opens_at sorts as "already due") — so a mid-year cycle opening 6
+  //    months out never jumps ahead of the employee's actual current cycle
+  //    just because it was created more recently.
+  // 4. Final tie-break: most recently created.
+  // Ranks by "how much would be lost if this got hidden," not by how far
+  // along the review is: a review with real invested work (self- or
+  // manager-submitted) ranks highest so it can never be silently swapped
+  // out. A not_started review still ranks above an already-finished one
+  // (acknowledged/closed) — nothing left to do there, so it's fine for a
+  // newer actionable review to take its place.
+  const STATUS_PROGRESS: Record<PerformanceReview["status"], number> = {
+    manager_submitted: 4,
+    self_submitted: 3,
+    not_started: 2,
+    acknowledged: 1,
+    closed: 0,
+  };
   const sorted = [...visible].sort((a, b) => {
+    const aProgress = STATUS_PROGRESS[a.status] ?? 0;
+    const bProgress = STATUS_PROGRESS[b.status] ?? 0;
+    if (aProgress !== bProgress) return bProgress - aProgress;
+
     const aOpen = a.performance_review_cycles.status === "open" ? 1 : 0;
     const bOpen = b.performance_review_cycles.status === "open" ? 1 : 0;
     if (aOpen !== bOpen) return bOpen - aOpen;
+
+    const aOpensAt = a.performance_review_cycles.opens_at ?? "";
+    const bOpensAt = b.performance_review_cycles.opens_at ?? "";
+    if (aOpensAt !== bOpensAt) return aOpensAt.localeCompare(bOpensAt);
+
     return b.performance_review_cycles.created_at.localeCompare(a.performance_review_cycles.created_at);
   });
   const { performance_review_cycles: cycle, ...review } = sorted[0];

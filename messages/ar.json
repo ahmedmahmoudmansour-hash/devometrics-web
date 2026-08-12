@@ -1602,7 +1602,11 @@
     "saved": "تم الحفظ",
     "useDefault": "مسح واستخدام الافتراضي",
     "type_knowledge_hub_content_updated": "إشعار تحديث محتوى التدريب",
-    "hint_knowledge_hub_content_updated": "يُرسل عندما يعدّل المسؤول محتوى مركز المعرفة المُسنَد بالفعل ويختار إشعار المتدربين."
+    "hint_knowledge_hub_content_updated": "يُرسل عندما يعدّل المسؤول محتوى مركز المعرفة المُسنَد بالفعل ويختار إشعار المتدربين.",
+    "type_probation_review_ready_alert": "مراجعة فترة التجربة جاهزة للقبول",
+    "hint_probation_review_ready_alert": "تُرسل إلى المدير المباشر عند إنشاء مراجعة فترة تجربة لموظف جديد وتكون بانتظار مراجعته وقبوله لها.",
+    "type_midyear_checkin_scheduled_alert": "تمت جدولة مراجعة منتصف العام",
+    "hint_midyear_checkin_scheduled_alert": "تُرسل إلى الموظف عند جدولة دورة مراجعة منتصف عام له."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "مُجدولة للحذف في {date}",
@@ -1880,8 +1884,9 @@
     "tenureMonths": "{months, plural, =0 {انضم هذا الشهر} one {# شهر هنا} other {# أشهر هنا}}",
     "tenureYears": "{years, plural, one {# سنة هنا} other {# سنوات هنا}}",
     "tenureYearsMonths": "{years} سنة و {months} شهر هنا",
-    "addVacantRole": "+ منصب شاغر",
-    "addStructural": "+ عنصر هيكلي",
+    "addPositionMenu": "+ إضافة منصب",
+    "addVacantRole": "منصب شاغر",
+    "addStructural": "عنصر هيكلي",
     "newVacantRoleTitle": "منصب شاغر جديد",
     "newStructuralTitle": "قسم جديد",
     "departmentChartLabel": "الانتقال إلى مخطط قسم معيّن",
@@ -1972,6 +1977,11 @@
     "saving": "جارٍ الحفظ…",
     "save": "حفظ",
     "cancel": "إلغاء"
+  },
+  "orgChartToolsMenu": {
+    "chartTools": "أدوات الهيكل",
+    "displayViewsLabel": "عروض العرض",
+    "structureSnapshotsLabel": "لقطات الهيكل"
   },
   "orgChartSnapshots": {
     "saveSnapshot": "حفظ لقطة من الهيكل",
@@ -2632,7 +2642,10 @@
     "readConfirmation": "تأكيد القراءة",
     "manage": "إدارة ←",
     "archivedCount": "مؤرشف ({count})",
-    "archivedOn": "أُرشف في {date}"
+    "archivedOn": "أُرشف في {date}",
+    "newHirePacketTitle": "حزمة الموظف الجديد ({count})",
+    "newHirePacketHint": "كل ما تم تعليمه بـ \"تعيين تلقائيًا للموظفين الجدد\" — هذا بالضبط ما يحصل عليه الموظف الجديد في يومه الأول.",
+    "newHireBadge": "موظف جديد"
   },
   "knowledgeHubUploadForm": {
     "onlyDocsSupported": "يُدعم فقط ملفات Word أو PDF أو Excel أو PowerPoint أو الفيديو (MP4/WebM/MOV).",

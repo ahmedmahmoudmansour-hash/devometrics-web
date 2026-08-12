@@ -12,8 +12,6 @@ import {
 } from "@/lib/orgChart/snapshots";
 import { resetOrgChart } from "@/lib/orgChart/reset";
 
-const RESET_CONFIRM_WORD = "RESET";
-
 const buttonStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
   border: "1px solid var(--border)",
@@ -34,7 +32,13 @@ function isToday(iso: string): boolean {
 // actually reports to whom (see migration 0121's comment). Conflating the
 // two under one "Save" button would silently mislead an admin into thinking
 // a display-config save also protects their reporting-line structure.
-export default function OrgChartSnapshotControls() {
+// Reset requires typing the organization's own name — same mechanic as
+// DeleteCompanyButton, deliberately, per a UX audit finding: this used to
+// require typing a hardcoded English word ("RESET") regardless of locale,
+// which was both inconsistent with the app's Arabic support and needed no
+// translation to fix, since the org's own name is self-explanatory either
+// way.
+export default function OrgChartSnapshotControls({ organizationName }: { organizationName: string }) {
   const t = useTranslations("orgChartSnapshots");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -298,13 +302,13 @@ export default function OrgChartSnapshotControls() {
               </p>
             )}
             <label style={{ fontSize: 11.5, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-              {t("resetConfirmLabel", { word: RESET_CONFIRM_WORD })}
+              {t("resetConfirmLabel", { word: organizationName })}
             </label>
             <input
               type="text"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              placeholder={RESET_CONFIRM_WORD}
+              placeholder={organizationName}
               style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--text)", outline: "none", marginBottom: 12 }}
             />
             {resetError && <p style={{ color: "#f87171", fontSize: 12.5, marginBottom: 10 }}>{resetError}</p>}
@@ -318,7 +322,7 @@ export default function OrgChartSnapshotControls() {
               </button>
               <button
                 type="button"
-                disabled={isPending || confirmText.trim() !== RESET_CONFIRM_WORD}
+                disabled={isPending || confirmText.trim() !== organizationName}
                 onClick={doReset}
                 style={{
                   background: "rgba(248,113,113,0.15)",
@@ -328,8 +332,8 @@ export default function OrgChartSnapshotControls() {
                   fontSize: 13,
                   fontWeight: 700,
                   color: "#f87171",
-                  cursor: confirmText.trim() === RESET_CONFIRM_WORD ? "pointer" : "not-allowed",
-                  opacity: isPending || confirmText.trim() !== RESET_CONFIRM_WORD ? 0.5 : 1,
+                  cursor: confirmText.trim() === organizationName ? "pointer" : "not-allowed",
+                  opacity: isPending || confirmText.trim() !== organizationName ? 0.5 : 1,
                 }}
               >
                 {isPending ? t("resetting") : t("resetButton")}

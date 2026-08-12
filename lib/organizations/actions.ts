@@ -542,6 +542,7 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
       organizationId: invite.organization_id,
       employeeUserId: user.id,
       employeeName: profile?.full_name || user.email,
+      managerEmail: invite.manager_email ?? null,
     });
   }
 

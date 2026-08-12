@@ -84,7 +84,7 @@ export async function runHireWelcome(
 // throughout this schema.
 export async function runHireToProbation(
   supabase: SupabaseServerClient,
-  params: { organizationId: string; employeeUserId: string; employeeName: string }
+  params: { organizationId: string; employeeUserId: string; employeeName: string; managerEmail: string | null }
 ): Promise<void> {
   const enabled = await isRecipeEnabled(supabase, params.organizationId, "hire_to_probation");
   if (!enabled) return;
@@ -99,11 +99,38 @@ export async function runHireToProbation(
     return;
   }
 
+  // UX audit follow-up: the automation used to fire completely silently —
+  // the review just sat on My Team until a manager happened to visit.
+  // Same email-not-DB-write reasoning as runHireWelcome above (no
+  // service-role key to write into the manager's own rows).
+  if (params.managerEmail) {
+    try {
+      const override = await getEmailMessageOverride(params.organizationId, "probation_review_ready_alert");
+      await sendEmail(
+        params.managerEmail,
+        override.subject || `${params.employeeName}'s probation review is ready for your acceptance`,
+        renderEmail({
+          preheader: `Review and accept ${params.employeeName}'s probation review to activate it`,
+          bodyHtml: `
+            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)}'s probation review is ready</h2>
+            ${customMessageHtml(override.message)}
+            <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+              A probation review has been started for them, but it stays hidden from them until you review and accept it from My Team.
+            </p>
+          `,
+          footerNote: "Sent automatically because your workspace has the \"New hire probation review\" automation turned on.",
+        })
+      );
+    } catch (err) {
+      console.error("runHireToProbation: manager email failed (non-fatal):", err);
+    }
+  }
+
   await logAutomation(supabase, {
     organizationId: params.organizationId,
     recipeKey: "hire_to_probation",
     subjectUserId: params.employeeUserId,
-    summary: "Probation review cycle created, pending hiring-manager acceptance.",
+    summary: `Probation review cycle created, pending hiring-manager acceptance${params.managerEmail ? " (manager notified)" : ""}.`,
   });
 }
 

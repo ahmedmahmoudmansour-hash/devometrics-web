@@ -1602,7 +1602,11 @@
     "saved": "Saved",
     "useDefault": "Clear and use default",
     "type_knowledge_hub_content_updated": "Training content updated notice",
-    "hint_knowledge_hub_content_updated": "Sent when an admin edits already-assigned Knowledge Hub content and chooses to notify learners."
+    "hint_knowledge_hub_content_updated": "Sent when an admin edits already-assigned Knowledge Hub content and chooses to notify learners.",
+    "type_probation_review_ready_alert": "Probation review ready for acceptance",
+    "hint_probation_review_ready_alert": "Sent to the hiring manager when a new hire's probation review has been created and is waiting for them to review and accept it.",
+    "type_midyear_checkin_scheduled_alert": "Mid-year check-in scheduled",
+    "hint_midyear_checkin_scheduled_alert": "Sent to an employee when a mid-year check-in cycle has been scheduled for them."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",
@@ -1880,8 +1884,9 @@
     "tenureMonths": "{months, plural, =0 {Joined this month} one {# month here} other {# months here}}",
     "tenureYears": "{years, plural, one {# year here} other {# years here}}",
     "tenureYearsMonths": "{years}y {months}mo here",
-    "addVacantRole": "+ Vacant role",
-    "addStructural": "+ Structural node",
+    "addPositionMenu": "+ Add position",
+    "addVacantRole": "Vacant role",
+    "addStructural": "Structural node",
     "newVacantRoleTitle": "New vacant role",
     "newStructuralTitle": "New department",
     "departmentChartLabel": "Jump to a department's chart",
@@ -1972,6 +1977,11 @@
     "saving": "Saving…",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "orgChartToolsMenu": {
+    "chartTools": "Chart tools",
+    "displayViewsLabel": "Display views",
+    "structureSnapshotsLabel": "Structure snapshots"
   },
   "orgChartSnapshots": {
     "saveSnapshot": "Save structure snapshot",
@@ -2632,7 +2642,10 @@
     "readConfirmation": "Read confirmation",
     "manage": "Manage →",
     "archivedCount": "Archived ({count})",
-    "archivedOn": "Archived {date}"
+    "archivedOn": "Archived {date}",
+    "newHirePacketTitle": "New-hire packet ({count})",
+    "newHirePacketHint": "Everything flagged \"assign automatically to new hires\" — this is exactly what a new hire receives on their first day.",
+    "newHireBadge": "New hire"
   },
   "knowledgeHubUploadForm": {
     "onlyDocsSupported": "Only Word, PDF, Excel, PowerPoint, or video (MP4/WebM/MOV) files are supported.",

@@ -28,6 +28,12 @@ export default async function CompanyKnowledgeHubPage() {
   const content = (allContent ?? []).filter((c) => !c.archived_at);
   const archivedContent = (allContent ?? []).filter((c) => c.archived_at);
 
+  // UX audit follow-up — an admin previously had no way to see the full set
+  // of documents flagged is_new_hire_content (migration 0120) except by
+  // opening each item one at a time and checking its checkbox. This
+  // surfaces the whole "new-hire packet" at a glance.
+  const newHireContent = content.filter((c) => c.is_new_hire_content);
+
   const contentIds = content.map((c) => c.id);
   const [{ data: assignments }, { data: completions }] = contentIds.length
     ? await Promise.all([
@@ -104,6 +110,38 @@ export default async function CompanyKnowledgeHubPage() {
           <KnowledgeHubUploadForm organizationId={data.organizationId} />
         </div>
 
+        <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
+          <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+            {t("newHirePacketTitle", { count: newHireContent.length })}
+          </p>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: newHireContent.length > 0 ? 12 : 0, lineHeight: 1.5 }}>
+            {t("newHirePacketHint")}
+          </p>
+          {newHireContent.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {newHireContent.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/dashboard/company/knowledge-hub/${c.id}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    background: "rgba(255,255,255,0.03)",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontSize: 13,
+                    color: "var(--text)",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span>{c.title}</span>
+                  <span style={{ color: "var(--text-muted)" }}>{c.completion_type === "exam" ? t("examWithPassPercent", { percent: c.passing_score_percent }) : t("readConfirmation")}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
         <FeatureEmailComposer
           organizationId={data.organizationId}
           featureKey="knowledge_hub"
@@ -147,6 +185,24 @@ export default async function CompanyKnowledgeHubPage() {
                           >
                             {c.title}
                           </Link>
+                          {c.is_new_hire_content && (
+                            <span
+                              style={{
+                                marginInlineStart: 8,
+                                fontSize: 10,
+                                fontWeight: 800,
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                                color: "var(--teal)",
+                                background: "rgba(0,201,167,0.1)",
+                                border: "1px solid rgba(0,201,167,0.3)",
+                                borderRadius: 999,
+                                padding: "2px 8px",
+                              }}
+                            >
+                              {t("newHireBadge")}
+                            </span>
+                          )}
                         </td>
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>
                           {c.file_name.split(".").pop()?.toUpperCase()}

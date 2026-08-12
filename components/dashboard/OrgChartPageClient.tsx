@@ -14,11 +14,13 @@ export default function OrgChartPageClient({
   nominatedUserIds,
   positions,
   memberManagerPositions,
+  organizationName,
 }: {
   rows: WorkforceRow[];
   nominatedUserIds: string[];
   positions: OrgPositionRow[];
   memberManagerPositions: Record<string, string>;
+  organizationName: string;
 }) {
   const t = useTranslations("orgChartPageClient");
   const [mode, setMode] = useState<ViewMode>("corporate");
@@ -46,7 +48,7 @@ export default function OrgChartPageClient({
       </div>
 
       {mode === "corporate" ? (
-        <OrgChartView rows={rows} nominatedUserIds={nominatedUserIds} positions={positions} memberManagerPositions={memberManagerPositions} />
+        <OrgChartView rows={rows} nominatedUserIds={nominatedUserIds} positions={positions} memberManagerPositions={memberManagerPositions} organizationName={organizationName} />
       ) : (
         <OrgChartDepartmentView rows={rows} />
       )}

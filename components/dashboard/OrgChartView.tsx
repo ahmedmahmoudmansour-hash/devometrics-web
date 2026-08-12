@@ -22,8 +22,7 @@ import OrgChartCard, { type DropState } from "@/components/dashboard/OrgChartCar
 import OrgChartPositionCard from "@/components/dashboard/OrgChartPositionCard";
 import OrgChartPositionPanel from "@/components/dashboard/OrgChartPositionPanel";
 import OrgChartControlBar from "@/components/dashboard/OrgChartControlBar";
-import OrgChartSavedViewsMenu from "@/components/dashboard/OrgChartSavedViewsMenu";
-import OrgChartSnapshotControls from "@/components/dashboard/OrgChartSnapshotControls";
+import OrgChartToolsMenu from "@/components/dashboard/OrgChartToolsMenu";
 import OrgChartExportBar from "@/components/dashboard/OrgChartExportBar";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
 
@@ -61,6 +60,7 @@ export default function OrgChartView({
   nominatedUserIds,
   positions,
   memberManagerPositions,
+  organizationName,
 }: {
   rows: WorkforceRow[];
   nominatedUserIds: string[];
@@ -70,6 +70,7 @@ export default function OrgChartView({
   // the server->client prop boundary (Maps don't serialize) — rebuilt into
   // a Map below.
   memberManagerPositions: Record<string, string>;
+  organizationName: string;
 }) {
   const t = useTranslations("orgChartView");
   const tPos = useTranslations("orgChartPositionCard");
@@ -85,6 +86,7 @@ export default function OrgChartView({
   const [activeDragTag, setActiveDragTag] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSeenRows, setLastSeenRows] = useState(rows);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   const nominatedSet = useMemo(() => new Set(nominatedUserIds), [nominatedUserIds]);
   const memberManagerPositionsMap = useMemo(() => new Map(Object.entries(memberManagerPositions)), [memberManagerPositions]);
@@ -309,20 +311,58 @@ export default function OrgChartView({
 
       <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <OrgChartSavedViewsMenu
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button type="button" disabled={isPending} onClick={() => setAddMenuOpen((v) => !v)} style={addPositionButtonStyle()}>
+              {t("addPositionMenu")} {addMenuOpen ? "▴" : "▾"}
+            </button>
+            {addMenuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "110%",
+                  left: 0,
+                  zIndex: 25,
+                  minWidth: 180,
+                  background: "var(--navy-mid)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  padding: 6,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    handleAddPosition("vacant_role");
+                  }}
+                  style={addPositionMenuItemStyle()}
+                >
+                  {t("addVacantRole")}
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    handleAddPosition("structural");
+                  }}
+                  style={addPositionMenuItemStyle()}
+                >
+                  {t("addStructural")}
+                </button>
+              </div>
+            )}
+          </div>
+          <OrgChartToolsMenu
             savedViews={savedViews}
             currentConfig={config}
             currentPresetKey={presetKey}
             onApply={handleApplySavedView}
             onSaved={() => listSavedViews().then(setSavedViews)}
+            organizationName={organizationName}
           />
-          <button type="button" disabled={isPending} onClick={() => handleAddPosition("vacant_role")} style={addPositionButtonStyle()}>
-            {t("addVacantRole")}
-          </button>
-          <button type="button" disabled={isPending} onClick={() => handleAddPosition("structural")} style={addPositionButtonStyle()}>
-            {t("addStructural")}
-          </button>
-          <OrgChartSnapshotControls />
         </div>
         <OrgChartExportBar />
       </div>
@@ -507,6 +547,22 @@ function addPositionButtonStyle(): React.CSSProperties {
     borderRadius: 8,
     padding: "7px 12px",
     fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+  };
+}
+
+function addPositionMenuItemStyle(): React.CSSProperties {
+  return {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    background: "none",
+    border: "none",
+    borderRadius: 6,
+    color: "var(--text)",
+    padding: "8px 10px",
+    fontSize: 12.5,
     fontWeight: 600,
     cursor: "pointer",
   };
