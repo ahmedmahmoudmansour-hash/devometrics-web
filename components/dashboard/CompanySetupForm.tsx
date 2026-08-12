@@ -58,8 +58,8 @@ export default function CompanySetupForm() {
               fontSize: 13,
               fontWeight: 700,
               cursor: "pointer",
-              border: tab === tabOption ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-              background: tab === tabOption ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+              border: tab === tabOption ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+              background: tab === tabOption ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
               color: tab === tabOption ? "var(--teal)" : "var(--text-muted)",
             }}
           >
@@ -161,7 +161,7 @@ export default function CompanySetupForm() {
           </div>
         )}
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
         <button
           type="submit"

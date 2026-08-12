@@ -67,7 +67,7 @@ export default function CognitiveAbilityForm() {
                   style={{
                     width: `${(b.correct / b.total) * 100}%`,
                     height: "100%",
-                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "#f87171" : "var(--amber)",
+                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "var(--danger)" : "var(--amber)",
                   }}
                 />
               </div>
@@ -98,7 +98,7 @@ export default function CognitiveAbilityForm() {
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
-      <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 12, padding: 16, marginBottom: 24 }}>
+      <div style={{ background: "rgba(var(--amber-rgb),0.06)", border: "1px solid rgba(var(--amber-rgb),0.25)", borderRadius: 12, padding: 16, marginBottom: 24 }}>
         <p style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>{disclaimer}</p>
       </div>
 
@@ -143,7 +143,7 @@ export default function CognitiveAbilityForm() {
                               borderRadius: 8,
                               cursor: "pointer",
                               border: selections[q.id] === i ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                              background: selections[q.id] === i ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                              background: selections[q.id] === i ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                               color: selections[q.id] === i ? "var(--teal)" : "var(--text-muted)",
                             }}
                           >
@@ -160,7 +160,7 @@ export default function CognitiveAbilityForm() {
         })}
       </div>
 
-      {submitError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 20 }}>{submitError}</p>}
+      {submitError && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 20 }}>{submitError}</p>}
 
       <button
         type="button"

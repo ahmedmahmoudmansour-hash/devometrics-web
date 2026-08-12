@@ -57,7 +57,7 @@ const ghostBtn: React.CSSProperties = {
 function scoreColor(score: number): string {
   if (score >= 70) return "var(--teal)";
   if (score >= 40) return "var(--amber)";
-  return "#f87171";
+  return "var(--danger)";
 }
 
 export default function CandidateDetailView({
@@ -210,7 +210,7 @@ function InterviewNotesSection({
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <button
         type="button"
         disabled={isPending || !text.trim()}
@@ -272,7 +272,7 @@ function AssessmentSection({
         {t("assessmentDescription")}
       </p>
       {!hasNotes && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("addNoteFirst")}</p>}
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       {assessment && (
         <div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
@@ -341,7 +341,7 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
           </p>
           <input style={input} placeholder={t("jobTitleOptional")} value={title} onChange={(e) => setTitle(e.target.value)} />
           <input style={input} placeholder={t("departmentOptional")} value={department} onChange={(e) => setDepartment(e.target.value)} />
-          {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"

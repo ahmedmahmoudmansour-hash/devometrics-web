@@ -151,13 +151,13 @@ export default function SidebarNav({
       color: active ? accentColor : "var(--text-muted)",
       background: active
         ? accent === "amber"
-          ? "rgba(240,184,64,0.1)"
-          : "rgba(0,201,167,0.1)"
+          ? "rgba(var(--amber-rgb),0.1)"
+          : "rgba(var(--teal-rgb),0.1)"
         : "transparent",
       border: active
         ? accent === "amber"
-          ? "1px solid rgba(240,184,64,0.3)"
-          : "1px solid rgba(0,201,167,0.3)"
+          ? "1px solid rgba(var(--amber-rgb),0.3)"
+          : "1px solid rgba(var(--teal-rgb),0.3)"
         : "1px solid transparent",
       whiteSpace: "nowrap",
       overflow: "hidden",

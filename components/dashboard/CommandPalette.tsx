@@ -188,7 +188,7 @@ export default function CommandPalette({
         style={{
           width: "min(560px, calc(100vw - 32px))",
           background: "var(--navy-mid)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 14,
           boxShadow: "0 24px 90px rgba(0,0,0,0.55)",
           overflow: "hidden",
@@ -234,7 +234,7 @@ export default function CommandPalette({
                 gap: 10,
                 width: "100%",
                 textAlign: "left",
-                background: i === activeIndex ? "rgba(0,201,167,0.12)" : "transparent",
+                background: i === activeIndex ? "rgba(var(--teal-rgb),0.12)" : "transparent",
                 border: "none",
                 borderRadius: 8,
                 padding: "10px 12px",

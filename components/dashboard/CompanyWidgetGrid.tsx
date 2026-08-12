@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import {
   Users,
   Network,
@@ -22,6 +23,14 @@ export type CompanyWidget = {
   href: string;
   icon: React.ComponentType<{ size?: number }>;
   stat: string;
+  // Matches one of CompanyNavTabs' 5 group labels (Overview, Structure,
+  // Talent, Hiring & Growth, Performance & Feedback) verbatim — the grid
+  // used to render as one flat, ungrouped run of tiles while the nav
+  // directly above it showed the same items clustered under labeled
+  // headers, which read as two different orderings of the same taxonomy.
+  // Rendering the same group boundaries here (in the same sequence) keeps
+  // both views visibly in sync.
+  group: string;
 };
 
 // Zoho-style launcher grid for the company home tab — every key area as its
@@ -30,6 +39,7 @@ export type CompanyWidget = {
 // as the persistent in-page nav; this is the "at a glance" home view on top
 // of it, same relationship Zoho's own app-launcher home has to its sidebar.
 export default function CompanyWidgetGrid({ widgets }: { widgets: CompanyWidget[] }) {
+  const seenGroups = new Set<string>();
   return (
     <div
       style={{
@@ -43,38 +53,59 @@ export default function CompanyWidgetGrid({ widgets }: { widgets: CompanyWidget[
         marginBottom: 24,
       }}
     >
-      {widgets.map((w) => (
-        <Link
-          key={w.key}
-          href={w.href}
-          className="card-hover"
-          style={{
-            display: "block",
-            background: "var(--navy-mid)",
-            padding: 20,
-            textDecoration: "none",
-          }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              color: "var(--teal)",
-              background: "rgba(0,201,167,0.1)",
-              border: "1px solid rgba(0,201,167,0.2)",
-              marginBottom: 12,
-            }}
-          >
-            <w.icon size={17} />
-          </span>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 3 }}>{w.label}</h3>
-          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{w.stat}</p>
-        </Link>
-      ))}
+      {widgets.map((w) => {
+        const isNewGroup = !seenGroups.has(w.group);
+        seenGroups.add(w.group);
+        return (
+          <Fragment key={w.key}>
+            {isNewGroup && (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  background: "var(--navy)",
+                  padding: "10px 20px",
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                }}
+              >
+                {w.group}
+              </div>
+            )}
+            <Link
+              href={w.href}
+              className="card-hover"
+              style={{
+                display: "block",
+                background: "var(--navy-mid)",
+                padding: 20,
+                textDecoration: "none",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  color: "var(--teal)",
+                  background: "rgba(var(--teal-rgb),0.1)",
+                  border: "1px solid rgba(var(--teal-rgb),0.2)",
+                  marginBottom: 12,
+                }}
+              >
+                <w.icon size={17} />
+              </span>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 3 }}>{w.label}</h3>
+              <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{w.stat}</p>
+            </Link>
+          </Fragment>
+        );
+      })}
     </div>
   );
 }

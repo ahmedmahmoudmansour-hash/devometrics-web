@@ -197,7 +197,7 @@ export default function CustomStepResponseForm({
               style={{ ...inputStyle(), fontSize: 12, marginBottom: 6 }}
             />
           )}
-          {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 6 }}>{aiError}</p>}
+          {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 6 }}>{aiError}</p>}
 
           {config.response_shape === "approval" && (
             <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
@@ -225,7 +225,7 @@ export default function CustomStepResponseForm({
             <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("commentPlaceholder")} style={{ ...inputStyle(), minHeight: 50, resize: "vertical", fontFamily: "inherit" }} />
           )}
 
-          {saveError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{saveError}</p>}
+          {saveError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{saveError}</p>}
           <button
             type="button"
             onClick={submit}

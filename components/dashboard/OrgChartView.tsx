@@ -367,7 +367,7 @@ export default function OrgChartView({
         <OrgChartExportBar />
       </div>
 
-      {error && <p className="no-print" style={{ color: "#f87171", fontSize: 12.5, marginBottom: 8 }}>{error}</p>}
+      {error && <p className="no-print" style={{ color: "var(--danger)", fontSize: 12.5, marginBottom: 8 }}>{error}</p>}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="print-plan" style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 16, background: "var(--navy-mid)" }}>
@@ -477,7 +477,7 @@ export default function OrgChartView({
       )}
 
       {selectedMemberRow && (
-        <div className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
+        <div className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{selectedMemberRow.name}</span>
             <button

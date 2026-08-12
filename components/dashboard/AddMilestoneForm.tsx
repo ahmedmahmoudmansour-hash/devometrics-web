@@ -51,8 +51,8 @@ export default function AddMilestoneForm({
           type="submit"
           disabled={isPending}
           style={{
-            background: "rgba(0,201,167,0.1)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.1)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 8,
             padding: "10px 16px",
             fontSize: 14,
@@ -65,7 +65,7 @@ export default function AddMilestoneForm({
           {t("add")}
         </button>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
     </form>
   );
 }

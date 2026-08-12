@@ -22,14 +22,20 @@ export default function Mascot({ size = 96, className = "" }: { size?: number; c
       aria-label="Devometrics mascot climbing its growth bars"
       className={className}
     >
+      {/*
+        Redesign restraint pass: both gradients were two-hue (teal to an
+        unrelated cyan/pale-blue) — now single-hue teal-to-teal-dim fades,
+        matching the same treatment applied to Logo.tsx and .gradient-text
+        in globals.css. var() in SVG stop-color tracks the active theme.
+      */}
       <defs>
         <linearGradient id={`mascot-bar-${uid}`} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00C9A7" />
-          <stop offset="100%" stopColor="#0891b2" />
+          <stop offset="0%" stopColor="var(--teal)" />
+          <stop offset="100%" stopColor="var(--teal-dim)" />
         </linearGradient>
         <linearGradient id={`mascot-body-${uid}`} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00C9A7" />
-          <stop offset="100%" stopColor="#7dd3fc" />
+          <stop offset="0%" stopColor="var(--teal)" />
+          <stop offset="100%" stopColor="var(--teal-dim)" />
         </linearGradient>
       </defs>
 
@@ -41,8 +47,8 @@ export default function Mascot({ size = 96, className = "" }: { size?: number; c
       {/* The character, standing atop the tallest bar */}
       <g transform="translate(38, 6)">
         {/* Flag */}
-        <line x1="14" y1="0" x2="14" y2="10" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" />
-        <path d="M14 0 L22 3 L14 6 Z" fill="#fbbf24" />
+        <line x1="14" y1="0" x2="14" y2="10" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" />
+        <path d="M14 0 L22 3 L14 6 Z" fill="var(--amber)" />
         {/* Body */}
         <circle cx="7" cy="16" r="10" fill={`url(#mascot-body-${uid})`} />
         {/* Face */}

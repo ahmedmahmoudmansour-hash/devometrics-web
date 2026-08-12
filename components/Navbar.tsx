@@ -130,7 +130,7 @@ export default function Navbar() {
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background = "var(--teal-dim)";
               (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(0,201,167,0.3)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(var(--teal-rgb),0.3)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = "var(--teal)";

@@ -50,7 +50,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
 
   if (createdCode) {
     return (
-      <div style={{ background: "rgba(0,201,167,0.08)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
+      <div style={{ background: "rgba(var(--teal-rgb),0.08)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
         <p style={{ fontSize: 13.5, color: "var(--text)", fontWeight: 700 }}>{t("groupCreatedMessage")}</p>
         <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)", letterSpacing: "0.08em", marginTop: 6 }}>{createdCode}</p>
         <button
@@ -72,7 +72,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+        style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
       >
         {t("createGroupButton")}
       </button>
@@ -89,7 +89,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void }) {
         <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("focusLabel")}</label>
         <input style={inputStyle()} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("focusPlaceholder")} />
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" disabled={isPending} style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}>
           {isPending ? t("creatingButton") : t("createButton")}
@@ -143,11 +143,11 @@ function JoinGroupForm({ onJoined }: { onJoined: () => void }) {
           placeholder={t("inviteCodePlaceholder")}
           maxLength={6}
         />
-        <button type="submit" disabled={isPending || !code.trim()} style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "9px 16px", fontSize: 12.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}>
+        <button type="submit" disabled={isPending || !code.trim()} style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 8, padding: "9px 16px", fontSize: 12.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}>
           {t("lookUpButton")}
         </button>
       </form>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
       {preview && (
         <div style={{ marginTop: 12, padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{preview.name}</p>

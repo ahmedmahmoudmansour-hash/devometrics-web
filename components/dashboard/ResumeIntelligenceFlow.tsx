@@ -18,7 +18,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 function ScoreRing({ label, score }: { label: string; score: number }) {
-  const color = score >= 70 ? "var(--teal)" : score >= 40 ? "#f0b840" : "#f87171";
+  const color = score >= 70 ? "var(--teal)" : score >= 40 ? "var(--amber)" : "var(--danger)";
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ fontSize: 32, fontWeight: 800, color }}>{score}</div>
@@ -37,9 +37,9 @@ function Chip({ text, tone }: { text: string; tone: "match" | "missing" }) {
         borderRadius: 100,
         marginInlineEnd: 6,
         marginBlockEnd: 6,
-        background: tone === "match" ? "rgba(0,201,167,0.1)" : "rgba(248,113,113,0.1)",
-        color: tone === "match" ? "var(--teal)" : "#f87171",
-        border: `1px solid ${tone === "match" ? "rgba(0,201,167,0.3)" : "rgba(248,113,113,0.3)"}`,
+        background: tone === "match" ? "rgba(var(--teal-rgb),0.1)" : "rgba(var(--danger-rgb),0.1)",
+        color: tone === "match" ? "var(--teal)" : "var(--danger)",
+        border: `1px solid ${tone === "match" ? "rgba(var(--teal-rgb),0.3)" : "rgba(var(--danger-rgb),0.3)"}`,
       }}
     >
       {text}
@@ -122,7 +122,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
             />
             <span>{t("consentLabel")}</span>
           </label>
-          {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
           <button
             type="submit"
             disabled={loading || !consent}
@@ -218,7 +218,7 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
                 <p style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "line-through", marginBottom: 4 }}>
                   {b.original}
                 </p>
-                <p style={{ fontSize: 12, color: "#f0b840", marginBottom: 6 }}>{b.issue}</p>
+                <p style={{ fontSize: 12, color: "var(--amber)", marginBottom: 6 }}>{b.issue}</p>
                 <p style={{ fontSize: 13, color: "var(--teal)" }}>{b.rewrite}</p>
               </div>
             ))}

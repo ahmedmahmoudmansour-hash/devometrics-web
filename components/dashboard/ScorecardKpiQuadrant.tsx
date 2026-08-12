@@ -15,7 +15,7 @@ function statusLabel(t: (key: string) => string, status: ScorecardKpiStatus): st
 const STATUS_COLOR: Record<ScorecardKpiStatus, string> = {
   on_track: "var(--teal)",
   at_risk: "var(--amber)",
-  off_track: "#f87171",
+  off_track: "var(--danger)",
 };
 
 const inputStyle: React.CSSProperties = {
@@ -141,7 +141,7 @@ function KpiCard({ kpi, onChanged }: { kpi: ScorecardKpi; onChanged: () => void 
           {t("delete")}
         </button>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 11, marginTop: 6 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 6 }}>{error}</p>}
     </div>
   );
 }
@@ -207,7 +207,7 @@ export default function ScorecardKpiQuadrant({
           {t("addKpi")}
         </button>
       )}
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

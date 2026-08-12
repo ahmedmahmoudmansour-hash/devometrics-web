@@ -151,7 +151,7 @@ export default function FeaturePermissionsManager({
           >
             {isPending ? t("adding") : t("addButton")}
           </button>
-          {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 10 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 10 }}>{error}</p>}
         </form>
       </div>
 

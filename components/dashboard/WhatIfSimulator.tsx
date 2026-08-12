@@ -39,7 +39,7 @@ export default function WhatIfSimulator() {
     });
   }
 
-  const deltaColor = result ? (result.delta > 0 ? "var(--teal)" : result.delta < 0 ? "#f87171" : "var(--text-muted)") : "var(--text-muted)";
+  const deltaColor = result ? (result.delta > 0 ? "var(--teal)" : result.delta < 0 ? "var(--danger)" : "var(--text-muted)") : "var(--text-muted)";
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
@@ -117,7 +117,7 @@ export default function WhatIfSimulator() {
         {isPending ? t("simulating") : t("simulate")}
       </button>
 
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 10 }}>{error}</p>}
 
       {result && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>

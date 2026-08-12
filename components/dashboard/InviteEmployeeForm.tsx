@@ -266,7 +266,7 @@ export default function InviteEmployeeForm({
           >
             {isPending ? t("sending") : t("sendInvite")}
           </button>
-          {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 10 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 10 }}>{error}</p>}
         </form>
       ) : (
         <div>
@@ -298,7 +298,7 @@ export default function InviteEmployeeForm({
             </button>
           </div>
           {importFileName && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{importFileName}</p>}
-          {importError && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 10 }}>{importError}</p>}
+          {importError && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 10 }}>{importError}</p>}
 
           {importRows.length > 0 && (
             <div style={{ marginBottom: 14 }}>

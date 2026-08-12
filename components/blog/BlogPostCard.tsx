@@ -27,7 +27,7 @@ export default function BlogPostCard({ post }: { post: BlogPost }) {
         textDecoration: "none",
         transition: "border-color 0.2s",
       }}
-      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(0,201,167,0.3)")}
+      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(var(--teal-rgb),0.3)")}
       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border)")}
     >
       <span

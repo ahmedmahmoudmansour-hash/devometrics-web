@@ -182,8 +182,8 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
       {success && (
         <div
           style={{
-            background: "rgba(0,201,167,0.06)",
-            border: "1px solid rgba(0,201,167,0.25)",
+            background: "rgba(var(--teal-rgb),0.06)",
+            border: "1px solid rgba(var(--teal-rgb),0.25)",
             borderRadius: 10,
             padding: 14,
             marginBottom: 16,
@@ -194,7 +194,7 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
           {t("successMessage", { count: success.questionCount })}
         </div>
       )}
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginBottom: 12 }}>{error}</p>}
 
       <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: questions ? 20 : 0 }}>
         <div>
@@ -303,8 +303,8 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: "pointer",
-                      border: checked ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                      background: checked ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                      border: checked ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+                      background: checked ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                       color: checked ? "var(--teal)" : "var(--text-muted)",
                     }}
                   >

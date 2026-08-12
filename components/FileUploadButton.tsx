@@ -63,7 +63,7 @@ export default function FileUploadButton({
       >
         {loading ? "Reading file…" : fileName ? `${label} (${fileName})` : label}
       </label>
-      {error && <p style={{ color: "#f87171", fontSize: 11, marginTop: 4 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 4 }}>{error}</p>}
     </div>
   );
 }

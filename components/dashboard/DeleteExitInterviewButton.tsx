@@ -21,7 +21,7 @@ export default function DeleteExitInterviewButton({ id, label }: { id: string; l
       type="button"
       onClick={remove}
       disabled={isPending}
-      style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer", padding: 0 }}
+      style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, cursor: "pointer", padding: 0 }}
     >
       {label}
     </button>

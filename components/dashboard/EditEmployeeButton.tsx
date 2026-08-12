@@ -202,7 +202,7 @@ export default function EditEmployeeButton({
           <div
             style={{
               background: "var(--navy-mid)",
-              border: "1px solid rgba(0,201,167,0.3)",
+              border: "1px solid rgba(var(--teal-rgb),0.3)",
               borderRadius: 20,
               padding: 28,
               maxWidth: 480,
@@ -251,7 +251,7 @@ export default function EditEmployeeButton({
               </label>
             </div>
 
-            {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 12, lineHeight: 1.5 }}>{error}</p>}
+            {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 12, lineHeight: 1.5 }}>{error}</p>}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
               <button
@@ -259,13 +259,13 @@ export default function EditEmployeeButton({
                 onClick={archive}
                 disabled={isPending}
                 style={{
-                  background: "rgba(248,113,113,0.1)",
-                  border: "1px solid rgba(248,113,113,0.35)",
+                  background: "rgba(var(--danger-rgb),0.1)",
+                  border: "1px solid rgba(var(--danger-rgb),0.35)",
                   borderRadius: 8,
                   padding: "9px 14px",
                   fontSize: 12,
                   fontWeight: 700,
-                  color: "#f87171",
+                  color: "var(--danger)",
                   cursor: "pointer",
                 }}
               >
@@ -335,7 +335,7 @@ export default function EditEmployeeButton({
                   {t("askAnotherAdmin")}
                 </p>
               )}
-              {roleError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{roleError}</p>}
+              {roleError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{roleError}</p>}
             </div>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
@@ -365,7 +365,7 @@ export default function EditEmployeeButton({
                   type="button"
                   onClick={savePerformance}
                   disabled={isPending}
-                  style={{ alignSelf: "flex-start", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                  style={{ alignSelf: "flex-start", background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
                 >
                   {isPending ? t("saving") : t("saveRating")}
                 </button>
@@ -377,8 +377,8 @@ export default function EditEmployeeButton({
                 {t("dataDeletion")}
               </p>
               {scheduledFor ? (
-                <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10, padding: 14 }}>
-                  <p style={{ fontSize: 12.5, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
+                <div style={{ background: "rgba(var(--danger-rgb),0.06)", border: "1px solid rgba(var(--danger-rgb),0.3)", borderRadius: 10, padding: 14 }}>
+                  <p style={{ fontSize: 12.5, color: "var(--danger)", fontWeight: 700, marginBottom: 4 }}>
                     {t("scheduledForDeletion", { date: formatDate(scheduledFor, locale) })}
                   </p>
                   <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
@@ -394,7 +394,7 @@ export default function EditEmployeeButton({
                         else setScheduledFor(null);
                       })
                     }
-                    style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                    style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
                   >
                     {t("cancelDeletion")}
                   </button>
@@ -428,13 +428,13 @@ export default function EditEmployeeButton({
                         })
                       }
                       style={{
-                        background: "rgba(248,113,113,0.12)",
-                        border: "1px solid rgba(248,113,113,0.4)",
+                        background: "rgba(var(--danger-rgb),0.12)",
+                        border: "1px solid rgba(var(--danger-rgb),0.4)",
                         borderRadius: 8,
                         padding: "8px 14px",
                         fontSize: 12,
                         fontWeight: 700,
-                        color: "#f87171",
+                        color: "var(--danger)",
                         cursor: confirmText === DELETE_CONFIRM_WORD ? "pointer" : "not-allowed",
                         opacity: isPending || confirmText !== DELETE_CONFIRM_WORD ? 0.5 : 1,
                       }}
@@ -457,7 +457,7 @@ export default function EditEmployeeButton({
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  style={{ background: "transparent", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+                  style={{ background: "transparent", border: "1px solid rgba(var(--danger-rgb),0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
                 >
                   {t("deleteEmployeeData")}
                 </button>

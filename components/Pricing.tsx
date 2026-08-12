@@ -183,12 +183,12 @@ export default function Pricing({ initialRegion: _initialRegion }: { initialRegi
           <div
             key={plan.name}
             style={{
-              background: plan.popular ? "linear-gradient(160deg, rgba(0,201,167,0.08) 0%, var(--navy-mid) 40%)" : "var(--navy-mid)",
-              border: plan.popular ? "1px solid rgba(0,201,167,0.35)" : "1px solid var(--border)",
+              background: plan.popular ? "linear-gradient(160deg, rgba(var(--teal-rgb),0.08) 0%, var(--navy-mid) 40%)" : "var(--navy-mid)",
+              border: plan.popular ? "1px solid rgba(var(--teal-rgb),0.35)" : "1px solid var(--border)",
               borderRadius: 20,
               padding: "36px 32px",
               position: "relative",
-              boxShadow: plan.popular ? "0 0 60px rgba(0,201,167,0.06)" : "none",
+              boxShadow: plan.popular ? "0 0 60px rgba(var(--teal-rgb),0.06)" : "none",
             }}
           >
             {plan.popular && (

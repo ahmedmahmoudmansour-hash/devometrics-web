@@ -25,8 +25,8 @@ export default function OnboardingChecklist({ steps }: { steps: Step[] }) {
   return (
     <div
       style={{
-        background: "linear-gradient(135deg, rgba(0,201,167,0.08), rgba(125,211,252,0.05))",
-        border: "1px solid rgba(0,201,167,0.25)",
+        background: "linear-gradient(135deg, rgba(var(--teal-rgb),0.08), rgba(var(--phase2-rgb),0.05))",
+        border: "1px solid rgba(var(--teal-rgb),0.25)",
         borderRadius: 16,
         padding: 24,
       }}

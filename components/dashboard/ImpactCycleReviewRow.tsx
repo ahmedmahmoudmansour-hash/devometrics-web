@@ -187,7 +187,7 @@ function FocusAreasEditor({
                 <button
                   type="button"
                   onClick={() => startTransition(async () => { await deleteReviewGoal(g.id); onChanged(); })}
-                  style={{ background: "none", border: "none", color: "#f87171", fontSize: 11, cursor: "pointer" }}
+                  style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 11, cursor: "pointer" }}
                 >
                   ✕
                 </button>
@@ -212,7 +212,7 @@ function FocusAreasEditor({
         ))}
       </div>
 
-      {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+      {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       {suggestions && suggestions.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10, background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 8, padding: 10 }}>
           <p style={{ fontSize: 10.5, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -230,7 +230,7 @@ function FocusAreasEditor({
                   add(s.title);
                   setSuggestions((prev) => (prev ?? []).filter((_, idx) => idx !== i));
                 }}
-                style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
+                style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 {t("add")}
               </button>
@@ -260,7 +260,7 @@ function FocusAreasEditor({
             setTarget("");
           }}
           disabled={isPending || !titleInput.trim()}
-          style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "0 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
+          style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 8, padding: "0 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer", whiteSpace: "nowrap" }}
         >
           {t("addButton")}
         </button>
@@ -338,10 +338,10 @@ function CompetencyRatingsEditor({
           {aiLoading ? t("thinking") : t("suggestWithAi")}
         </button>
       </div>
-      {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+      {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       {suggestions && (
         <div style={{ marginBottom: 8 }}>
-          <button type="button" onClick={applyAll} style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}>
+          <button type="button" onClick={applyAll} style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}>
             {t("applyAllSuggestions")}
           </button>
         </div>
@@ -504,7 +504,7 @@ function ManagerAssessmentSection({
           {aiLoading ? t("drafting") : t("draftWithAi")}
         </button>
       </div>
-      {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+      {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("ratingLabel")}</label>
       <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
         {[1, 2, 3, 4, 5].map((n) => (
@@ -527,7 +527,7 @@ function ManagerAssessmentSection({
         placeholder={t("developmentNeedsPlaceholder")}
         style={{ ...inputStyle(), minHeight: 50, resize: "vertical", fontFamily: "inherit" }}
       />
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <button
         type="button"
         onClick={save}
@@ -591,7 +591,7 @@ function ConclusionSection({ item, title, canClose, onChanged }: { item: ReviewL
           <span aria-hidden="true">🔒</span> {t("submitPerspectiveFirst")}
         </p>
       )}
-      {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+      {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       <textarea
         value={conclusion}
         onChange={(e) => setConclusion(e.target.value)}
@@ -599,7 +599,7 @@ function ConclusionSection({ item, title, canClose, onChanged }: { item: ReviewL
         disabled={!canClose}
         style={{ ...inputStyle(), minHeight: 70, resize: "vertical", fontFamily: "inherit", opacity: canClose ? 1 : 0.5, cursor: canClose ? "text" : "not-allowed" }}
       />
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <button
         type="button"
         onClick={close}
@@ -679,7 +679,7 @@ function UplineSignoffSection({
                     type="button"
                     onClick={() => submit(c.managerUserId)}
                     disabled={isPending}
-                    style={{ marginTop: 6, background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 6, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                    style={{ marginTop: 6, background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 6, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
                   >
                     {existing?.signed_off_at ? t("updateCoSign") : t("coSign")}
                   </button>

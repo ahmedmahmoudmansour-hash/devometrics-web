@@ -186,7 +186,7 @@ export default function WelcomeModal({
       <div
         style={{
           background: "var(--navy-mid)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 20,
           padding: 36,
           maxWidth: 480,

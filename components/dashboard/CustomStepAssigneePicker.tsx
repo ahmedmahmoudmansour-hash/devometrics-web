@@ -73,7 +73,7 @@ export default function CustomStepAssigneePicker({
                 onClick={() => unassign(a.assigneeUserId)}
                 disabled={isPending}
                 aria-label={t("remove", { name: a.assigneeName })}
-                style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: 11, padding: 0 }}
+                style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 11, padding: 0 }}
               >
                 ✕
               </button>
@@ -99,7 +99,7 @@ export default function CustomStepAssigneePicker({
             type="button"
             onClick={assign}
             disabled={!selected || isPending}
-            style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer", opacity: !selected || isPending ? 0.6 : 1 }}
+            style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer", opacity: !selected || isPending ? 0.6 : 1 }}
           >
             {t("assign")}
           </button>

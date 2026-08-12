@@ -35,7 +35,7 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
       <span style={{ fontSize: 13, color: "var(--text)" }}>{milestone.title}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {message && <span style={{ fontSize: 11, color: success ? "var(--teal)" : "#f87171" }}>{message}</span>}
+        {message && <span style={{ fontSize: 11, color: success ? "var(--teal)" : "var(--danger)" }}>{message}</span>}
         <button
           type="button"
           onClick={handleBreakdown}

@@ -96,7 +96,7 @@ export default function JobArchitectureManager({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
       {/* Add family */}
       {showAddFamily ? (
@@ -157,7 +157,7 @@ export default function JobArchitectureManager({
               </div>
               <button
                 type="button"
-                style={{ ...ghostBtn, color: "#f87171", borderColor: "rgba(248,113,113,0.35)" }}
+                style={{ ...ghostBtn, color: "var(--danger)", borderColor: "rgba(var(--danger-rgb),0.35)" }}
                 onClick={() =>
                   startTransition(async () => {
                     await deleteJobFamily(family.id);
@@ -238,6 +238,21 @@ function JDBuilder({ role }: { role: JobRole }) {
     });
   }
 
+  function downloadDocx() {
+    setError(null);
+    startTransition(async () => {
+      // Save first so the downloaded file always matches what's on screen,
+      // including edits made after the last generate/save — the export
+      // route reads the persisted generated_jd column, not this textarea.
+      const result = await saveJobDescription(role.id, text);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      window.location.href = `/api/job-architecture/roles/${role.id}/export/docx`;
+    });
+  }
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
@@ -277,7 +292,7 @@ function JDBuilder({ role }: { role: JobRole }) {
           style={{ ...input, minHeight: 220, resize: "vertical", fontFamily: "inherit", fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap" }}
         />
       )}
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
         <button type="button" onClick={generate} disabled={generating} style={{ ...ghostBtn, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", opacity: generating ? 0.6 : 1 }}>
           {generating ? t("generating") : text ? t("regenerate") : t("generateFromRoleData")}
@@ -289,6 +304,9 @@ function JDBuilder({ role }: { role: JobRole }) {
             </button>
             <button type="button" onClick={copy} style={ghostBtn}>
               {t("copy")}
+            </button>
+            <button type="button" onClick={downloadDocx} disabled={isPending} style={{ ...ghostBtn, opacity: isPending ? 0.6 : 1 }}>
+              {t("downloadWord")}
             </button>
           </>
         )}
@@ -329,7 +347,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)" }}>{role.title}</span>
             {role.level && (
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "2px 8px" }}>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--teal)", background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 999, padding: "2px 8px" }}>
                 {role.level}
               </span>
             )}
@@ -400,7 +418,7 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
   }
 
   return (
-    <div style={{ border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16, marginTop: 14, background: "rgba(0,201,167,0.03)" }}>
+    <div style={{ border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16, marginTop: 14, background: "rgba(var(--teal-rgb),0.03)" }}>
       <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("newRole")}</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <input style={input} placeholder={t("roleTitlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -415,7 +433,7 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
         <button
           type="button"
           disabled={suggesting || !title.trim()}
-          style={{ ...ghostBtn, alignSelf: "flex-start", color: "var(--teal)", borderColor: "rgba(0,201,167,0.4)", opacity: suggesting || !title.trim() ? 0.5 : 1 }}
+          style={{ ...ghostBtn, alignSelf: "flex-start", color: "var(--teal)", borderColor: "rgba(var(--teal-rgb),0.4)", opacity: suggesting || !title.trim() ? 0.5 : 1 }}
           onClick={() => {
             setSuggesting(true);
             setError(null);
@@ -475,7 +493,7 @@ function AddRoleForm({ familyId, onDone, onCancel }: { familyId: string; onDone:
           </div>
         </div>
 
-        {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
 
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -595,7 +613,7 @@ function TransitionsPanel({
           {t("addPath")}
         </button>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

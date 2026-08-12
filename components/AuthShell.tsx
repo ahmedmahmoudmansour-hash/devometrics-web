@@ -23,7 +23,7 @@ export default function AuthShell({
         style={{
           flex: "0 0 42%",
           background:
-            "radial-gradient(circle at 20% 20%, rgba(0,201,167,0.16), transparent 55%), radial-gradient(circle at 80% 80%, rgba(125,211,252,0.12), transparent 55%), var(--navy)",
+            "radial-gradient(circle at 20% 20%, rgba(var(--teal-rgb),0.16), transparent 55%), radial-gradient(circle at 80% 80%, rgba(var(--phase2-rgb),0.12), transparent 55%), var(--navy)",
           borderRight: "1px solid var(--border)",
           flexDirection: "column",
           justifyContent: "space-between",
@@ -53,7 +53,7 @@ export default function AuthShell({
                     width: 20,
                     height: 20,
                     borderRadius: 999,
-                    background: "rgba(0,201,167,0.15)",
+                    background: "rgba(var(--teal-rgb),0.15)",
                     color: "var(--teal)",
                     fontSize: 12,
                     fontWeight: 800,

@@ -167,8 +167,8 @@ export default async function EnterprisePage() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 8,
-                background: "rgba(0,201,167,0.08)",
-                border: "1px solid rgba(0,201,167,0.2)",
+                background: "rgba(var(--teal-rgb),0.08)",
+                border: "1px solid rgba(var(--teal-rgb),0.2)",
                 borderRadius: 100,
                 padding: "6px 16px",
                 marginBottom: 32,
@@ -273,8 +273,8 @@ export default async function EnterprisePage() {
               style={{
                 fontSize: 11,
                 color: "var(--teal)",
-                background: "rgba(0,201,167,0.1)",
-                border: "1px solid rgba(0,201,167,0.2)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.2)",
                 borderRadius: 100,
                 padding: "4px 12px",
                 fontWeight: 700,
@@ -338,8 +338,8 @@ export default async function EnterprisePage() {
               decision engine. */}
           <div
             style={{
-              background: "rgba(0,201,167,0.06)",
-              border: "1px solid rgba(0,201,167,0.2)",
+              background: "rgba(var(--teal-rgb),0.06)",
+              border: "1px solid rgba(var(--teal-rgb),0.2)",
               borderRadius: 16,
               padding: "24px 28px",
               marginBottom: 32,
@@ -356,8 +356,8 @@ export default async function EnterprisePage() {
                 fontWeight: 700,
                 letterSpacing: "0.06em",
                 color: "var(--teal)",
-                background: "rgba(0,201,167,0.12)",
-                border: "1px solid rgba(0,201,167,0.3)",
+                background: "rgba(var(--teal-rgb),0.12)",
+                border: "1px solid rgba(var(--teal-rgb),0.3)",
                 borderRadius: 100,
                 padding: "4px 12px",
                 textTransform: "uppercase",
@@ -498,8 +498,8 @@ export default async function EnterprisePage() {
                         alignItems: "center",
                         justifyContent: "center",
                         color: "var(--teal)",
-                        background: "rgba(0,201,167,0.1)",
-                        border: "1px solid rgba(0,201,167,0.2)",
+                        background: "rgba(var(--teal-rgb),0.1)",
+                        border: "1px solid rgba(var(--teal-rgb),0.2)",
                       }}
                     >
                       <c.icon size={18} />
@@ -532,8 +532,8 @@ export default async function EnterprisePage() {
                     width: 44,
                     height: 44,
                     borderRadius: "50%",
-                    background: "rgba(0,201,167,0.1)",
-                    border: "1px solid rgba(0,201,167,0.3)",
+                    background: "rgba(var(--teal-rgb),0.1)",
+                    border: "1px solid rgba(var(--teal-rgb),0.3)",
                     color: "var(--teal)",
                     fontWeight: 600,
                     fontSize: 17,

@@ -57,7 +57,7 @@ export default function EscalationLevelsSetting({ organizationId, initialLevels 
         <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("levelsSuffix")}</span>
         {saved && <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700 }}>{t("saved")}</span>}
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

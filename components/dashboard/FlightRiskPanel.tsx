@@ -55,7 +55,7 @@ export default function FlightRiskPanel({ employeeUserId, initial }: { employeeU
         </button>
       </div>
 
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{error}</p>}
 
       {result && (
         <div style={{ marginTop: 18 }}>

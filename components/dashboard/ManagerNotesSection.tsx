@@ -97,7 +97,7 @@ export default function ManagerNotesSection({
         >
           {isPending ? t("saving") : t("addNote")}
         </button>
-        {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       </div>
 
       {notes.length === 0 ? (

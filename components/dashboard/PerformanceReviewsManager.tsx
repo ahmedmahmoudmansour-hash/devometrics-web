@@ -101,7 +101,7 @@ function CreateCycleForm({ organizationId, onCreated }: { organizationId: string
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+        style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
       >
         {t("newImpactCycle")}
       </button>
@@ -160,7 +160,7 @@ function CreateCycleForm({ organizationId, onCreated }: { organizationId: string
                 fontWeight: 700,
                 borderRadius: 999,
                 border: scopeMode === mode ? "1px solid var(--teal)" : "1px solid var(--border)",
-                background: scopeMode === mode ? "rgba(0,201,167,0.1)" : "transparent",
+                background: scopeMode === mode ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                 color: scopeMode === mode ? "var(--teal)" : "var(--text-muted)",
                 cursor: "pointer",
               }}
@@ -184,7 +184,7 @@ function CreateCycleForm({ organizationId, onCreated }: { organizationId: string
           </div>
         )}
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button type="submit" disabled={isPending} style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}>
           {isPending ? t("creating") : t("create")}

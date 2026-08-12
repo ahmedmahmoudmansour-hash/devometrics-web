@@ -38,6 +38,7 @@ async function countOrNull(
 export default async function CompanyProfilePage() {
   const t = await getTranslations("companyProfilePage");
   const tDim = await getTranslations("competencyDimensions");
+  const tNav = await getTranslations("companyNavTabs");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
   const overview = await buildCompanyOverview(data);
@@ -93,6 +94,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/employees",
         icon: COMPANY_WIDGET_ICONS.Users,
         stat: t("employeesStat", { count: data.rows.length }),
+        group: tNav("groupOverview"),
       },
       {
         key: "analytics",
@@ -100,6 +102,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/analytics",
         icon: COMPANY_WIDGET_ICONS.BarChart3,
         stat: t("analyticsStat"),
+        group: tNav("groupOverview"),
       },
       // Structure
       {
@@ -108,6 +111,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/org-chart",
         icon: COMPANY_WIDGET_ICONS.ListTree,
         stat: t("orgChartStat", { withManager, total: data.rows.length }),
+        group: tNav("groupStructure"),
       },
       {
         key: "jobArchitecture",
@@ -115,6 +119,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/job-architecture",
         icon: COMPANY_WIDGET_ICONS.Network,
         stat: jobRoleCount !== null ? t("jobArchitectureStat", { count: jobRoleCount }) : t("jobArchitectureStatEmpty"),
+        group: tNav("groupStructure"),
       },
       {
         key: "competencies",
@@ -122,6 +127,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/competencies",
         icon: COMPANY_WIDGET_ICONS.SlidersHorizontal,
         stat: t("competenciesStat", { count: data.organizationCompetencies.length }),
+        group: tNav("groupStructure"),
       },
       // Talent
       {
@@ -130,6 +136,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/high-potential",
         icon: COMPANY_WIDGET_ICONS.Star,
         stat: t("highPotentialStat", { count: hipoCount }),
+        group: tNav("groupTalent"),
       },
       {
         key: "succession",
@@ -137,6 +144,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/succession",
         icon: COMPANY_WIDGET_ICONS.TrendingUp,
         stat: successionRoleCount !== null ? t("successionStat", { count: successionRoleCount }) : t("successionStatEmpty"),
+        group: tNav("groupTalent"),
       },
       {
         key: "scorecard",
@@ -144,6 +152,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/scorecard",
         icon: COMPANY_WIDGET_ICONS.Gauge,
         stat: scorecardKpiCount !== null ? t("scorecardStat", { count: scorecardKpiCount }) : t("scorecardStatEmpty"),
+        group: tNav("groupTalent"),
       },
       // Hiring & Growth
       {
@@ -152,6 +161,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/hiring",
         icon: COMPANY_WIDGET_ICONS.Briefcase,
         stat: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
+        group: tNav("groupHiringGrowth"),
       },
       {
         key: "knowledgeHub",
@@ -162,6 +172,7 @@ export default async function CompanyProfilePage() {
           knowledgeHubContentCount !== null
             ? t("knowledgeHubStat", { count: knowledgeHubContentCount })
             : t("knowledgeHubStatEmpty"),
+        group: tNav("groupHiringGrowth"),
       },
       // Performance & Feedback
       {
@@ -170,6 +181,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/impact-cycles",
         icon: COMPANY_WIDGET_ICONS.ClipboardCheck,
         stat: reviewCycleCount !== null ? t("performanceReviewsStat", { count: reviewCycleCount }) : t("performanceReviewsStatEmpty"),
+        group: tNav("groupPerformanceFeedback"),
       },
       {
         key: "surveys",
@@ -177,6 +189,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/surveys",
         icon: COMPANY_WIDGET_ICONS.MessageSquare,
         stat: surveyCount !== null ? t("surveysStat", { count: surveyCount }) : t("surveysStatEmpty"),
+        group: tNav("groupPerformanceFeedback"),
       },
       {
         key: "exitInterviews",
@@ -184,6 +197,7 @@ export default async function CompanyProfilePage() {
         href: "/dashboard/company/exit-interviews",
         icon: COMPANY_WIDGET_ICONS.UserMinus,
         stat: exitInterviewCount !== null ? t("exitInterviewsStat", { count: exitInterviewCount }) : t("exitInterviewsStatEmpty"),
+        group: tNav("groupPerformanceFeedback"),
       },
     ];
   }

@@ -63,8 +63,8 @@ function SurveyForm({ survey, onDone }: { survey: MySurvey; onDone: () => void }
                     fontSize: 13,
                     fontWeight: 700,
                     cursor: "pointer",
-                    border: answers[q.id] === n ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                    background: answers[q.id] === n ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                    border: answers[q.id] === n ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+                    background: answers[q.id] === n ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                     color: answers[q.id] === n ? "var(--teal)" : "var(--text-muted)",
                   }}
                 >
@@ -86,8 +86,8 @@ function SurveyForm({ survey, onDone }: { survey: MySurvey; onDone: () => void }
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
-                    border: answers[q.id] === opt ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                    background: answers[q.id] === opt ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                    border: answers[q.id] === opt ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+                    background: answers[q.id] === opt ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                     color: answers[q.id] === opt ? "var(--teal)" : "var(--text-muted)",
                   }}
                 >
@@ -98,7 +98,7 @@ function SurveyForm({ survey, onDone }: { survey: MySurvey; onDone: () => void }
           )}
         </div>
       ))}
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <button
         type="button"
         onClick={handleSubmit}

@@ -74,7 +74,7 @@ export default function ProbationAcceptanceCard({ initial }: { initial: PendingP
           </div>
         ))}
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

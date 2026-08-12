@@ -28,8 +28,8 @@ export default function GapAnalysisSummary({ analysis }: { analysis: GapAnalysis
         <Link
           href="/dashboard/gap-analysis"
           style={{
-            background: "rgba(0,201,167,0.1)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.1)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 8,
             padding: "8px 16px",
             fontSize: 13,
@@ -43,7 +43,7 @@ export default function GapAnalysisSummary({ analysis }: { analysis: GapAnalysis
       </div>
 
       {analysis.role_context_inferred && (
-        <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.2)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <div style={{ background: "rgba(var(--amber-rgb),0.06)", border: "1px solid rgba(var(--amber-rgb),0.2)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "var(--amber)", textTransform: "uppercase", marginBottom: 6 }}>
             No job description provided — responsibilities inferred
           </p>

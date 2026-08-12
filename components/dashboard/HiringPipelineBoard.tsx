@@ -74,7 +74,7 @@ function sanitizeFileName(name: string): string {
 function scoreColor(score: number): string {
   if (score >= 70) return "var(--teal)";
   if (score >= 40) return "var(--amber)";
-  return "#f87171";
+  return "var(--danger)";
 }
 
 export default function HiringPipelineBoard({
@@ -198,7 +198,7 @@ export default function HiringPipelineBoard({
       <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: -4 }}>
         {t("compareDescription")}
       </p>
-      {rankingError && <p style={{ color: "#f87171", fontSize: 12 }}>{rankingError}</p>}
+      {rankingError && <p style={{ color: "var(--danger)", fontSize: 12 }}>{rankingError}</p>}
 
       {showAdd && (
         <AddCandidateForm
@@ -354,7 +354,7 @@ function InterviewQuestionsSection({ posting, hasRequirements }: { posting: JobP
         {t("interviewQuestionsDescription")}
       </p>
       {!hasRequirements && <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("setRequirementsFirst")}</p>}
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       {questions.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {questions.map((q, i) => (
@@ -582,7 +582,7 @@ function AddCandidateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ ...card, border: "1px solid rgba(0,201,167,0.3)", background: "rgba(0,201,167,0.03)" }}>
+    <form onSubmit={handleSubmit} style={{ ...card, border: "1px solid rgba(var(--teal-rgb),0.3)", background: "rgba(var(--teal-rgb),0.03)" }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("addCandidateTitle")}</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <input style={input} placeholder={t("fullNamePlaceholder")} value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -594,11 +594,11 @@ function AddCandidateForm({
           <label htmlFor="candidate-cv-upload" style={{ fontSize: 12, color: "var(--teal)", cursor: "pointer", textDecoration: "underline" }}>
             {file ? t("cvFileLabel", { fileName: file.name }) : t("attachCv")}
           </label>
-          {fileError && <p style={{ color: "#f87171", fontSize: 11, marginTop: 4 }}>{fileError}</p>}
+          {fileError && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 4 }}>{fileError}</p>}
         </div>
 
         {status && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{status}</p>}
-        {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
 
         <div style={{ display: "flex", gap: 8 }}>
           <button type="submit" disabled={isPending} style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }}>

@@ -89,7 +89,7 @@ export default function ResetPasswordForm() {
 
   if (done) {
     return (
-      <div style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 28, textAlign: "center" }}>
+      <div style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 28, textAlign: "center" }}>
         <p style={{ color: "var(--teal)", fontWeight: 700, fontSize: 16 }}>Password updated</p>
         <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
           You&apos;re all set — head back to your dashboard.
@@ -153,7 +153,7 @@ export default function ResetPasswordForm() {
           style={inputStyle}
         />
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
       <button type="submit" disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.6 : 1 }}>
         {loading ? "Updating…" : "Update password"}
       </button>

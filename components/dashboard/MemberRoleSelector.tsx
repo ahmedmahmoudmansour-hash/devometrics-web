@@ -68,7 +68,7 @@ export default function MemberRoleSelector({
         ))}
       </select>
       {isPending && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("savingLabel")}</span>}
-      {error && <span style={{ fontSize: 12, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 12, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }

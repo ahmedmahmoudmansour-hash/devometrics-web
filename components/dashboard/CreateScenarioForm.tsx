@@ -110,7 +110,7 @@ export default function CreateScenarioForm() {
         />
       </div>
 
-      {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
       <button
         type="submit"

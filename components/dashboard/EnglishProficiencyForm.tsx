@@ -68,7 +68,7 @@ export default function EnglishProficiencyForm() {
                   style={{
                     width: `${(b.correct / b.total) * 100}%`,
                     height: "100%",
-                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "#f87171" : "var(--amber)",
+                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "var(--danger)" : "var(--amber)",
                   }}
                 />
               </div>
@@ -93,7 +93,7 @@ export default function EnglishProficiencyForm() {
                   style={{
                     width: `${(b.correct / b.total) * 100}%`,
                     height: "100%",
-                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "#f87171" : "var(--amber)",
+                    background: b.correct === b.total ? "var(--teal)" : b.correct === 0 ? "var(--danger)" : "var(--amber)",
                   }}
                 />
               </div>
@@ -160,7 +160,7 @@ export default function EnglishProficiencyForm() {
                           borderRadius: 8,
                           cursor: "pointer",
                           border: selections[q.id] === i ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                          background: selections[q.id] === i ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                          background: selections[q.id] === i ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                           color: selections[q.id] === i ? "var(--teal)" : "var(--text-muted)",
                         }}
                       >
@@ -175,7 +175,7 @@ export default function EnglishProficiencyForm() {
         ))}
       </div>
 
-      {submitError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 20 }}>{submitError}</p>}
+      {submitError && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 20 }}>{submitError}</p>}
 
       <button
         type="button"

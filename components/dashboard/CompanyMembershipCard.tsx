@@ -22,7 +22,7 @@ export default function CompanyMembershipCard({ organizationName }: { organizati
         <span style={{ fontSize: 13, color: "var(--teal)" }}>{t("left")}</span>
       ) : confirming ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
-          {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"
@@ -35,13 +35,13 @@ export default function CompanyMembershipCard({ organizationName }: { organizati
                 })
               }
               style={{
-                background: "rgba(248,113,113,0.12)",
-                border: "1px solid rgba(248,113,113,0.4)",
+                background: "rgba(var(--danger-rgb),0.12)",
+                border: "1px solid rgba(var(--danger-rgb),0.4)",
                 borderRadius: 8,
                 padding: "10px 18px",
                 fontSize: 13,
                 fontWeight: 700,
-                color: "#f87171",
+                color: "var(--danger)",
                 cursor: "pointer",
               }}
             >
@@ -62,12 +62,12 @@ export default function CompanyMembershipCard({ organizationName }: { organizati
           onClick={() => setConfirming(true)}
           style={{
             background: "transparent",
-            border: "1px solid rgba(248,113,113,0.4)",
+            border: "1px solid rgba(var(--danger-rgb),0.4)",
             borderRadius: 8,
             padding: "10px 18px",
             fontSize: 13,
             fontWeight: 700,
-            color: "#f87171",
+            color: "var(--danger)",
             cursor: "pointer",
           }}
         >

@@ -108,7 +108,7 @@ export default async function JourneyPage() {
                             width: 28,
                             height: 28,
                             borderRadius: 999,
-                            background: "rgba(0,201,167,0.12)",
+                            background: "rgba(var(--teal-rgb),0.12)",
                             color: "var(--teal)",
                             fontSize: 13,
                             display: "flex",

@@ -18,7 +18,7 @@ const MAX_TEXT = 4000;
 // without having to remember to add it to each one individually. Treated
 // the same as "not an org admin at all": a restricted admin gets exactly
 // the same null-user result an unauthenticated caller would.
-async function requireAdmin() {
+export async function requireAdmin() {
   const supabase = await createClient();
   const {
     data: { user },

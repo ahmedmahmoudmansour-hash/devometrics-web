@@ -16,8 +16,8 @@ import { TASK_CATEGORIES, categoryTranslationKey, type PersonalTask, type TaskRe
 import type { Milestone } from "@/lib/supabase/types";
 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
-  high: "#f87171",
-  medium: "#f0b840",
+  high: "var(--danger)",
+  medium: "var(--amber)",
   low: "var(--text-muted)",
 };
 
@@ -129,8 +129,8 @@ function AddToCalendarControl({
   }
 
   const linkStyle: React.CSSProperties = {
-    background: "rgba(0,201,167,0.1)",
-    border: "1px solid rgba(0,201,167,0.3)",
+    background: "rgba(var(--teal-rgb),0.1)",
+    border: "1px solid rgba(var(--teal-rgb),0.3)",
     borderRadius: 6,
     padding: "4px 10px",
     fontSize: 11,
@@ -420,7 +420,7 @@ function TaskRow({ task, onChanged }: { task: PersonalTask; onChanged: () => voi
               ))}
             </div>
           )}
-          {error && <p style={{ color: "#f87171", fontSize: 11, marginTop: 6 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 6 }}>{error}</p>}
           <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
             {task.subtasks.length === 0 && (
               <button
@@ -594,8 +594,8 @@ export default function TaskList({
               onClick={() => setIcon(icon === c.icon ? null : c.icon)}
               title={t(c.translationKey)}
               style={{
-                background: icon === c.icon ? "rgba(0,201,167,0.12)" : "transparent",
-                border: icon === c.icon ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
+                background: icon === c.icon ? "rgba(var(--teal-rgb),0.12)" : "transparent",
+                border: icon === c.icon ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
                 borderRadius: 100,
                 padding: "3px 10px",
                 fontSize: 11.5,
@@ -612,7 +612,7 @@ export default function TaskList({
             </button>
           ))}
         </div>
-        {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
         <button
           type="submit"
           disabled={isPending}

@@ -30,8 +30,8 @@ export default function CustomStepCompletionBadge({
         padding: "3px 8px",
         borderRadius: 999,
         whiteSpace: "nowrap",
-        background: done ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.06)",
-        border: `1px solid ${done ? "rgba(0,201,167,0.3)" : "var(--border)"}`,
+        background: done ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.06)",
+        border: `1px solid ${done ? "rgba(var(--teal-rgb),0.3)" : "var(--border)"}`,
         color: done ? "var(--teal)" : "var(--text-muted)",
       }}
     >

@@ -93,7 +93,7 @@ export default function CalendarSyncCard() {
         )}
       </div>
 
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{error}</p>}
 
       {feedUrl && (
         <div style={{ marginTop: 12 }}>
@@ -118,8 +118,8 @@ export default function CalendarSyncCard() {
               type="button"
               onClick={copy}
               style={{
-                background: "rgba(0,201,167,0.1)",
-                border: "1px solid rgba(0,201,167,0.3)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.3)",
                 borderRadius: 8,
                 padding: "8px 14px",
                 fontSize: 12,
@@ -186,7 +186,7 @@ export default function CalendarSyncCard() {
             {importStatus.imported === 1 ? t("importedOne") : t("importedMany", { count: importStatus.imported })}
           </p>
         )}
-        {importStatus?.error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 8 }}>{importStatus.error}</p>}
+        {importStatus?.error && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 8 }}>{importStatus.error}</p>}
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
           {t("exportInstructions")}
         </p>

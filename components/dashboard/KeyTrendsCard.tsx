@@ -148,7 +148,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
           </p>
         )}
 
-        {error && <p style={{ fontSize: 13, color: "#f87171" }}>{error}</p>}
+        {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
         {summary && (
           <div
             style={{
@@ -206,7 +206,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
             </button>
           )}
 
-          {coursesError && <p style={{ fontSize: 13, color: "#f87171" }}>{coursesError}</p>}
+          {coursesError && <p style={{ fontSize: 13, color: "var(--danger)" }}>{coursesError}</p>}
           {courses && (
             <div
               style={{

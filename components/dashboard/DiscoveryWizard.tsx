@@ -145,7 +145,7 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
         </label>
       )}
 
-      {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{error}</p>}
 
       <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
         {step > 0 && (

@@ -25,7 +25,7 @@ export default function InviteCodeDisplay({ slug }: { slug: string }) {
     <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <span>
         {t("label")}{" "}
-        <code style={{ color: "var(--teal)", background: "rgba(0,201,167,0.08)", padding: "2px 6px", borderRadius: 4 }}>
+        <code style={{ color: "var(--teal)", background: "rgba(var(--teal-rgb),0.08)", padding: "2px 6px", borderRadius: 4 }}>
           {slug}
         </code>
       </span>

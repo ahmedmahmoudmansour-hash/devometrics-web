@@ -161,8 +161,8 @@ export default async function AssessmentsPage() {
         </div>
 
         {pendingAssigned.length > 0 && (
-          <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#f0b840", marginBottom: 10 }}>
+          <div style={{ background: "rgba(var(--amber-rgb),0.06)", border: "1px solid rgba(var(--amber-rgb),0.25)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "var(--amber)", marginBottom: 10 }}>
               {t("assignedToYou", { count: pendingAssigned.length })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -173,7 +173,7 @@ export default async function AssessmentsPage() {
                   style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}
                 >
                   <span style={{ color: "var(--text)" }}>{a.kind === "exercise" ? a.name : assessmentDisplayName(tCatalog, a.slug)}</span>
-                  <span style={{ color: "#f0b840", fontWeight: 600 }}>{t("start")}</span>
+                  <span style={{ color: "var(--amber)", fontWeight: 600 }}>{t("start")}</span>
                 </Link>
               ))}
             </div>
@@ -287,7 +287,7 @@ export default async function AssessmentsPage() {
                   style={{
                     display: "block",
                     background: "var(--navy-mid)",
-                    border: isRecommended ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
+                    border: isRecommended ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
                     borderRadius: 14,
                     padding: 20,
                     textDecoration: "none",
@@ -358,7 +358,7 @@ export default async function AssessmentsPage() {
                     width: 26,
                     height: 26,
                     borderRadius: 999,
-                    background: "rgba(0,201,167,0.12)",
+                    background: "rgba(var(--teal-rgb),0.12)",
                     color: "var(--teal)",
                     fontSize: 13,
                     display: "flex",

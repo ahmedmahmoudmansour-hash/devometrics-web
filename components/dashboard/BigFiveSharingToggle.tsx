@@ -73,7 +73,7 @@ export default function BigFiveSharingToggle({
           </p>
         </div>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

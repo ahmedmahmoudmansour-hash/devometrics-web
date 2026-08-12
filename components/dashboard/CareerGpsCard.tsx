@@ -6,7 +6,7 @@ import type { CareerGpsSnapshot } from "@/lib/careerGps/gps";
 function scoreColor(score: number): string {
   if (score >= 70) return "var(--teal)";
   if (score >= 40) return "var(--amber)";
-  return "#f87171";
+  return "var(--danger)";
 }
 
 export default function CareerGpsCard({ snapshot }: { snapshot: CareerGpsSnapshot }) {

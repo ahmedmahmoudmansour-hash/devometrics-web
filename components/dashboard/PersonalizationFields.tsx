@@ -167,8 +167,8 @@ export default function PersonalizationFields({
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  border: checked ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                  background: checked ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                  border: checked ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+                  background: checked ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                   color: checked ? "var(--teal)" : "var(--text-muted)",
                 }}
               >

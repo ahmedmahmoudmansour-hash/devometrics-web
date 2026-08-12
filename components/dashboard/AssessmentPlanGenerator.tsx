@@ -94,7 +94,7 @@ export default function AssessmentPlanGenerator({
                   fontWeight: 600,
                   cursor: "pointer",
                   border: horizon === h ? "1px solid var(--teal)" : "1px solid var(--border)",
-                  background: horizon === h ? "rgba(0,201,167,0.1)" : "transparent",
+                  background: horizon === h ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                   color: horizon === h ? "var(--teal)" : "var(--text-muted)",
                 }}
               >
@@ -102,7 +102,7 @@ export default function AssessmentPlanGenerator({
               </button>
             ))}
           </div>
-          {result?.error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{result.error}</p>}
+          {result?.error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{result.error}</p>}
           <button
             type="button"
             disabled={isPending}

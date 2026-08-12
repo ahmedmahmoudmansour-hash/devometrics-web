@@ -89,7 +89,7 @@ export default function EmailMessagesForm({
                 fontWeight: 700,
                 borderRadius: 999,
                 border: type === activeType ? "1px solid var(--teal)" : "1px solid var(--border)",
-                background: type === activeType ? "rgba(0,201,167,0.1)" : "transparent",
+                background: type === activeType ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                 color: type === activeType ? "var(--teal)" : "var(--text-muted)",
                 cursor: "pointer",
                 display: "flex",
@@ -132,16 +132,16 @@ export default function EmailMessagesForm({
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>{t("messageScopeNote")}</p>
         </div>
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button
             type="submit"
             disabled={isPending}
             style={{
-              background: saved === activeType ? "rgba(0,201,167,0.1)" : "var(--teal)",
+              background: saved === activeType ? "rgba(var(--teal-rgb),0.1)" : "var(--teal)",
               color: saved === activeType ? "var(--teal)" : "#0A0F1E",
-              border: saved === activeType ? "1px solid rgba(0,201,167,0.3)" : "none",
+              border: saved === activeType ? "1px solid rgba(var(--teal-rgb),0.3)" : "none",
               borderRadius: 8,
               padding: "10px 18px",
               fontSize: 14,

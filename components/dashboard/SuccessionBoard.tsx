@@ -132,7 +132,7 @@ function NominationPanel({
             aria-label={t("nominationNoteLabel")}
             style={{ ...fieldStyle, padding: "8px 12px", fontSize: 13 }}
           />
-          {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"
@@ -156,7 +156,7 @@ function NominationPanel({
           type="button"
           onClick={() => setAdding(true)}
           disabled={available.length === 0}
-          style={{ background: "none", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: available.length === 0 ? "not-allowed" : "pointer", opacity: available.length === 0 ? 0.5 : 1 }}
+          style={{ background: "none", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: available.length === 0 ? "not-allowed" : "pointer", opacity: available.length === 0 ? 0.5 : 1 }}
         >
           {t("nominateSomeone")}
         </button>
@@ -254,8 +254,8 @@ function RoleCard({
             onClick={generate}
             disabled={isPending}
             style={{
-              background: "rgba(0,201,167,0.1)",
-              border: "1px solid rgba(0,201,167,0.3)",
+              background: "rgba(var(--teal-rgb),0.1)",
+              border: "1px solid rgba(var(--teal-rgb),0.3)",
               borderRadius: 8,
               padding: "7px 14px",
               fontSize: 12,
@@ -278,7 +278,7 @@ function RoleCard({
         </div>
       </div>
 
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
 
       <div style={{ marginTop: 14 }}>
         <NominationPanel
@@ -299,17 +299,17 @@ function RoleCard({
         <div style={{ marginTop: 16 }}>
           {/* Bench strength pipeline */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "4px 12px" }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--teal)", background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 999, padding: "4px 12px" }}>
               {t("readyNow", { count: readyNow })}
             </span>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--amber)", background: "rgba(240,184,64,0.08)", border: "1px solid rgba(240,184,64,0.3)", borderRadius: 999, padding: "4px 12px" }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--amber)", background: "rgba(var(--amber-rgb),0.08)", border: "1px solid rgba(var(--amber-rgb),0.3)", borderRadius: 999, padding: "4px 12px" }}>
               {t("nearReady", { count: nearReady })}
             </span>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--phase2)", background: "rgba(125,211,252,0.08)", border: "1px solid rgba(125,211,252,0.3)", borderRadius: 999, padding: "4px 12px" }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--phase2)", background: "rgba(var(--phase2-rgb),0.08)", border: "1px solid rgba(var(--phase2-rgb),0.3)", borderRadius: 999, padding: "4px 12px" }}>
               {t("developing", { count: developing })}
             </span>
             {!report.hasStrongSuccessor && (
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 999, padding: "4px 12px" }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--danger)", background: "rgba(var(--danger-rgb),0.08)", border: "1px solid rgba(var(--danger-rgb),0.3)", borderRadius: 999, padding: "4px 12px" }}>
                 {t("noStrongSuccessor")}
               </span>
             )}
@@ -345,12 +345,12 @@ function RoleCard({
               </p>
             )}
             {report.candidates.map((c, i) => (
-              <div key={c.userId} style={{ background: "rgba(255,255,255,0.03)", border: i === 0 ? "1px solid rgba(0,201,167,0.3)" : "1px solid var(--border)", borderRadius: 12, padding: 14 }}>
+              <div key={c.userId} style={{ background: "rgba(255,255,255,0.03)", border: i === 0 ? "1px solid rgba(var(--teal-rgb),0.3)" : "1px solid var(--border)", borderRadius: 12, padding: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                   <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
                     {i + 1}. {c.name}
                     {c.nominated && (
-                      <span style={{ fontSize: 9.5, fontWeight: 800, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "3px 9px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      <span style={{ fontSize: 9.5, fontWeight: 800, color: "var(--teal)", background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 999, padding: "3px 9px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         {t("nominatedByYou")}
                       </span>
                     )}
@@ -458,7 +458,7 @@ export default function SuccessionBoard({
             {t("analyzedCount", { count: analyzed.length })}
           </span>
           {needsAttention.length > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 999, padding: "5px 14px" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--danger)", background: "rgba(var(--danger-rgb),0.08)", border: "1px solid rgba(var(--danger-rgb),0.3)", borderRadius: 999, padding: "5px 14px" }}>
               {t("needsAttentionCount", { count: needsAttention.length })}
             </span>
           )}
@@ -466,7 +466,7 @@ export default function SuccessionBoard({
       )}
 
       {creating ? (
-        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <input
             type="text"
             value={title}
@@ -484,7 +484,7 @@ export default function SuccessionBoard({
             rows={4}
             style={{ ...fieldStyle, resize: "vertical" }}
           />
-          {error && <p style={{ color: "#f87171", fontSize: 12.5 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 12.5 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"

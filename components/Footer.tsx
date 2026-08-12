@@ -98,7 +98,7 @@ export default function Footer() {
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,201,167,0.3)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(var(--teal-rgb),0.3)";
                   (e.currentTarget as HTMLElement).style.color = "var(--teal)";
                 }}
                 onMouseLeave={(e) => {
@@ -128,7 +128,7 @@ export default function Footer() {
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,201,167,0.3)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(var(--teal-rgb),0.3)";
                   (e.currentTarget as HTMLElement).style.color = "var(--teal)";
                 }}
                 onMouseLeave={(e) => {

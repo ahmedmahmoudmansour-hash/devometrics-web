@@ -53,7 +53,7 @@ const ghostBtn: React.CSSProperties = {
 const STATUS_COLOR: Record<JobPostingStatus, string> = {
   draft: "var(--text-muted)",
   open: "var(--teal)",
-  closed: "#f87171",
+  closed: "var(--danger)",
 };
 
 type PostingRow = JobPosting & { candidateCount: number; hiredCount: number };
@@ -219,7 +219,7 @@ function NewPostingForm({
   }
 
   return (
-    <div style={{ ...card, border: "1px solid rgba(0,201,167,0.3)", background: "rgba(0,201,167,0.03)" }}>
+    <div style={{ ...card, border: "1px solid rgba(var(--teal-rgb),0.3)", background: "rgba(var(--teal-rgb),0.03)" }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>{t("newPostingTitle")}</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {linkableRoles.length > 0 && (
@@ -256,7 +256,7 @@ function NewPostingForm({
         <button
           type="button"
           disabled={suggesting || !title.trim()}
-          style={{ ...ghostBtn, alignSelf: "flex-start", color: "var(--teal)", borderColor: "rgba(0,201,167,0.4)", opacity: suggesting || !title.trim() ? 0.5 : 1 }}
+          style={{ ...ghostBtn, alignSelf: "flex-start", color: "var(--teal)", borderColor: "rgba(var(--teal-rgb),0.4)", opacity: suggesting || !title.trim() ? 0.5 : 1 }}
           onClick={() => {
             setSuggesting(true);
             setError(null);
@@ -300,7 +300,7 @@ function NewPostingForm({
           </div>
         )}
 
-        {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
 
         <div style={{ display: "flex", gap: 8 }}>
           <button

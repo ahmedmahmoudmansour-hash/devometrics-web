@@ -32,8 +32,8 @@ export default function PremiumTrialForm() {
     return (
       <div
         style={{
-          background: "rgba(0,201,167,0.06)",
-          border: "1px solid rgba(0,201,167,0.25)",
+          background: "rgba(var(--teal-rgb),0.06)",
+          border: "1px solid rgba(var(--teal-rgb),0.25)",
           borderRadius: 16,
           padding: 20,
           fontSize: 13,
@@ -90,7 +90,7 @@ export default function PremiumTrialForm() {
           {isPending ? t("checking") : t("activate")}
         </button>
       </form>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

@@ -134,7 +134,7 @@ export default function CreateCompanyWorkspaceForm() {
           </button>
         </div>
       </form>
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
       {success && <p style={{ color: "var(--teal)", fontSize: 12.5, marginTop: 10 }}>{t("successMessage")}</p>}
     </div>
   );

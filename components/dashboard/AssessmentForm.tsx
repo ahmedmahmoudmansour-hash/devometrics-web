@@ -178,7 +178,7 @@ export default function AssessmentForm({
         </p>
 
         {result.insight && (
-          <div style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.2)", borderRadius: 10, padding: 16, marginTop: 20 }}>
+          <div style={{ background: "rgba(var(--teal-rgb),0.06)", border: "1px solid rgba(var(--teal-rgb),0.2)", borderRadius: 10, padding: 16, marginTop: 20 }}>
             <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginBottom: 8 }}>
               {t("caseStudyInsightTitle")}
             </h3>
@@ -242,7 +242,7 @@ export default function AssessmentForm({
                         borderRadius: 8,
                         cursor: "pointer",
                         border: mcqSelections[c.id] === opt.id ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                        background: mcqSelections[c.id] === opt.id ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                        background: mcqSelections[c.id] === opt.id ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                         color: mcqSelections[c.id] === opt.id ? "var(--teal)" : "var(--text)",
                       }}
                     >
@@ -266,7 +266,7 @@ export default function AssessmentForm({
           ))}
         </div>
 
-        {submitError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 16 }}>{submitError}</p>}
+        {submitError && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 16 }}>{submitError}</p>}
 
         <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
           <button
@@ -339,7 +339,7 @@ export default function AssessmentForm({
                     borderRadius: 8,
                     cursor: "pointer",
                     border: answers[i] === opt.value ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                    background: answers[i] === opt.value ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                    background: answers[i] === opt.value ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                     color: answers[i] === opt.value ? "var(--teal)" : "var(--text-muted)",
                   }}
                 >
@@ -351,7 +351,7 @@ export default function AssessmentForm({
         ))}
       </div>
 
-      {submitError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 16 }}>{submitError}</p>}
+      {submitError && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 16 }}>{submitError}</p>}
 
       <button
         type="button"

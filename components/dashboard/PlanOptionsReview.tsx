@@ -105,7 +105,7 @@ export default function PlanOptionsReview({
                         borderRadius: 10,
                         cursor: "pointer",
                         border: selected ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                        background: selected ? "rgba(0,201,167,0.1)" : "rgba(255,255,255,0.04)",
+                        background: selected ? "rgba(var(--teal-rgb),0.1)" : "rgba(255,255,255,0.04)",
                       }}
                     >
                       <div style={{ fontSize: 11, fontWeight: 700, color: selected ? "var(--teal)" : "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>

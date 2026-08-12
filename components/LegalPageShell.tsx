@@ -51,8 +51,8 @@ export default async function LegalPageShell({
 
           <div
             style={{
-              background: "rgba(240,184,64,0.08)",
-              border: "1px solid rgba(240,184,64,0.25)",
+              background: "rgba(var(--amber-rgb),0.08)",
+              border: "1px solid rgba(var(--amber-rgb),0.25)",
               borderRadius: 12,
               padding: "16px 20px",
               marginBottom: 40,

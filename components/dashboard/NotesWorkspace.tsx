@@ -64,7 +64,7 @@ function NoteEditor({
         rows={8}
         style={{ ...inputStyle, resize: "vertical" }}
       />
-      {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
@@ -141,8 +141,8 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
           onClick={organize}
           disabled={isPending}
           style={{
-            background: "rgba(0,201,167,0.1)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.1)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 8,
             padding: "8px 14px",
             fontSize: 12,
@@ -154,7 +154,7 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
         >
           {isPending ? t("organizingButton") : t("organizeWithAiButton")}
         </button>
-        {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
       </div>
     );
   }
@@ -163,8 +163,8 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
     <div
       style={{
         marginTop: 12,
-        background: "rgba(0,201,167,0.06)",
-        border: "1px solid rgba(0,201,167,0.2)",
+        background: "rgba(var(--teal-rgb),0.06)",
+        border: "1px solid rgba(var(--teal-rgb),0.2)",
         borderRadius: 10,
         padding: 14,
       }}
@@ -209,7 +209,7 @@ function InsightPanel({ noteId, initialInsight }: { noteId: string; initialInsig
           </div>
         </>
       )}
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }
@@ -233,7 +233,7 @@ export default function NotesWorkspace({ initialNotes }: { initialNotes: Persona
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {creating ? (
-        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 16, padding: 20 }}>
+        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 16, padding: 20 }}>
           <NoteEditor note={null} onDone={() => setCreating(false)} />
         </div>
       ) : (

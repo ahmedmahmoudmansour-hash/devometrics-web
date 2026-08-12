@@ -304,12 +304,12 @@ export default function RoleplayChat({
         {speaking && (
           <div style={{ alignSelf: "flex-start", color: "var(--teal)", fontSize: 12 }}>{t("speaking")}</div>
         )}
-        {error && <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{error}</div>}
+        {error && <div style={{ alignSelf: "flex-start", color: "var(--danger)", fontSize: 13 }}>{error}</div>}
         {voiceError && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{t("voicePrefix", { error: voiceError })}</div>
+          <div style={{ alignSelf: "flex-start", color: "var(--danger)", fontSize: 13 }}>{t("voicePrefix", { error: voiceError })}</div>
         )}
         {micError && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{t("micPrefix", { error: micError })}</div>
+          <div style={{ alignSelf: "flex-start", color: "var(--danger)", fontSize: 13 }}>{t("micPrefix", { error: micError })}</div>
         )}
       </div>
 
@@ -350,13 +350,13 @@ export default function RoleplayChat({
               disabled={loading}
               aria-label={listening ? t("stopRecording") : t("speakYourResponse")}
               style={{
-                background: listening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
-                border: listening ? "1px solid rgba(248,113,113,0.4)" : "1px solid var(--border)",
+                background: listening ? "rgba(var(--danger-rgb),0.15)" : "rgba(255,255,255,0.05)",
+                border: listening ? "1px solid rgba(var(--danger-rgb),0.4)" : "1px solid var(--border)",
                 borderRadius: 8,
                 padding: "10px 14px",
                 fontSize: 14,
                 cursor: "pointer",
-                color: listening ? "#f87171" : "var(--text-muted)",
+                color: listening ? "var(--danger)" : "var(--text-muted)",
               }}
             >
               {listening ? t("listening") : "🎙"}

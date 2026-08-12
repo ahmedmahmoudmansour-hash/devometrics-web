@@ -34,7 +34,7 @@ export default function OrganizationBrandingForm({
 }) {
   const t = useTranslations("organizationBrandingForm");
   const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? "");
-  const [brandColor, setBrandColor] = useState(initial.brandColor ?? "#00C9A7");
+  const [brandColor, setBrandColor] = useState(initial.brandColor ?? "var(--teal)");
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +154,7 @@ export default function OrganizationBrandingForm({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <input
               type="color"
-              value={/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : "#00C9A7"}
+              value={/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : "var(--teal)"}
               onChange={(e) => {
                 setBrandColor(e.target.value);
                 setSaved(false);
@@ -169,22 +169,22 @@ export default function OrganizationBrandingForm({
                 setBrandColor(e.target.value);
                 setSaved(false);
               }}
-              placeholder="#00C9A7"
+              placeholder="var(--teal)"
               style={{ ...inputStyle, flex: 1 }}
             />
           </div>
         </div>
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
         <button
           type="submit"
           disabled={isPending || logoUploading}
           style={{
             alignSelf: "flex-start",
-            background: saved ? "rgba(0,201,167,0.1)" : "var(--teal)",
+            background: saved ? "rgba(var(--teal-rgb),0.1)" : "var(--teal)",
             color: saved ? "var(--teal)" : "#0A0F1E",
-            border: saved ? "1px solid rgba(0,201,167,0.3)" : "none",
+            border: saved ? "1px solid rgba(var(--teal-rgb),0.3)" : "none",
             borderRadius: 8,
             padding: "10px 18px",
             fontSize: 14,

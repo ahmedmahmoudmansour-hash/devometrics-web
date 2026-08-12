@@ -171,7 +171,7 @@ function ConfigFields({
                   fontWeight: 600,
                   borderRadius: 999,
                   border: active ? "1px solid var(--teal)" : "1px solid var(--border)",
-                  background: active ? "rgba(0,201,167,0.1)" : "transparent",
+                  background: active ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                   color: active ? "var(--teal)" : "var(--text-muted)",
                   cursor: "pointer",
                 }}
@@ -205,7 +205,7 @@ function ConfigFields({
                       fontWeight: 600,
                       borderRadius: 999,
                       border: active ? "1px solid var(--teal)" : "1px solid var(--border)",
-                      background: active ? "rgba(0,201,167,0.1)" : "transparent",
+                      background: active ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                       color: active ? "var(--teal)" : "var(--text-muted)",
                       cursor: "pointer",
                     }}
@@ -443,7 +443,7 @@ export default function PerformanceReviewWorkflowEditor({
                 fontWeight: 700,
                 borderRadius: 999,
                 border: type === stepType ? "1px solid var(--teal)" : "1px solid var(--border)",
-                background: type === stepType ? "rgba(0,201,167,0.1)" : "transparent",
+                background: type === stepType ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                 color: type === stepType ? "var(--teal)" : "var(--text-muted)",
                 cursor: "pointer",
               }}
@@ -465,7 +465,7 @@ export default function PerformanceReviewWorkflowEditor({
 
         <ConfigFields stepType={stepType} draft={draft} onChange={setDraft} organizationCompetencyOptions={organizationCompetencyOptions} t={t} tKinds={tKinds} />
 
-        {error && <p style={{ color: "#f87171", fontSize: 12.5 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12.5 }}>{error}</p>}
 
         <button
           type="button"

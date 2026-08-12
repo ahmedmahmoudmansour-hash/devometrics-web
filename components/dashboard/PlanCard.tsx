@@ -109,8 +109,8 @@ export default function PlanCard({
                 color: "var(--teal)",
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
-                background: "rgba(0,201,167,0.1)",
-                border: "1px solid rgba(0,201,167,0.3)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.3)",
                 borderRadius: 100,
                 padding: "4px 12px",
                 whiteSpace: "nowrap",
@@ -167,7 +167,7 @@ export default function PlanCard({
       <AddMilestoneForm planId={plan.id} nextPosition={milestones.length} />
 
       <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-        {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {confirmingDelete ? (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("confirmDeleteQuestion")}</span>
@@ -180,7 +180,7 @@ export default function PlanCard({
                   if (result?.error) setError(result.error);
                 })
               }
-              style={{ background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+              style={{ background: "rgba(var(--danger-rgb),0.12)", border: "1px solid rgba(var(--danger-rgb),0.4)", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
             >
               {t("confirmDelete")}
             </button>

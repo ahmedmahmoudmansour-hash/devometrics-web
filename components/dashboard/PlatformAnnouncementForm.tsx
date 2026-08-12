@@ -124,8 +124,8 @@ export default function PlatformAnnouncementForm() {
           type="button"
           onClick={() => setExpanded(true)}
           style={{
-            background: "rgba(0,201,167,0.1)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.1)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 8,
             padding: "10px 18px",
             fontSize: 13,
@@ -243,7 +243,7 @@ export default function PlatformAnnouncementForm() {
             </div>
           )}
 
-          <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ background: "rgba(var(--danger-rgb),0.06)", border: "1px solid rgba(var(--danger-rgb),0.3)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>{t("confirmInstructions")}</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
@@ -259,13 +259,13 @@ export default function PlatformAnnouncementForm() {
                 disabled={isPending || !canSend}
                 onClick={handleSend}
                 style={{
-                  background: "rgba(248,113,113,0.12)",
-                  border: "1px solid rgba(248,113,113,0.4)",
+                  background: "rgba(var(--danger-rgb),0.12)",
+                  border: "1px solid rgba(var(--danger-rgb),0.4)",
                   borderRadius: 8,
                   padding: "10px 18px",
                   fontSize: 13,
                   fontWeight: 700,
-                  color: "#f87171",
+                  color: "var(--danger)",
                   cursor: canSend ? "pointer" : "not-allowed",
                   opacity: isPending || !canSend ? 0.5 : 1,
                 }}
@@ -280,7 +280,7 @@ export default function PlatformAnnouncementForm() {
               {t("sendResult", { sent: result.sent, failed: result.failed })}
             </p>
           )}
-          {error && <p style={{ fontSize: 13, color: "#f87171" }}>{error}</p>}
+          {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
         </div>
       </div>
     </div>

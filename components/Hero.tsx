@@ -43,7 +43,7 @@ export default function Hero() {
           width: 600,
           height: 600,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,201,167,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(var(--teal-rgb),0.06) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -55,7 +55,7 @@ export default function Hero() {
           width: 300,
           height: 300,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(125,211,252,0.04) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(var(--teal-rgb),0.04) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -67,7 +67,7 @@ export default function Hero() {
           width: 250,
           height: 250,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,201,167,0.04) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(var(--teal-rgb),0.04) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -100,8 +100,8 @@ export default function Hero() {
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            background: "rgba(0,201,167,0.08)",
-            border: "1px solid rgba(0,201,167,0.2)",
+            background: "rgba(var(--teal-rgb),0.08)",
+            border: "1px solid rgba(var(--teal-rgb),0.2)",
             borderRadius: 100,
             paddingInline: 16,
             paddingBlock: 6,
@@ -167,7 +167,7 @@ export default function Hero() {
                 width: 280,
                 transition: "border-color 0.2s",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,201,167,0.4)")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(var(--teal-rgb),0.4)")}
               onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
             />
             <button
@@ -188,7 +188,7 @@ export default function Hero() {
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.background = "var(--teal-dim)";
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(0,201,167,0.35)";
+                (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(var(--teal-rgb),0.35)";
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.background = "var(--teal)";

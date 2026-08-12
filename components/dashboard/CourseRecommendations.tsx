@@ -48,7 +48,7 @@ export default function CourseRecommendations({ topic }: { topic: string }) {
       {open && (
         <div style={{ marginTop: 8 }}>
           {loading && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("searching")}</p>}
-          {error && <p style={{ fontSize: 12, color: "#f87171" }}>{error}</p>}
+          {error && <p style={{ fontSize: 12, color: "var(--danger)" }}>{error}</p>}
           {summary && (
             <div
               style={{

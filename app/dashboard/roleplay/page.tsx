@@ -103,8 +103,8 @@ export default async function RoleplayListPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-                background: "rgba(0,201,167,0.06)",
-                border: "1px dashed rgba(0,201,167,0.4)",
+                background: "rgba(var(--teal-rgb),0.06)",
+                border: "1px dashed rgba(var(--teal-rgb),0.4)",
                 borderRadius: 14,
                 padding: 20,
                 textDecoration: "none",
@@ -140,7 +140,7 @@ export default async function RoleplayListPage() {
                   {session?.completed ? (
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>{t("completedTryAgain")}</span>
                   ) : session ? (
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#f0b840" }}>{t("inProgress")}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--amber)" }}>{t("inProgress")}</span>
                   ) : (
                     <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
                   )}
@@ -161,7 +161,7 @@ export default async function RoleplayListPage() {
                     width: 26,
                     height: 26,
                     borderRadius: 999,
-                    background: "rgba(0,201,167,0.12)",
+                    background: "rgba(var(--teal-rgb),0.12)",
                     color: "var(--teal)",
                     fontSize: 13,
                     display: "flex",
@@ -204,7 +204,7 @@ export default async function RoleplayListPage() {
                       {session?.completed ? (
                         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--teal)" }}>{t("completedTryAgain")}</span>
                       ) : session ? (
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#f0b840" }}>{t("inProgress")}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--amber)" }}>{t("inProgress")}</span>
                       ) : (
                         <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("notStarted")}</span>
                       )}

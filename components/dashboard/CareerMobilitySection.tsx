@@ -66,7 +66,7 @@ function MoveCard({ move, kind, t, tDim }: { move: MoveOption; kind: "vertical" 
 
 function UntappedCard({ item, t, tDim }: { item: UntappedRole; t: Translator; tDim: Translator }) {
   return (
-    <div style={{ border: "1px solid rgba(125,211,252,0.25)", borderRadius: 12, padding: 14, background: "rgba(125,211,252,0.04)" }}>
+    <div style={{ border: "1px solid rgba(var(--phase2-rgb),0.25)", borderRadius: 12, padding: 14, background: "rgba(var(--phase2-rgb),0.04)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{item.role.title}</span>
         <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--phase2)" }}>{t("matchPercent", { percent: item.matchPercent })}</span>
@@ -117,7 +117,7 @@ export default async function CareerMobilitySection({
               {t("from")}
             </span>
             <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{mobility.currentRole.title}</span>
-            <span className="mono" style={{ fontSize: 11, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "2px 8px" }}>
+            <span className="mono" style={{ fontSize: 11, color: "var(--teal)", background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 999, padding: "2px 8px" }}>
               G{mobility.currentRole.grade}
               {mobility.currentRole.level ? ` · ${mobility.currentRole.level}` : ""}
             </span>

@@ -110,7 +110,7 @@ export default function CareerProfileForm({
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
         {t("description")}
       </p>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 16 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginBottom: 16 }}>{error}</p>}
 
       <div style={{ marginBottom: 24 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 10 }}>{t("jobHistory")}</p>
@@ -176,8 +176,8 @@ export default function CareerProfileForm({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                background: "rgba(0,201,167,0.1)",
-                border: "1px solid rgba(0,201,167,0.25)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.25)",
                 borderRadius: 100,
                 padding: "5px 10px",
                 fontSize: 12,
@@ -279,9 +279,9 @@ export default function CareerProfileForm({
         onClick={handleSave}
         disabled={isSaving}
         style={{
-          background: saved ? "rgba(0,201,167,0.1)" : "var(--teal)",
+          background: saved ? "rgba(var(--teal-rgb),0.1)" : "var(--teal)",
           color: saved ? "var(--teal)" : "#0A0F1E",
-          border: saved ? "1px solid rgba(0,201,167,0.3)" : "none",
+          border: saved ? "1px solid rgba(var(--teal-rgb),0.3)" : "none",
           borderRadius: 8,
           padding: "10px 18px",
           fontSize: 14,

@@ -15,7 +15,7 @@ const COMPACT_CARD_H = 44;
 // "structural" regardless of their (always-'open') status.
 const KIND_STATUS_COLORS: Record<string, { fg: string; bg: string; border: string }> = {
   structural: { fg: "#60a5fa", bg: "rgba(96,165,250,0.1)", border: "rgba(96,165,250,0.35)" },
-  open: { fg: "#fbbf24", bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.35)" },
+  open: { fg: "var(--amber)", bg: "rgba(var(--amber-rgb),0.1)", border: "rgba(var(--amber-rgb),0.35)" },
   future: { fg: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.35)" },
   frozen: { fg: "#9ca3af", bg: "rgba(156,163,175,0.1)", border: "rgba(156,163,175,0.35)" },
 };
@@ -58,7 +58,7 @@ export default function OrgChartPositionCard({
   const colorKey = position.kind === "structural" ? "structural" : position.status;
   const colors = KIND_STATUS_COLORS[colorKey] ?? KIND_STATUS_COLORS.open;
 
-  const ringColor = dropState === "valid" ? "var(--teal)" : dropState === "invalid" || dropState === "self" ? "#f87171" : isSelected ? "var(--teal)" : colors.border;
+  const ringColor = dropState === "valid" ? "var(--teal)" : dropState === "invalid" || dropState === "self" ? "var(--danger)" : isSelected ? "var(--teal)" : colors.border;
   const ringWidth = dropState === "valid" || dropState === "invalid" || isSelected ? 2 : 1;
 
   return (
@@ -83,7 +83,7 @@ export default function OrgChartPositionCard({
         flexDirection: "column",
         gap: 2,
         position: "relative",
-        boxShadow: dropState === "valid" ? "0 0 0 3px rgba(0,201,167,0.25)" : dropState === "invalid" || dropState === "self" ? "0 0 0 3px rgba(248,113,113,0.2)" : "none",
+        boxShadow: dropState === "valid" ? "0 0 0 3px rgba(var(--teal-rgb),0.25)" : dropState === "invalid" || dropState === "self" ? "0 0 0 3px rgba(var(--danger-rgb),0.2)" : "none",
       }}
     >
       <span style={{ fontSize: 9, fontWeight: 700, color: colors.fg, textTransform: "uppercase", letterSpacing: "0.03em" }}>

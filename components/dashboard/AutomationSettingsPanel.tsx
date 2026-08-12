@@ -85,7 +85,7 @@ export default function AutomationSettingsPanel({
           </div>
         ))}
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 10 }}>{error}</p>}
     </div>
   );
 }

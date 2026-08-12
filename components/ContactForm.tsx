@@ -65,8 +65,8 @@ export default function ContactForm() {
     return (
       <div
         style={{
-          background: "rgba(0,201,167,0.08)",
-          border: "1px solid rgba(0,201,167,0.25)",
+          background: "rgba(var(--teal-rgb),0.08)",
+          border: "1px solid rgba(var(--teal-rgb),0.25)",
           borderRadius: 16,
           padding: 32,
           textAlign: "center",
@@ -158,7 +158,7 @@ export default function ContactForm() {
         />
       </div>
 
-      {error && <p style={{ fontSize: 13, color: "#f87171" }}>{error}</p>}
+      {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
 
       <button
         type="submit"

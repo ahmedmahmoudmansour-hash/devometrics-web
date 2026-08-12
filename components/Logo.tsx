@@ -26,7 +26,7 @@ export default function Logo({ size = 36, showWordmark = true, className = "" }:
         <rect x="22" y="13" width="5" height="21" rx="1.5" fill="url(#bar-grad)" opacity="0.9" />
         <rect x="29" y="8" width="5" height="26" rx="1.5" fill="url(#bar-grad)" />
         {/* Score tick at top of tallest bar */}
-        <circle cx="31.5" cy="8" r="2.5" fill="#00C9A7" />
+        <circle cx="31.5" cy="8" r="2.5" fill="var(--teal)" />
         <circle cx="31.5" cy="8" r="1.2" fill="white" />
         {/* Connector line */}
         <path
@@ -37,18 +37,26 @@ export default function Logo({ size = 36, showWordmark = true, className = "" }:
           strokeDasharray="2 2"
           opacity="0.6"
         />
+        {/*
+          Redesign restraint pass: these were two-hue gradients (teal to an
+          unrelated pale blue/cyan) — now single-hue teal-to-teal-dim fades,
+          in keeping with the "no rainbow gradient" direction applied
+          elsewhere (see .gradient-text in globals.css). SVG presentation
+          attributes accept var() in all evergreen browsers, so these track
+          the active theme automatically.
+        */}
         <defs>
           <linearGradient id="ring-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#00C9A7" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.3" />
+            <stop offset="0%" stopColor="var(--teal)" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="var(--teal-dim)" stopOpacity="0.3" />
           </linearGradient>
           <linearGradient id="bar-grad" x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#00C9A7" />
-            <stop offset="100%" stopColor="#0891b2" />
+            <stop offset="0%" stopColor="var(--teal)" />
+            <stop offset="100%" stopColor="var(--teal-dim)" />
           </linearGradient>
           <linearGradient id="line-grad" x1="8" y1="26" x2="31.5" y2="8" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#00C9A7" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#00C9A7" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="var(--teal)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--teal)" stopOpacity="0.9" />
           </linearGradient>
         </defs>
       </svg>

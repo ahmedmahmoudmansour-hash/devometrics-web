@@ -71,8 +71,8 @@ export default function AchievementsCard({
               key={a.key}
               title={a.description}
               style={{
-                background: earned ? "rgba(0,201,167,0.08)" : "rgba(255,255,255,0.03)",
-                border: earned ? "1px solid rgba(0,201,167,0.3)" : "1px solid var(--border)",
+                background: earned ? "rgba(var(--teal-rgb),0.08)" : "rgba(255,255,255,0.03)",
+                border: earned ? "1px solid rgba(var(--teal-rgb),0.3)" : "1px solid var(--border)",
                 borderRadius: 12,
                 padding: "14px 10px",
                 textAlign: "center",

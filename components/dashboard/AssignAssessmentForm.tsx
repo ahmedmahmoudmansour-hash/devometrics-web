@@ -115,7 +115,7 @@ export default function AssignAssessmentForm({
         <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{t("allAssigned")}</p>
       )}
 
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{error}</p>}
     </div>
   );
 }

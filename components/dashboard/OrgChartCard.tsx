@@ -66,7 +66,7 @@ export default function OrgChartCard({
   const height = density === "compact" ? COMPACT_CARD_H : CARD_H;
   const memberSince = toggles.showTenure ? formatMemberSince(t, row.memberSince) : null;
 
-  const ringColor = dropState === "valid" ? "var(--teal)" : dropState === "invalid" || dropState === "self" ? "#f87171" : isSelected ? "var(--teal)" : "var(--border)";
+  const ringColor = dropState === "valid" ? "var(--teal)" : dropState === "invalid" || dropState === "self" ? "var(--danger)" : isSelected ? "var(--teal)" : "var(--border)";
   const ringWidth = dropState === "valid" || dropState === "invalid" || isSelected ? 2 : 1;
 
   return (
@@ -91,11 +91,11 @@ export default function OrgChartCard({
         alignItems: "center",
         gap: 8,
         position: "relative",
-        boxShadow: dropState === "valid" ? "0 0 0 3px rgba(0,201,167,0.25)" : dropState === "invalid" || dropState === "self" ? "0 0 0 3px rgba(248,113,113,0.2)" : "none",
+        boxShadow: dropState === "valid" ? "0 0 0 3px rgba(var(--teal-rgb),0.25)" : dropState === "invalid" || dropState === "self" ? "0 0 0 3px rgba(var(--danger-rgb),0.2)" : "none",
       }}
     >
       {toggles.showPhoto && (
-        <div style={{ flexShrink: 0, width: density === "compact" ? 22 : 28, height: density === "compact" ? 22 : 28, borderRadius: "50%", overflow: "hidden", background: "rgba(0,201,167,0.12)", border: "1px solid rgba(0,201,167,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ flexShrink: 0, width: density === "compact" ? 22 : 28, height: density === "compact" ? 22 : 28, borderRadius: "50%", overflow: "hidden", background: "rgba(var(--teal-rgb),0.12)", border: "1px solid rgba(var(--teal-rgb),0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {row.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={row.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -127,7 +127,7 @@ export default function OrgChartCard({
         {(toggles.showPerformanceBadge || toggles.showSuccessionStatus) && (
           <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
             {toggles.showPerformanceBadge && row.performanceRating !== null && (
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: "var(--teal)", background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 999, padding: "1px 6px" }}>
+              <span style={{ fontSize: 9.5, fontWeight: 700, color: "var(--teal)", background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 999, padding: "1px 6px" }}>
                 {t("performanceBadge", { rating: row.performanceRating })}
               </span>
             )}

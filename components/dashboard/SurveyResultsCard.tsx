@@ -42,7 +42,7 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
       {expanded && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
           {isPending && <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("loading")}</p>}
-          {results && "error" in results && <p style={{ fontSize: 12, color: "#f87171" }}>{results.error}</p>}
+          {results && "error" in results && <p style={{ fontSize: 12, color: "var(--danger)" }}>{results.error}</p>}
           {results && "status" in results && results.status === "insufficient_data" && (
             <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
               {t("insufficientData", { responded: results.responseCount, assigned: survey.assignedCount })}

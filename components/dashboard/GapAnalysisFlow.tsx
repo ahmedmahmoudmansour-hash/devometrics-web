@@ -28,8 +28,8 @@ const inputStyle: React.CSSProperties = {
 };
 
 const priorityColor: Record<string, string> = {
-  high: "#f87171",
-  medium: "#f0b840",
+  high: "var(--danger)",
+  medium: "var(--amber)",
   low: "var(--text-muted)",
 };
 
@@ -152,7 +152,7 @@ export default function GapAnalysisFlow({
               {t("consentLabel")}
             </span>
           </label>
-          {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
           <button
             type="submit"
             disabled={loading || !consent}
@@ -294,9 +294,9 @@ export default function GapAnalysisFlow({
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <span
                 style={{
-                  background: "rgba(0,201,167,0.1)",
+                  background: "rgba(var(--teal-rgb),0.1)",
                   color: "var(--teal)",
-                  border: "1px solid rgba(0,201,167,0.3)",
+                  border: "1px solid rgba(var(--teal-rgb),0.3)",
                   borderRadius: 8,
                   padding: "12px 24px",
                   fontSize: 14,
@@ -343,7 +343,7 @@ export default function GapAnalysisFlow({
                         fontWeight: 600,
                         cursor: "pointer",
                         border: horizon === h ? "1px solid var(--teal)" : "1px solid var(--border)",
-                        background: horizon === h ? "rgba(0,201,167,0.1)" : "transparent",
+                        background: horizon === h ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                         color: horizon === h ? "var(--teal)" : "var(--text-muted)",
                       }}
                     >
@@ -353,7 +353,7 @@ export default function GapAnalysisFlow({
                 </div>
               </div>
 
-              {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+              {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <button

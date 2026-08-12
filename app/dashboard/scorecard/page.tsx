@@ -11,7 +11,7 @@ function DeltaBadge({ delta, t }: { delta: number | null; t: (key: string, value
   if (delta === null) return null;
   const positive = delta > 0;
   const flat = delta === 0;
-  const color = flat ? "var(--text-muted)" : positive ? "var(--teal)" : "#f87171";
+  const color = flat ? "var(--text-muted)" : positive ? "var(--teal)" : "var(--danger)";
   const sign = positive ? "+" : "";
   return (
     <span style={{ fontSize: 12, fontWeight: 700, color }}>
@@ -60,8 +60,8 @@ export default async function ScorecardPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div
               style={{
-                background: "rgba(240,184,64,0.06)",
-                border: "1px solid rgba(240,184,64,0.2)",
+                background: "rgba(var(--amber-rgb),0.06)",
+                border: "1px solid rgba(var(--amber-rgb),0.2)",
                 borderRadius: 12,
                 padding: "14px 18px",
                 fontSize: 12,

@@ -94,8 +94,8 @@ function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
         type="button"
         onClick={() => setOpen(true)}
         style={{
-          background: "rgba(0,201,167,0.1)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          background: "rgba(var(--teal-rgb),0.1)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 10,
           padding: "10px 16px",
           fontSize: 13,
@@ -154,7 +154,7 @@ function AddApplicationForm({ onAdded }: { onAdded: () => void }) {
           </select>
         </div>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="submit"
@@ -316,7 +316,7 @@ function ApplicationCard({ app, onChanged }: { app: JobApplication; onChanged: (
               type="button"
               onClick={remove}
               disabled={isPending}
-              style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}
+              style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, cursor: "pointer" }}
             >
               {t("remove")}
             </button>

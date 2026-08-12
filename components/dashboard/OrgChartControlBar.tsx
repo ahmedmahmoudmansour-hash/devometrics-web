@@ -32,7 +32,7 @@ function chipStyle(active: boolean): React.CSSProperties {
     fontWeight: 600,
     borderRadius: 999,
     border: active ? "1px solid var(--teal)" : "1px solid var(--border)",
-    background: active ? "rgba(0,201,167,0.1)" : "transparent",
+    background: active ? "rgba(var(--teal-rgb),0.1)" : "transparent",
     color: active ? "var(--teal)" : "var(--text-muted)",
     cursor: "pointer",
     whiteSpace: "nowrap",

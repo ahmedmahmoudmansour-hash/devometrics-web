@@ -52,7 +52,7 @@ export default function KnowledgeHubAttemptHistory({
               <div key={a.id} style={{ fontSize: 11.5, color: "var(--text-muted)", display: "flex", gap: 8 }}>
                 <span>{new Date(a.completedAt).toLocaleString()}</span>
                 {a.scorePercent !== null && (
-                  <span style={{ color: a.passed ? "var(--teal)" : "#f87171", fontWeight: 700 }}>
+                  <span style={{ color: a.passed ? "var(--teal)" : "var(--danger)", fontWeight: 700 }}>
                     {a.scorePercent}% · {a.passed ? t("passed") : t("failed")}
                   </span>
                 )}

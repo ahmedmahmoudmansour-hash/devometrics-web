@@ -139,7 +139,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
               placeholder={t("roughNotesPlaceholder")}
               style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
             />
-            {aiError && <p style={{ color: "#f87171", fontSize: 11.5, marginTop: 6 }}>{aiError}</p>}
+            {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginTop: 6 }}>{aiError}</p>}
             <button
               type="button"
               onClick={draftFromNotes}
@@ -187,7 +187,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
           placeholder={t("recommendationsPlaceholder")}
           style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
         />
-        {selfError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{selfError}</p>}
+        {selfError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{selfError}</p>}
         <button
           type="button"
           onClick={saveSelf}
@@ -261,7 +261,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       )}
 
       {manager?.submitted_at ? (
-        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
+        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("managersPerspective")}</p>
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--teal)" }}>
             {manager.rating}/5
@@ -297,7 +297,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
                   placeholder={t("confirmCommentPlaceholder")}
                   style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
                 />
-                {ackError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{ackError}</p>}
+                {ackError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{ackError}</p>}
                 <button
                   type="button"
                   onClick={saveAck}
@@ -343,7 +343,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       )}
 
       {review.manager_closed_at && review.conclusion && (
-        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
+        <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{t("conclusion")}</p>
           <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{review.conclusion}</p>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>

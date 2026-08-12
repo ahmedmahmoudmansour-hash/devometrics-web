@@ -144,8 +144,8 @@ export default function CoachScheduleReminder() {
         <a
           href={href}
           style={{
-            background: "rgba(0,201,167,0.1)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.1)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 6,
             padding: "6px 14px",
             fontSize: 12,

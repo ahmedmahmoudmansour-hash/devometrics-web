@@ -116,7 +116,7 @@ export default function PlatformChatWidget() {
               </div>
             ))}
             {loading && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Thinking…</div>}
-            {error && <div style={{ fontSize: 12, color: "#f87171" }}>{error}</div>}
+            {error && <div style={{ fontSize: 12, color: "var(--danger)" }}>{error}</div>}
           </div>
 
           <form onSubmit={send} style={{ display: "flex", gap: 8, padding: 12, borderTop: "1px solid var(--border)" }}>
@@ -168,7 +168,7 @@ export default function PlatformChatWidget() {
           borderRadius: "50%",
           background: "var(--teal)",
           border: "none",
-          boxShadow: "0 8px 24px rgba(0,201,167,0.35)",
+          boxShadow: "0 8px 24px rgba(var(--teal-rgb),0.35)",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",

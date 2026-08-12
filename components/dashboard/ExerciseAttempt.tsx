@@ -14,7 +14,7 @@ function TimerRing({ secondsLeft, totalSeconds }: { secondsLeft: number; totalSe
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = Math.max(0, secondsLeft / totalSeconds);
-  const color = pct > 0.5 ? "#00C9A7" : pct > 0.2 ? "#f0b840" : "#f87171";
+  const color = pct > 0.5 ? "var(--teal)" : pct > 0.2 ? "var(--amber)" : "var(--danger)";
   const mm = Math.floor(Math.max(0, secondsLeft) / 60);
   const ss = Math.max(0, secondsLeft) % 60;
 
@@ -57,7 +57,7 @@ function TimerRing({ secondsLeft, totalSeconds }: { secondsLeft: number; totalSe
 function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report: ExerciseReport }) {
   const t = useTranslations("exerciseAttempt");
   const tDim = useTranslations("competencyDimensions");
-  const color = report.score >= 70 ? "#00C9A7" : report.score >= 40 ? "#f0b840" : "#f87171";
+  const color = report.score >= 70 ? "var(--teal)" : report.score >= 40 ? "var(--amber)" : "var(--danger)";
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32 }}>
       <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
@@ -69,7 +69,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
       </div>
 
       <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-        <div style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.2)", borderRadius: 10, padding: 16 }}>
+        <div style={{ background: "rgba(var(--teal-rgb),0.06)", border: "1px solid rgba(var(--teal-rgb),0.2)", borderRadius: 10, padding: 16 }}>
           <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--teal)", textTransform: "uppercase", marginBottom: 10 }}>
             {t("strengths")}
           </h3>
@@ -79,7 +79,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
             ))}
           </ul>
         </div>
-        <div style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.2)", borderRadius: 10, padding: 16 }}>
+        <div style={{ background: "rgba(var(--amber-rgb),0.06)", border: "1px solid rgba(var(--amber-rgb),0.2)", borderRadius: 10, padding: 16 }}>
           <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "var(--amber)", textTransform: "uppercase", marginBottom: 10 }}>
             {t("gaps")}
           </h3>
@@ -181,8 +181,8 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
               fontSize: 12,
               fontWeight: 700,
               color: "var(--amber)",
-              background: "rgba(240,184,64,0.1)",
-              border: "1px solid rgba(240,184,64,0.3)",
+              background: "rgba(var(--amber-rgb),0.1)",
+              border: "1px solid rgba(var(--amber-rgb),0.3)",
               borderRadius: 100,
               padding: "6px 14px",
             }}
@@ -190,7 +190,7 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
             {t("minutesOnceStarted", { count: exercise.timeLimitMinutes })}
           </span>
         </div>
-        {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 16 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 16 }}>{error}</p>}
         <button
           type="button"
           onClick={handleStart}
@@ -257,7 +257,7 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
         }}
       />
 
-      {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{error}</p>}
 
       <button
         type="button"

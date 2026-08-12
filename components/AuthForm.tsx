@@ -146,8 +146,8 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
     return (
       <div
         style={{
-          background: "rgba(0,201,167,0.1)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          background: "rgba(var(--teal-rgb),0.1)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 12,
           padding: "28px",
           textAlign: "center",
@@ -158,7 +158,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
             width: 44,
             height: 44,
             borderRadius: 999,
-            background: "rgba(0,201,167,0.15)",
+            background: "rgba(var(--teal-rgb),0.15)",
             color: "var(--teal)",
             fontSize: 20,
             display: "flex",
@@ -186,8 +186,8 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
       return (
         <div
           style={{
-            background: "rgba(0,201,167,0.1)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.1)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 12,
             padding: "28px",
             textAlign: "center",
@@ -229,7 +229,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
             style={inputStyle}
           />
         </div>
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.6 : 1 }}>
           {loading ? "Sending…" : "Send reset link"}
         </button>
@@ -280,8 +280,8 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
                   fontSize: 13,
                   fontWeight: 700,
                   cursor: "pointer",
-                  border: accountType === type ? "1px solid rgba(0,201,167,0.4)" : "1px solid rgba(255,255,255,0.1)",
-                  background: accountType === type ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                  border: accountType === type ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid rgba(255,255,255,0.1)",
+                  background: accountType === type ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                   color: accountType === type ? "var(--teal)" : "var(--text-muted)",
                 }}
               >
@@ -348,7 +348,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
         />
       </div>
       {error && (
-        <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>
+        <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>
       )}
       <button type="submit" disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.6 : 1 }}>
         {loading ? "Please wait…" : mode === "signup" ? "Create my account" : "Log in"}

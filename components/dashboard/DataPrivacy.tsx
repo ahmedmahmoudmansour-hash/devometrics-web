@@ -88,14 +88,14 @@ export default function DataPrivacy({
         ) : scheduledFor ? (
           <div
             style={{
-              background: "rgba(248,113,113,0.06)",
-              border: "1px solid rgba(248,113,113,0.3)",
+              background: "rgba(var(--danger-rgb),0.06)",
+              border: "1px solid rgba(var(--danger-rgb),0.3)",
               borderRadius: 12,
               padding: 16,
               width: "100%",
             }}
           >
-            <p style={{ fontSize: 13, color: "#f87171", fontWeight: 700, marginBottom: 4 }}>
+            <p style={{ fontSize: 13, color: "var(--danger)", fontWeight: 700, marginBottom: 4 }}>
               {t("scheduledFor", { date: formatDate(scheduledFor, locale) })}
             </p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
@@ -113,8 +113,8 @@ export default function DataPrivacy({
                 })
               }
               style={{
-                background: "rgba(0,201,167,0.1)",
-                border: "1px solid rgba(0,201,167,0.3)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.3)",
                 borderRadius: 8,
                 padding: "9px 16px",
                 fontSize: 13,
@@ -126,7 +126,7 @@ export default function DataPrivacy({
               {isPending ? t("cancelling") : t("cancelDeletion")}
             </button>
             )}
-            {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 8 }}>{error}</p>}
+            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{error}</p>}
           </div>
         ) : confirming ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
@@ -143,7 +143,7 @@ export default function DataPrivacy({
                 aria-label={t("confirmWordAria", { word: CONFIRM_WORD })}
                 style={{
                   background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(248,113,113,0.3)",
+                  border: "1px solid rgba(var(--danger-rgb),0.3)",
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontSize: 13,
@@ -163,13 +163,13 @@ export default function DataPrivacy({
                   })
                 }
                 style={{
-                  background: "rgba(248,113,113,0.12)",
-                  border: "1px solid rgba(248,113,113,0.4)",
+                  background: "rgba(var(--danger-rgb),0.12)",
+                  border: "1px solid rgba(var(--danger-rgb),0.4)",
                   borderRadius: 8,
                   padding: "10px 18px",
                   fontSize: 13,
                   fontWeight: 700,
-                  color: "#f87171",
+                  color: "var(--danger)",
                   cursor: confirmText === CONFIRM_WORD ? "pointer" : "not-allowed",
                   opacity: isPending || confirmText !== CONFIRM_WORD ? 0.5 : 1,
                 }}
@@ -195,7 +195,7 @@ export default function DataPrivacy({
                 {t("cancel")}
               </button>
             </div>
-            {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+            {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
           </div>
         ) : (
           <button
@@ -203,12 +203,12 @@ export default function DataPrivacy({
             onClick={() => setConfirming(true)}
             style={{
               background: "transparent",
-              border: "1px solid rgba(248,113,113,0.4)",
+              border: "1px solid rgba(var(--danger-rgb),0.4)",
               borderRadius: 8,
               padding: "10px 18px",
               fontSize: 13,
               fontWeight: 700,
-              color: "#f87171",
+              color: "var(--danger)",
               cursor: "pointer",
             }}
           >

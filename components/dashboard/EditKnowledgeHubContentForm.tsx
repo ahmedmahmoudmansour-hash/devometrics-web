@@ -195,7 +195,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
           {t("newHireContentLabel")}
         </label>
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -204,7 +204,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
                 type="button"
                 onClick={unarchive}
                 disabled={isPending}
-                style={{ background: "transparent", border: "1px solid rgba(0,201,167,0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+                style={{ background: "transparent", border: "1px solid rgba(var(--teal-rgb),0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
               >
                 {isPending ? t("restoring") : t("restoreButton")}
               </button>
@@ -215,7 +215,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
                   type="button"
                   onClick={archive}
                   disabled={isPending}
-                  style={{ background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+                  style={{ background: "rgba(var(--danger-rgb),0.12)", border: "1px solid rgba(var(--danger-rgb),0.4)", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
                 >
                   {isPending ? t("archiving") : t("yesArchive")}
                 </button>
@@ -231,7 +231,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
               <button
                 type="button"
                 onClick={() => setConfirmingArchive(true)}
-                style={{ background: "transparent", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+                style={{ background: "transparent", border: "1px solid rgba(var(--danger-rgb),0.4)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
               >
                 {t("archiveThisContentButton")}
               </button>
@@ -244,7 +244,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
                   type="button"
                   onClick={remove}
                   disabled={isPending}
-                  style={{ background: "rgba(248,113,113,0.2)", border: "1px solid #f87171", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+                  style={{ background: "rgba(var(--danger-rgb),0.2)", border: "1px solid var(--danger)", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
                 >
                   {isPending ? t("deleting") : t("yesDelete")}
                 </button>
@@ -260,7 +260,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                style={{ background: "transparent", border: "1px solid #f87171", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+                style={{ background: "transparent", border: "1px solid var(--danger)", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
               >
                 {t("deleteThisContentButton")}
               </button>

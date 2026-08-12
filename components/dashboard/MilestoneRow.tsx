@@ -90,7 +90,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
               style={{ ...inputStyle, resize: "vertical" }}
             />
           </div>
-          {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"
@@ -196,8 +196,8 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
                 fontSize: 10,
                 fontWeight: 700,
                 color: "var(--amber)",
-                background: "rgba(240,184,64,0.1)",
-                border: "1px solid rgba(240,184,64,0.3)",
+                background: "rgba(var(--amber-rgb),0.1)",
+                border: "1px solid rgba(var(--amber-rgb),0.3)",
                 borderRadius: 999,
                 padding: "2px 8px",
                 textTransform: "uppercase",
@@ -230,8 +230,8 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
                 color: "var(--text)",
                 marginTop: 6,
                 lineHeight: 1.5,
-                background: "rgba(240,184,64,0.08)",
-                border: "1px solid rgba(240,184,64,0.25)",
+                background: "rgba(var(--amber-rgb),0.08)",
+                border: "1px solid rgba(var(--amber-rgb),0.25)",
                 borderRadius: 6,
                 padding: "6px 10px",
               }}
@@ -276,7 +276,7 @@ export default function MilestoneRow({ milestone }: { milestone: Milestone }) {
           </button>
         </div>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 4, marginInlineStart: 30 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 4, marginInlineStart: 30 }}>{error}</p>}
     </div>
   );
 }

@@ -78,7 +78,7 @@ export function HBarChart({
   );
 }
 
-const DONUT_COLORS = [TEAL, "var(--phase2)", AMBER, "var(--phase3)", "#f87171", "#34d399", "#f472b6", "#a3e635"];
+const DONUT_COLORS = [TEAL, "var(--phase2)", AMBER, "var(--phase3)", "var(--danger)", "#34d399", "#f472b6", "#a3e635"];
 
 export function DonutChart({
   data,
@@ -156,9 +156,9 @@ const ZONE_TONE_COLOR: Record<string, string> = {
 };
 
 const ZONE_TONE_FILL: Record<string, string> = {
-  teal: "rgba(0,201,167,0.10)",
-  amber: "rgba(240,184,64,0.09)",
-  danger: "rgba(248,113,113,0.08)",
+  teal: "rgba(var(--teal-rgb),0.10)",
+  amber: "rgba(var(--amber-rgb),0.09)",
+  danger: "rgba(var(--danger-rgb),0.08)",
   muted: "rgba(128,140,160,0.06)",
 };
 

@@ -63,7 +63,7 @@ export default function OrgChartSavedViewsMenu({
       <button
         type="button"
         onClick={() => setSaveDialogOpen(true)}
-        style={{ background: "rgba(0,201,167,0.1)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
+        style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 8, padding: "8px 14px", fontSize: 12.5, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}
       >
         {t("saveCurrentView")}
       </button>
@@ -89,7 +89,7 @@ export default function OrgChartSavedViewsMenu({
                   type="button"
                   disabled={isPending}
                   onClick={() => remove(view.id)}
-                  style={{ background: "none", border: "none", color: "#f87171", fontSize: 11, cursor: "pointer" }}
+                  style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 11, cursor: "pointer" }}
                 >
                   {t("delete")}
                 </button>
@@ -100,7 +100,7 @@ export default function OrgChartSavedViewsMenu({
       )}
 
       {saveDialogOpen && (
-        <div style={{ position: "absolute", top: "110%", right: 0, zIndex: 20, width: 280, background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 10, padding: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>
+        <div style={{ position: "absolute", top: "110%", right: 0, zIndex: 20, width: 280, background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 10, padding: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>{t("nameLabel")}</label>
           <input
             autoFocus
@@ -109,7 +109,7 @@ export default function OrgChartSavedViewsMenu({
             placeholder={t("namePlaceholder")}
             style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", fontSize: 13, color: "var(--text)", outline: "none" }}
           />
-          {error && <p style={{ color: "#f87171", fontSize: 11.5, marginTop: 6 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 11.5, marginTop: 6 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button
               type="button"

@@ -64,7 +64,7 @@ function SeatLimitCell({ org }: { org: AdminOrganizationRow }) {
         style={{
           width: 80,
           background: "rgba(255,255,255,0.05)",
-          border: `1px solid ${overLimit ? "#f87171" : "var(--border)"}`,
+          border: `1px solid ${overLimit ? "var(--danger)" : "var(--border)"}`,
           borderRadius: 6,
           padding: "5px 8px",
           fontSize: 12,
@@ -72,8 +72,8 @@ function SeatLimitCell({ org }: { org: AdminOrganizationRow }) {
           outline: "none",
         }}
       />
-      {overLimit && <span style={{ fontSize: 10.5, color: "#f87171", fontWeight: 700 }}>{t("overLabel")}</span>}
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {overLimit && <span style={{ fontSize: 10.5, color: "var(--danger)", fontWeight: 700 }}>{t("overLabel")}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -127,7 +127,7 @@ function AiBudgetCell({ org }: { org: AdminOrganizationRow }) {
             outline: "none",
           }}
         />
-        {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+        {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
       </div>
       <div style={{ display: "flex", gap: 4 }}>
         {AI_BUDGET_PACKAGES.map((pkg) => {
@@ -199,7 +199,7 @@ function EmployeeSpendPanel({ organizationId }: { organizationId: string }) {
     return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>{t("loadingEllipsis")}</p>;
   }
   if (error) {
-    return <p style={{ fontSize: 12, color: "#f87171", padding: "10px 14px" }}>{error}</p>;
+    return <p style={{ fontSize: 12, color: "var(--danger)", padding: "10px 14px" }}>{error}</p>;
   }
   if (!rows || rows.length === 0) {
     return <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "10px 14px" }}>{t("noUsageThisMonth")}</p>;
@@ -259,19 +259,19 @@ function OrgAccessCell({ org }: { org: AdminOrganizationRow }) {
         disabled={isPending}
         onClick={toggle}
         style={{
-          background: isDisabled ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.05)",
-          border: "1px solid " + (isDisabled ? "rgba(248,113,113,0.4)" : "var(--border)"),
+          background: isDisabled ? "rgba(var(--danger-rgb),0.12)" : "rgba(255,255,255,0.05)",
+          border: "1px solid " + (isDisabled ? "rgba(var(--danger-rgb),0.4)" : "var(--border)"),
           borderRadius: 6,
           padding: "5px 10px",
           fontSize: 11,
           fontWeight: 700,
-          color: isDisabled ? "#f87171" : "var(--text)",
+          color: isDisabled ? "var(--danger)" : "var(--text)",
           cursor: "pointer",
         }}
       >
         {isPending ? t("accessUpdating") : isDisabled ? t("accessDisabledLabel") : t("accessEnabledLabel")}
       </button>
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -317,7 +317,7 @@ function DeleteOrgCell({ org }: { org: AdminOrganizationRow }) {
   if (pendingDeletionAt) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <span style={{ fontSize: 10.5, color: "#f87171" }}>
+        <span style={{ fontSize: 10.5, color: "var(--danger)" }}>
           {t("deletionScheduledFor", { date: new Date(pendingDeletionAt).toLocaleDateString() })}
         </span>
         <button
@@ -337,7 +337,7 @@ function DeleteOrgCell({ org }: { org: AdminOrganizationRow }) {
         >
           {isPending ? t("accessUpdating") : t("cancelDeleteButton")}
         </button>
-        {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+        {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
       </div>
     );
   }
@@ -350,18 +350,18 @@ function DeleteOrgCell({ org }: { org: AdminOrganizationRow }) {
         onClick={scheduleDelete}
         style={{
           background: "transparent",
-          border: "1px solid rgba(248,113,113,0.4)",
+          border: "1px solid rgba(var(--danger-rgb),0.4)",
           borderRadius: 6,
           padding: "5px 10px",
           fontSize: 11,
           fontWeight: 700,
-          color: "#f87171",
+          color: "var(--danger)",
           cursor: "pointer",
         }}
       >
         {isPending ? t("accessUpdating") : t("deleteButton")}
       </button>
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -412,7 +412,7 @@ export default function AdminOrganizationsTable({ initial }: { initial: AdminOrg
                   <td style={cellStyle}>
                     <SeatLimitCell org={org} />
                   </td>
-                  <td style={{ ...cellStyle, textAlign: "right", color: overBudget ? "#f87171" : "var(--text)", fontWeight: overBudget ? 700 : 400 }}>
+                  <td style={{ ...cellStyle, textAlign: "right", color: overBudget ? "var(--danger)" : "var(--text)", fontWeight: overBudget ? 700 : 400 }}>
                     ${org.spendThisMonthUsd.toFixed(2)}
                   </td>
                   <td style={cellStyle}>

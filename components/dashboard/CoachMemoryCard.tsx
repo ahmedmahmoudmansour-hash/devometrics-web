@@ -33,8 +33,8 @@ export default function CoachMemoryCard({ memory }: { memory: CoachGrowMemory | 
       {commitments.length > 0 && (
         <div
           style={{
-            background: "rgba(0,201,167,0.06)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.06)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 16,
             padding: 20,
             marginBottom: 12,

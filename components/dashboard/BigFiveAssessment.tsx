@@ -14,9 +14,9 @@ import {
 import type { BigFiveProfile } from "@/lib/supabase/types";
 
 function barColor(score: number): string {
-  if (score >= 70) return "#00C9A7";
-  if (score >= 40) return "#f0b840";
-  return "#f87171";
+  if (score >= 70) return "var(--teal)";
+  if (score >= 40) return "var(--amber)";
+  return "var(--danger)";
 }
 
 function ScoreBars({ scores }: { scores: Record<BigFiveTrait, number> }) {
@@ -136,7 +136,7 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
                     borderRadius: 8,
                     cursor: "pointer",
                     border: answers[item.id] === opt.value ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.1)",
-                    background: answers[item.id] === opt.value ? "rgba(0,201,167,0.12)" : "rgba(255,255,255,0.05)",
+                    background: answers[item.id] === opt.value ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
                     color: answers[item.id] === opt.value ? "var(--teal)" : "var(--text-muted)",
                   }}
                 >
@@ -148,7 +148,7 @@ export default function BigFiveAssessment({ latest }: { latest: BigFiveProfile |
         ))}
       </div>
 
-      {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 16 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 16 }}>{error}</p>}
 
       <button
         type="button"

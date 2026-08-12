@@ -116,7 +116,7 @@ export default function ProfileHeader({
         <p style={{ fontSize: 12, color: "var(--teal)", marginTop: 4 }}>
           {avatarUploading ? t("uploading") : t("clickToChangePicture")}
         </p>
-        {avatarError && <p style={{ fontSize: 12, color: "#f87171", marginTop: 4 }}>{avatarError}</p>}
+        {avatarError && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 4 }}>{avatarError}</p>}
       </div>
     </div>
   );

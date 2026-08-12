@@ -40,8 +40,8 @@ export default function GenerateAssessmentSummaryButton({
         onClick={generate}
         disabled={isPending || blocked}
         style={{
-          background: "rgba(0,201,167,0.1)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          background: "rgba(var(--teal-rgb),0.1)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 8,
           padding: "9px 16px",
           fontSize: 13,
@@ -58,7 +58,7 @@ export default function GenerateAssessmentSummaryButton({
           {t("waitingOn", { count: pendingAssignments.length, names: pendingAssignments.join(", ") })}
         </p>
       )}
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

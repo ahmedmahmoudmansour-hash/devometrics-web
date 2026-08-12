@@ -142,7 +142,7 @@ export default function KnowledgeHubContentViewer({
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
         {urlError ? (
-          <p style={{ fontSize: 13, color: "#f87171" }}>{urlError}</p>
+          <p style={{ fontSize: 13, color: "var(--danger)" }}>{urlError}</p>
         ) : !signedUrl ? (
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("loadingDocument")}</p>
         ) : isPdf ? (
@@ -181,10 +181,10 @@ export default function KnowledgeHubContentViewer({
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
         {completion && completionType === "exam" && completion.passed === false && !examStarted ? (
           <div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#f0b840" }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--amber)" }}>
               {t("scoredNotPassed", { score: completion.scorePercent ?? 0, required: passingScorePercent })}
             </p>
-            {examError && <p style={{ fontSize: 13, color: "#f87171", marginTop: 8 }}>{examError}</p>}
+            {examError && <p style={{ fontSize: 13, color: "var(--danger)", marginTop: 8 }}>{examError}</p>}
             {attemptsExhausted ? (
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
                 {t("usedAllAttempts", { count: maxAttempts ?? 0 })}
@@ -234,7 +234,7 @@ export default function KnowledgeHubContentViewer({
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
               {t("onceReadConfirm")}
             </p>
-            {confirmError && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{confirmError}</p>}
+            {confirmError && <p style={{ fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{confirmError}</p>}
             <button
               type="button"
               onClick={handleConfirmRead}
@@ -259,7 +259,7 @@ export default function KnowledgeHubContentViewer({
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
               {t("requiresExam", { required: passingScorePercent })}
             </p>
-            {examError && <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{examError}</p>}
+            {examError && <p style={{ fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{examError}</p>}
             <button
               type="button"
               onClick={handleStartExam}
@@ -305,7 +305,7 @@ export default function KnowledgeHubContentViewer({
                 </div>
               </div>
             ))}
-            {examError && <p style={{ fontSize: 13, color: "#f87171" }}>{examError}</p>}
+            {examError && <p style={{ fontSize: 13, color: "var(--danger)" }}>{examError}</p>}
             <button
               type="button"
               onClick={handleSubmitExam}

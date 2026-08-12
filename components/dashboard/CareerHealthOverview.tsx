@@ -9,7 +9,7 @@ type ScoreEntry = {
 };
 
 function ScoreCard({ entry }: { entry: ScoreEntry }) {
-  const color = entry.score === null ? "var(--text-muted)" : entry.score >= 70 ? "var(--teal)" : entry.score >= 40 ? "#f0b840" : "#f87171";
+  const color = entry.score === null ? "var(--text-muted)" : entry.score >= 70 ? "var(--teal)" : entry.score >= 40 ? "var(--amber)" : "var(--danger)";
   return (
     <Link
       href={entry.href}

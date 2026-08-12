@@ -42,18 +42,18 @@ function KnowledgeCheck({ questions }: { questions: BridgeContent["microLesson"]
                 let color = "var(--text-muted)";
                 if (isSelected && !showResult) {
                   borderColor = "var(--teal)";
-                  bg = "rgba(0,201,167,0.12)";
+                  bg = "rgba(var(--teal-rgb),0.12)";
                   color = "var(--teal)";
                 }
                 if (showResult && isCorrectOpt) {
                   borderColor = "var(--teal)";
-                  bg = "rgba(0,201,167,0.12)";
+                  bg = "rgba(var(--teal-rgb),0.12)";
                   color = "var(--teal)";
                 }
                 if (showResult && isSelected && !isCorrectOpt) {
-                  borderColor = "#f87171";
-                  bg = "rgba(248,113,113,0.1)";
-                  color = "#f87171";
+                  borderColor = "var(--danger)";
+                  bg = "rgba(var(--danger-rgb),0.1)";
+                  color = "var(--danger)";
                 }
                 return (
                   <button
@@ -150,7 +150,7 @@ export default function BridgeContentView({
           {t("introPrefix")} <strong style={{ color: "var(--text)" }}>{currentLevel}/100</strong>
           {t("introMiddle")} <strong style={{ color: "var(--text)" }}>{targetLevel}/100</strong>. {t("introSuffix")}
         </p>
-        {error && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
         <button
           type="button"
           onClick={generate}
@@ -198,7 +198,7 @@ export default function BridgeContentView({
           {t("rerunGapAnalysis")}
         </Link>
       </div>
-      {error && <p className="no-print" style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+      {error && <p className="no-print" style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
       <div className="print-plan" style={{ ...card, padding: 32 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -217,14 +217,14 @@ export default function BridgeContentView({
           )}
         </div>
 
-        <div className="print-avoid-break" style={{ background: "rgba(240,184,64,0.06)", border: "1px solid rgba(240,184,64,0.25)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <div className="print-avoid-break" style={{ background: "rgba(var(--amber-rgb),0.06)", border: "1px solid rgba(var(--amber-rgb),0.25)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--amber)", marginBottom: 6 }}>
             {t("whyGapTitle")}
           </p>
           <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{cached.diagnosticNote}</p>
         </div>
 
-        <div className="print-avoid-break" style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.25)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <div className="print-avoid-break" style={{ background: "rgba(var(--teal-rgb),0.06)", border: "1px solid rgba(var(--teal-rgb),0.25)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--teal)", marginBottom: 6 }}>
             {t("nextStepTitle")}
           </p>

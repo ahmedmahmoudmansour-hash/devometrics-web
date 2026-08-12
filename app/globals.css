@@ -1,44 +1,74 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------
+   "Instrument" visual identity redesign (approved by Ahmed, 2 review
+   rounds). Token NAMES below are legacy (--navy, --teal, etc.) and kept
+   unchanged on purpose — renaming them would mean touching every one of
+   the ~150+ component files that consume them via var(--x). Only the
+   VALUES changed: --navy is no longer navy-colored, --teal is a muted
+   verdigris rather than a bright teal, etc. Treat the names as opaque
+   role identifiers ("ground", "surface", "signal accent"), not literal
+   color descriptions.
+
+   LIGHT is now the default theme (bare :root, no data-theme attribute) —
+   a deliberate, explicit part of this redesign. Dark is the alternate,
+   opt-in-only theme (html[data-theme="dark"]), the reverse of the
+   previous setup. Every pairing below is contrast-checked (WCAG AA,
+   4.5:1+ for normal text) against its paired ground color.
+
+   --teal-rgb / --amber-rgb / --danger-rgb / --phase2-rgb are companion
+   "R, G, B" triplets (no rgba() wrapper) for the handful of call sites
+   that need a translucent wash at a custom alpha — e.g.
+   rgba(var(--teal-rgb), 0.2) — since CSS custom properties can't be
+   partially substituted inside a hex literal.
+   --------------------------------------------------------------------- */
 :root {
-  --navy: #0A0F1E;
-  --navy-mid: #111827;
-  --navy-light: #1a2236;
-  --teal: #00C9A7;
-  --teal-dim: #00a589;
-  --teal-glow: rgba(0, 201, 167, 0.15);
-  --slate: #8892a4;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #e8edf5;
-  --text-muted: #8892a4;
-  --phase2: #7dd3fc;
-  --phase3: #c084fc;
-  --amber: #fbbf24;
-  --danger: #f87171;
-  --nav-scrolled-bg: rgba(10, 15, 30, 0.92);
-  --nav-mobile-menu-bg: rgba(10, 15, 30, 0.98);
+  --navy: #f6f5f2;
+  --navy-mid: #ffffff;
+  --navy-light: #efeee9;
+  --teal: #3f7a67;
+  --teal-dim: #2e5c4e;
+  --teal-glow: rgba(63, 122, 103, 0.10);
+  --teal-rgb: 63, 122, 103;
+  --slate: #6b6a64;
+  --border: rgba(22, 22, 26, 0.11);
+  --text: #1c1c1f;
+  --text-muted: #6b6a64;
+  --phase2: #3e5972;
+  --phase2-rgb: 62, 89, 114;
+  --phase3: #6b3f5c;
+  --amber: #a1701c;
+  --amber-rgb: 161, 112, 28;
+  --danger: #a5392e;
+  --danger-rgb: 165, 57, 46;
+  --nav-scrolled-bg: rgba(246, 245, 242, 0.92);
+  --nav-mobile-menu-bg: rgba(246, 245, 242, 0.98);
 }
 
-/* Light theme — self-disclosed elective preference, not a claim that light
-   is "better" for anyone. Every pairing here is contrast-verified (WCAG AA,
-   4.5:1+ for normal text), not just visually eyeballed. */
-html[data-theme="light"] {
-  --navy: #ffffff;
-  --navy-mid: #f6f7f9;
-  --navy-light: #eef0f3;
-  --teal: #097066;
-  --teal-dim: #075a52;
-  --teal-glow: rgba(9, 112, 102, 0.12);
-  --slate: #4b5768;
-  --border: rgba(10, 15, 30, 0.1);
-  --text: #0a1220;
-  --text-muted: #4b5768;
-  --phase2: #0e5fa8;
-  --phase3: #7c3aed;
-  --amber: #b45309;
-  --danger: #b91c1c;
-  --nav-scrolled-bg: rgba(255, 255, 255, 0.92);
-  --nav-mobile-menu-bg: rgba(255, 255, 255, 0.98);
+/* Dark theme — self-disclosed elective preference, not a claim that dark
+   is "better" for anyone. Every pairing here is contrast-verified (WCAG
+   AA, 4.5:1+ for normal text), not just visually eyeballed. */
+html[data-theme="dark"] {
+  --navy: #16161a;
+  --navy-mid: #1c1c21;
+  --navy-light: #232328;
+  --teal: #74ab98;
+  --teal-dim: #4f7e6f;
+  --teal-glow: rgba(116, 171, 152, 0.13);
+  --teal-rgb: 116, 171, 152;
+  --slate: #96948e;
+  --border: rgba(237, 235, 230, 0.10);
+  --text: #edebe6;
+  --text-muted: #96948e;
+  --phase2: #7f9ab1;
+  --phase2-rgb: 127, 154, 177;
+  --phase3: #b485a3;
+  --amber: #dba84a;
+  --amber-rgb: 219, 168, 74;
+  --danger: #c96e63;
+  --danger-rgb: 201, 110, 99;
+  --nav-scrolled-bg: rgba(22, 22, 26, 0.92);
+  --nav-mobile-menu-bg: rgba(22, 22, 26, 0.98);
 }
 
 * { box-sizing: border-box; }
@@ -47,32 +77,34 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--navy);
   color: var(--text);
-  /* var(--font-inter) is the next/font-loaded family; the bare 'Inter' name
-     it used before never matched the hashed family next/font actually
-     emits, so the whole site was silently rendering in the system fallback.
-     The stack degrades to native system fonts (SF, Segoe) if the webfont
-     is slow or blocked. */
+  /* var(--font-inter) is the next/font-loaded body family — the CSS
+     variable name is legacy (see the token comment above): it now loads
+     IBM Plex Sans, not Inter, as part of the "Instrument" redesign. The
+     stack degrades to native system fonts (SF, Segoe) if the webfont is
+     slow or blocked. */
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Inter/Space Grotesk have no Arabic glyphs — swap to the Arabic-covering
-   family whenever the page direction is RTL, regardless of which
-   component set dir (the root <html dir> from app/layout.tsx covers this
-   automatically since it cascades). */
+/* IBM Plex Sans / Instrument Serif have no Arabic glyphs — swap to the
+   Arabic-covering family whenever the page direction is RTL, regardless
+   of which component set dir (the root <html dir> from app/layout.tsx
+   covers this automatically since it cascades). */
 [dir="rtl"] body {
   font-family: var(--font-arabic), var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Instrument-readout treatment for figures and eyebrow labels — a metrics
    product should show its numbers like an instrument, not in the same
-   proportional face as its prose. Uses the platform's own high-quality
-   monospace (SF Mono on macOS/iOS, Consolas on Windows, system mono on
-   Linux) so it needs no webfont download, and tabular figures so digits
-   line up in columns (scores, gaps, stat rows). Applied deliberately to
-   data and eyebrow labels, never to body copy. */
+   proportional face as its prose. Leads with the real IBM Plex Mono
+   webfont (var(--font-mono), loaded in app/layout.tsx) so figures get a
+   deliberately-chosen mono face rather than whatever mono the OS ships;
+   falls back to the platform's own monospace if the webfont is slow or
+   blocked. Tabular figures so digits line up in columns (scores, gaps,
+   stat rows). Applied deliberately to data and eyebrow labels, never to
+   body copy. */
 .mono {
-  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: var(--font-mono), ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-variant-numeric: tabular-nums;
 }
 
@@ -89,8 +121,8 @@ body {
    the open option list is the browser's own light-mode rendering). This
    tells the browser which native widget palette to use for the popup
    itself, app-wide, without touching every <select> element individually. */
-select { color-scheme: dark; }
-html[data-theme="light"] select { color-scheme: light; }
+select { color-scheme: light; }
+html[data-theme="dark"] select { color-scheme: dark; }
 
 /* Several form inputs set outline:none inline (higher specificity than any
    normal CSS rule) with no replacement focus indicator — this restores one
@@ -244,43 +276,20 @@ a:focus-visible {
   font-family: var(--font-display), var(--font-inter), -apple-system, sans-serif;
 }
 
-/* Subtle film-grain overlay — a fixed, screen-space texture (not tied to
-   any one section) that's the difference between a flat gradient and a
-   surface with depth. Generated inline via feTurbulence so it costs zero
-   network requests; opacity is low enough to read as "material," not
-   "noisy." Purely decorative (pointer-events:none, aria-hidden via the
-   caller); it never animates, so prefers-reduced-motion doesn't apply. */
-.grain-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
+/* Redesign restraint pass: the two-stop gradient-clip wordmark/headline
+   treatment read as generic-AI-SaaS flourish, so it's now a single solid
+   color. var(--teal-dim) rather than var(--teal) — the dimmer of the two
+   reads calmer as an emphasis color at headline size in both themes. */
 .gradient-text {
-  background: linear-gradient(135deg, #00C9A7 0%, #7dd3fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-/* The dark-theme gradient (#00C9A7 to #7dd3fc) is unreadable on a light
-   background — #7dd3fc is a pale blue that fails contrast on white
-   entirely. Both colors here are contrast-verified against white. */
-html[data-theme="light"] .gradient-text {
-  background: linear-gradient(135deg, #097066 0%, #0e5fa8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--teal-dim);
 }
 
 .card-hover {
   transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 .card-hover:hover {
-  border-color: rgba(0, 201, 167, 0.3) !important;
-  box-shadow: 0 8px 40px rgba(0, 201, 167, 0.08);
+  border-color: rgba(var(--teal-rgb), 0.3) !important;
+  box-shadow: 0 8px 40px var(--teal-glow);
   transform: translateY(-2px);
 }
 
@@ -305,7 +314,7 @@ html[data-theme="light"] .gradient-text {
   100% { background-position:  200% center; }
 }
 .shimmer-line {
-  background: linear-gradient(90deg, var(--navy-light) 25%, rgba(0,201,167,0.15) 50%, var(--navy-light) 75%);
+  background: linear-gradient(90deg, var(--navy-light) 25%, var(--teal-glow) 50%, var(--navy-light) 75%);
   background-size: 200% auto;
   animation: shimmer 2.5s linear infinite;
 }
@@ -319,7 +328,6 @@ html[data-theme="light"] .gradient-text {
   width: 8px; height: 8px;
   border-radius: 50%;
   background: var(--teal);
-  box-shadow: 0 0 8px var(--teal);
 }
 
 /* Respect the OS-level "reduce motion" setting (vestibular sensitivity,

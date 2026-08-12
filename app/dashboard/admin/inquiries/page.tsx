@@ -6,7 +6,7 @@ import { listContactInquiries } from "@/lib/contact/actions";
 const TYPE_COLOR: Record<string, string> = {
   sales: "var(--teal)",
   support: "#7dd3fc",
-  careers: "#f0b840",
+  careers: "var(--amber)",
 };
 
 export default async function AdminInquiriesPage() {

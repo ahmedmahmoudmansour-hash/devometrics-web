@@ -272,7 +272,7 @@ export default function FeatureEmailComposer({
           )}
         </div>
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
         {confirmation && <p style={{ color: "var(--teal)", fontSize: 13 }}>{confirmation}</p>}
 
         <div>

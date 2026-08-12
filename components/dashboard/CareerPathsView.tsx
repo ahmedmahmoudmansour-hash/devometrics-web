@@ -18,7 +18,7 @@ function NodeCard({ node, isFirst }: { node: CareerPathNode; isFirst: boolean })
     <div
       style={{
         background: "rgba(255,255,255,0.03)",
-        border: isFirst ? "1px solid rgba(0,201,167,0.3)" : "1px solid var(--border)",
+        border: isFirst ? "1px solid rgba(var(--teal-rgb),0.3)" : "1px solid var(--border)",
         borderRadius: 12,
         padding: 16,
       }}
@@ -124,7 +124,7 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
         >
           {isPending ? t("mappingYourPaths") : t("generateMyCareerMap")}
         </button>
-        {error && <p style={{ color: "#f87171", fontSize: 13, marginTop: 12 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{error}</p>}
       </div>
     );
   }
@@ -136,8 +136,8 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div
           style={{
-            background: "rgba(0,201,167,0.08)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.08)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 12,
             padding: "10px 18px",
           }}
@@ -176,7 +176,7 @@ export default function CareerPathsView({ saved }: { saved: CareerPaths | null }
           </p>
         </div>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 16 }}>
         {branches.map((branch) => (

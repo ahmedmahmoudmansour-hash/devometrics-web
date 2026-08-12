@@ -76,7 +76,7 @@ function SummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: 
       <div
         style={{
           background: "var(--navy-mid)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 20,
           padding: 28,
           maxWidth: 560,
@@ -142,7 +142,7 @@ function SummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: 
             {t("close")}
           </button>
         </div>
-        {emailError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{emailError}</p>}
+        {emailError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>{emailError}</p>}
       </div>
     </div>
   );
@@ -405,8 +405,8 @@ export default function CoachChat({
             onClick={getSummary}
             disabled={summaryLoading}
             style={{
-              background: "rgba(0,201,167,0.1)",
-              border: "1px solid rgba(0,201,167,0.3)",
+              background: "rgba(var(--teal-rgb),0.1)",
+              border: "1px solid rgba(var(--teal-rgb),0.3)",
               borderRadius: 8,
               padding: "6px 12px",
               fontSize: 12,
@@ -425,13 +425,13 @@ export default function CoachChat({
             type="button"
             onClick={stopSpeaking}
             style={{
-              background: "rgba(248,113,113,0.12)",
-              border: "1px solid rgba(248,113,113,0.35)",
+              background: "rgba(var(--danger-rgb),0.12)",
+              border: "1px solid rgba(var(--danger-rgb),0.35)",
               borderRadius: 8,
               padding: "6px 12px",
               fontSize: 12,
               fontWeight: 700,
-              color: "#f87171",
+              color: "var(--danger)",
               cursor: "pointer",
               whiteSpace: "nowrap",
             }}
@@ -493,7 +493,7 @@ export default function CoachChat({
                         style={{
                           alignSelf: m.role === "user" ? "flex-end" : "flex-start",
                           maxWidth: "85%",
-                          background: m.role === "user" ? "rgba(0,201,167,0.15)" : "rgba(255,255,255,0.05)",
+                          background: m.role === "user" ? "rgba(var(--teal-rgb),0.15)" : "rgba(255,255,255,0.05)",
                           color: "var(--text)",
                           borderRadius: 10,
                           padding: "8px 12px",
@@ -588,15 +588,15 @@ export default function CoachChat({
           </div>
         )}
         {error && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>{error}</div>
+          <div style={{ alignSelf: "flex-start", color: "var(--danger)", fontSize: 13 }}>{error}</div>
         )}
         {voiceError && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>
+          <div style={{ alignSelf: "flex-start", color: "var(--danger)", fontSize: 13 }}>
             {t("voicePrefix")} {voiceError}
           </div>
         )}
         {micError && (
-          <div style={{ alignSelf: "flex-start", color: "#f87171", fontSize: 13 }}>
+          <div style={{ alignSelf: "flex-start", color: "var(--danger)", fontSize: 13 }}>
             {t("micPrefix")} {micError}
           </div>
         )}
@@ -630,13 +630,13 @@ export default function CoachChat({
             disabled={loading}
             aria-label={listening ? t("stopRecordingAria") : t("speakMessageAria")}
             style={{
-              background: listening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
-              border: listening ? "1px solid rgba(248,113,113,0.4)" : "1px solid var(--border)",
+              background: listening ? "rgba(var(--danger-rgb),0.15)" : "rgba(255,255,255,0.05)",
+              border: listening ? "1px solid rgba(var(--danger-rgb),0.4)" : "1px solid var(--border)",
               borderRadius: 8,
               padding: "10px 14px",
               fontSize: 14,
               cursor: "pointer",
-              color: listening ? "#f87171" : "var(--text-muted)",
+              color: listening ? "var(--danger)" : "var(--text-muted)",
             }}
           >
             {listening ? t("listeningLabel") : "🎙"}

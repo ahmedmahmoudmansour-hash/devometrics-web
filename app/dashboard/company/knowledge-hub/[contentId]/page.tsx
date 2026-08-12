@@ -159,7 +159,7 @@ export default async function KnowledgeHubContentDetailPage({
                             ...cellStyle,
                             textAlign: "right",
                             fontWeight: 700,
-                            color: r.passed === false ? "#f87171" : r.passed ? "var(--teal)" : "var(--text)",
+                            color: r.passed === false ? "var(--danger)" : r.passed ? "var(--teal)" : "var(--text)",
                           }}
                         >
                           {r.scorePercent !== null ? `${r.scorePercent}%` : "—"}

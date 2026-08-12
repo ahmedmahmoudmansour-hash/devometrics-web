@@ -120,7 +120,7 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
       </button>
       <button
         type="button"
-        style={{ ...buttonStyle, borderColor: "rgba(248,113,113,0.4)", color: "#f87171" }}
+        style={{ ...buttonStyle, borderColor: "rgba(var(--danger-rgb),0.4)", color: "var(--danger)" }}
         onClick={() => {
           setResetError(null);
           setConfirmText("");
@@ -140,7 +140,7 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
             zIndex: 30,
             width: 300,
             background: "var(--navy-mid)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 10,
             padding: 14,
             boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
@@ -155,7 +155,7 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
             placeholder={t("namePlaceholder")}
             style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", fontSize: 13, color: "var(--text)", outline: "none" }}
           />
-          {saveError && <p style={{ color: "#f87171", fontSize: 11.5, marginTop: 6 }}>{saveError}</p>}
+          {saveError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginTop: 6 }}>{saveError}</p>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button
               type="button"
@@ -282,12 +282,12 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "var(--navy-mid)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 16, padding: 24, maxWidth: 440, width: "100%" }}
+            style={{ background: "var(--navy-mid)", border: "1px solid rgba(var(--danger-rgb),0.4)", borderRadius: 16, padding: 24, maxWidth: 440, width: "100%" }}
           >
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#f87171", marginBottom: 10 }}>{t("resetTitle")}</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--danger)", marginBottom: 10 }}>{t("resetTitle")}</p>
             <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 12 }}>{t("resetBody")}</p>
             {!hasSnapshotToday && (
-              <p style={{ fontSize: 12.5, color: "var(--amber)", background: "rgba(240,184,64,0.1)", border: "1px solid rgba(240,184,64,0.3)", borderRadius: 8, padding: 10, marginBottom: 12, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 12.5, color: "var(--amber)", background: "rgba(var(--amber-rgb),0.1)", border: "1px solid rgba(var(--amber-rgb),0.3)", borderRadius: 8, padding: 10, marginBottom: 12, lineHeight: 1.5 }}>
                 {t("resetNoSnapshotNudge")}{" "}
                 <button
                   type="button"
@@ -309,9 +309,9 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder={organizationName}
-              style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--text)", outline: "none", marginBottom: 12 }}
+              style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(var(--danger-rgb),0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--text)", outline: "none", marginBottom: 12 }}
             />
-            {resetError && <p style={{ color: "#f87171", fontSize: 12.5, marginBottom: 10 }}>{resetError}</p>}
+            {resetError && <p style={{ color: "var(--danger)", fontSize: 12.5, marginBottom: 10 }}>{resetError}</p>}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button
                 type="button"
@@ -325,13 +325,13 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
                 disabled={isPending || confirmText.trim() !== organizationName}
                 onClick={doReset}
                 style={{
-                  background: "rgba(248,113,113,0.15)",
-                  border: "1px solid #f87171",
+                  background: "rgba(var(--danger-rgb),0.15)",
+                  border: "1px solid var(--danger)",
                   borderRadius: 8,
                   padding: "9px 16px",
                   fontSize: 13,
                   fontWeight: 700,
-                  color: "#f87171",
+                  color: "var(--danger)",
                   cursor: confirmText.trim() === organizationName ? "pointer" : "not-allowed",
                   opacity: isPending || confirmText.trim() !== organizationName ? 0.5 : 1,
                 }}

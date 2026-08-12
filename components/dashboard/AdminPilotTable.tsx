@@ -71,7 +71,7 @@ function AiBudgetCell({ row }: { row: PilotRow }) {
           outline: "none",
         }}
       />
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -122,7 +122,7 @@ function SubscriptionTierCell({ row }: { row: PilotRow }) {
           {t("trialExpiredLabel")}
         </span>
       )}
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -146,7 +146,7 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
   if (scheduledFor) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <span style={{ fontSize: 11, color: "#f87171", fontWeight: 700 }}>
+        <span style={{ fontSize: 11, color: "var(--danger)", fontWeight: 700 }}>
           {t("dataScheduled", { date: new Date(scheduledFor).toLocaleDateString() })}
         </span>
         <button
@@ -166,7 +166,7 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
         >
           {isPending ? t("dataCancelling") : t("dataCancelButton")}
         </button>
-        {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+        {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
       </div>
     );
   }
@@ -176,7 +176,7 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        style={{ background: "none", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#f87171", cursor: "pointer" }}
+        style={{ background: "none", border: "1px solid rgba(var(--danger-rgb),0.4)", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "var(--danger)", cursor: "pointer" }}
       >
         {t("dataDeleteButton")}
       </button>
@@ -191,7 +191,7 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
         onChange={(e) => setConfirmText(e.target.value)}
         placeholder={row.email}
         aria-label={t("dataConfirmAria", { email: row.email })}
-        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "var(--text)", outline: "none" }}
+        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(var(--danger-rgb),0.3)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "var(--text)", outline: "none" }}
       />
       <div style={{ display: "flex", gap: 6 }}>
         <button
@@ -208,13 +208,13 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
             })
           }
           style={{
-            background: "rgba(248,113,113,0.12)",
-            border: "1px solid rgba(248,113,113,0.4)",
+            background: "rgba(var(--danger-rgb),0.12)",
+            border: "1px solid rgba(var(--danger-rgb),0.4)",
             borderRadius: 6,
             padding: "5px 10px",
             fontSize: 11,
             fontWeight: 700,
-            color: "#f87171",
+            color: "var(--danger)",
             cursor: matches ? "pointer" : "not-allowed",
             opacity: isPending || !matches ? 0.5 : 1,
           }}
@@ -232,7 +232,7 @@ function DataDeletionCell({ row }: { row: PilotRow }) {
           {t("dataCancelButton")}
         </button>
       </div>
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -270,19 +270,19 @@ function AccessCell({ row }: { row: PilotRow }) {
         disabled={isPending}
         onClick={toggle}
         style={{
-          background: isDisabled ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.05)",
-          border: "1px solid " + (isDisabled ? "rgba(248,113,113,0.4)" : "var(--border)"),
+          background: isDisabled ? "rgba(var(--danger-rgb),0.12)" : "rgba(255,255,255,0.05)",
+          border: "1px solid " + (isDisabled ? "rgba(var(--danger-rgb),0.4)" : "var(--border)"),
           borderRadius: 6,
           padding: "5px 10px",
           fontSize: 11,
           fontWeight: 700,
-          color: isDisabled ? "#f87171" : "var(--text)",
+          color: isDisabled ? "var(--danger)" : "var(--text)",
           cursor: "pointer",
         }}
       >
         {isPending ? t("accessUpdating") : isDisabled ? t("accessDisabledLabel") : t("accessEnabledLabel")}
       </button>
-      {error && <span style={{ fontSize: 10.5, color: "#f87171" }}>{error}</span>}
+      {error && <span style={{ fontSize: 10.5, color: "var(--danger)" }}>{error}</span>}
     </div>
   );
 }
@@ -345,7 +345,7 @@ export default function AdminPilotTable({ initial }: { initial: PilotRow[] }) {
                     <td style={{ ...cellStyle, textAlign: "right" }}>
                       {new Date(r.joined).toLocaleDateString(dateLocale)}
                     </td>
-                    <td style={{ ...cellStyle, textAlign: "right", color: overBudget ? "#f87171" : "var(--text)", fontWeight: overBudget ? 700 : 400 }}>
+                    <td style={{ ...cellStyle, textAlign: "right", color: overBudget ? "var(--danger)" : "var(--text)", fontWeight: overBudget ? 700 : 400 }}>
                       ${r.spendThisMonthUsd.toFixed(2)}
                     </td>
                     <td style={cellStyle}>

@@ -13,12 +13,12 @@ type ThemeValue = "dark" | "light";
 let listeners: Array<() => void> = [];
 
 function readDomTheme(): ThemeValue {
-  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
 }
 
 function applyTheme(next: ThemeValue) {
-  if (next === "light") {
-    document.documentElement.setAttribute("data-theme", "light");
+  if (next === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
   } else {
     document.documentElement.removeAttribute("data-theme");
   }
@@ -39,7 +39,7 @@ function subscribe(callback: () => void) {
 }
 
 function getServerSnapshot(): ThemeValue {
-  return "dark";
+  return "light";
 }
 
 export default function ThemeToggle({ savedTheme }: { savedTheme?: string | null }) {
@@ -54,8 +54,8 @@ export default function ThemeToggle({ savedTheme }: { savedTheme?: string | null
     } catch {
       // ignore
     }
-    if (!stored && savedTheme === "light") {
-      applyTheme("light");
+    if (!stored && savedTheme === "dark") {
+      applyTheme("dark");
     }
   }, [savedTheme]);
 

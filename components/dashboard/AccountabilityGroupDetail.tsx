@@ -135,7 +135,7 @@ function AttachmentList({
             <button
               type="button"
               onClick={() => remove(a.id)}
-              style={{ background: "none", border: "none", color: "#f87171", fontSize: 11, cursor: "pointer", padding: 0, flexShrink: 0 }}
+              style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 11, cursor: "pointer", padding: 0, flexShrink: 0 }}
             >
               {t("deleteButton")}
             </button>
@@ -154,7 +154,7 @@ function AttachmentList({
           />
         </label>
       )}
-      {error && <p style={{ color: "#f87171", fontSize: 11.5 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 11.5 }}>{error}</p>}
     </div>
   );
 }
@@ -213,7 +213,7 @@ function ReplyThread({
               <button
                 type="button"
                 onClick={() => removeReply(r.id)}
-                style={{ background: "none", border: "none", color: "#f87171", fontSize: 10.5, cursor: "pointer", padding: 0, marginTop: 2 }}
+                style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 10.5, cursor: "pointer", padding: 0, marginTop: 2 }}
               >
                 {t("deleteButton")}
               </button>
@@ -246,7 +246,7 @@ function ReplyThread({
           {t("replyButton")}
         </button>
       </form>
-      {error && <p style={{ color: "#f87171", fontSize: 11.5 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 11.5 }}>{error}</p>}
     </div>
   );
 }
@@ -276,8 +276,8 @@ function GroupAiAssistant({ groupId, t }: { groupId: string; t: ReturnType<typeo
         type="button"
         onClick={() => setOpen(true)}
         style={{
-          background: "rgba(0,201,167,0.08)",
-          border: "1px dashed rgba(0,201,167,0.3)",
+          background: "rgba(var(--teal-rgb),0.08)",
+          border: "1px dashed rgba(var(--teal-rgb),0.3)",
           borderRadius: 12,
           padding: "12px 16px",
           fontSize: 13,
@@ -294,7 +294,7 @@ function GroupAiAssistant({ groupId, t }: { groupId: string; t: ReturnType<typeo
   }
 
   return (
-    <div style={{ background: "rgba(0,201,167,0.06)", border: "1px solid rgba(0,201,167,0.2)", borderRadius: 12, padding: 16 }}>
+    <div style={{ background: "rgba(var(--teal-rgb),0.06)", border: "1px solid rgba(var(--teal-rgb),0.2)", borderRadius: 12, padding: 16 }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", marginBottom: 8 }}>{t("askAiTitle")}</p>
       <form onSubmit={ask} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input
@@ -321,7 +321,7 @@ function GroupAiAssistant({ groupId, t }: { groupId: string; t: ReturnType<typeo
           {isPending ? t("askAiThinking") : t("askAiSubmit")}
         </button>
       </form>
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{error}</p>}
       {answer && (
         <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.7, marginTop: 12, whiteSpace: "pre-wrap" }}>{answer}</p>
       )}
@@ -407,7 +407,7 @@ export default function AccountabilityGroupDetail({
               fontFamily: "inherit",
             }}
           />
-          {error && <p style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>{error}</p>}
+          {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
             <button
               type="submit"
@@ -438,7 +438,7 @@ export default function AccountabilityGroupDetail({
                     <button
                       type="button"
                       onClick={() => remove(c.id)}
-                      style={{ marginTop: 6, background: "none", border: "none", color: "#f87171", fontSize: 11.5, cursor: "pointer", padding: 0 }}
+                      style={{ marginTop: 6, background: "none", border: "none", color: "var(--danger)", fontSize: 11.5, cursor: "pointer", padding: 0 }}
                     >
                       {t("deleteButton")}
                     </button>
@@ -480,7 +480,7 @@ export default function AccountabilityGroupDetail({
           type="button"
           onClick={leave}
           disabled={isPending}
-          style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f87171", cursor: "pointer" }}
+          style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "var(--danger)", cursor: "pointer" }}
         >
           {t("leaveGroupButton")}
         </button>

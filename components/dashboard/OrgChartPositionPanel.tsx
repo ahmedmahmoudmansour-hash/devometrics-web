@@ -69,7 +69,7 @@ export default function OrgChartPositionPanel({
   }
 
   return (
-    <div className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(0,201,167,0.3)", borderRadius: 12, padding: 16 }}>
+    <div className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>
           {position.kind === "structural" ? t("kindStructural") : t("kindVacant")} — {position.title}
@@ -79,7 +79,7 @@ export default function OrgChartPositionPanel({
         </button>
       </div>
 
-      {error && <p style={{ color: "#f87171", fontSize: 12, marginBottom: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12, marginBottom: 10 }}>{error}</p>}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
         <Field label={t("title")}>
@@ -202,7 +202,7 @@ export default function OrgChartPositionPanel({
                     fontWeight: 600,
                     borderRadius: 999,
                     border: position.status === s ? "1px solid var(--teal)" : "1px solid var(--border)",
-                    background: position.status === s ? "rgba(0,201,167,0.1)" : "transparent",
+                    background: position.status === s ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                     color: position.status === s ? "var(--teal)" : "var(--text-muted)",
                     cursor: "pointer",
                   }}
@@ -287,7 +287,7 @@ export default function OrgChartPositionPanel({
           <button
             type="button"
             onClick={() => setConfirmingDelete(true)}
-            style={{ background: "none", border: "1px solid #f87171", color: "#f87171", borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}
+            style={{ background: "none", border: "1px solid var(--danger)", color: "var(--danger)", borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}
           >
             {t("deletePosition")}
           </button>
@@ -325,7 +325,7 @@ function inputStyle(): React.CSSProperties {
 
 function primaryButtonStyle(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? "rgba(0,201,167,0.15)" : "var(--teal)",
+    background: disabled ? "rgba(var(--teal-rgb),0.15)" : "var(--teal)",
     color: disabled ? "var(--text-muted)" : "#0A0F1E",
     border: "none",
     borderRadius: 8,
@@ -337,5 +337,5 @@ function primaryButtonStyle(disabled: boolean): React.CSSProperties {
 }
 
 function dangerButtonStyle(): React.CSSProperties {
-  return { background: "#f87171", color: "#1a0505", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" };
+  return { background: "var(--danger)", color: "#1a0505", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" };
 }

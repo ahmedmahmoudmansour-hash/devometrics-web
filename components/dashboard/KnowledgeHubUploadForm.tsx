@@ -255,7 +255,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                   fontWeight: 600,
                   cursor: "pointer",
                   border: completionType === option ? "1px solid var(--teal)" : "1px solid var(--border)",
-                  background: completionType === option ? "rgba(0,201,167,0.1)" : "transparent",
+                  background: completionType === option ? "rgba(var(--teal-rgb),0.1)" : "transparent",
                   color: completionType === option ? "var(--teal)" : "var(--text-muted)",
                 }}
               >
@@ -305,7 +305,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
                     <button
                       type="button"
                       onClick={() => removeQuestion(qIndex)}
-                      style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}
+                      style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, cursor: "pointer" }}
                     >
                       {t("remove")}
                     </button>
@@ -380,7 +380,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           </div>
         )}
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
         <div style={{ display: "flex", gap: 12 }}>
           <button

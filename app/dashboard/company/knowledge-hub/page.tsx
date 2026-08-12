@@ -194,8 +194,8 @@ export default async function CompanyKnowledgeHubPage() {
                                 letterSpacing: "0.04em",
                                 textTransform: "uppercase",
                                 color: "var(--teal)",
-                                background: "rgba(0,201,167,0.1)",
-                                border: "1px solid rgba(0,201,167,0.3)",
+                                background: "rgba(var(--teal-rgb),0.1)",
+                                border: "1px solid rgba(var(--teal-rgb),0.3)",
                                 borderRadius: 999,
                                 padding: "2px 8px",
                               }}

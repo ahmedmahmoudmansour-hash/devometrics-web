@@ -8,10 +8,17 @@ export default function SkillRadar() {
   // Visual demo of the Skill Radar / gap analysis output — current/target
   // are illustrative static numbers, not real data, so only the labels
   // need translation.
+  // "callout" is set only on the row the insight panel below actually talks
+  // about (largest gap + highest market demand) — pinning a small label
+  // directly on the specific bar it refers to, rather than leaving the
+  // connection between "here's a chart" and "here's what it means" implicit.
+  // Same idea as competitor product shots that annotate a real screenshot
+  // with what the product found, deliberately not a floating decorative
+  // badge — restraint over a Humu-style scattered-callout hero.
   const skills = [
     { label: t("skillLeadership"), current: 65, target: 85 },
     { label: t("skillStrategicThinking"), current: 55, target: 90 },
-    { label: t("skillAiFluency"), current: 40, target: 80 },
+    { label: t("skillAiFluency"), current: 40, target: 80, callout: t("priorityFlag") },
     { label: t("skillCommunication"), current: 78, target: 85 },
     { label: t("skillProjectMgmt"), current: 72, target: 88 },
     { label: t("skillFinancialLiteracy"), current: 45, target: 75 },
@@ -96,8 +103,8 @@ export default function SkillRadar() {
               style={{
                 fontSize: 11,
                 color: "var(--teal)",
-                background: "rgba(0,201,167,0.1)",
-                border: "1px solid rgba(0,201,167,0.2)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.2)",
                 borderRadius: 100,
                 padding: "3px 10px",
                 fontWeight: 600,
@@ -110,7 +117,7 @@ export default function SkillRadar() {
           {/* Legend */}
           <div style={{ display: "flex", gap: 20, marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgba(0,201,167,0.35)", display: "block" }} />
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "rgba(var(--teal-rgb),0.35)", display: "block" }} />
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("current")}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -128,9 +135,27 @@ export default function SkillRadar() {
               const gap = skill.target - skill.current;
               return (
                 <div key={skill.label}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{skill.label}</span>
-                    <span className="mono" style={{ fontSize: 12, color: "rgba(255,100,100,0.8)", fontWeight: 600 }}>−{gap}</span>
+                    {skill.callout && (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          letterSpacing: "0.05em",
+                          textTransform: "uppercase",
+                          color: "var(--teal)",
+                          background: "rgba(var(--teal-rgb),0.12)",
+                          border: "1px solid rgba(var(--teal-rgb),0.3)",
+                          borderRadius: 100,
+                          padding: "2px 8px",
+                        }}
+                      >
+                        {skill.callout}
+                      </span>
+                    )}
+                    <span className="mono" style={{ fontSize: 12, color: "rgba(255,100,100,0.8)", fontWeight: 600, marginInlineStart: "auto" }}>−{gap}</span>
                   </div>
                   <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 100 }}>
                     {/* Target bar */}
@@ -141,7 +166,7 @@ export default function SkillRadar() {
                         insetBlockStart: 0,
                         height: "100%",
                         width: `${skill.target}%`,
-                        background: "rgba(0,201,167,0.15)",
+                        background: "rgba(var(--teal-rgb),0.15)",
                         borderRadius: 100,
                       }}
                     />
@@ -153,7 +178,7 @@ export default function SkillRadar() {
                         insetBlockStart: 0,
                         height: "100%",
                         width: `${skill.current}%`,
-                        background: "linear-gradient(90deg, #00C9A7, #0891b2)",
+                        background: "linear-gradient(90deg, var(--teal), #0891b2)",
                         borderRadius: 100,
                         transition: "width 1s ease",
                       }}
@@ -176,8 +201,8 @@ export default function SkillRadar() {
           <div
             style={{
               marginTop: 24,
-              background: "rgba(0,201,167,0.06)",
-              border: "1px solid rgba(0,201,167,0.2)",
+              background: "rgba(var(--teal-rgb),0.06)",
+              border: "1px solid rgba(var(--teal-rgb),0.2)",
               borderRadius: 12,
               padding: "16px 18px",
             }}

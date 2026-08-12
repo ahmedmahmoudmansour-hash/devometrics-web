@@ -103,16 +103,16 @@ export default function OrganizationProfileForm({
           </div>
         </div>
 
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
 
         <button
           type="submit"
           disabled={isPending}
           style={{
             alignSelf: "flex-start",
-            background: saved ? "rgba(0,201,167,0.1)" : "var(--teal)",
+            background: saved ? "rgba(var(--teal-rgb),0.1)" : "var(--teal)",
             color: saved ? "var(--teal)" : "#0A0F1E",
-            border: saved ? "1px solid rgba(0,201,167,0.3)" : "none",
+            border: saved ? "1px solid rgba(var(--teal-rgb),0.3)" : "none",
             borderRadius: 8,
             padding: "10px 18px",
             fontSize: 14,

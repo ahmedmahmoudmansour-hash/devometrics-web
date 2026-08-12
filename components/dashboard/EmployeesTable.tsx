@@ -105,8 +105,8 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
             display: "flex",
             flexDirection: "column",
             gap: 8,
-            background: "rgba(0,201,167,0.08)",
-            border: "1px solid rgba(0,201,167,0.3)",
+            background: "rgba(var(--teal-rgb),0.08)",
+            border: "1px solid rgba(var(--teal-rgb),0.3)",
             borderRadius: 10,
             padding: "10px 14px",
             marginBottom: 10,
@@ -238,7 +238,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
         </div>
       )}
 
-      {error && <p style={{ color: "#f87171", fontSize: 12.5, marginBottom: 10 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginBottom: 10 }}>{error}</p>}
       {confirmation && <p style={{ color: "var(--teal)", fontSize: 12.5, marginBottom: 10 }}>{confirmation}</p>}
 
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>

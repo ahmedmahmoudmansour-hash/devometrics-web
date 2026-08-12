@@ -163,7 +163,7 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
           {isSuggesting ? t("thinking") : t("suggestWithAi")}
         </button>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
@@ -326,7 +326,7 @@ export default function OrganizationCompetencyBuilder({
             </button>
           </div>
         </div>
-        {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}
+        {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
         <button
           type="submit"
           disabled={isPending}

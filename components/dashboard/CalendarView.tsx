@@ -10,8 +10,8 @@ import type { WeekDeadline } from "@/lib/tasks/actions";
 type Mode = "week" | "month" | "year";
 
 const PRIORITY_DOT: Record<PersonalTask["priority"], string> = {
-  high: "#f87171",
-  medium: "#f0b840",
+  high: "var(--danger)",
+  medium: "var(--amber)",
   low: "var(--text-muted)",
 };
 
@@ -141,7 +141,7 @@ function QuickAdd({
       style={{
         marginTop: 8,
         background: "var(--navy-mid)",
-        border: "1px solid rgba(0,201,167,0.35)",
+        border: "1px solid rgba(var(--teal-rgb),0.35)",
         borderRadius: 10,
         padding: 10,
         display: "flex",
@@ -171,7 +171,7 @@ function QuickAdd({
         aria-label={t("timeOptionalAria")}
         style={{ ...fieldStyle, colorScheme: "dark" }}
       />
-      {error && <p style={{ color: "#f87171", fontSize: 11 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 11 }}>{error}</p>}
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <button
           type="button"
@@ -336,8 +336,8 @@ export default function CalendarView({
                 role="button"
                 tabIndex={0}
                 style={{
-                  border: isToday ? "1px solid rgba(0,201,167,0.4)" : "1px solid var(--border)",
-                  background: isToday ? "rgba(0,201,167,0.05)" : "rgba(255,255,255,0.02)",
+                  border: isToday ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+                  background: isToday ? "rgba(var(--teal-rgb),0.05)" : "rgba(255,255,255,0.02)",
                   borderRadius: 10,
                   padding: 10,
                   minHeight: 90,
@@ -348,7 +348,7 @@ export default function CalendarView({
                   {DAY_LABELS[i]} {day.slice(8, 10)}
                 </p>
                 {dayDeadlines.map((d) => (
-                  <p key={d.id} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 700, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <p key={d.id} title={d.title} style={{ fontSize: 10.5, color: "var(--amber)", fontWeight: 700, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {d.type === "assessment" ? "📝" : "🏁"} {d.title}
                   </p>
                 ))}
@@ -417,9 +417,9 @@ export default function CalendarView({
                       quickAddDay === day
                         ? "1px solid var(--teal)"
                         : isToday
-                          ? "1px solid rgba(0,201,167,0.4)"
+                          ? "1px solid rgba(var(--teal-rgb),0.4)"
                           : "1px solid var(--border)",
-                    background: isToday ? "rgba(0,201,167,0.05)" : "rgba(255,255,255,0.02)",
+                    background: isToday ? "rgba(var(--teal-rgb),0.05)" : "rgba(255,255,255,0.02)",
                     borderRadius: 8,
                     padding: 6,
                     minHeight: 56,
@@ -475,7 +475,7 @@ export default function CalendarView({
                 <p style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{t("noDeadlines")}</p>
               ) : (
                 m.deadlines.map((d) => (
-                  <p key={d.id} title={d.title} style={{ fontSize: 10.5, color: "#f0b840", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <p key={d.id} title={d.title} style={{ fontSize: 10.5, color: "var(--amber)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {d.type === "assessment" ? "📝" : "🏁"} {d.title}
                   </p>
                 ))

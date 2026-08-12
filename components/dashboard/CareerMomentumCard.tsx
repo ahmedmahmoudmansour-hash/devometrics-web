@@ -18,7 +18,7 @@ export default function CareerMomentumCard({ momentum }: { momentum: MomentumRes
   const { deltaPoints, deltaPercent, currentScore, daysSince } = momentum;
   const improving = deltaPoints > 0;
   const flat = deltaPoints === 0;
-  const color = improving ? "var(--teal)" : flat ? "var(--text-muted)" : "#f87171";
+  const color = improving ? "var(--teal)" : flat ? "var(--text-muted)" : "var(--danger)";
   const arrow = improving ? "↑" : flat ? "→" : "↓";
 
   return (

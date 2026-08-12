@@ -81,8 +81,8 @@ function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
         type="button"
         onClick={() => setOpen(true)}
         style={{
-          background: "rgba(0,201,167,0.1)",
-          border: "1px solid rgba(0,201,167,0.3)",
+          background: "rgba(var(--teal-rgb),0.1)",
+          border: "1px solid rgba(var(--teal-rgb),0.3)",
           borderRadius: 10,
           padding: "10px 16px",
           fontSize: 13,
@@ -123,7 +123,7 @@ function AddCertificationForm({ onAdded }: { onAdded: () => void }) {
           <input type="date" style={inputStyle()} value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
         </div>
       </div>
-      {error && <p style={{ color: "#f87171", fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="submit"
@@ -240,7 +240,7 @@ function CertificationCard({ cert, onChanged }: { cert: Certification; onChanged
             >
               {isPending ? t("saving") : t("saveDetails")}
             </button>
-            <button type="button" onClick={remove} disabled={isPending} style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}>
+            <button type="button" onClick={remove} disabled={isPending} style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, cursor: "pointer" }}>
               {t("remove")}
             </button>
           </div>
@@ -277,7 +277,7 @@ export default function CertificationsView({ initial }: { initial: Certification
           <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("statusExpiringSoon")}</p>
         </div>
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 18px", minWidth: 120 }}>
-          <p style={{ fontSize: 20, fontWeight: 800, color: "#f87171" }}>{expiredCount}</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: "var(--danger)" }}>{expiredCount}</p>
           <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("statusExpired")}</p>
         </div>
       </div>
