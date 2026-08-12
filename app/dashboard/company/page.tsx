@@ -15,6 +15,7 @@ import EmailMessagesForm from "@/components/dashboard/EmailMessagesForm";
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
 import CompanyWidgetGrid, { COMPANY_WIDGET_ICONS, type CompanyWidget } from "@/components/dashboard/CompanyWidgetGrid";
+import CompanySetupGuide, { type SetupGuideStep } from "@/components/dashboard/CompanySetupGuide";
 import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
 import { getAutomationSettings } from "@/lib/automations/actions";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
@@ -44,6 +45,7 @@ export default async function CompanyProfilePage() {
   const emailMessages = data.organizationId ? await getOrganizationEmailMessages(data.organizationId) : null;
 
   let widgets: CompanyWidget[] = [];
+  let setupSteps: SetupGuideStep[] = [];
   if (data.organizationId) {
     const supabase = await createClient();
     const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount, jobPostingCount, exitInterviewCount] = await Promise.all([
@@ -63,6 +65,20 @@ export default async function CompanyProfilePage() {
     }).length;
 
     const withManager = data.rows.filter((r) => r.managerUserId).length;
+
+    // "Account created" (step 1) is implicit — an org admin exists by
+    // definition of reaching this page. "Add employees" (step 2) checks
+    // for more than just the admin's own row (data.rows always includes
+    // the admin themselves), not merely rows.length > 0, so a freshly
+    // created org never shows this step as already done.
+    setupSteps = [
+      { key: "account", href: "/dashboard/company", done: true },
+      { key: "employees", href: "/dashboard/company/employees", done: data.rows.length > 1 || data.pendingInvites.length > 0 },
+      { key: "structure", href: "/dashboard/company/org-chart", done: withManager > 0 },
+      { key: "competencies", href: "/dashboard/company/competencies", done: data.organizationCompetencies.length > 0 },
+      { key: "jobDescriptions", href: "/dashboard/company/job-architecture", done: !!jobRoleCount && jobRoleCount > 0 },
+    ];
+
     // Same order as CompanyNavTabs' 5 groups (Overview, Structure, Talent,
     // Hiring & Growth, Performance & Feedback) — this grid used to be in an
     // unrelated ad-hoc order, which read as inconsistent with the nav
@@ -200,6 +216,8 @@ export default async function CompanyProfilePage() {
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
           {t("scopeNote")}
         </p>
+
+        {setupSteps.length > 0 && <CompanySetupGuide steps={setupSteps} />}
 
         {data.organizationId && data.rows.length > 0 && (
           <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 16 }}>

@@ -1420,6 +1420,24 @@
     "adminDescription": "Your team's workforce dashboard, hiring, performance reviews, org chart, and every company-wide tool.",
     "rememberNote": "We'll remember your choice on this device — use \"Switch workspace\" in the sidebar to come back here anytime."
   },
+  "companySetupGuide": {
+    "title": "Get your workspace set up",
+    "guidelines": "A few steps to get your company ready — each one unlocks the next, so there's always a clear next move. You can always come back and adjust any of these later.",
+    "completeBanner": "Setup complete",
+    "reviewAgain": "Review steps",
+    "collapse": "Collapse",
+    "lockedHint": "Complete the previous step first",
+    "step_account_label": "Account created",
+    "step_account_description": "Your company workspace is live.",
+    "step_employees_label": "Add employees",
+    "step_employees_description": "Invite your team so they can start using Devometrics.",
+    "step_structure_label": "Set titles & structure",
+    "step_structure_description": "Draw at least one reporting line in the Org Chart.",
+    "step_competencies_label": "Build a competencies framework",
+    "step_competencies_description": "Define the skills and behaviors you'll assess people against.",
+    "step_jobDescriptions_label": "Add job descriptions",
+    "step_jobDescriptions_description": "Create your first role in Job Architecture."
+  },
   "companyProfilePage": {
     "backToProgress": "← Back to progress",
     "scopeNote": "Only your own company's members appear here — this is scoped to your organization, not a shared pilot-wide view. Everyone below uses the exact same individual tools as any other Devometrics account; this dashboard just aggregates what they've already done.",
