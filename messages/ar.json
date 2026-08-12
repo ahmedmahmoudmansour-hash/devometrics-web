@@ -1393,7 +1393,6 @@
     "employees": "الموظفون",
     "jobArchitecture": "هيكلة الوظائف",
     "hiring": "التوظيف",
-    "onboarding": "التأهيل",
     "orgChart": "الهيكل التنظيمي",
     "competencies": "الكفاءات",
     "performanceReviews": "دورات الأداء",
@@ -1410,52 +1409,6 @@
     "groupHiringGrowth": "التوظيف والتطوير",
     "groupPerformanceFeedback": "الأداء والتغذية الراجعة",
     "permissions": "الصلاحيات"
-  },
-  "companyOnboardingPage": {
-    "backToProgress": "← العودة إلى التقدم",
-    "title": "التأهيل",
-    "description": "أنشئ القائمة التي يحصل عليها كل موظف جديد تلقائيًا عند انضمامه — مهام يُكملها، مستندات يقرؤها ويقرّ بها، وخطوات يوافق عليها مديره.",
-    "notEnabledYet": "هذا غير مفعّل على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0102_onboarding_configurable.sql</code> في محرر SQL الخاص بـ Supabase أولاً."
-  },
-  "onboardingTemplateEditor": {
-    "title": "قائمة التأهيل الخاصة بك",
-    "description": "أضف الخطوات أو أعد ترتيبها أو احذفها — سيحصل كل موظف جديد من الآن على هذه القائمة بالضبط. تعديلها لا يغيّر أبدًا ما تم تعيينه بالفعل لشخص أثناء تأهيله.",
-    "noSteps": "لا توجد خطوات بعد — أضف أول خطوة أدناه.",
-    "type_task": "مهمة",
-    "type_knowledge_hub": "مستند",
-    "type_manager_approval": "موافقة المدير",
-    "dueOffset": "{days, plural, one {مستحقة بعد يوم واحد من الانضمام} other {مستحقة بعد # أيام من الانضمام}}",
-    "addStepTitle": "أضف خطوة",
-    "titlePlaceholder": "عنوان الخطوة",
-    "descriptionPlaceholder": "تفاصيل اختيارية (تُعرض للموظف الجديد)",
-    "chooseDocument": "اختر مستندًا من مركز المعرفة…",
-    "dueOffsetLabel": "الاستحقاق (أيام بعد الانضمام):",
-    "titleRequired": "أعطِ هذه الخطوة عنوانًا",
-    "addStep": "أضف الخطوة",
-    "saveStep": "حفظ",
-    "cancelEdit": "إلغاء"
-  },
-  "myOnboardingPage": {
-    "backToProgress": "← العودة إلى التقدم",
-    "title": "التأهيل",
-    "description": "قائمة البدء الخاصة بك — أعدّتها مؤسستك، خصيصًا لك.",
-    "noneYet": "لم يُعيَّن لك شيء بعد — تحقق مرة أخرى بعد يومك الأول، أو اسأل المسؤول إن كنت تتوقع قائمة تأهيل.",
-    "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
-  },
-  "myOnboardingChecklist": {
-    "title": "قائمتك",
-    "progress": "{done}/{total} مكتملة",
-    "done": "تم",
-    "markDone": "وضع علامة مكتمل",
-    "openDocument": "افتح المستند",
-    "awaitingApproval": "بانتظار موافقة المدير",
-    "dueDate": "الاستحقاق {date}"
-  },
-  "teamOnboardingSection": {
-    "title": "تأهيل الفريق",
-    "hint": "قوائم تأهيل تقاريرك المباشرين — وافق على الخطوات التي تحتاج توقيعك.",
-    "progress": "{done}/{total}",
-    "approve": "موافقة"
   },
   "chooseWorkspacePage": {
     "title": "أي مساحة عمل تريد؟",
@@ -1520,9 +1473,7 @@
     "attentionOpenPostingsNoCandidates": "{count, plural, one {وظيفة مفتوحة واحدة ليس لديها} other {# وظائف مفتوحة ليس لديها}} مرشحون بعد",
     "attentionHighFlightRisk": "{name} مُصنّف بمخاطر مغادرة عالية ({score}/100)",
     "attentionExitInterviewInsight": "رؤية من مقابلات الخروج: {summary}",
-    "attentionExitInterviewTrendsReady": "{count, plural, one {تم تسجيل مقابلة خروج واحدة} other {تم تسجيل # مقابلات خروج}} — كافية لتشغيل تحليل اتجاهات الأسباب الجذرية",
-    "onboardingLabel": "التأهيل",
-    "onboardingStat": "إنشاء قائمة تأهيل الموظفين الجدد"
+    "attentionExitInterviewTrendsReady": "{count, plural, one {تم تسجيل مقابلة خروج واحدة} other {تم تسجيل # مقابلات خروج}} — كافية لتشغيل تحليل اتجاهات الأسباب الجذرية"
   },
   "inviteCodeDisplay": {
     "label": "رمز الدعوة:",
@@ -1609,8 +1560,6 @@
     "type_employee_invite": "دعوة موظف",
     "type_hire_to_onboarding_manager_alert": "تنبيه المدير بموظف جديد",
     "type_high_potential_manager_alert": "تنبيه المدير بإمكانات عالية",
-    "type_onboarding_step_reminder": "تذكير بخطوة التهيئة",
-    "type_onboarding_manager_approval_reminder": "تذكير بموافقة التهيئة",
     "type_milestone_assignment": "إشعار تعيين هدف",
     "type_interview_stage_notice": "إشعار مرحلة المقابلة",
     "type_assessment_assignment": "إشعار تعيين تقييم",
@@ -1623,8 +1572,6 @@
     "hint_employee_invite": "تُرسل عندما يدعو مسؤول شخصًا للانضمام إلى مساحة العمل، بما في ذلك تحويلات التوظيف من مسار التوظيف.",
     "hint_hire_to_onboarding_manager_alert": "تُرسل إلى المدير عند انضمام موظف جديد في فريقه إلى Devometrics.",
     "hint_high_potential_manager_alert": "تُرسل إلى المدير عندما يُصنَّف أحد تابعيه المباشرين كصاحب إمكانات عالية في تحليل الفجوة.",
-    "hint_onboarding_step_reminder": "تُرسل للموظف عندما تكون مهمة أو خطوة تدريب في التهيئة مستحقة ولم تكتمل بعد.",
-    "hint_onboarding_manager_approval_reminder": "تُرسل إلى المدير عندما تكون إحدى خطوات تهيئة أحد تابعيه بانتظار موافقته.",
     "hint_milestone_assignment": "تُرسل فور تعيين مسؤول أو مدير هدفًا أو معلمًا جديدًا لموظف.",
     "hint_interview_stage_notice": "تُرسل إلى المرشح عندما ينتقل طلبه إلى مرحلة المقابلة.",
     "hint_assessment_assignment": "تُرسل فور تعيين مسؤول تقييمًا جديدًا لموظف.",
@@ -2642,7 +2589,8 @@
     "addQuestion": "+ إضافة سؤال",
     "uploading": "جارٍ الرفع…",
     "upload": "رفع",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "newHireContentLabel": "تعيين تلقائيًا للموظفين الجدد"
   },
   "knowledgeHubContentDetailPage": {
     "backToKnowledgeHub": "← العودة إلى مركز المعرفة",
@@ -2683,6 +2631,7 @@
     "save": "حفظ",
     "archiveNote": "الأرشفة تخفي هذا من القوائم النشطة لكنها تحافظ على سجل إكمال الجميع سليمًا — لا تحذف أي شيء.",
     "notifyLearnersLabel": "إشعار المتدربين المسجَّلين بهذا التحديث",
+    "newHireContentLabel": "تعيين تلقائيًا للموظفين الجدد",
     "restoreButton": "استعادة من الأرشيف",
     "restoring": "جارٍ الاستعادة…",
     "deleteThisContentQuestion": "حذف نهائي؟ لا يمكن التراجع عن هذا.",
@@ -4967,8 +4916,8 @@
     "description": "أتمتة منسّقة تربط بين الميزات التي تستخدمها بالفعل — فعّل أو عطّل كل واحدة لمساحة عملك.",
     "recipes": {
       "hire_to_onboarding": {
-        "title": "تأهيل الموظف الجديد",
-        "description": "عند انضمام مرشح تم توظيفه، يُمنح تلقائيًا قائمة تأهيل قصيرة، ويُرسل بريد إلكتروني لمديره لجدولة متابعة بعد 30 يومًا."
+        "title": "ترحيب بالموظف الجديد",
+        "description": "عند انضمام مرشح تم توظيفه، يُعيَّن له تلقائيًا أي محتوى في مركز المعرفة مخصص للموظفين الجدد، ويُرسل بريد إلكتروني لمديره لجدولة متابعة بعد 30 يومًا."
       },
       "low_score_to_reassessment": {
         "title": "متابعة درجة التقييم المنخفضة",
@@ -5067,7 +5016,6 @@
     "noRestrictions": "كل ميزة متاحة حاليًا لجميع أفراد شركتك.",
     "unknownUser": "(موظف غير معروف)",
     "removeButton": "إزالة",
-    "feature_onboarding": "التأهيل",
     "feature_performance_review": "تقييمات الأداء"
   },
   "featureEmailComposer": {

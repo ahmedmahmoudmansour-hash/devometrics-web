@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ListChecks, ClipboardList, Library, ClipboardCheck, Milestone as MilestoneIcon, UserCheck } from "lucide-react";
+import { ListChecks, ClipboardList, Library, ClipboardCheck, Milestone as MilestoneIcon } from "lucide-react";
 import type { PendingAction, PendingActionType } from "@/lib/actionHub/types";
 
 const TYPE_ICON: Record<PendingActionType, React.ComponentType<{ size?: number }>> = {
@@ -9,7 +9,6 @@ const TYPE_ICON: Record<PendingActionType, React.ComponentType<{ size?: number }
   knowledge_hub: Library,
   performance_review: ClipboardCheck,
   milestone: MilestoneIcon,
-  onboarding: UserCheck,
 };
 
 // The single consolidated "everything requiring your attention" list —

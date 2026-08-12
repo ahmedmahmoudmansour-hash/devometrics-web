@@ -3,7 +3,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template";
 import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
-import { instantiateOnboarding } from "@/lib/onboarding/actions";
+import { listNewHireContentIds, assignKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
 import { isRecipeEnabled, logAutomation, firedRecently } from "./engine";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -15,25 +15,27 @@ function addDaysIso(days: number): string {
 }
 
 // Fires from inside checkAndConsumeInvite() — the acting user IS the new
-// employee joining, so both task inserts below are self-scoped (their own
-// personal_tasks) and RLS-safe with zero special-casing. The manager
+// employee joining. Onboarding was retired as a standalone feature in favor
+// of ordinary Knowledge Hub content flagged is_new_hire_content (migration
+// 0120) — this assigns every such flagged, unarchived document to the new
+// hire via the same path an admin uses to assign content manually. The
+// recipe key stays "hire_to_onboarding" (not renamed) so orgs that already
+// have the automation toggle on don't silently lose it. The manager
 // notification is an email, not a DB write into the manager's own
 // rows — this app has no service-role key, so there's no privileged path
 // to write into a different user's table on their behalf; email sidesteps
 // that entirely since it isn't an RLS-governed action at all.
-export async function runHireToOnboarding(
+export async function runHireWelcome(
   supabase: SupabaseServerClient,
   params: { organizationId: string; employeeUserId: string; employeeName: string; orgName: string; managerEmail: string | null }
 ): Promise<void> {
   const enabled = await isRecipeEnabled(supabase, params.organizationId, "hire_to_onboarding");
   if (!enabled) return;
 
-  // Real, admin-configurable onboarding checklist (migration 0102) —
-  // replaces what used to be two hardcoded personal_tasks. Instantiates
-  // from the org's own template (lazily seeded with those same two steps
-  // on an admin's first visit to the editor, so behavior doesn't regress
-  // for an org that's never touched onboarding settings).
-  await instantiateOnboarding(supabase, { organizationId: params.organizationId, employeeUserId: params.employeeUserId });
+  const newHireContentIds = await listNewHireContentIds(params.organizationId);
+  for (const contentId of newHireContentIds) {
+    await assignKnowledgeHubContent(contentId, [params.employeeUserId]);
+  }
 
   if (params.managerEmail) {
     try {
@@ -59,7 +61,7 @@ export async function runHireToOnboarding(
         })
       );
     } catch (err) {
-      console.error("runHireToOnboarding: manager email failed (non-fatal):", err);
+      console.error("runHireWelcome: manager email failed (non-fatal):", err);
     }
   }
 
@@ -67,7 +69,7 @@ export async function runHireToOnboarding(
     organizationId: params.organizationId,
     recipeKey: "hire_to_onboarding",
     subjectUserId: params.employeeUserId,
-    summary: `Onboarding tasks created${params.managerEmail ? " and manager notified" : ""}.`,
+    summary: `${newHireContentIds.length} new-hire Knowledge Hub document(s) assigned${params.managerEmail ? " and manager notified" : ""}.`,
   });
 }
 

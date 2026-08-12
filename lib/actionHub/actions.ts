@@ -125,41 +125,6 @@ export async function listMyPendingActions(): Promise<PendingAction[]> {
     });
   }
 
-  // Onboarding steps still open — 'manager_approval' steps are excluded
-  // since those are the MANAGER's action, not this employee's (they show
-  // on My Team for the manager instead). 'knowledge_hub' steps self-heal
-  // their completed_at via getMyOnboarding elsewhere, but that function
-  // isn't called here, so a knowledge_hub step's real Knowledge Hub
-  // completion is already separately surfaced by the "knowledge_hub"
-  // action type above — including it again here via onboarding_instance_
-  // steps would double-list the same document under two action types.
-  const { data: instance } = await supabase
-    .from("onboarding_instances")
-    .select("id")
-    .eq("employee_user_id", user.id)
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ id: string }>();
-  if (instance) {
-    const { data: onboardingSteps } = await supabase
-      .from("onboarding_instance_steps")
-      .select("id, title, due_date, step_type, completed_at")
-      .eq("instance_id", instance.id)
-      .eq("step_type", "task")
-      .is("completed_at", null)
-      .returns<{ id: string; title: string; due_date: string | null; step_type: string; completed_at: string | null }[]>();
-    for (const step of onboardingSteps ?? []) {
-      actions.push({
-        id: `onboarding-${step.id}`,
-        type: "onboarding",
-        title: step.title,
-        subtitle: step.due_date,
-        href: "/dashboard/onboarding",
-        overdue: !!step.due_date && step.due_date < today,
-      });
-    }
-  }
-
   // Same 7-day window as the standalone UpcomingDeadlinesCard this
   // replaces — milestones further out aren't "needs your attention yet."
   const { data: plans } = await supabase.from("development_plans").select("id").eq("user_id", user.id);

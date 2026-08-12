@@ -138,13 +138,6 @@ export default async function CompanyProfilePage() {
         stat: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
       },
       {
-        key: "onboarding",
-        label: t("onboardingLabel"),
-        href: "/dashboard/company/onboarding",
-        icon: COMPANY_WIDGET_ICONS.ListChecks,
-        stat: t("onboardingStat"),
-      },
-      {
         key: "knowledgeHub",
         label: t("knowledgeHubLabel"),
         href: "/dashboard/company/knowledge-hub",

@@ -32,6 +32,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
   const [passingScore, setPassingScore] = useState(content.passing_score_percent);
   const [maxAttempts, setMaxAttempts] = useState<string>(content.max_attempts?.toString() ?? "");
   const [dueDate, setDueDate] = useState(content.due_date ?? "");
+  const [isNewHireContent, setIsNewHireContent] = useState(content.is_new_hire_content);
   const [notifyLearners, setNotifyLearners] = useState(false);
   const [confirmingArchive, setConfirmingArchive] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -52,6 +53,7 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
           passingScorePercent: passingScore,
           maxAttempts: maxAttempts.trim() ? Number(maxAttempts) : null,
           dueDate: dueDate || null,
+          isNewHireContent,
         },
         notifyLearners
       );
@@ -186,6 +188,11 @@ export default function EditKnowledgeHubContentForm({ content }: { content: Know
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
           <input type="checkbox" checked={notifyLearners} onChange={(e) => setNotifyLearners(e.target.checked)} />
           {t("notifyLearnersLabel")}
+        </label>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
+          <input type="checkbox" checked={isNewHireContent} onChange={(e) => setIsNewHireContent(e.target.checked)} />
+          {t("newHireContentLabel")}
         </label>
 
         {error && <p style={{ color: "#f87171", fontSize: 13 }}>{error}</p>}

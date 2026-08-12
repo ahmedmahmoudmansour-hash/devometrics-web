@@ -1393,7 +1393,6 @@
     "employees": "Employees",
     "jobArchitecture": "Job Architecture",
     "hiring": "Hiring",
-    "onboarding": "Onboarding",
     "orgChart": "Org Chart",
     "competencies": "Competencies",
     "performanceReviews": "Impact Cycles",
@@ -1410,52 +1409,6 @@
     "groupHiringGrowth": "Hiring & Growth",
     "groupPerformanceFeedback": "Performance & Feedback",
     "permissions": "Permissions"
-  },
-  "companyOnboardingPage": {
-    "backToProgress": "← Back to progress",
-    "title": "Onboarding",
-    "description": "Build the checklist every new hire gets automatically when they join — tasks for them to complete, documents to read and acknowledge, and steps their manager signs off on.",
-    "notEnabledYet": "This isn't enabled on this database yet — the <code>0102_onboarding_configurable.sql</code> migration needs to be run in the Supabase SQL Editor first."
-  },
-  "onboardingTemplateEditor": {
-    "title": "Your onboarding checklist",
-    "description": "Add, reorder, or remove steps — every new hire gets exactly this list from now on. Editing it never changes what's already assigned to someone mid-onboarding.",
-    "noSteps": "No steps yet — add your first one below.",
-    "type_task": "Task",
-    "type_knowledge_hub": "Document",
-    "type_manager_approval": "Manager approval",
-    "dueOffset": "due {days, plural, one {# day after joining} other {# days after joining}}",
-    "addStepTitle": "Add a step",
-    "titlePlaceholder": "Step title",
-    "descriptionPlaceholder": "Optional details (shown to the new hire)",
-    "chooseDocument": "Choose a Knowledge Hub document…",
-    "dueOffsetLabel": "Due (days after joining):",
-    "titleRequired": "Give this step a title",
-    "addStep": "Add step",
-    "saveStep": "Save",
-    "cancelEdit": "Cancel"
-  },
-  "myOnboardingPage": {
-    "backToProgress": "← Back to progress",
-    "title": "Onboarding",
-    "description": "Your getting-started checklist — set up by your organization, just for you.",
-    "noneYet": "Nothing assigned yet — check back after your first day, or ask your admin if you were expecting an onboarding checklist.",
-    "restrictedNotice": "This feature has been restricted for your account by your company administrator."
-  },
-  "myOnboardingChecklist": {
-    "title": "Your checklist",
-    "progress": "{done}/{total} complete",
-    "done": "Done",
-    "markDone": "Mark done",
-    "openDocument": "Open document",
-    "awaitingApproval": "Awaiting manager approval",
-    "dueDate": "Due {date}"
-  },
-  "teamOnboardingSection": {
-    "title": "Team onboarding",
-    "hint": "Your direct reports' onboarding checklists — approve the steps that need your sign-off.",
-    "progress": "{done}/{total}",
-    "approve": "Approve"
   },
   "chooseWorkspacePage": {
     "title": "Which workspace do you want?",
@@ -1520,9 +1473,7 @@
     "attentionOpenPostingsNoCandidates": "{count, plural, one {# open posting has} other {# open postings have}} no candidates yet",
     "attentionHighFlightRisk": "{name} flagged as a high flight risk ({score}/100)",
     "attentionExitInterviewInsight": "Exit interview insight: {summary}",
-    "attentionExitInterviewTrendsReady": "{count, plural, one {# exit interview is} other {# exit interviews are}} recorded — enough to run root-cause trend analysis",
-    "onboardingLabel": "Onboarding",
-    "onboardingStat": "Build your new-hire checklist"
+    "attentionExitInterviewTrendsReady": "{count, plural, one {# exit interview is} other {# exit interviews are}} recorded — enough to run root-cause trend analysis"
   },
   "inviteCodeDisplay": {
     "label": "Invite code:",
@@ -1609,8 +1560,6 @@
     "type_employee_invite": "Employee invite",
     "type_hire_to_onboarding_manager_alert": "New hire manager alert",
     "type_high_potential_manager_alert": "High-potential manager alert",
-    "type_onboarding_step_reminder": "Onboarding step reminder",
-    "type_onboarding_manager_approval_reminder": "Onboarding approval reminder",
     "type_milestone_assignment": "Goal assignment notice",
     "type_interview_stage_notice": "Interview stage notice",
     "type_assessment_assignment": "Assessment assignment notice",
@@ -1623,8 +1572,6 @@
     "hint_employee_invite": "Sent when an admin invites someone to join the workspace, including hire conversions from the Hiring pipeline.",
     "hint_hire_to_onboarding_manager_alert": "Sent to a manager when a new hire on their team joins Devometrics.",
     "hint_high_potential_manager_alert": "Sent to a manager when a direct report's Gap Analysis flags them as High Potential.",
-    "hint_onboarding_step_reminder": "Sent to an employee when a due onboarding task or training step isn't complete yet.",
-    "hint_onboarding_manager_approval_reminder": "Sent to a manager when one of their reports has an onboarding step waiting on their approval.",
     "hint_milestone_assignment": "Sent immediately when an admin or manager assigns someone a new goal or milestone.",
     "hint_interview_stage_notice": "Sent to a candidate when their application moves to the interview stage.",
     "hint_assessment_assignment": "Sent immediately when an admin assigns someone a new assessment.",
@@ -2642,7 +2589,8 @@
     "addQuestion": "+ Add question",
     "uploading": "Uploading…",
     "upload": "Upload",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "newHireContentLabel": "Assign automatically to new hires"
   },
   "knowledgeHubContentDetailPage": {
     "backToKnowledgeHub": "← Back to Knowledge Hub",
@@ -2683,6 +2631,7 @@
     "save": "Save",
     "archiveNote": "Archiving hides this from active lists but keeps everyone's completion history intact — it doesn't delete anything.",
     "notifyLearnersLabel": "Notify enrolled learners about this update",
+    "newHireContentLabel": "Assign automatically to new hires",
     "restoreButton": "Restore from archive",
     "restoring": "Restoring…",
     "deleteThisContentQuestion": "Permanently delete? This can't be undone.",
@@ -4967,8 +4916,8 @@
     "description": "Curated automations that connect features you already use — turn each one on or off for your workspace.",
     "recipes": {
       "hire_to_onboarding": {
-        "title": "New hire onboarding",
-        "description": "When a hired candidate joins, automatically give them a short onboarding checklist and email their manager to schedule a 30-day check-in."
+        "title": "New hire welcome",
+        "description": "When a hired candidate joins, automatically assign them any Knowledge Hub content flagged for new hires and email their manager to schedule a 30-day check-in."
       },
       "low_score_to_reassessment": {
         "title": "Low assessment score follow-up",
@@ -5067,7 +5016,6 @@
     "noRestrictions": "Every feature is available to everyone in your company right now.",
     "unknownUser": "(unknown employee)",
     "removeButton": "Remove",
-    "feature_onboarding": "Onboarding",
     "feature_performance_review": "Performance Reviews"
   },
   "featureEmailComposer": {

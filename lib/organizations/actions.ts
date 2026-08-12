@@ -12,7 +12,7 @@ import { slugify } from "@/lib/organizations/slug";
 import { ENGLISH_PROFICIENCY_SLUG, cefrLevelFromScore } from "@/lib/assessments/englishProficiency";
 import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessments/cognitiveAbility";
 import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFive";
-import { runHireToOnboarding } from "@/lib/automations/recipes";
+import { runHireWelcome } from "@/lib/automations/recipes";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
@@ -524,14 +524,14 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
   // fire for every invite-based join, not just genuine Smart Hiring
   // conversions (invite.candidate_id set) as it did before — someone
   // joining a company workspace via a direct admin invite is still
-  // genuinely starting there, and now gets the org's actual configured
-  // onboarding checklist (migration 0102) rather than nothing.
+  // genuinely starting there, and now gets the org's new-hire-flagged
+  // Knowledge Hub content (migration 0120) rather than nothing.
   {
     const [{ data: org }, { data: profile }] = await Promise.all([
       supabase.from("organizations").select("name").eq("id", invite.organization_id).maybeSingle<{ name: string }>(),
       supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>(),
     ]);
-    await runHireToOnboarding(supabase, {
+    await runHireWelcome(supabase, {
       organizationId: invite.organization_id,
       employeeUserId: user.id,
       employeeName: profile?.full_name || user.email,

@@ -454,6 +454,7 @@ export type KnowledgeHubContent = {
   max_attempts: number | null;
   due_date: string | null;
   archived_at: string | null;
+  is_new_hire_content: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;

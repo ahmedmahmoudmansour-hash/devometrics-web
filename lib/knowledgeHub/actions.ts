@@ -34,6 +34,7 @@ export async function createKnowledgeHubContent(input: {
   passingScorePercent: number;
   maxAttempts?: number | null;
   dueDate?: string | null;
+  isNewHireContent?: boolean;
   questions?: NewExamQuestion[];
 }) {
   const company = await buildCompanyData();
@@ -64,6 +65,7 @@ export async function createKnowledgeHubContent(input: {
     passing_score_percent: input.passingScorePercent,
     max_attempts: input.completionType === "exam" ? input.maxAttempts ?? null : null,
     due_date: input.dueDate || null,
+    is_new_hire_content: input.isNewHireContent ?? false,
     created_by: user.id,
   });
   if (contentError) {
@@ -100,6 +102,23 @@ export async function createKnowledgeHubContent(input: {
 
   revalidatePath("/dashboard/company/knowledge-hub");
   return { success: true, contentId: input.id };
+}
+
+// Called from lib/automations/recipes.ts's runHireWelcome on every new
+// hire — every unarchived document an admin has flagged "assign
+// automatically to new hires" gets assigned via assignKnowledgeHubContent
+// below, reusing its existing diff-against-already-assigned + notification
+// email logic rather than inventing a separate onboarding-specific path.
+export async function listNewHireContentIds(organizationId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("knowledge_hub_content")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("is_new_hire_content", true)
+    .is("archived_at", null)
+    .returns<{ id: string }[]>();
+  return (data ?? []).map((r) => r.id);
 }
 
 // Best-effort — a failed assignment email shouldn't fail the assignment
@@ -349,6 +368,7 @@ export async function updateKnowledgeHubContent(
     passingScorePercent: number;
     maxAttempts: number | null;
     dueDate: string | null;
+    isNewHireContent: boolean;
   },
   notifyLearners = false
 ) {
@@ -366,9 +386,9 @@ export async function updateKnowledgeHubContent(
   // from the live row).
   const { data: before } = await supabase
     .from("knowledge_hub_content")
-    .select("organization_id, title, description, passing_score_percent, max_attempts, due_date")
+    .select("organization_id, title, description, passing_score_percent, max_attempts, due_date, is_new_hire_content")
     .eq("id", contentId)
-    .maybeSingle<{ organization_id: string; title: string; description: string | null; passing_score_percent: number; max_attempts: number | null; due_date: string | null }>();
+    .maybeSingle<{ organization_id: string; title: string; description: string | null; passing_score_percent: number; max_attempts: number | null; due_date: string | null; is_new_hire_content: boolean }>();
 
   const { data, error } = await supabase
     .from("knowledge_hub_content")
@@ -378,6 +398,7 @@ export async function updateKnowledgeHubContent(
       passing_score_percent: fields.passingScorePercent,
       max_attempts: fields.maxAttempts,
       due_date: fields.dueDate || null,
+      is_new_hire_content: fields.isNewHireContent,
     })
     .eq("id", contentId)
     .select("id");
@@ -397,6 +418,7 @@ export async function updateKnowledgeHubContent(
       passing_score_percent: before.passing_score_percent,
       max_attempts: before.max_attempts,
       due_date: before.due_date,
+      is_new_hire_content: before.is_new_hire_content,
       edited_by: user.id,
     });
     // Never fails the edit itself — version history is a nice-to-have

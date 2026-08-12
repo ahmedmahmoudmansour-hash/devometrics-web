@@ -10,6 +10,11 @@
 // functions (0101) and the check constraint value are left in place in
 // the database rather than migrated out; this array is what actually
 // controls whether the type appears anywhere in the app.
+// onboarding_step_reminder / onboarding_manager_approval_reminder (0107)
+// removed the same way when the standalone Onboarding feature was retired
+// (migration 0120) — hire_to_onboarding_manager_alert is KEPT: that's the
+// unrelated "new hire joined, here's your manager notification" email,
+// still sent by runHireWelcome (lib/automations/recipes.ts).
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -19,8 +24,6 @@ export const EMAIL_MESSAGE_TYPES = [
   "employee_invite",
   "hire_to_onboarding_manager_alert",
   "high_potential_manager_alert",
-  "onboarding_step_reminder",
-  "onboarding_manager_approval_reminder",
   "milestone_assignment",
   "interview_stage_notice",
   "assessment_assignment",

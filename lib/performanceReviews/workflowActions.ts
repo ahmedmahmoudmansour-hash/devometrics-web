@@ -10,8 +10,7 @@ const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 1000;
 const REVALIDATE_PATH = "/dashboard/company/impact-cycles";
 
-// Thin auth wrapper for the admin workflow editor — mirrors
-// requireOrgAdminForOnboarding.
+// Thin auth wrapper for the admin workflow editor.
 export async function requireOrgAdminForWorkflows(): Promise<{ error: string } | { organizationId: string }> {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
@@ -21,8 +20,8 @@ export async function requireOrgAdminForWorkflows(): Promise<{ error: string } |
 // Lazily creates the org's one default template on first visit, seeded with
 // today's actual 5-step sequence — matches the migration 0103 backfill
 // exactly, so an org that never touches the editor keeps the exact behavior
-// it already had. Returns an explicit error instead of throwing, same
-// graceful-degrade shape as getOrCreateDefaultOnboardingTemplate.
+// it already had. Returns an explicit error instead of throwing rather than
+// letting a missing-schema query bubble up as a crash.
 export async function getOrCreateDefaultWorkflowTemplate(
   organizationId: string
 ): Promise<{ error: string } | { template: WorkflowTemplate; steps: WorkflowStep[] }> {
@@ -148,8 +147,7 @@ export async function deleteWorkflowStep(stepId: string) {
 
 // Simple up/down reorder rather than drag-and-drop — true drag-and-drop is
 // reserved for the Org Chart (Workstream 6), matching the memo's own
-// "simplicity over complexity" principle, same call already made for
-// onboarding's template editor.
+// "simplicity over complexity" principle.
 export async function moveWorkflowStep(templateId: string, stepId: string, direction: "up" | "down") {
   const supabase = await createClient();
   const { data: steps } = await supabase

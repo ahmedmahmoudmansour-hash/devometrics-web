@@ -4,10 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { listMyDirectReportReviews } from "@/lib/performanceReviews/actions";
 import { listMyTeamPulse } from "@/lib/organizations/teamPulse";
-import { listMyReportsOnboarding } from "@/lib/onboarding/actions";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import MyTeamReviews from "@/components/dashboard/MyTeamReviews";
-import TeamOnboardingSection from "@/components/dashboard/TeamOnboardingSection";
 import { ScoreBar } from "@/components/dashboard/charts";
 
 export const metadata = { title: "My Team — Devometrics" };
@@ -27,7 +25,6 @@ export default async function MyTeamPage() {
 
   const { items, error } = await listMyDirectReportReviews();
   const { members: pulseMembers } = await listMyTeamPulse();
-  const onboardingReports = await listMyReportsOnboarding();
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -73,8 +70,6 @@ export default async function MyTeamPage() {
             </div>
           </div>
         )}
-
-        <TeamOnboardingSection reports={onboardingReports} />
 
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

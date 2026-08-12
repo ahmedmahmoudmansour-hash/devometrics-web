@@ -15,7 +15,6 @@ export const RESTRICTABLE_FEATURES = [
   "knowledge_hub",
   "job_architecture",
   "competency_management",
-  "onboarding",
   "performance_review",
 ] as const;
 export type RestrictableFeature = (typeof RESTRICTABLE_FEATURES)[number];

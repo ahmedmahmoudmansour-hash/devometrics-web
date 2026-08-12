@@ -16,7 +16,6 @@ export const FEATURE_EMAIL_KEYS = [
   "succession",
   "scorecard",
   "exit_interviews",
-  "onboarding",
 ] as const;
 export type FeatureEmailKey = (typeof FEATURE_EMAIL_KEYS)[number];
 

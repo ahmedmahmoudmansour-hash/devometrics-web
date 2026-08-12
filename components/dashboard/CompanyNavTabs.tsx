@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews" | "onboarding" | "permissions";
+type TabKey = "profile" | "employees" | "jobArchitecture" | "hiring" | "orgChart" | "competencies" | "analytics" | "highPotential" | "succession" | "scorecard" | "surveys" | "performanceReviews" | "knowledgeHub" | "exitInterviews" | "permissions";
 
 // Grouped into 5 clusters of 3 instead of one flat row — at 15 items the
 // flat version wrapped to 2 lines of equal-weight links with no way to
@@ -18,7 +18,7 @@ const GROUPS: { labelKey: string; tabs: TabKey[] }[] = [
   { labelKey: "groupOverview", tabs: ["profile", "employees", "analytics", "permissions"] },
   { labelKey: "groupStructure", tabs: ["orgChart", "jobArchitecture", "competencies"] },
   { labelKey: "groupTalent", tabs: ["highPotential", "succession", "scorecard"] },
-  { labelKey: "groupHiringGrowth", tabs: ["hiring", "onboarding", "knowledgeHub"] },
+  { labelKey: "groupHiringGrowth", tabs: ["hiring", "knowledgeHub"] },
   { labelKey: "groupPerformanceFeedback", tabs: ["performanceReviews", "surveys", "exitInterviews"] },
 ];
 
@@ -29,7 +29,6 @@ export default async function CompanyNavTabs({ active }: { active: TabKey }) {
     employees: "/dashboard/company/employees",
     jobArchitecture: "/dashboard/company/job-architecture",
     hiring: "/dashboard/company/hiring",
-    onboarding: "/dashboard/company/onboarding",
     orgChart: "/dashboard/company/org-chart",
     competencies: "/dashboard/company/competencies",
     performanceReviews: "/dashboard/company/impact-cycles",

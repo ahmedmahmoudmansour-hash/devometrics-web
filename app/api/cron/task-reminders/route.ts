@@ -5,7 +5,6 @@ import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template
 import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
 import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/sendReminders";
 import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
-import { sendDueOnboardingReminders, sendDueOnboardingManagerApprovalReminders } from "@/lib/onboarding/sendReminders";
 import { sendDueScheduledFeatureEmails } from "@/lib/organizations/featureEmails";
 
 type ReminderTask = { title: string; date: string; overdue: boolean };
@@ -26,11 +25,13 @@ type ReminderRow = {
 // due_task_reminders for why that check has to live in the database
 // function itself).
 //
-// Also sends Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
-// performance review and assessment reminders, and (as of 0107) onboarding
-// step / manager-approval reminders — all piggybacking on this same daily
-// run rather than getting a separate Vercel Cron entry — see each
-// function's own comment for why (Hobby plan's cron-count cap).
+// Also sends Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders)
+// and performance review / assessment reminders — all piggybacking on this
+// same daily run rather than getting a separate Vercel Cron entry — see
+// each function's own comment for why (Hobby plan's cron-count cap).
+// Onboarding step / manager-approval reminders (added 0107) were removed
+// when the standalone Onboarding feature was retired in favor of Knowledge
+// Hub new-hire content (migration 0120) — see lib/onboarding/ (deleted).
 // Certification-expiry reminders (sendDueCertificationReminders) used to
 // run here too — removed per Ahmed (Certifications reminders retired; the
 // tracking page/data are untouched, lib/certifications/sendReminders.ts
@@ -110,16 +111,12 @@ export async function GET(request: Request) {
   const knowledgeHubResult = await sendDueKnowledgeHubReminders(supabase, secret);
   const performanceReviewResult = await sendDuePerformanceReviewReminders(supabase, secret);
   const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
-  const onboardingResult = await sendDueOnboardingReminders(supabase, secret);
-  const onboardingManagerApprovalResult = await sendDueOnboardingManagerApprovalReminders(supabase, secret);
   const scheduledFeatureEmailsResult = await sendDueScheduledFeatureEmails(supabase, secret);
 
   return NextResponse.json({
     candidates: rows?.length ?? 0,
     performanceReviews: performanceReviewResult,
     assessments: assessmentResult,
-    onboarding: onboardingResult,
-    onboardingManagerApproval: onboardingManagerApprovalResult,
     sent,
     knowledgeHub: knowledgeHubResult,
     scheduledFeatureEmails: scheduledFeatureEmailsResult,

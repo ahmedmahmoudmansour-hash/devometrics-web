@@ -11,8 +11,8 @@ export type RecipeKey = "hire_to_onboarding" | "low_score_to_reassessment" | "hi
 export const RECIPES: { key: RecipeKey; title: string; description: string }[] = [
   {
     key: "hire_to_onboarding",
-    title: "New hire onboarding",
-    description: "When a hired candidate joins, automatically give them a short onboarding checklist and email their manager to schedule a 30-day check-in.",
+    title: "New hire welcome",
+    description: "When a hired candidate joins, automatically assign them any Knowledge Hub content flagged for new hires and email their manager to schedule a 30-day check-in.",
   },
   {
     key: "low_score_to_reassessment",

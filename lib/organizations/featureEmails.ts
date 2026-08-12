@@ -19,7 +19,6 @@ const FEATURE_EMAIL_PAGE_PATH: Record<FeatureEmailKey, string> = {
   succession: "/dashboard/company/succession",
   scorecard: "/dashboard/company/scorecard",
   exit_interviews: "/dashboard/company/exit-interviews",
-  onboarding: "/dashboard/company/onboarding",
 };
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;

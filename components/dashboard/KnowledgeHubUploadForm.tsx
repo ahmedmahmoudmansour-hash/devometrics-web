@@ -39,6 +39,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
   const [passingScore, setPassingScore] = useState(80);
   const [maxAttempts, setMaxAttempts] = useState<string>("");
   const [dueDate, setDueDate] = useState("");
+  const [isNewHireContent, setIsNewHireContent] = useState(false);
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +130,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           passingScorePercent: passingScore,
           maxAttempts: maxAttempts.trim() ? Number(maxAttempts) : null,
           dueDate: dueDate || null,
+          isNewHireContent,
           questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
         });
         if (result?.error) {
@@ -141,6 +143,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
         setCompletionType("attestation");
         setMaxAttempts("");
         setDueDate("");
+        setIsNewHireContent(false);
         setQuestions([newQuestion()]);
         setExpanded(false);
         router.refresh();
@@ -224,6 +227,16 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
             style={{ ...inputStyle, maxWidth: 200, colorScheme: "dark" }}
           />
         </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text)", cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={isNewHireContent}
+            onChange={(e) => setIsNewHireContent(e.target.checked)}
+            style={{ accentColor: "var(--teal)" }}
+          />
+          {t("newHireContentLabel")}
+        </label>
 
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>

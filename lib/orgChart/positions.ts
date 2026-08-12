@@ -282,8 +282,8 @@ export async function deletePosition(id: string): Promise<{ success: true } | { 
 // atomically inside the fill_org_position RPC). The position row is kept
 // as a permanent record (status='filled', occupant, filled_at) rather than
 // deleted — see migration 0106's comment for why. Not part of the
-// automatic onboarding trigger chain; an admin calls this explicitly once
-// the new hire's account already exists.
+// automatic new-hire trigger chain (runHireWelcome); an admin calls this
+// explicitly once the new hire's account already exists.
 export async function fillPosition(positionId: string, employeeUserId: string): Promise<{ success: true } | { error: string }> {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
