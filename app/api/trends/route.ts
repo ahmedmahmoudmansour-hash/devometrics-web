@@ -77,7 +77,19 @@ export async function POST(request: Request) {
 
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
-      let reply = "";
+      // Only the LAST text block is the real answer. With the server-side
+      // web_search tool, Claude can narrate between search rounds — e.g.
+      // "Let me search for X" before the first search, "Good, I have solid
+      // sources, let me extract the relevant content" between rounds — and
+      // each of those is its own real text content block, not a "thinking"
+      // block that's filtered out automatically. The bug this replaced
+      // forwarded every text_delta live as it arrived, so that in-between
+      // narration streamed straight to the user ahead of (and mixed in
+      // with) the actual bulleted summary. A new text content_block_start
+      // means whatever was buffered before it was mid-search commentary,
+      // not the final answer, so it's discarded; whatever's left in the
+      // buffer once the stream ends is the true final block.
+      let finalText = "";
       let searchError: Anthropic.WebSearchToolResultErrorCode | null = null;
 
       try {
@@ -114,14 +126,17 @@ export async function POST(request: Request) {
             continue;
           }
           if (searchError) continue;
+          if (event.type === "content_block_start" && event.content_block.type === "text") {
+            finalText = "";
+            continue;
+          }
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-            reply += event.delta.text;
-            controller.enqueue(encoder.encode(event.delta.text));
+            finalText += event.delta.text;
           }
         }
       } catch (err) {
         console.error("Trends generation failed:", err);
-        if (!reply && !searchError) {
+        if (!finalText && !searchError) {
           controller.enqueue(encoder.encode("Could not fetch trends right now — please try again."));
         }
         controller.close();
@@ -136,19 +151,27 @@ export async function POST(request: Request) {
         return;
       }
 
-      if (!reply.trim()) {
+      if (!finalText.trim()) {
         controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
         controller.close();
         return;
       }
 
+      // Sent once the full answer is known, rather than live-forwarded
+      // deltas — the streaming API is still used server-side (needed either
+      // way to receive the multi-round tool-use response), but the client
+      // now only ever sees the real final text, never intermediate search
+      // narration. The "typed out" reveal is a UX tradeoff traded for
+      // correctness; sends in one chunk instead of appearing sentence by
+      // sentence.
+      controller.enqueue(encoder.encode(finalText));
       controller.close();
 
       // Best-effort — a cache write failure shouldn't fail the response the
       // user is already looking at.
       await supabase
         .from("key_trends_cache")
-        .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary: reply, generated_at: new Date().toISOString() })
+        .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary: finalText, generated_at: new Date().toISOString() })
         .then(
           () => {},
           () => {}

@@ -79,11 +79,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const summary = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("\n\n")
-      .trim();
+    // Only the LAST text block is the real answer — same bug/fix as
+    // /api/trends. With the server-side web_search tool, Claude can narrate
+    // between search rounds ("Let me search for X", "Good, I have solid
+    // sources, let me extract the relevant content") and each of those is
+    // its own real text content block, not filtered-out "thinking." Joining
+    // every text block (the previous behavior) concatenated that narration
+    // together with the actual course list instead of returning just the
+    // final answer.
+    const textBlocks = response.content.filter((block): block is Anthropic.TextBlock => block.type === "text");
+    const summary = (textBlocks.at(-1)?.text ?? "").trim();
 
     if (!summary) {
       return NextResponse.json({ error: "Could not find course recommendations right now" }, { status: 502 });
