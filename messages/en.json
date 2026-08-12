@@ -1973,6 +1973,33 @@
     "save": "Save",
     "cancel": "Cancel"
   },
+  "orgChartSnapshots": {
+    "saveSnapshot": "Save structure snapshot",
+    "saveSnapshotHint": "Captures who reports to whom right now, as a permanent record — separate from a saved view, which only remembers display settings.",
+    "viewSnapshots": "Snapshots",
+    "resetChart": "Reset chart",
+    "nameLabel": "Snapshot name",
+    "namePlaceholder": "e.g. Structure before Q3 redesign",
+    "saving": "Saving…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "noneYet": "No snapshots yet.",
+    "snapshotMeta": "{date} — by {by}",
+    "unknownCreator": "someone no longer on this workspace",
+    "snapshotDetailAsOf": "Structure as of {date}",
+    "vacantRole": "Vacant role",
+    "structural": "Structural",
+    "noManager": "No manager (root)",
+    "close": "Close",
+    "resetTitle": "Reset the org chart?",
+    "resetBody": "This clears every reporting line and position placement back to a blank slate so you can redesign the structure from scratch. Vacant and structural positions themselves aren't deleted — only their place in the tree. This can't be undone, but a saved snapshot always preserves the structure as it was.",
+    "resetNoSnapshotNudge": "You haven't saved a snapshot today — consider saving one first so today's structure isn't lost.",
+    "resetSaveOneNow": "Save a snapshot now",
+    "resetConfirmLabel": "Type {word} to confirm",
+    "resetting": "Resetting…",
+    "resetButton": "Reset chart"
+  },
   "orgChartExportBar": {
     "downloadPdf": "Download PDF"
   },

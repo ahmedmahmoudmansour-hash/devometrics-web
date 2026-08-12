@@ -23,6 +23,7 @@ import OrgChartPositionCard from "@/components/dashboard/OrgChartPositionCard";
 import OrgChartPositionPanel from "@/components/dashboard/OrgChartPositionPanel";
 import OrgChartControlBar from "@/components/dashboard/OrgChartControlBar";
 import OrgChartSavedViewsMenu from "@/components/dashboard/OrgChartSavedViewsMenu";
+import OrgChartSnapshotControls from "@/components/dashboard/OrgChartSnapshotControls";
 import OrgChartExportBar from "@/components/dashboard/OrgChartExportBar";
 import type { WorkforceRow } from "@/lib/organizations/aggregate";
 
@@ -321,6 +322,7 @@ export default function OrgChartView({
           <button type="button" disabled={isPending} onClick={() => handleAddPosition("structural")} style={addPositionButtonStyle()}>
             {t("addStructural")}
           </button>
+          <OrgChartSnapshotControls />
         </div>
         <OrgChartExportBar />
       </div>
