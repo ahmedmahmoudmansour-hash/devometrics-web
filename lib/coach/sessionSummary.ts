@@ -122,7 +122,7 @@ export async function emailSessionSummary(summary: SessionSummary): Promise<{ er
     preheader: `Your coaching session summary from ${dateLabel}`,
     footerNote: "Sent from your AI Career Coach on Devometrics — an AI-generated summary of your own session.",
     bodyHtml: `
-      <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 20px;">Your coaching session — ${dateLabel}</h2>
+      <h2 style="color:#16161a;font-size:20px;margin:0 0 20px;">Your coaching session — ${dateLabel}</h2>
       <h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Meeting notes</h3>
       <p style="line-height:1.7;font-size:15px;margin:0 0 24px;">${escapeHtml(summary.meetingNotes)}</p>
       <h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Action plan</h3>

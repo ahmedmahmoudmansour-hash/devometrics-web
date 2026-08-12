@@ -74,45 +74,52 @@ export default function PlatformChatWidget() {
           style={{
             width: 340,
             height: 440,
-            marginBottom: 12,
+            marginBottom: 10,
             background: "var(--navy-mid)",
             border: "1px solid var(--border)",
-            borderRadius: 16,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+            borderRadius: 4,
+            boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
           }}
         >
           <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Ask about Devometrics</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              Product questions only — for personal career advice, sign up for the AI Coach.
+            <div className="mono" style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)" }}>
+              Ask Devometrics
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>
+              Product questions only — for personal career advice, use the AI Coach.
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 14 }}>
             {messages.length === 0 && (
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
                 Ask what Devometrics does, how pricing works, or what the gap analysis actually measures.
               </p>
             )}
             {messages.map((m, i) => (
-              <div
-                key={i}
-                style={{
-                  alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                  maxWidth: "85%",
-                  background: m.role === "user" ? "var(--teal)" : "rgba(255,255,255,0.05)",
-                  color: m.role === "user" ? "#0A0F1E" : "var(--text)",
-                  borderRadius: 10,
-                  padding: "8px 12px",
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {m.content}
+              <div key={i} style={{ maxWidth: "88%", alignSelf: m.role === "user" ? "flex-end" : "flex-start" }}>
+                {m.role === "assistant" && (
+                  <div className="mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 3 }}>
+                    Devometrics
+                  </div>
+                )}
+                <div
+                  style={{
+                    background: m.role === "user" ? "var(--teal)" : "transparent",
+                    color: m.role === "user" ? "#0A0F1E" : "var(--text)",
+                    borderInlineStart: m.role === "assistant" ? "2px solid var(--border)" : "none",
+                    borderRadius: 2,
+                    padding: m.role === "user" ? "8px 12px" : "0 0 0 10px",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {m.content}
+                </div>
               </div>
             ))}
             {loading && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Thinking…</div>}
@@ -128,10 +135,11 @@ export default function PlatformChatWidget() {
               placeholder="Ask a question…"
               style={{
                 flex: 1,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                padding: "8px 12px",
+                background: "transparent",
+                border: "none",
+                borderBottom: "1px solid var(--border)",
+                borderRadius: 0,
+                padding: "8px 2px",
                 fontSize: 13,
                 color: "var(--text)",
                 outline: "none",
@@ -144,9 +152,9 @@ export default function PlatformChatWidget() {
                 background: "var(--teal)",
                 color: "#0A0F1E",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 2,
                 padding: "8px 14px",
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: 700,
                 cursor: "pointer",
                 opacity: loading ? 0.6 : 1,
@@ -161,30 +169,28 @@ export default function PlatformChatWidget() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        aria-label={open ? "Close chat" : "Ask about Devometrics"}
+        aria-label={open ? "Close chat" : "Ask Devometrics"}
+        className="mono"
         style={{
-          width: 52,
-          height: 52,
-          borderRadius: "50%",
-          background: "var(--teal)",
-          border: "none",
-          boxShadow: "0 8px 24px rgba(var(--teal-rgb),0.35)",
-          cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          gap: 8,
           marginLeft: "auto",
+          background: "var(--navy-mid)",
+          border: "1px solid var(--border)",
+          borderRadius: 2,
+          padding: "9px 14px",
+          fontSize: 11.5,
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          color: "var(--text)",
+          cursor: "pointer",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
         }}
       >
-        {open ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0F1E" strokeWidth="2" strokeLinecap="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F1E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-          </svg>
-        )}
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />
+        {open ? "Close" : "Ask Devometrics"}
       </button>
     </div>
   );

@@ -7,18 +7,11 @@ import { attentionFlagText } from "@/lib/organizations/attentionText";
 import { createClient } from "@/lib/supabase/server";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
-import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
-import OrganizationProfileForm from "@/components/dashboard/OrganizationProfileForm";
-import OrganizationContactsForm from "@/components/dashboard/OrganizationContactsForm";
-import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandingForm";
-import EmailMessagesForm from "@/components/dashboard/EmailMessagesForm";
-import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
 import CompanyWidgetGrid, { COMPANY_WIDGET_ICONS, type CompanyWidget } from "@/components/dashboard/CompanyWidgetGrid";
 import CompanySetupGuide, { type SetupGuideStep } from "@/components/dashboard/CompanySetupGuide";
 import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
 import { getAutomationSettings } from "@/lib/automations/actions";
-import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 
 // Live counts for the widget grid — each an isolated, defensive count query
 // (head:true, no rows fetched) against a table that may belong to a
@@ -43,7 +36,6 @@ export default async function CompanyProfilePage() {
   if (!data.isOrgAdmin) redirect("/dashboard");
   const overview = await buildCompanyOverview(data);
   const automationSettings = data.organizationId ? await getAutomationSettings(data.organizationId) : null;
-  const emailMessages = data.organizationId ? await getOrganizationEmailMessages(data.organizationId) : null;
 
   let widgets: CompanyWidget[] = [];
   let setupSteps: SetupGuideStep[] = [];
@@ -206,9 +198,16 @@ export default async function CompanyProfilePage() {
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
-          <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            {t("backToProgress")}
-          </Link>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+            <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
+              {t("backToProgress")}
+            </Link>
+            {data.organizationId && (
+              <Link href="/dashboard/company/settings" className="mono" style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", textDecoration: "none", borderBottom: "1px solid var(--border)", paddingBottom: 2 }}>
+                {t("goToSettings")}
+              </Link>
+            )}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
             {data.organizationLogoUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- customer-supplied external logo URL, not a static asset next/image can optimize meaningfully
@@ -343,44 +342,6 @@ export default async function CompanyProfilePage() {
 
         {data.organizationId && automationSettings && (
           <AutomationSettingsPanel organizationId={data.organizationId} initialSettings={automationSettings} />
-        )}
-
-        {data.organizationId && (
-          <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 24 }}>
-            <InviteEmployeeForm organizationId={data.organizationId} pendingInvites={data.pendingInvites} />
-            <OrganizationProfileForm
-              organizationId={data.organizationId}
-              initial={{
-                website: data.organizationWebsite,
-                employeeCount: data.organizationEmployeeCount,
-                industry: data.organizationIndustry,
-              }}
-            />
-            <OrganizationContactsForm
-              organizationId={data.organizationId}
-              initial={{
-                platformContactName: data.organizationPlatformContactName,
-                platformContactEmail: data.organizationPlatformContactEmail,
-                financeContactName: data.organizationFinanceContactName,
-                financeContactEmail: data.organizationFinanceContactEmail,
-              }}
-            />
-            <OrganizationBrandingForm
-              organizationId={data.organizationId}
-              initial={{ logoUrl: data.organizationLogoUrl, brandColor: data.organizationBrandColor }}
-            />
-            {emailMessages && <EmailMessagesForm organizationId={data.organizationId} initial={emailMessages} />}
-          </div>
-        )}
-
-        {data.organizationId && (
-          <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
-            <DeleteCompanyButton
-              organizationId={data.organizationId}
-              organizationName={data.organizationName ?? "this workspace"}
-              pendingDeletionAt={data.organizationPendingDeletionAt}
-            />
-          </div>
         )}
       </div>
     </div>

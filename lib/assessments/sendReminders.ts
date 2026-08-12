@@ -44,13 +44,13 @@ export async function sendDueAssessmentReminders(
           preheader: `${name} was assigned to you and hasn't been completed yet`,
           footerNote: "You're getting this because your organization assigned you an assessment on Devometrics.",
           bodyHtml: `
-            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
             ${customMessageHtml(row.custom_message)}
             <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
               <strong>${escapeHtml(name)}</strong> was assigned to you and hasn't been completed yet.
             </p>
             <p style="margin:28px 0 0;">
-              <a href="https://devometrics.com/dashboard/assessments" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open Assessment Center →</a>
+              <a href="https://devometrics.com/dashboard/assessments" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open Assessment Center →</a>
             </p>
           `,
         })

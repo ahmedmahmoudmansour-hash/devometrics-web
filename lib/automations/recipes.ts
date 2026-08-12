@@ -52,7 +52,7 @@ export async function runHireWelcome(
         renderEmail({
           preheader: `${params.employeeName} just joined — plan their 30-day check-in`,
           bodyHtml: `
-            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)} has joined</h2>
+            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)} has joined</h2>
             ${customMessageHtml(override.message)}
             <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
               They've signed up and are getting started on Devometrics. A good first move is scheduling a 30-day check-in to see how onboarding is going.
@@ -112,7 +112,7 @@ export async function runHireToProbation(
         renderEmail({
           preheader: `Review and accept ${params.employeeName}'s probation review to activate it`,
           bodyHtml: `
-            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)}'s probation review is ready</h2>
+            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)}'s probation review is ready</h2>
             ${customMessageHtml(override.message)}
             <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
               A probation review has been started for them, but it stays hidden from them until you review and accept it from My Team.
@@ -210,7 +210,7 @@ export async function runHighPotentialToSuccession(
       renderEmail({
         preheader: `${params.userName}'s latest Gap Analysis places them in the High Potential zone`,
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">${escapeHtml(params.userName)} — High Potential</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(params.userName)} — High Potential</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
             Their latest Gap Analysis places them in the High Potential zone of your team's talent grid. Worth considering them for succession planning and growth opportunities.

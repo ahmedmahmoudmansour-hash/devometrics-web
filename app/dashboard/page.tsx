@@ -245,7 +245,13 @@ export default async function DashboardPage() {
             <PendingSurveysCard surveys={mySurveys} />
           </DashboardSection>
 
-          <DashboardSection label={t("sectionCareerHealth")}>
+          {/* Collapsed by default (2026-08 UX audit's content-tiering fix):
+              this section answers "how am I doing overall," which someone
+              checks periodically, not "what do I do today" — the Today
+              section above already covers the changes-every-visit content.
+              Nothing here is hidden or removed, just not forced into the
+              first scroll every single time. */}
+          <DashboardSection label={t("sectionCareerHealth")} collapsible defaultOpen={false}>
             <CareerHealthOverview
               gapAnalysisScore={latestAnalysis?.career_health_score ?? null}
               assessmentAverage={assessmentAverage}

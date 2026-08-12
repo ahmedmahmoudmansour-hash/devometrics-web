@@ -316,13 +316,13 @@ export async function createCompanyWorkspace(fields: {
       renderEmail({
         preheader: `${name} is ready on Devometrics — you're its admin`,
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Your company workspace is ready</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Your company workspace is ready</h2>
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
             Devometrics has set up <strong>${escapeHtml(name)}</strong>'s workspace and made
             <strong>${escapeHtml(adminEmail)}</strong> its admin.
           </p>
           <p style="margin:0;">
-            <a href="https://devometrics.com/signup?email=${encodeURIComponent(adminEmail)}" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your admin account →</a>
+            <a href="https://devometrics.com/signup?email=${encodeURIComponent(adminEmail)}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your admin account →</a>
           </p>
           <p style="font-size:13px;color:#8892a4;margin:24px 0 0;">
             Sign up with this email address (${escapeHtml(adminEmail)}) and you'll be attached as

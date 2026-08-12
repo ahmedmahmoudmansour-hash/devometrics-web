@@ -1,5 +1,11 @@
-const BRAND_TEAL = "#00C9A7";
-const BRAND_NAVY = "#0A0F1E";
+// Same "Instrument" palette the app itself runs on (light-theme values,
+// since email always renders on a white card regardless of the recipient's
+// in-app theme preference — there's no dark-mode toggle for an inbox).
+// Kept as their own named constants rather than reusing CSS custom
+// properties: email clients (especially Outlook) don't reliably support
+// var()/rgba() in inline styles, so these have to be literal hex.
+const BRAND_SIGNAL = "#3f7a67";
+const BRAND_INK = "#16161a";
 
 export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -47,21 +53,21 @@ export function renderEmail({
   footerNote?: string;
 }): string {
   return `
-  <div style="background:#f4f6f8; padding:32px 16px; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;">
+  <div style="background:#f6f5f2; padding:32px 16px; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;">
     ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preheader}</div>` : ""}
-    <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e9ef;">
-      <div style="background:${BRAND_NAVY};padding:22px 32px;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:4px;overflow:hidden;border:1px solid #e4e2da;">
+      <div style="background:${BRAND_INK};padding:22px 32px;">
         <span style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">Devometrics</span>
       </div>
-      <div style="padding:32px;color:#1a2236;">
+      <div style="padding:32px;color:#1c1c1f;">
         ${bodyHtml}
       </div>
-      <div style="padding:20px 32px;border-top:1px solid #eef1f5;">
-        <p style="font-size:12px;color:#8892a4;line-height:1.6;margin:0;">
+      <div style="padding:20px 32px;border-top:1px solid #e4e2da;">
+        <p style="font-size:12px;color:#6b6a64;line-height:1.6;margin:0;">
           ${footerNote ?? "Devometrics — The Science of Career Growth."}
         </p>
-        <p style="font-size:12px;color:#8892a4;line-height:1.6;margin:8px 0 0;">
-          Questions? <a href="mailto:support@devometrics.com" style="color:${BRAND_TEAL};text-decoration:none;">support@devometrics.com</a>
+        <p style="font-size:12px;color:#6b6a64;line-height:1.6;margin:8px 0 0;">
+          Questions? <a href="mailto:support@devometrics.com" style="color:${BRAND_SIGNAL};text-decoration:none;">support@devometrics.com</a>
         </p>
       </div>
     </div>

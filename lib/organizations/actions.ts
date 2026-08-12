@@ -34,14 +34,14 @@ export async function sendInviteEmail(email: string, orgName: string, organizati
       renderEmail({
         preheader: `${orgName} invited you to Devometrics`,
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">You're invited</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">You're invited</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
             <strong>${escapeHtml(orgName)}</strong> has invited you to join their workspace on
             Devometrics — track your career growth alongside the rest of your team.
           </p>
           <p style="margin:0;">
-            <a href="https://devometrics.com/signup?email=${encodeURIComponent(email)}" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your account →</a>
+            <a href="https://devometrics.com/signup?email=${encodeURIComponent(email)}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your account →</a>
           </p>
           <p style="font-size:13px;color:#8892a4;margin:24px 0 0;">
             Sign up with this email address (${escapeHtml(email)}) and you'll be attached to
@@ -225,7 +225,7 @@ export async function updateOrganizationBranding(
 
   const brandColor = fields.brandColor?.trim() || null;
   if (brandColor && !HEX_COLOR_RE.test(brandColor)) {
-    return { error: "Brand color must be a hex code like #00C9A7" };
+    return { error: "Brand color must be a hex code like #3f7a67" };
   }
 
   const { error } = await supabase
@@ -616,7 +616,7 @@ async function sendMilestoneAssignmentEmail(
         preheader: `${milestoneTitle}${targetDate ? ` — due ${targetDate}` : ""}`,
         footerNote: "You're getting this because your organization assigned you a goal on Devometrics.",
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New goal assigned</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">New goal assigned</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
             <strong>${escapeHtml(org.name)}</strong> assigned you <strong>${escapeHtml(milestoneTitle)}</strong> on Devometrics.
@@ -627,7 +627,7 @@ async function sendMilestoneAssignmentEmail(
               : `<p style="margin:0 0 24px;"></p>`
           }
           <p style="margin:0;">
-            <a href="https://devometrics.com/dashboard/plans" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open your plan →</a>
+            <a href="https://devometrics.com/dashboard/plans" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open your plan →</a>
           </p>
         `,
       })
@@ -737,7 +737,7 @@ async function sendAssessmentAssignmentEmail(
         preheader: `${assessmentTitle}${dueDate ? ` — due ${dueDate}` : ""}`,
         footerNote: "You're getting this because your organization assigned you an assessment on Devometrics.",
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New assessment assigned</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">New assessment assigned</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
             <strong>${escapeHtml(org.name)}</strong> assigned you <strong>${escapeHtml(assessmentTitle)}</strong> on Devometrics.
@@ -748,7 +748,7 @@ async function sendAssessmentAssignmentEmail(
               : `<p style="margin:0 0 24px;"></p>`
           }
           <p style="margin:0;">
-            <a href="https://devometrics.com/dashboard/assessments" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open your assessments →</a>
+            <a href="https://devometrics.com/dashboard/assessments" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open your assessments →</a>
           </p>
         `,
       })

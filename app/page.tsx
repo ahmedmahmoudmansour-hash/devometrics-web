@@ -25,17 +25,24 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero />
+        {/* Orientation before depth (2026-08 UX audit, §2/§6): a first-time
+            visitor gets "what is this and how does it work" immediately
+            after the hero, before the more detailed/technical sections
+            that assume that context. SkillRadar (the live Gap Analysis
+            demo) moves up right after it — it's the single strongest proof
+            of what the product does, not something to bury three sections
+            deep behind Decisions/Methodology. */}
         <Reveal>
-          <DecisionsSection namespace="individualDecisions" />
-        </Reveal>
-        <Reveal>
-          <Methodology />
+          <HowItWorks />
         </Reveal>
         <Reveal>
           <SkillRadar />
         </Reveal>
         <Reveal>
-          <HowItWorks />
+          <DecisionsSection namespace="individualDecisions" />
+        </Reveal>
+        <Reveal>
+          <Methodology />
         </Reveal>
         <Reveal>
           <Features />

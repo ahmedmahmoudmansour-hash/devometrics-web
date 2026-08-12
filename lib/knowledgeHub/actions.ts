@@ -140,7 +140,7 @@ async function sendKnowledgeHubAssignmentEmail(
         preheader: `${contentTitle}${dueDate ? ` — due ${dueDate}` : ""}`,
         footerNote: "You're getting this because your organization assigned you training on Devometrics.",
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New training assigned</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">New training assigned</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 8px;">
             <strong>${escapeHtml(orgName)}</strong> assigned you <strong>${escapeHtml(contentTitle)}</strong> on Devometrics.
@@ -151,7 +151,7 @@ async function sendKnowledgeHubAssignmentEmail(
               : `<p style="margin:0 0 24px;"></p>`
           }
           <p style="margin:0;">
-            <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
+            <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
           </p>
         `,
       })
@@ -344,13 +344,13 @@ async function sendKnowledgeHubUpdateEmail(email: string, contentTitle: string, 
         preheader: contentTitle,
         footerNote: "You're getting this because your organization assigned you this training on Devometrics.",
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Training content updated</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Training content updated</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
             <strong>${escapeHtml(orgName)}</strong> made an update to <strong>${escapeHtml(contentTitle)}</strong>, which you're assigned. Worth a look if you've already started or completed it.
           </p>
           <p style="margin:0;">
-            <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
+            <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
           </p>
         `,
       })

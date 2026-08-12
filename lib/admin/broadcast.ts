@@ -25,10 +25,10 @@ function renderAnnouncementHtml(firstName: string, subject: string, message: str
     preheader: subject,
     footerNote: "You're getting this because you have a Devometrics account.",
     bodyHtml: `
-      <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+      <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
       ${paragraphs}
       <p style="margin:24px 0 0;">
-        <a href="${ctaUrl}" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">${escapeHtml(ctaLabel)} →</a>
+        <a href="${ctaUrl}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">${escapeHtml(ctaLabel)} →</a>
       </p>
     `,
   });

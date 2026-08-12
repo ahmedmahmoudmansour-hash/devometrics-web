@@ -8,6 +8,7 @@ import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import CapabilityPyramid from "@/components/CapabilityPyramid";
 import Avatar from "@/components/Avatar";
 import EmployeesTable from "@/components/dashboard/EmployeesTable";
+import TabbedSections from "@/components/dashboard/TabbedSections";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import { levelBg } from "@/lib/ui/levelColor";
@@ -110,117 +111,127 @@ export default async function CompanyEmployeesPage() {
               />
             )}
 
-            {/* Workforce skill inventory */}
-            <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-                {t("workforceSkillInventory")}
-              </h2>
-              <EmployeesTable rows={data.rows} currentUserId={currentUser?.id ?? null} />
-            </div>
-
-            {/* Capability pyramid, team average */}
-            <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                {t("teamCapabilityPyramid")}
-              </h2>
-              <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
-                {t("teamCapabilityPyramidDesc")}
-              </p>
-              <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, display: "flex", justifyContent: "center" }}>
-                <CapabilityPyramid dimensionLevels={data.dimensionAverages} />
-              </div>
-            </div>
-
-            {/* Talent heatmap */}
-            <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 12 }}>
-                {t("talentHeatmap")}
-              </h2>
-              <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ ...headStyle, textAlign: "start" }}>{t("tableName")}</th>
-                        {COMPETENCY_DIMENSIONS.map((d) => (
-                          <th key={d} style={{ ...headStyle, textAlign: "center", whiteSpace: "nowrap" }}>
-                            {dimensionLabel(tDim, d)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.rows.map((r) => (
-                        <tr key={r.userId}>
-                          <td style={cellStyle}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <Avatar name={r.name} avatarUrl={r.avatarUrl} />
-                              {r.name}
-                            </div>
-                          </td>
-                          {COMPETENCY_DIMENSIONS.map((d) => (
-                            <td
-                              key={d}
-                              style={{ ...cellStyle, textAlign: "center", background: levelBg(r.dimensionLevels[d]) }}
-                            >
-                              {r.dimensionLevels[d] ?? "—"}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                      <tr>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: "var(--text-muted)" }}>{t("teamAverage")}</td>
-                        {COMPETENCY_DIMENSIONS.map((d) => (
-                          <td key={d} style={{ ...cellStyle, textAlign: "center", fontWeight: 700 }}>
-                            {data.dimensionAverages[d] ?? "—"}
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-                {t("talentHeatmapNote")}
-              </p>
-            </div>
-
-            {/* Leadership readiness signal */}
-            <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
-                {t("leadershipReadinessSignal")}
-              </h2>
-              <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
-                {t("leadershipReadinessDesc")}
-              </p>
-              {data.leadershipReadiness.length === 0 ? (
-                <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    {t("noRankingYet")}
-                  </p>
-                </div>
-              ) : (
-                <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 8 }}>
-                  {data.leadershipReadiness.map((r, i) => (
-                    <div
-                      key={r.userId}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "10px 14px",
-                        borderBottom: i === data.leadershipReadiness.length - 1 ? "none" : "1px solid var(--border)",
-                      }}
-                    >
-                      <span style={{ fontSize: 13, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
-                        {i + 1}. <Avatar name={r.name} avatarUrl={r.avatarUrl} size={22} /> {r.name}
-                      </span>
-                      <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>{r.score}/100</span>
+            {/* Four topically-coherent views of the same workforce data,
+                previously stacked as one long scroll — tabbed per the
+                2026-08 UX audit (dense-but-focused, unlike the company-home
+                page's unrelated-jobs problem, so tabs rather than a
+                structural split). */}
+            <TabbedSections
+              tabs={[
+                {
+                  key: "table",
+                  label: t("workforceSkillInventory"),
+                  content: <EmployeesTable rows={data.rows} currentUserId={currentUser?.id ?? null} />,
+                },
+                {
+                  key: "pyramid",
+                  label: t("teamCapabilityPyramid"),
+                  content: (
+                    <div>
+                      <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
+                        {t("teamCapabilityPyramidDesc")}
+                      </p>
+                      <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, display: "flex", justifyContent: "center" }}>
+                        <CapabilityPyramid dimensionLevels={data.dimensionAverages} />
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  ),
+                },
+                {
+                  key: "heatmap",
+                  label: t("talentHeatmap"),
+                  content: (
+                    <div>
+                      <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead>
+                              <tr>
+                                <th style={{ ...headStyle, textAlign: "start" }}>{t("tableName")}</th>
+                                {COMPETENCY_DIMENSIONS.map((d) => (
+                                  <th key={d} style={{ ...headStyle, textAlign: "center", whiteSpace: "nowrap" }}>
+                                    {dimensionLabel(tDim, d)}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.rows.map((r) => (
+                                <tr key={r.userId}>
+                                  <td style={cellStyle}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                      <Avatar name={r.name} avatarUrl={r.avatarUrl} />
+                                      {r.name}
+                                    </div>
+                                  </td>
+                                  {COMPETENCY_DIMENSIONS.map((d) => (
+                                    <td
+                                      key={d}
+                                      style={{ ...cellStyle, textAlign: "center", background: levelBg(r.dimensionLevels[d]) }}
+                                    >
+                                      {r.dimensionLevels[d] ?? "—"}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                              <tr>
+                                <td style={{ ...cellStyle, fontWeight: 700, color: "var(--text-muted)" }}>{t("teamAverage")}</td>
+                                {COMPETENCY_DIMENSIONS.map((d) => (
+                                  <td key={d} style={{ ...cellStyle, textAlign: "center", fontWeight: 700 }}>
+                                    {data.dimensionAverages[d] ?? "—"}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
+                        {t("talentHeatmapNote")}
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: "leadership",
+                  label: t("leadershipReadinessSignal"),
+                  content: (
+                    <div>
+                      <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
+                        {t("leadershipReadinessDesc")}
+                      </p>
+                      {data.leadershipReadiness.length === 0 ? (
+                        <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+                          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                            {t("noRankingYet")}
+                          </p>
+                        </div>
+                      ) : (
+                        <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 8 }}>
+                          {data.leadershipReadiness.map((r, i) => (
+                            <div
+                              key={r.userId}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "10px 14px",
+                                borderBottom: i === data.leadershipReadiness.length - 1 ? "none" : "1px solid var(--border)",
+                              }}
+                            >
+                              <span style={{ fontSize: 13, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
+                                {i + 1}. <Avatar name={r.name} avatarUrl={r.avatarUrl} size={22} /> {r.name}
+                              </span>
+                              <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>{r.score}/100</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </div>
         )}
       </div>

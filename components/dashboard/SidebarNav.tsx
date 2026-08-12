@@ -61,9 +61,17 @@ function buildSections(
     {
       labelKey: "understandSection",
       items: [
+        // Order matches app/dashboard/page.tsx's OnboardingChecklist
+        // (Discovery -> Assessments -> Gap Analysis) — these two were
+        // previously out of sync (nav had Gap Analysis before Assessments),
+        // so the sidebar and the dashboard's own "what to do next" list
+        // disagreed on sequence. Gap Analysis is deliberately last: it's
+        // the CV/target-role-driven step that produces the score other
+        // features consume, a natural culmination of the lighter
+        // Discovery/Assessments self-report steps before it.
         { href: "/dashboard/discovery", labelKey: "discovery", icon: Compass },
-        { href: "/dashboard/gap-analysis", labelKey: "gapAnalysis", icon: Target },
         { href: "/dashboard/assessments", labelKey: "assessments", icon: ClipboardList },
+        { href: "/dashboard/gap-analysis", labelKey: "gapAnalysis", icon: Target },
         { href: "/dashboard/resume", labelKey: "resume", icon: FileText, premium: true, featureKey: "resume_intelligence" },
         { href: "/dashboard/scorecard", labelKey: "scorecard", icon: LineChart },
         // Only shown to someone with an actual manager assigned in the Org

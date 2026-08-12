@@ -48,7 +48,7 @@ export async function sendDueKnowledgeHubReminders(
           preheader: `${row.content_title} — ${row.overdue ? "overdue" : `due ${row.due_date}`}`,
           footerNote: "You're getting this because your organization assigned you training on Devometrics.",
           bodyHtml: `
-            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
             ${customMessageHtml(row.custom_message)}
             ${
               row.overdue
@@ -62,7 +62,7 @@ export async function sendDueKnowledgeHubReminders(
                    </p>`
             }
             <p style="margin:28px 0 0;">
-              <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
+              <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
             </p>
           `,
         })

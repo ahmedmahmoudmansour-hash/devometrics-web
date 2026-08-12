@@ -42,13 +42,13 @@ export async function sendDuePerformanceReviewReminders(
           preheader: `Your self-reflection for ${row.cycle_name} hasn't been started yet`,
           footerNote: "You're getting this because your organization opened a performance review cycle you're part of.",
           bodyHtml: `
-            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
             ${customMessageHtml(row.custom_message)}
             <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
               <strong>${escapeHtml(row.cycle_name)}</strong> is open, and your self-reflection hasn't been started yet.
             </p>
             <p style="margin:28px 0 0;">
-              <a href="https://devometrics.com/dashboard/impact-cycle" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open your Impact Cycle →</a>
+              <a href="https://devometrics.com/dashboard/impact-cycle" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open your Impact Cycle →</a>
             </p>
           `,
         })

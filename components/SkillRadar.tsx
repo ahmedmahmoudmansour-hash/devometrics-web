@@ -93,23 +93,13 @@ export default function SkillRadar() {
           style={{
             background: "var(--navy-mid)",
             border: "1px solid var(--border)",
-            borderRadius: 20,
+            borderRadius: 4,
             padding: "32px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28, borderBottom: "1px solid var(--border)", paddingBottom: 14 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("chartTitle")}</span>
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--teal)",
-                background: "rgba(var(--teal-rgb),0.1)",
-                border: "1px solid rgba(var(--teal-rgb),0.2)",
-                borderRadius: 100,
-                padding: "3px 10px",
-                fontWeight: 600,
-              }}
-            >
+            <span className="mono" style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)" }}>
               {t("liveSample")}
             </span>
           </div>
@@ -125,7 +115,7 @@ export default function SkillRadar() {
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("target")}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 12, height: 3, background: "rgba(255,100,100,0.5)", display: "block", borderRadius: 2 }} />
+              <span style={{ width: 12, height: 3, background: "var(--danger)", opacity: 0.6, display: "block", borderRadius: 1 }} />
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("gap")}</span>
             </div>
           </div>
@@ -146,18 +136,16 @@ export default function SkillRadar() {
                           letterSpacing: "0.05em",
                           textTransform: "uppercase",
                           color: "var(--teal)",
-                          background: "rgba(var(--teal-rgb),0.12)",
-                          border: "1px solid rgba(var(--teal-rgb),0.3)",
-                          borderRadius: 100,
-                          padding: "2px 8px",
+                          borderInlineStart: "2px solid var(--teal)",
+                          padding: "0 0 0 6px",
                         }}
                       >
                         {skill.callout}
                       </span>
                     )}
-                    <span className="mono" style={{ fontSize: 12, color: "rgba(255,100,100,0.8)", fontWeight: 600, marginInlineStart: "auto" }}>−{gap}</span>
+                    <span className="mono" style={{ fontSize: 12, color: "var(--danger)", fontWeight: 600, marginInlineStart: "auto" }}>−{gap}</span>
                   </div>
-                  <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 100 }}>
+                  <div style={{ position: "relative", height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
                     {/* Target bar */}
                     <div
                       style={{
@@ -166,8 +154,8 @@ export default function SkillRadar() {
                         insetBlockStart: 0,
                         height: "100%",
                         width: `${skill.target}%`,
-                        background: "rgba(var(--teal-rgb),0.15)",
-                        borderRadius: 100,
+                        background: "rgba(var(--teal-rgb),0.18)",
+                        borderRadius: 2,
                       }}
                     />
                     {/* Current bar */}
@@ -178,8 +166,8 @@ export default function SkillRadar() {
                         insetBlockStart: 0,
                         height: "100%",
                         width: `${skill.current}%`,
-                        background: "linear-gradient(90deg, var(--teal), #0891b2)",
-                        borderRadius: 100,
+                        background: "var(--teal)",
+                        borderRadius: 2,
                         transition: "width 1s ease",
                       }}
                     />
@@ -201,10 +189,9 @@ export default function SkillRadar() {
           <div
             style={{
               marginTop: 24,
-              background: "rgba(var(--teal-rgb),0.06)",
-              border: "1px solid rgba(var(--teal-rgb),0.2)",
-              borderRadius: 12,
-              padding: "16px 18px",
+              borderTop: "1px solid var(--border)",
+              borderInlineStart: "2px solid var(--teal)",
+              padding: "16px 0 4px 16px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>

@@ -398,7 +398,7 @@ export async function submitManagerAssessment(reviewId: string, rating: number, 
                     renderEmail({
                       preheader: "A lighter check-in cycle to support your progress",
                       bodyHtml: `
-                        <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">A mid-year check-in is on your calendar</h2>
+                        <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">A mid-year check-in is on your calendar</h2>
                         ${customMessageHtml(override.message)}
                         <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
                           Your manager has scheduled an additional check-in about 6 months out to support your progress — a lighter version of your regular review, with the same self-reflection and goals steps.

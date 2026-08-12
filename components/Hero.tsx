@@ -95,21 +95,18 @@ export default function Hero() {
 
         {/* Badge */}
         <div
-          className="fade-up fade-up-1"
+          className="fade-up fade-up-1 mono"
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            background: "rgba(var(--teal-rgb),0.08)",
-            border: "1px solid rgba(var(--teal-rgb),0.2)",
-            borderRadius: 100,
-            paddingInline: 16,
+            borderBottom: "1px solid rgba(var(--teal-rgb),0.35)",
             paddingBlock: 6,
             marginBottom: 32,
           }}
         >
           <span className="teal-dot" style={{ width: 6, height: 6, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600, letterSpacing: "0.04em" }}>
+          <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
             {t("badge")}
           </span>
         </div>

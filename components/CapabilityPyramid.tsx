@@ -26,6 +26,11 @@ export default function CapabilityPyramid({
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       {PYRAMID_TIERS.map((tier, i) => {
         const avg = dimensionLevels ? tierAverage(tier, dimensionLevels) : null;
+        // Tint strengthens toward the base (widest tier) and lightens toward
+        // the apex — reads as "foundation vs. summit" at a glance instead of
+        // three visually-identical bands, and stays legible in both themes
+        // since it's derived from the signal accent, not a fixed rgba value.
+        const tint = 5 + i * 6;
         return (
           <div
             key={tier.key}
@@ -33,9 +38,10 @@ export default function CapabilityPyramid({
               width: TIER_WIDTH[tier.key],
               maxWidth: "92vw",
               clipPath: "polygon(6% 0%, 94% 0%, 100% 100%, 0% 100%)",
-              background: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+              background: `color-mix(in srgb, var(--teal) ${tint}%, var(--navy-mid))`,
               border: "1px solid var(--border)",
-              borderTop: i === 0 ? "1px solid color-mix(in srgb, var(--teal) 40%, transparent)" : "1px solid var(--border)",
+              borderBottom: i < PYRAMID_TIERS.length - 1 ? "1px solid color-mix(in srgb, var(--teal) 25%, var(--border))" : "1px solid var(--border)",
+              borderTop: i === 0 ? "1px solid color-mix(in srgb, var(--teal) 45%, transparent)" : "1px solid var(--border)",
               padding: compact ? "16px 32px 14px" : "20px 40px 18px",
               marginTop: i === 0 ? 0 : -1,
               textAlign: "center",

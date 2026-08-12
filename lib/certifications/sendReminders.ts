@@ -54,7 +54,7 @@ export async function sendDueCertificationReminders(
             .join(", ")}`,
           footerNote: "You're getting this because you track certifications on Devometrics — manage them anytime from Certifications.",
           bodyHtml: `
-            <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
             ${customMessageHtml(row.custom_message)}
             ${
               expired.length > 0
@@ -73,7 +73,7 @@ export async function sendDueCertificationReminders(
                 : ""
             }
             <p style="margin:28px 0 0;">
-              <a href="https://devometrics.com/dashboard/certifications" style="background:#00C9A7;color:#0A0F1E;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Review your certifications →</a>
+              <a href="https://devometrics.com/dashboard/certifications" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Review your certifications →</a>
             </p>
           `,
         })

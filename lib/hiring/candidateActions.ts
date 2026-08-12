@@ -243,7 +243,7 @@ async function sendInterviewStageEmail(
       renderEmail({
         preheader: `Update on your application to ${org.name}`,
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0;">
             Your application with <strong>${escapeHtml(org.name)}</strong> has moved to the interview stage. The hiring team will be in touch with next steps.

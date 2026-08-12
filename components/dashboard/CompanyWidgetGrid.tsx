@@ -1,21 +1,20 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import {
-  Users,
-  Network,
-  ListTree,
-  SlidersHorizontal,
-  BarChart3,
-  Star,
-  TrendingUp,
-  Gauge,
-  MessageSquare,
-  ClipboardCheck,
-  Library,
-  Briefcase,
-  UserMinus,
-  ListChecks,
-} from "lucide-react";
+  EmployeesIcon,
+  AnalyticsIcon,
+  OrgChartIcon,
+  JobArchitectureIcon,
+  CompetenciesIcon,
+  HighPotentialIcon,
+  SuccessionIcon,
+  ScorecardIcon,
+  SurveysIcon,
+  PerformanceReviewsIcon,
+  KnowledgeHubIcon,
+  HiringIcon,
+  ExitInterviewsIcon,
+} from "@/components/icons/InstrumentIcons";
 
 export type CompanyWidget = {
   key: string;
@@ -110,19 +109,22 @@ export default function CompanyWidgetGrid({ widgets }: { widgets: CompanyWidget[
   );
 }
 
+// Key names kept identical to the old lucide-react map (Users, Network,
+// etc.) even though they now point at the custom Instrument icon set below
+// — page.tsx references COMPANY_WIDGET_ICONS.Users and so on, and keeping
+// the names stable means this is the only file that needed to change.
 export const COMPANY_WIDGET_ICONS = {
-  Users,
-  Network,
-  ListTree,
-  SlidersHorizontal,
-  BarChart3,
-  Star,
-  TrendingUp,
-  Gauge,
-  MessageSquare,
-  ClipboardCheck,
-  Library,
-  Briefcase,
-  UserMinus,
-  ListChecks,
+  Users: EmployeesIcon,
+  Network: JobArchitectureIcon,
+  ListTree: OrgChartIcon,
+  SlidersHorizontal: CompetenciesIcon,
+  BarChart3: AnalyticsIcon,
+  Star: HighPotentialIcon,
+  TrendingUp: SuccessionIcon,
+  Gauge: ScorecardIcon,
+  MessageSquare: SurveysIcon,
+  ClipboardCheck: PerformanceReviewsIcon,
+  Library: KnowledgeHubIcon,
+  Briefcase: HiringIcon,
+  UserMinus: ExitInterviewsIcon,
 };

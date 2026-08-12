@@ -51,7 +51,7 @@ function renderFeatureEmailHtml(firstName: string, subject: string, message: str
   return renderEmail({
     preheader: subject,
     footerNote: "You're getting this because you have a Devometrics account.",
-    bodyHtml: `<h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>${paragraphs}`,
+    bodyHtml: `<h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>${paragraphs}`,
   });
 }
 

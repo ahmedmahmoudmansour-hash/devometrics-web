@@ -86,9 +86,9 @@ export async function submitContactInquiry(fields: {
         preheader: message.slice(0, 120),
         footerNote: "Submitted via the Devometrics contact form.",
         bodyHtml: `
-          <h2 style="color:#0A0F1E;font-size:20px;margin:0 0 16px;">New ${escapeHtml(fields.type)} inquiry</h2>
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">New ${escapeHtml(fields.type)} inquiry</h2>
           <p style="font-size:14px;margin:0 0 4px;"><strong>From:</strong> ${escapeHtml(name)}</p>
-          <p style="font-size:14px;margin:0 0 20px;"><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#00C9A7;">${escapeHtml(email)}</a></p>
+          <p style="font-size:14px;margin:0 0 20px;"><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#3f7a67;">${escapeHtml(email)}</a></p>
           <p style="font-size:15px;line-height:1.7;white-space:pre-wrap;margin:0;">${escapeHtml(message)}</p>
         `,
       })
