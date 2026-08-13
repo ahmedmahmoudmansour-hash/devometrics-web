@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
-import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import OrganizationProfileForm from "@/components/dashboard/OrganizationProfileForm";
 import OrganizationContactsForm from "@/components/dashboard/OrganizationContactsForm";
 import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandingForm";
@@ -41,7 +40,6 @@ export default async function CompanySettingsPage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <InviteEmployeeForm organizationId={data.organizationId} pendingInvites={data.pendingInvites} />
           <OrganizationProfileForm
             organizationId={data.organizationId}
             initial={{

@@ -10,6 +10,7 @@ import Avatar from "@/components/Avatar";
 import EmployeesTable from "@/components/dashboard/EmployeesTable";
 import TabbedSections from "@/components/dashboard/TabbedSections";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
+import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import { levelBg } from "@/lib/ui/levelColor";
 
@@ -90,28 +91,34 @@ export default async function CompanyEmployeesPage() {
 
         <CompanyNavTabs active="employees" />
 
-        {data.rows.length === 0 ? (
-          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              {t("noTeamMembersPrefix")}{" "}
-              <Link href="/dashboard/company" style={{ color: "var(--teal)" }}>
-                {t("profileLinkLabel")}
-              </Link>{" "}
-              {t("noTeamMembersSuffix")}
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            {data.organizationId && (
-              <FeatureEmailComposer
-                organizationId={data.organizationId}
-                featureKey="assessment"
-                employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
-                initialHistory={await listFeatureEmailHistory(data.organizationId, "assessment")}
-              />
-            )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* The one place an admin actually looks to add someone —
+              previously lived on the company overview page, then briefly
+              moved to Settings during the page split; Settings reads as
+              "config you rarely touch," which is the wrong home for a
+              frequent, core action like inviting an employee. */}
+          {data.organizationId && (
+            <InviteEmployeeForm organizationId={data.organizationId} pendingInvites={data.pendingInvites} />
+          )}
 
-            {/* Four topically-coherent views of the same workforce data,
+          {data.rows.length === 0 ? (
+            <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                {t("noTeamMembersYet")}
+              </p>
+            </div>
+          ) : (
+            <>
+              {data.organizationId && (
+                <FeatureEmailComposer
+                  organizationId={data.organizationId}
+                  featureKey="assessment"
+                  employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email, department: r.department }))}
+                  initialHistory={await listFeatureEmailHistory(data.organizationId, "assessment")}
+                />
+              )}
+
+              {/* Four topically-coherent views of the same workforce data,
                 previously stacked as one long scroll — tabbed per the
                 2026-08 UX audit (dense-but-focused, unlike the company-home
                 page's unrelated-jobs problem, so tabs rather than a
@@ -231,9 +238,10 @@ export default async function CompanyEmployeesPage() {
                   ),
                 },
               ]}
-            />
-          </div>
-        )}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
