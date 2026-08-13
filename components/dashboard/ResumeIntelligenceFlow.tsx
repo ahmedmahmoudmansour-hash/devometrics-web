@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import FileUploadButton from "@/components/FileUploadButton";
 import type { ResumeAnalysis } from "@/lib/supabase/types";
@@ -120,7 +121,12 @@ export default function ResumeIntelligenceFlow({ latest }: { latest: ResumeAnaly
               onChange={(e) => setConsent(e.target.checked)}
               style={{ marginTop: 2, accentColor: "var(--teal)" }}
             />
-            <span>{t("consentLabel")}</span>
+            <span>
+              {t("consentLabel")}{" "}
+              <Link href="/privacy" target="_blank" style={{ color: "var(--teal)" }}>
+                {t("privacyLinkText")}
+              </Link>
+            </span>
           </label>
           {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
           <button

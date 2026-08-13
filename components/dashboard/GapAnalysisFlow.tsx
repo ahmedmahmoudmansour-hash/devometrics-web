@@ -149,7 +149,10 @@ export default function GapAnalysisFlow({
               style={{ marginTop: 2, accentColor: "var(--teal)" }}
             />
             <span>
-              {t("consentLabel")}
+              {t("consentLabel")}{" "}
+              <Link href="/privacy" target="_blank" style={{ color: "var(--teal)" }}>
+                {t("privacyLinkText")}
+              </Link>
             </span>
           </label>
           {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}

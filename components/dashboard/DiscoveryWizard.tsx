@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { DISCOVERY_QUESTIONS } from "@/lib/discovery/questions";
 import type { DiscoveryProfile } from "@/lib/supabase/types";
@@ -141,7 +142,12 @@ export default function DiscoveryWizard({ latest }: { latest: DiscoveryProfile |
             onChange={(e) => setConsent(e.target.checked)}
             style={{ marginTop: 2, accentColor: "var(--teal)" }}
           />
-          <span>{t("consentLabel")}</span>
+          <span>
+            {t("consentLabel")}{" "}
+            <Link href="/privacy" target="_blank" style={{ color: "var(--teal)" }}>
+              {t("privacyLinkText")}
+            </Link>
+          </span>
         </label>
       )}
 
