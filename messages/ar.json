@@ -113,13 +113,13 @@
     "readyPercent": "جاهزية {percent}%",
     "skillLeadership": "القيادة",
     "skillStrategicThinking": "التفكير الاستراتيجي",
-    "skillAiFluency": "إتقان الذكاء الاصطناعي",
+    "skillAiFluency": "إتقان الذكاء الاصطناعي والمهارات الرقمية",
     "priorityFlag": "أولوية",
     "skillCommunication": "التواصل",
-    "skillProjectMgmt": "إدارة المشاريع",
+    "skillProjectMgmt": "المهارات التقنية",
     "skillFinancialLiteracy": "الثقافة المالية",
     "insightLabel": "القرار الذي يشير إليه هذا",
-    "insightText": "إتقان الذكاء الاصطناعي لديه أكبر فجوة (−40) وأعلى طلب في سوق العمل من بين الستة — سدّ هذه الفجوة أولًا له أكبر أثر على جاهزية الترقية.",
+    "insightText": "إتقان الذكاء الاصطناعي والمهارات الرقمية لديه أكبر فجوة (−40) وأعلى طلب في سوق العمل من بين الستة — سدّ هذه الفجوة أولًا له أكبر أثر على جاهزية الترقية.",
     "confidenceLabel": "ثقة {percent}٪"
   },
   "methodology": {

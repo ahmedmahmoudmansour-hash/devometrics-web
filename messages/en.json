@@ -113,13 +113,13 @@
     "readyPercent": "{percent}% ready",
     "skillLeadership": "Leadership",
     "skillStrategicThinking": "Strategic Thinking",
-    "skillAiFluency": "AI Fluency",
+    "skillAiFluency": "AI & Digital Skills",
     "priorityFlag": "Priority",
     "skillCommunication": "Communication",
-    "skillProjectMgmt": "Project Mgmt",
+    "skillProjectMgmt": "Technical Skills",
     "skillFinancialLiteracy": "Financial Literacy",
     "insightLabel": "The decision this points to",
-    "insightText": "AI Fluency has both the largest gap (−40) and the highest market demand of the six — closing it first has the biggest impact on promotion readiness.",
+    "insightText": "AI & Digital Skills has both the largest gap (−40) and the highest market demand of the six — closing it first has the biggest impact on promotion readiness.",
     "confidenceLabel": "{percent}% confidence"
   },
   "methodology": {
