@@ -95,7 +95,15 @@ export async function POST(request: Request) {
       try {
         const stream = anthropic.messages.stream({
           model: "claude-sonnet-5",
-          max_tokens: 1024,
+          // max_tokens is a hard ceiling across the WHOLE response, not just
+          // the final answer — it also has to cover every discarded
+          // narration block ("Let me search for X", "Good, I have solid
+          // sources...") between search rounds. At 1024 those rounds could
+          // eat most of the budget before Claude ever got to write the real
+          // answer, truncating it mid-sentence (observed live: a response
+          // that cut off after two words). Raised to give real headroom for
+          // narration + a complete 3-5-bullet answer with sources.
+          max_tokens: 2048,
           // Was 10 — the prompt already asks for "2-4 searches," this just
           // makes that a hard ceiling instead of a suggestion, bounding
           // worst-case first-time latency instead of trusting the model to
@@ -151,7 +159,17 @@ export async function POST(request: Request) {
         return;
       }
 
-      if (!finalText.trim()) {
+      // A suspiciously short "final" block (e.g. cut off by hitting
+      // max_tokens mid-sentence, or any other stream truncation) is worse
+      // than no answer — it reads as broken output, not "try again." A
+      // real 3-5-bullet trends summary is always well over 100 characters,
+      // so anything under a generous floor is treated the same as empty:
+      // shown as a retry message, and — critically — never cached, so one
+      // bad generation can't keep serving the same broken fragment to
+      // everyone else searching that job title for the next 7 days.
+      const MIN_VALID_LENGTH = 80;
+      if (!finalText.trim() || finalText.trim().length < MIN_VALID_LENGTH) {
+        console.error("Trends response suspiciously short, discarding:", JSON.stringify(finalText));
         controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
         controller.close();
         return;

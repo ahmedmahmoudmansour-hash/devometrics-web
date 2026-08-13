@@ -48,7 +48,10 @@ export async function POST(request: Request) {
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
-      max_tokens: 1024,
+      // Same reasoning as /api/trends: this ceiling covers every discarded
+      // narration block between search rounds, not just the final answer —
+      // too low risks truncating the real course list mid-sentence.
+      max_tokens: 2048,
       tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 10 }],
       messages: [
         {
@@ -90,7 +93,13 @@ export async function POST(request: Request) {
     const textBlocks = response.content.filter((block): block is Anthropic.TextBlock => block.type === "text");
     const summary = (textBlocks.at(-1)?.text ?? "").trim();
 
-    if (!summary) {
+    // A suspiciously short "final" block (e.g. cut off by hitting
+    // max_tokens mid-sentence) is worse than no answer — same guard as
+    // /api/trends. A real 3-5-course list is always well over 100
+    // characters, so anything under a generous floor is treated as failed.
+    const MIN_VALID_LENGTH = 80;
+    if (!summary || summary.length < MIN_VALID_LENGTH) {
+      console.error("Course recommendations suspiciously short, discarding:", JSON.stringify(summary));
       return NextResponse.json({ error: "Could not find course recommendations right now" }, { status: 502 });
     }
 
