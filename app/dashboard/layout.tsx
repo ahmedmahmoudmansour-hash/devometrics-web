@@ -4,6 +4,7 @@ import SidebarNav from "@/components/dashboard/SidebarNav";
 import CommandPalette from "@/components/dashboard/CommandPalette";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
+import { getNextOnboardingStep } from "@/lib/dashboard/onboardingStatus";
 
 // Single place where an enterprise workspace's accent color reaches every
 // dashboard page — every page already renders with var(--teal), so
@@ -23,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) return <>{children}</>;
 
-  const [{ data: membership }, { data: profile }, { count: directReportCount }] = await Promise.all([
+  const [{ data: membership }, { data: profile }, { count: directReportCount }, nextOnboardingStep] = await Promise.all([
     supabase
       .from("organization_members")
       .select("role, manager_user_id, organization_id, organizations(brand_color, is_disabled)")
@@ -38,6 +39,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // breaking the whole layout if 0072's manager_user_id column isn't
     // migrated yet on this database.
     supabase.from("organization_members").select("*", { count: "exact", head: true }).eq("manager_user_id", user.id),
+    // Powers a persistent "what's next" nudge in the sidebar for a new
+    // user who's navigated away from the home page's full checklist
+    // (2026-08-13 feedback: people lose the "where do I start" thread once
+    // they click into Coach/Tasks/etc.). Existence-only lookups, cheap
+    // enough to run on every dashboard page load.
+    getNextOnboardingStep(),
   ]);
   // A disabled account (0112) or a disabled company workspace (0113) both
   // keep their login (this app has no service-role key to revoke it) but
@@ -97,6 +104,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             hasManager={hasManager}
             hasOrgMembership={hasOrgMembership}
             restrictedFeatures={restrictedFeatures}
+            nextOnboardingStep={nextOnboardingStep}
           />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>

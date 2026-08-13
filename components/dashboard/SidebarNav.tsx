@@ -122,6 +122,7 @@ export default function SidebarNav({
   hasManager,
   hasOrgMembership,
   restrictedFeatures = [],
+  nextOnboardingStep = null,
 }: {
   savedTheme?: string | null;
   isCompanyAdmin: boolean;
@@ -131,8 +132,13 @@ export default function SidebarNav({
   hasManager: boolean;
   hasOrgMembership: boolean;
   restrictedFeatures?: string[];
+  // Only rendered away from the home page — that page already shows the
+  // full checklist this summarizes, so repeating it there would just be
+  // a second, redundant "you're not done yet" nudge on the same screen.
+  nextOnboardingStep?: { labelKey: string; href: string } | null;
 }) {
   const t = useTranslations("sidebarNav");
+  const tHome = useTranslations("dashboardHome");
   const pathname = usePathname();
   const restrictedSet = new Set(restrictedFeatures);
   const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership).map((section) => ({
@@ -240,6 +246,34 @@ export default function SidebarNav({
           Ctrl K
         </kbd>
       </button>
+
+      {/* Only away from the home page (which already shows the full
+          checklist this summarizes) — this exists specifically for a new
+          employee who clicked into Coach/Tasks/etc. from the welcome tour
+          and lost the "where do I start" thread once the checklist scrolled
+          out of view. Disappears entirely once all 5 steps are done. */}
+      {nextOnboardingStep && pathname !== "/dashboard" && (
+        <Link
+          href={nextOnboardingStep.href}
+          className="dashboard-sidebar-label"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            margin: "0 0 14px",
+            padding: "8px 14px",
+            borderRadius: 8,
+            background: "rgba(var(--teal-rgb),0.08)",
+            border: "1px solid rgba(var(--teal-rgb),0.25)",
+            textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)" }}>
+            {t("continueSetup")}
+          </span>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{tHome(nextOnboardingStep.labelKey)}</span>
+        </Link>
+      )}
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
         {sections.map((section, i) => (

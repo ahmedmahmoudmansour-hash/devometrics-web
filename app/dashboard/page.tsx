@@ -33,6 +33,7 @@ import WhatIfSimulator from "@/components/dashboard/WhatIfSimulator";
 import DailyInsightBanner from "@/components/dashboard/DailyInsightBanner";
 import { buildCareerGpsSnapshot } from "@/lib/careerGps/gps";
 import { getDailyInsight } from "@/lib/careerGps/dailyInsight";
+import { ONBOARDING_STEP_DEFS } from "@/lib/dashboard/onboardingSteps";
 import type {
   AssessmentResult,
   DevelopmentPlan,
@@ -181,38 +182,19 @@ export default async function DashboardPage() {
     .filter((m) => !m.completed && m.target_date)
     .sort((a, b) => (a.target_date as string).localeCompare(b.target_date as string))[0] ?? null;
 
-  const onboardingSteps = [
-    {
-      label: t("step1Label"),
-      description: t("step1Description"),
-      href: "/dashboard/discovery",
-      done: !!discoveryProfile,
-    },
-    {
-      label: t("step2Label"),
-      description: t("step2Description"),
-      href: "/dashboard/assessments",
-      done: latestScoreBySlug.size > 0,
-    },
-    {
-      label: t("step3Label"),
-      description: t("step3Description"),
-      href: "/dashboard/gap-analysis",
-      done: !!latestAnalysis,
-    },
-    {
-      label: t("step4Label"),
-      description: t("step4Description"),
-      href: "/dashboard/gap-analysis",
-      done: (plans ?? []).length > 0,
-    },
-    {
-      label: t("step5Label"),
-      description: t("step5Description"),
-      href: "/dashboard/resume",
-      done: !!latestResume,
-    },
+  const onboardingDone = [
+    !!discoveryProfile,
+    latestScoreBySlug.size > 0,
+    !!latestAnalysis,
+    (plans ?? []).length > 0,
+    !!latestResume,
   ];
+  const onboardingSteps = ONBOARDING_STEP_DEFS.map((def, i) => ({
+    label: t(def.labelKey),
+    description: t(def.descriptionKey),
+    href: def.href,
+    done: onboardingDone[i],
+  }));
 
   const careerHealthColor =
     compositeScore === null ? "var(--text-muted)" : compositeScore >= 70 ? "var(--teal)" : compositeScore >= 40 ? "var(--amber)" : "var(--danger)";

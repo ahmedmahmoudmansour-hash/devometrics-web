@@ -461,6 +461,7 @@
   "sidebarNav": {
     "search": "بحث",
     "searchTooltip": "بحث (Ctrl+K)",
+    "continueSetup": "أكمل الإعداد",
     "progress": "التقدم",
     "understandSection": "الفهم",
     "discovery": "الاكتشاف",
