@@ -229,8 +229,13 @@ export default async function DashboardPage() {
 
           {dailyInsight && <DailyInsightBanner insight={dailyInsight} />}
           {careerGps && <CareerGpsCard snapshot={careerGps} />}
-          {latestAnalysis && <WhatIfSimulator />}
 
+          {/* "Where do I start" comes before any exploratory tool — this
+              used to sit below CareerGpsCard's "you are here" and the What
+              If simulator, but CareerGpsCard only renders once a Gap
+              Analysis exists, so a brand-new employee (the majority of
+              first-time users, per 2026-08-13 feedback) landed on an
+              advanced projection tool with zero orientation above it. */}
           <DashboardSection label={t("sectionToday")}>
             <OnboardingChecklist steps={onboardingSteps} />
             {/* One consolidated "needs your attention" list — tasks,
@@ -243,6 +248,18 @@ export default async function DashboardPage() {
                 rows below don't support and shouldn't regress to. */}
             <PendingActionsPanel actions={pendingActions} compact />
             <PendingSurveysCard surveys={mySurveys} />
+          </DashboardSection>
+
+          {/* Always open, not tucked inside "Career Health" — Trends and
+              Recommended Learning are a research tool available to
+              everyone from day one (no Gap Analysis required), not a
+              personal progress metric. Leaving them inside the collapsed,
+              metrics-only Career Health section (2026-08-13 feedback) meant
+              a new employee had to know to expand a section full of empty
+              placeholders just to find a tool that had nothing to do with
+              "how am I doing." */}
+          <DashboardSection label={t("sectionExplore")}>
+            <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
           </DashboardSection>
 
           {/* Collapsed by default (2026-08 UX audit's content-tiering fix):
@@ -259,8 +276,15 @@ export default async function DashboardPage() {
             />
             <CareerMomentumCard momentum={momentum} />
             <AchievementsCard earnedKeys={earnedAchievements} badgesEnabled={profile?.badges_enabled ?? true} />
-            <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
           </DashboardSection>
+
+          {/* Moved below Today/Explore/Career Health (was above all of
+              them) — it projects the impact of a plan change, which only
+              makes sense to reach for once someone knows their current
+              standing, not as the first thing they see. Still gated on
+              having a Gap Analysis, since it has nothing to project from
+              otherwise. */}
+          {latestAnalysis && <WhatIfSimulator />}
 
           <DashboardSection label={t("sectionDevelopment")}>
             {(plans ?? []).map((plan) => (

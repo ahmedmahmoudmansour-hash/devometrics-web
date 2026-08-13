@@ -492,6 +492,7 @@
   "dashboardHome": {
     "heading": "Your progress",
     "sectionToday": "Today",
+    "sectionExplore": "Explore",
     "sectionCareerHealth": "Your career health",
     "sectionDevelopment": "Development",
     "sectionCompany": "Company",
@@ -666,8 +667,8 @@
     "estimatedReadinessSuffix": "— an estimate assuming real progress on your biggest gap, not a guarantee."
   },
   "whatIfSimulator": {
-    "title": "What if?",
-    "subtitle": "Recalculated from your actual measured competencies — a projection, not a promise.",
+    "title": "Explore a career move",
+    "subtitle": "See how changing your target role — or leveling up a skill — would shift your promotion readiness. Recalculated from your actual measured competencies, not a promise.",
     "changeRole": "Change target role",
     "improveSkill": "Improve a skill",
     "rolePlaceholder": "e.g. Head of Product, People Manager, relocate to a Product role in the UAE…",
