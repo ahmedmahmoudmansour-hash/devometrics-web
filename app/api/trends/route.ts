@@ -68,132 +68,130 @@ export async function POST(request: Request) {
     .maybeSingle<{ summary: string; generated_at: string }>();
   if (cached) {
     const ageHours = (Date.now() - new Date(cached.generated_at).getTime()) / 3_600_000;
-    if (ageHours < CACHE_TTL_HOURS) {
+    // Anything generated before this fix shipped may be a broken fragment
+    // from either the narration-leak bug or the block-position-guessing
+    // bug the two-phase request replaced — never serve it, regardless of
+    // the normal 7-day TTL. No SQL cleanup needed: every affected row is
+    // simply too old to pass this check, and a fresh (correct) generation
+    // overwrites it on the next request. Safe to delete this cutoff once
+    // enough time has passed that no pre-fix rows remain.
+    const FIX_DEPLOYED_AT = new Date("2026-08-13T00:00:00Z").getTime();
+    const isPreFix = new Date(cached.generated_at).getTime() < FIX_DEPLOYED_AT;
+    if (ageHours < CACHE_TTL_HOURS && !isPreFix) {
       return new Response(encoder.encode(cached.summary), {
         headers: { "Content-Type": "text/plain; charset=utf-8", "X-Trends-Cached": "true" },
       });
     }
   }
 
+  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 4 };
+  const userPrompt = `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.`;
+
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
-      // Only the LAST text block is the real answer. With the server-side
-      // web_search tool, Claude can narrate between search rounds — e.g.
-      // "Let me search for X" before the first search, "Good, I have solid
-      // sources, let me extract the relevant content" between rounds — and
-      // each of those is its own real text content block, not a "thinking"
-      // block that's filtered out automatically. The bug this replaced
-      // forwarded every text_delta live as it arrived, so that in-between
-      // narration streamed straight to the user ahead of (and mixed in
-      // with) the actual bulleted summary. A new text content_block_start
-      // means whatever was buffered before it was mid-search commentary,
-      // not the final answer, so it's discarded; whatever's left in the
-      // buffer once the stream ends is the true final block.
-      let finalText = "";
-      let searchError: Anthropic.WebSearchToolResultErrorCode | null = null;
-
+      // Two-phase request instead of one long tool-use conversation.
+      // Phase 1 (below) lets Claude search freely — its interleaved text
+      // here is throwaway narration ("Let me search for X") that we never
+      // show. Phase 2 is a fresh turn with tool_choice "none": Claude
+      // can't invoke the search tool again, so its response can only be
+      // plain text — nothing to filter, buffer, or guess about.
+      //
+      // The previous single-phase approach tried to detect "the real
+      // answer" by discarding buffered text every time a new text block
+      // started, on the assumption only the LAST block was final. That
+      // broke whenever Claude did a legitimate verification search partway
+      // through writing the answer (observed live: a 5-bullet answer where
+      // the last bullet triggered one more search, and the reset-on-new-
+      // block logic threw away bullets 1-4, leaving only a stray sentence
+      // fragment and a trailing "Note:" caveat). There's no reliable way
+      // to tell "narration before a search" from "the real answer,
+      // interrupted by a search" from block position alone — so this
+      // removes the need to guess entirely.
       try {
+        const researchResponse = await anthropic.messages.create({
+          model: "claude-sonnet-5",
+          max_tokens: 2048,
+          tools: [searchTool],
+          messages: [{ role: "user", content: userPrompt }],
+        });
+
+        const errorBlock = researchResponse.content.find(
+          (b): b is Anthropic.WebSearchToolResultBlock => b.type === "web_search_tool_result" && !Array.isArray(b.content)
+        );
+        if (errorBlock) {
+          const errorCode = (errorBlock.content as Anthropic.WebSearchToolResultError).error_code;
+          console.error("Web search tool error:", errorCode);
+          controller.enqueue(encoder.encode(SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for trends right now."));
+          controller.close();
+          return;
+        }
+
+        // A research phase cut off mid-tool-call by max_tokens can leave
+        // malformed content blocks that aren't safe to replay as history
+        // in phase 2 — bail out rather than risk a broken follow-up call.
+        if (researchResponse.stop_reason === "max_tokens") {
+          console.error("Trends research phase hit max_tokens, discarding");
+          controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
+          controller.close();
+          return;
+        }
+
         const stream = anthropic.messages.stream({
           model: "claude-sonnet-5",
-          // max_tokens is a hard ceiling across the WHOLE response, not just
-          // the final answer — it also has to cover every discarded
-          // narration block ("Let me search for X", "Good, I have solid
-          // sources...") between search rounds. At 1024 those rounds could
-          // eat most of the budget before Claude ever got to write the real
-          // answer, truncating it mid-sentence (observed live: a response
-          // that cut off after two words). Raised to give real headroom for
-          // narration + a complete 3-5-bullet answer with sources.
-          max_tokens: 2048,
-          // Was 10 — the prompt already asks for "2-4 searches," this just
-          // makes that a hard ceiling instead of a suggestion, bounding
-          // worst-case first-time latency instead of trusting the model to
-          // stop on its own.
-          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 4 }],
+          max_tokens: 1024,
+          tools: [searchTool],
+          tool_choice: { type: "none" },
           messages: [
+            { role: "user", content: userPrompt },
+            { role: "assistant", content: researchResponse.content as Anthropic.MessageParam["content"] },
             {
               role: "user",
-              content: `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.`,
+              content:
+                "Now write only the final trends summary, exactly as instructed — a short bulleted list (3-5 bullets, 1-2 sentences each), each ending with the source in parentheses. Nothing else: no search narration, no caveats or notes about source quality, nothing before or after the list.",
             },
           ],
         });
 
-        // Web search errors don't throw — they arrive as a web_search_tool_result
-        // content block whose content is an error object instead of a result
-        // list. That block always lands (fully formed, not delta-streamed)
-        // before any final-answer text block, so catching it here — before
-        // forwarding any text — prevents Claude's own "I couldn't search"
-        // explanation from leaking to the client as if it were a real result.
+        let finalText = "";
         for await (const event of stream) {
-          if (
-            event.type === "content_block_start" &&
-            event.content_block.type === "web_search_tool_result" &&
-            !Array.isArray(event.content_block.content)
-          ) {
-            searchError = (event.content_block.content as Anthropic.WebSearchToolResultError).error_code;
-            console.error("Web search tool error:", searchError);
-            continue;
-          }
-          if (searchError) continue;
-          if (event.type === "content_block_start" && event.content_block.type === "text") {
-            finalText = "";
-            continue;
-          }
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             finalText += event.delta.text;
           }
         }
+
+        // A suspiciously short answer (e.g. cut off by hitting max_tokens
+        // mid-sentence) is worse than no answer — it reads as broken
+        // output, not "try again." A real 3-5-bullet trends summary is
+        // always well over 100 characters, so anything under a generous
+        // floor is treated the same as empty: shown as a retry message,
+        // and — critically — never cached, so one bad generation can't
+        // keep serving the same broken fragment to everyone else searching
+        // that job title for the next 7 days.
+        const MIN_VALID_LENGTH = 80;
+        if (!finalText.trim() || finalText.trim().length < MIN_VALID_LENGTH) {
+          console.error("Trends response suspiciously short, discarding:", JSON.stringify(finalText));
+          controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
+          controller.close();
+          return;
+        }
+
+        controller.enqueue(encoder.encode(finalText));
+        controller.close();
+
+        // Best-effort — a cache write failure shouldn't fail the response
+        // the user is already looking at.
+        await supabase
+          .from("key_trends_cache")
+          .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary: finalText, generated_at: new Date().toISOString() })
+          .then(
+            () => {},
+            () => {}
+          );
       } catch (err) {
         console.error("Trends generation failed:", err);
-        if (!finalText && !searchError) {
-          controller.enqueue(encoder.encode("Could not fetch trends right now — please try again."));
-        }
+        controller.enqueue(encoder.encode("Could not fetch trends right now — please try again."));
         controller.close();
-        return;
       }
-
-      if (searchError) {
-        controller.enqueue(
-          encoder.encode(SEARCH_ERROR_MESSAGES[searchError] ?? "Could not search for trends right now.")
-        );
-        controller.close();
-        return;
-      }
-
-      // A suspiciously short "final" block (e.g. cut off by hitting
-      // max_tokens mid-sentence, or any other stream truncation) is worse
-      // than no answer — it reads as broken output, not "try again." A
-      // real 3-5-bullet trends summary is always well over 100 characters,
-      // so anything under a generous floor is treated the same as empty:
-      // shown as a retry message, and — critically — never cached, so one
-      // bad generation can't keep serving the same broken fragment to
-      // everyone else searching that job title for the next 7 days.
-      const MIN_VALID_LENGTH = 80;
-      if (!finalText.trim() || finalText.trim().length < MIN_VALID_LENGTH) {
-        console.error("Trends response suspiciously short, discarding:", JSON.stringify(finalText));
-        controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
-        controller.close();
-        return;
-      }
-
-      // Sent once the full answer is known, rather than live-forwarded
-      // deltas — the streaming API is still used server-side (needed either
-      // way to receive the multi-round tool-use response), but the client
-      // now only ever sees the real final text, never intermediate search
-      // narration. The "typed out" reveal is a UX tradeoff traded for
-      // correctness; sends in one chunk instead of appearing sentence by
-      // sentence.
-      controller.enqueue(encoder.encode(finalText));
-      controller.close();
-
-      // Best-effort — a cache write failure shouldn't fail the response the
-      // user is already looking at.
-      await supabase
-        .from("key_trends_cache")
-        .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary: finalText, generated_at: new Date().toISOString() })
-        .then(
-          () => {},
-          () => {}
-        );
     },
   });
 

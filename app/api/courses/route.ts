@@ -45,18 +45,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
   }
 
+  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 10 };
+  const userPrompt = `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.`;
+
   try {
+    // Two-phase request — same fix and same reasoning as /api/trends.
+    // Phase 1 lets Claude search freely and narrate as much as it wants;
+    // that text is thrown away, only the tool results matter. Phase 2 is a
+    // fresh turn with tool_choice "none" so Claude can't call the search
+    // tool again, meaning its response can only be plain text — no risk of
+    // a mid-answer verification search silently discarding earlier bullets
+    // (the failure mode the old "only the last text block is real"
+    // heuristic couldn't reliably detect).
+    const researchResponse = await anthropic.messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 2048,
+      tools: [searchTool],
+      messages: [{ role: "user", content: userPrompt }],
+    });
+
+    const errorBlock = researchResponse.content.find(
+      (block): block is Anthropic.WebSearchToolResultBlock =>
+        block.type === "web_search_tool_result" && !Array.isArray(block.content)
+    );
+    if (errorBlock) {
+      const errorCode = (errorBlock.content as Anthropic.WebSearchToolResultError).error_code;
+      console.error("Course search tool error:", errorCode);
+      return NextResponse.json(
+        { error: SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for courses right now" },
+        { status: 502 }
+      );
+    }
+
+    // A research phase cut off mid-tool-call by max_tokens can leave
+    // malformed content blocks that aren't safe to replay as history in
+    // phase 2 — bail out rather than risk a broken follow-up call.
+    if (researchResponse.stop_reason === "max_tokens") {
+      console.error("Course research phase hit max_tokens, discarding");
+      return NextResponse.json({ error: "Could not find course recommendations right now" }, { status: 502 });
+    }
+
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
-      // Same reasoning as /api/trends: this ceiling covers every discarded
-      // narration block between search rounds, not just the final answer —
-      // too low risks truncating the real course list mid-sentence.
-      max_tokens: 2048,
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 10 }],
+      max_tokens: 1024,
+      tools: [searchTool],
+      tool_choice: { type: "none" },
       messages: [
+        { role: "user", content: userPrompt },
+        { role: "assistant", content: researchResponse.content as Anthropic.MessageParam["content"] },
         {
           role: "user",
-          content: `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.`,
+          content:
+            "Now write only the final course list, exactly as instructed — a short bulleted list, one course per bullet, ending with the source in parentheses. Nothing else: no search narration, no caveats, nothing before or after the list.",
         },
       ],
     });
@@ -65,38 +105,20 @@ export async function POST(request: Request) {
       userId: user.id,
       feature: "course_recommendations",
       model: response.model,
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
+      inputTokens: researchResponse.usage.input_tokens + response.usage.input_tokens,
+      outputTokens: researchResponse.usage.output_tokens + response.usage.output_tokens,
     });
 
-    const searchError = response.content.find(
-      (block): block is Anthropic.WebSearchToolResultBlock =>
-        block.type === "web_search_tool_result" && !Array.isArray(block.content)
-    );
-    if (searchError) {
-      const errorCode = (searchError.content as Anthropic.WebSearchToolResultError).error_code;
-      console.error("Course search tool error:", errorCode);
-      return NextResponse.json(
-        { error: SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for courses right now" },
-        { status: 502 }
-      );
-    }
+    const summary = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === "text")
+      .map((block) => block.text)
+      .join("")
+      .trim();
 
-    // Only the LAST text block is the real answer — same bug/fix as
-    // /api/trends. With the server-side web_search tool, Claude can narrate
-    // between search rounds ("Let me search for X", "Good, I have solid
-    // sources, let me extract the relevant content") and each of those is
-    // its own real text content block, not filtered-out "thinking." Joining
-    // every text block (the previous behavior) concatenated that narration
-    // together with the actual course list instead of returning just the
-    // final answer.
-    const textBlocks = response.content.filter((block): block is Anthropic.TextBlock => block.type === "text");
-    const summary = (textBlocks.at(-1)?.text ?? "").trim();
-
-    // A suspiciously short "final" block (e.g. cut off by hitting
-    // max_tokens mid-sentence) is worse than no answer — same guard as
-    // /api/trends. A real 3-5-course list is always well over 100
-    // characters, so anything under a generous floor is treated as failed.
+    // A suspiciously short answer (e.g. cut off by hitting max_tokens
+    // mid-sentence) is worse than no answer. A real 3-5-course list is
+    // always well over 100 characters, so anything under a generous floor
+    // is treated as failed.
     const MIN_VALID_LENGTH = 80;
     if (!summary || summary.length < MIN_VALID_LENGTH) {
       console.error("Course recommendations suspiciously short, discarding:", JSON.stringify(summary));
