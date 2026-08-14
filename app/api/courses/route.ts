@@ -6,6 +6,14 @@ import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Same fix and same reasoning as /api/trends — without this, Vercel kills
+// the function at its platform default (well under a minute), which is too
+// short for two sequential model calls where phase 1 alone can involve
+// several rounds of Claude Sonnet 5's code-execution-based search
+// orchestration. 60s is plan-agnostic — Vercel clamps down to the
+// account's actual ceiling if this exceeds it.
+export const maxDuration = 60;
+
 const MAX_TOPIC_LENGTH = 200;
 
 const SEARCH_ERROR_MESSAGES: Record<Anthropic.WebSearchToolResultErrorCode, string> = {
@@ -45,7 +53,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
   }
 
-  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 10 };
+  // Was 10 — each search can now involve multiple internal code-execution
+  // rounds (see maxDuration comment above), so this bounds worst-case
+  // latency more tightly. Still generous enough for a 3-5 course list.
+  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 6 };
   const userPrompt = `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.`;
 
   try {

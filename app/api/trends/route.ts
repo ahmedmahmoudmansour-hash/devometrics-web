@@ -4,6 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Without this, Vercel kills the function at its platform default (well
+// under a minute) — too short for two sequential model calls where phase 1
+// alone can involve several rounds of Claude Sonnet 5's code-execution-based
+// search orchestration. Observed live as a request that just hangs on
+// "Searching…" forever: the platform silently terminates the function
+// mid-stream, no error ever reaches the client to display. 60s is
+// plan-agnostic — Vercel clamps down to whatever the account's actual
+// ceiling is if this exceeds it, so this is safe to set regardless of tier.
+export const maxDuration = 60;
+
 const MAX_JOB_TITLE_LENGTH = 120;
 
 // Trends don't meaningfully change hour to hour — a cache hit is
@@ -84,7 +94,12 @@ export async function POST(request: Request) {
     }
   }
 
-  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 4 };
+  // Was 4 — the prompt already asks for "2-4 searches," and each one can now
+  // involve multiple internal code-execution rounds (see maxDuration
+  // comment above), so this bounds worst-case latency more tightly without
+  // meaningfully hurting thoroughness (observed live: a real run only used
+  // 3 even with 4 available).
+  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 3 };
   const userPrompt = `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.`;
 
   const readable = new ReadableStream<Uint8Array>({
