@@ -110,7 +110,16 @@ export async function POST(request: Request) {
       try {
         const researchResponse = await anthropic.messages.create({
           model: "claude-sonnet-5",
-          max_tokens: 2048,
+          // Claude Sonnet 5's web search runs through an internal
+          // code-execution sandbox — it writes and runs small Python
+          // snippets to call searches and parse results, sometimes
+          // retrying when it misparses its own output. A real research
+          // phase can burn 30+ content blocks (thinking + code cells +
+          // search results) before it ever gets to the answer, far more
+          // than the narrate-then-search pattern 2048 was originally
+          // sized for. Observed live: this ceiling hit mid-research on a
+          // real query, discarding a perfectly good search in progress.
+          max_tokens: 4096,
           tools: [searchTool],
           messages: [{ role: "user", content: userPrompt }],
         });
@@ -138,7 +147,7 @@ export async function POST(request: Request) {
 
         const stream = anthropic.messages.stream({
           model: "claude-sonnet-5",
-          max_tokens: 1024,
+          max_tokens: 1536,
           tools: [searchTool],
           tool_choice: { type: "none" },
           messages: [
