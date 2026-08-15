@@ -7,7 +7,14 @@
     "methodology": "Methodology",
     "pricing": "Pricing",
     "forEnterprise": "For Enterprise",
-    "getEarlyAccess": "Get early access"
+    "getEarlyAccess": "Get early access",
+    "audienceLabel": "Choose your path",
+    "audienceIndividualTitle": "Individual",
+    "audienceIndividualDescription": "Track your own growth — see your competency gaps and get a prioritized plan to close them.",
+    "audienceIndividualCta": "Explore the platform",
+    "audienceEnterpriseTitle": "Enterprise",
+    "audienceEnterpriseDescription": "One competency graph for your whole team — hiring, reviews, succession, and workforce analytics.",
+    "audienceEnterpriseCta": "See Enterprise"
   },
   "nav": {
     "signIn": "Sign in",

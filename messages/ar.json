@@ -7,7 +7,14 @@
     "methodology": "المنهجية",
     "pricing": "الأسعار",
     "forEnterprise": "للشركات",
-    "getEarlyAccess": "احصل على وصول مبكر"
+    "getEarlyAccess": "احصل على وصول مبكر",
+    "audienceLabel": "اختر مسارك",
+    "audienceIndividualTitle": "فرد",
+    "audienceIndividualDescription": "تتبّع نموك الشخصي — اطّلع على فجوات كفاءاتك واحصل على خطة مرتبة بالأولوية لسدها.",
+    "audienceIndividualCta": "استكشف المنصة",
+    "audienceEnterpriseTitle": "شركات",
+    "audienceEnterpriseDescription": "خريطة كفاءات واحدة لفريقك بالكامل — التوظيف، التقييمات، تخطيط الخلافة، وتحليلات القوى العاملة.",
+    "audienceEnterpriseCta": "استكشف حلول الشركات"
   },
   "nav": {
     "signIn": "تسجيل الدخول",
