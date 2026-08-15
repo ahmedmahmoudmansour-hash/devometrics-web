@@ -9,12 +9,12 @@ import { useTranslations } from "next-intl";
 // the page talks about competencies, scores, and features; this section
 // is the one place that states outright what those features are actually
 // FOR — the decision each one exists to answer.
-export default function DecisionsSection({ namespace }: { namespace: string }) {
+export default function DecisionsSection({ namespace, id }: { namespace: string; id?: string }) {
   const t = useTranslations(namespace);
   const decisions = [t("decision1"), t("decision2"), t("decision3"), t("decision4"), t("decision5"), t("decision6")];
 
   return (
-    <section style={{ padding: "100px 24px", maxWidth: 1200, margin: "0 auto" }}>
+    <section id={id} style={{ padding: "100px 24px", maxWidth: 1200, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 56 }}>
         <span
           className="mono"

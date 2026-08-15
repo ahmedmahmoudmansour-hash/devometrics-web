@@ -2,34 +2,38 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type HomeTab = { key: string; label: string; content: React.ReactNode };
+export type SectionTab = { key: string; label: string; content: React.ReactNode };
 
-// Replaces one long scroll through 6 sections with a tab bar — direct
-// response to tester feedback that the homepage was "super long and
-// unorganized." All panels still render server-side (only the active one
-// is visually hidden via display:none, same pattern as the dashboard's
-// TabbedSections), so this doesn't cost anything for SEO — a crawler still
-// sees full content, only interactive visitors see the shortened page.
+// Shared by the individual homepage ("/") and the enterprise page
+// ("/enterprise") — replaces one long scroll through N sections with a tab
+// bar. All panels still render server-side (only the active one is visually
+// hidden via display:none, same pattern as the dashboard's TabbedSections),
+// so this doesn't cost anything for SEO — a crawler still sees full
+// content, only interactive visitors see the shortened page.
 //
-// Navbar/Footer keep linking to "/#features" etc. unchanged (each section
-// still owns its real id) — this makes those links keep working without
-// touching either file. Three mechanisms, because verifying this live
-// turned up three genuinely different cases, no two of which cover each
-// other:
-//  1. Landing on "/" fresh with a hash already in the URL (a link from
+// pagePath scopes the hash-link interception to the specific page this
+// instance governs (e.g. Navbar/Footer links like "/#features" are written
+// with a leading "/" so they still work correctly when clicked from a
+// *different* page — that click must NOT be intercepted here, it needs a
+// real navigation to pagePath first). Three mechanisms, because verifying
+// this live (on the original homepage instance) turned up three genuinely
+// different cases, no two of which cover each other:
+//  1. Landing on pagePath fresh with a hash already in the URL (a link from
 //     another page, a bookmark, a shared URL) — read on mount.
-//  2. Clicking a Navbar/Footer link while ALREADY on "/" — verified live
-//     that next/link's client-side navigation updates location.hash via
-//     history.pushState, which per spec never fires `hashchange` (that
-//     only fires for genuine browser-driven hash navigation). A capture-
-//     phase click listener intercepts the click before next/link's own
-//     handler runs, so this never races against it.
-//  3. A real browser-level hash change with no click involved — editing
-//     the address bar, an external tool setting location.href, etc. This
-//     DOES fire `hashchange` natively, which case 2's interceptor never
-//     sees (there's no anchor click to intercept) — confirmed live that
-//     dropping this in favor of #2 alone broke this exact case.
-export default function HomeTabs({ tabs }: { tabs: HomeTab[] }) {
+//  2. Clicking a same-page hash link while ALREADY on pagePath — verified
+//     live that next/link's client-side navigation updates location.hash via
+//     history.pushState, which per spec never fires `hashchange` (that only
+//     fires for genuine browser-driven hash navigation). A capture-phase
+//     click listener intercepts the click before next/link's own handler
+//     runs, so this never races against it.
+//  3. A real browser-level hash change with no click involved — editing the
+//     address bar, a plain (non-Link) anchor tag's default browser
+//     navigation, external tool setting location.href, etc. This DOES fire
+//     `hashchange` natively, which case 2's interceptor never sees (there's
+//     no anchor click to intercept, or the click wasn't on pagePath) —
+//     confirmed live that dropping this in favor of #2 alone broke this
+//     exact case.
+export default function SectionTabs({ tabs, pagePath = "/" }: { tabs: SectionTab[]; pagePath?: string }) {
   // Lazy initializer, not an effect — the initial active tab is derivable
   // synchronously from a value that's already available (the URL), so
   // this is the correct place for it per react-hooks/set-state-in-effect:
@@ -69,11 +73,11 @@ export default function HomeTabs({ tabs }: { tabs: HomeTab[] }) {
       const href = anchor.getAttribute("href") ?? "";
       const hashIndex = href.indexOf("#");
       if (hashIndex === -1) return;
-      const path = href.slice(0, hashIndex) || "/";
+      const path = href.slice(0, hashIndex) || pagePath;
       const key = href.slice(hashIndex + 1);
-      const onHomepage = window.location.pathname === "/";
-      const targetsHomepage = path === "/" || path === "";
-      if (!onHomepage || !targetsHomepage) return; // let normal navigation happen
+      const onThisPage = window.location.pathname === pagePath;
+      const targetsThisPage = path === pagePath || path === "";
+      if (!onThisPage || !targetsThisPage) return; // let normal navigation happen
       if (!tabs.some((t) => t.key === key)) return; // not one of our tabs (e.g. footer social links)
       e.preventDefault();
       window.history.replaceState(null, "", `#${key}`);

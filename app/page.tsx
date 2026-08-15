@@ -10,7 +10,7 @@ import Methodology from "@/components/Methodology";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import PlatformChatWidget from "@/components/PlatformChatWidget";
-import HomeTabs from "@/components/HomeTabs";
+import SectionTabs from "@/components/SectionTabs";
 import { detectVisitorCountry } from "@/lib/billing/detectCountry";
 import { tierForCountry } from "@/lib/billing/pricingTiers";
 
@@ -31,7 +31,7 @@ export default async function Home() {
   const tabs = [
     { key: "how-it-works", label: t("howItWorks"), content: <HowItWorks /> },
     { key: "live-demo", label: t("liveDemo"), content: <SkillRadar /> },
-    { key: "decisions", label: t("decisions"), content: <DecisionsSection namespace="individualDecisions" /> },
+    { key: "decisions", label: t("decisions"), content: <DecisionsSection namespace="individualDecisions" id="decisions" /> },
     { key: "methodology", label: t("methodology"), content: <Methodology /> },
     { key: "features", label: t("features"), content: <Features /> },
     { key: "pricing", label: t("pricing"), content: <Pricing initialRegion={region} /> },
@@ -43,7 +43,7 @@ export default async function Home() {
       <main>
         <Hero />
         <AudiencePicker />
-        <HomeTabs tabs={tabs} />
+        <SectionTabs tabs={tabs} />
       </main>
       <Footer />
       <PlatformChatWidget />

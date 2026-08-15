@@ -9,6 +9,7 @@ import Avatar from "@/components/Avatar";
 import Reveal from "@/components/Reveal";
 import DecisionsSection from "@/components/DecisionsSection";
 import Methodology from "@/components/Methodology";
+import SectionTabs from "@/components/SectionTabs";
 import { levelBg, levelText } from "@/lib/ui/levelColor";
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import {
@@ -124,6 +125,7 @@ const sampleHeadStyle: React.CSSProperties = {
 
 export default async function EnterprisePage() {
   const t = await getTranslations("enterprisePage");
+  const tCommon = await getTranslations("common");
   const tDim = await getTranslations("competencyDimensions");
 
   const capabilityTitles = [t("cap1Title"), t("cap2Title"), t("cap3Title"), t("cap4Title"), t("cap5Title"), t("cap6Title"), t("cap7Title"), t("cap8Title"), t("cap9Title"), t("cap10Title"), t("cap11Title"), t("cap12Title"), t("cap13Title"), t("cap14Title"), t("cap15Title")];
@@ -144,6 +146,325 @@ export default async function EnterprisePage() {
     { n: "1", title: t("step1Title"), description: t("step1Description") },
     { n: "2", title: t("step2Title"), description: t("step2Description") },
     { n: "3", title: t("step3Title"), description: t("step3Description") },
+  ];
+
+  // Tabbed instead of one long scroll — same treatment as the individual
+  // homepage, same reasoning: a long sales page loses readers exactly like
+  // a long product tour does. Order mirrors the previous scroll order
+  // exactly, so nothing's reprioritized, just reachable directly instead of
+  // scrolled past. Labels reuse the "common" namespace (decisions,
+  // methodology, howItWorks) where the concept is literally the same one
+  // the homepage tabs already use, so the two pages read as one system.
+  const tabs = [
+    {
+      key: "decisions",
+      label: tCommon("decisions"),
+      content: <DecisionsSection namespace="enterpriseDecisions" id="decisions" />,
+    },
+    {
+      key: "methodology",
+      label: tCommon("methodology"),
+      content: <Methodology />,
+    },
+    {
+      key: "workspace",
+      label: tCommon("liveDemo"),
+      content: (
+        <section id="workspace" style={{ padding: "0 24px 100px", maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 12 }}>
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--teal)",
+                background: "rgba(var(--teal-rgb),0.1)",
+                border: "1px solid rgba(var(--teal-rgb),0.2)",
+                borderRadius: 100,
+                padding: "4px 12px",
+                fontWeight: 700,
+              }}
+            >
+              {t("sampleBadge")}
+            </span>
+          </div>
+          <p style={{ textAlign: "center", fontSize: 14, color: "var(--text-muted)", maxWidth: 560, margin: "12px auto 40px" }}>
+            {t("sampleSubtext")}
+          </p>
+
+          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden", marginBottom: 32 }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...sampleHeadStyle, textAlign: "start" }}>{t("tableNameHeader")}</th>
+                    {COMPETENCY_DIMENSIONS.map((d) => (
+                      <th key={d} style={{ ...sampleHeadStyle, textAlign: "center", whiteSpace: "nowrap" }}>
+                        {dimensionLabel(tDim, d)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sampleRows.map((r) => (
+                    <tr key={r.name}>
+                      <td style={sampleCellStyle}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Avatar name={r.name} avatarUrl={null} />
+                          <div>
+                            <div>{r.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.title}</div>
+                          </div>
+                        </div>
+                      </td>
+                      {COMPETENCY_DIMENSIONS.map((d) => (
+                        <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", background: levelBg(r.levels[d]) }}>
+                          {r.levels[d]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr>
+                    <td style={{ ...sampleCellStyle, fontWeight: 700, color: "var(--text-muted)" }}>{t("teamAverage")}</td>
+                    {COMPETENCY_DIMENSIONS.map((d) => (
+                      <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", fontWeight: 700, color: levelText(SAMPLE_AVERAGES[d]) }}>
+                        {SAMPLE_AVERAGES[d]}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Turns the raw score table into the actual point of it: not
+              "here are some numbers" but "here's the decision this
+              surfaces" — the exact gap between a competency graph and a
+              decision engine. */}
+          <div
+            style={{
+              background: "rgba(var(--teal-rgb),0.06)",
+              border: "1px solid rgba(var(--teal-rgb),0.2)",
+              borderRadius: 16,
+              padding: "24px 28px",
+              marginBottom: 32,
+              display: "flex",
+              gap: 16,
+              alignItems: "flex-start",
+            }}
+          >
+            <span
+              className="mono"
+              style={{
+                flexShrink: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                color: "var(--teal)",
+                background: "rgba(var(--teal-rgb),0.12)",
+                border: "1px solid rgba(var(--teal-rgb),0.3)",
+                borderRadius: 100,
+                padding: "4px 12px",
+                textTransform: "uppercase",
+              }}
+            >
+              {t("sampleInsightLabel")}
+            </span>
+            <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7 }}>{t("sampleInsightText")}</p>
+          </div>
+
+          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, display: "flex", justifyContent: "center" }}>
+            <CapabilityPyramid dimensionLevels={SAMPLE_AVERAGES} />
+          </div>
+        </section>
+      ),
+    },
+    {
+      key: "succession",
+      label: t("navSuccession"),
+      content: (
+        <section id="succession" style={{ padding: "0 24px 100px", maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
+              {t("successionLabel")}
+            </span>
+            <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
+              {t("successionHeadline")}
+            </h2>
+            <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 16, maxWidth: 640, margin: "16px auto 0", lineHeight: 1.7 }}>
+              {t("successionSubtext")}
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              { name: "Priya Kapoor", fit: 68, reasoning: t("successionRank1Reasoning"), gap: t("successionRank1Gap") },
+              { name: "Amara Osei", fit: 65, reasoning: t("successionRank2Reasoning"), gap: t("successionRank2Gap") },
+              { name: "Daniel Mensah", fit: 44, reasoning: t("successionRank3Reasoning"), gap: t("successionRank3Gap") },
+            ].map((c, i) => (
+              <div
+                key={c.name}
+                style={{
+                  background: "var(--navy-mid)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 14,
+                  padding: "22px 26px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 20,
+                }}
+              >
+                <div
+                  className="mono"
+                  style={{
+                    flexShrink: 0,
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    color: i === 0 ? "#0A0F1E" : "var(--text)",
+                    background: i === 0 ? "var(--teal)" : "rgba(255,255,255,0.06)",
+                    border: i === 0 ? "none" : "1px solid var(--border)",
+                  }}
+                >
+                  {i + 1}
+                </div>
+                <Avatar name={c.name} avatarUrl={null} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{c.name}</span>
+                    <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)" }}>
+                      {t("successionFitLabel", { percent: c.fit })}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 4 }}>{c.reasoning}</p>
+                  <p style={{ fontSize: 12.5, color: "var(--amber)", lineHeight: 1.6 }}>{c.gap}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginTop: 24, maxWidth: 600, marginInline: "auto", lineHeight: 1.7 }}>
+            {t("successionDisclaimer")}
+          </p>
+        </section>
+      ),
+    },
+    {
+      key: "capabilities",
+      label: t("navCapabilities"),
+      content: (
+        <section
+          id="capabilities"
+          style={{
+            padding: "80px 24px",
+            background: "var(--navy-mid)",
+            borderTop: "1px solid var(--border)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 56 }}>
+              <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
+                {t("capabilitiesLabel")}
+              </span>
+              <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
+                {t("capabilitiesHeadline")}
+              </h2>
+            </div>
+            {/* Hairline-divider grid (Zoho-suite structure, dark-theme
+                translation): the 1px gap over a border-colored background
+                paints clean internal gridlines at any column count, with a
+                single rounded, clipped outer frame — no floating cards. No
+                per-cell CTA on purpose: these are features of one product,
+                not separate apps to "try" individually. */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                gap: 1,
+                background: "var(--border)",
+                border: "1px solid var(--border)",
+                borderRadius: 16,
+                overflow: "hidden",
+              }}
+            >
+              {capabilities.map((c) => (
+                <div key={c.title} style={{ background: "var(--navy)", padding: 28 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                      {c.title}
+                    </h3>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        width: 38,
+                        height: 38,
+                        borderRadius: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--teal)",
+                        background: "rgba(var(--teal-rgb),0.1)",
+                        border: "1px solid rgba(var(--teal-rgb),0.2)",
+                      }}
+                    >
+                      <c.icon size={18} />
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7 }}>{c.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ),
+    },
+    {
+      key: "how-it-works",
+      label: tCommon("howItWorks"),
+      content: (
+        <section id="how-it-works" style={{ padding: "100px 24px", maxWidth: 1000, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
+              {t("howItWorksLabel")}
+            </span>
+            <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
+              {t("howItWorksHeadline")}
+            </h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+            {steps.map((s) => (
+              <div key={s.n} style={{ textAlign: "center" }}>
+                <div
+                  className="mono"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "rgba(var(--teal-rgb),0.1)",
+                    border: "1px solid rgba(var(--teal-rgb),0.3)",
+                    color: "var(--teal)",
+                    fontWeight: 600,
+                    fontSize: 17,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                  }}
+                >
+                  {s.n}
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{s.title}</h3>
+                <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>{s.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ),
+    },
   ];
 
   return (
@@ -259,299 +580,7 @@ export default async function EnterprisePage() {
           </div>
         </section>
 
-        <Reveal>
-          <DecisionsSection namespace="enterpriseDecisions" />
-        </Reveal>
-        <Reveal>
-          <Methodology />
-        </Reveal>
-
-        <Reveal>
-        <section style={{ padding: "0 24px 100px", maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 12 }}>
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--teal)",
-                background: "rgba(var(--teal-rgb),0.1)",
-                border: "1px solid rgba(var(--teal-rgb),0.2)",
-                borderRadius: 100,
-                padding: "4px 12px",
-                fontWeight: 700,
-              }}
-            >
-              {t("sampleBadge")}
-            </span>
-          </div>
-          <p style={{ textAlign: "center", fontSize: 14, color: "var(--text-muted)", maxWidth: 560, margin: "12px auto 40px" }}>
-            {t("sampleSubtext")}
-          </p>
-
-          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden", marginBottom: 32 }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...sampleHeadStyle, textAlign: "start" }}>{t("tableNameHeader")}</th>
-                    {COMPETENCY_DIMENSIONS.map((d) => (
-                      <th key={d} style={{ ...sampleHeadStyle, textAlign: "center", whiteSpace: "nowrap" }}>
-                        {dimensionLabel(tDim, d)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sampleRows.map((r) => (
-                    <tr key={r.name}>
-                      <td style={sampleCellStyle}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Avatar name={r.name} avatarUrl={null} />
-                          <div>
-                            <div>{r.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.title}</div>
-                          </div>
-                        </div>
-                      </td>
-                      {COMPETENCY_DIMENSIONS.map((d) => (
-                        <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", background: levelBg(r.levels[d]) }}>
-                          {r.levels[d]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                  <tr>
-                    <td style={{ ...sampleCellStyle, fontWeight: 700, color: "var(--text-muted)" }}>{t("teamAverage")}</td>
-                    {COMPETENCY_DIMENSIONS.map((d) => (
-                      <td key={d} className="mono" style={{ ...sampleCellStyle, textAlign: "center", fontWeight: 700, color: levelText(SAMPLE_AVERAGES[d]) }}>
-                        {SAMPLE_AVERAGES[d]}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Turns the raw score table into the actual point of it: not
-              "here are some numbers" but "here's the decision this
-              surfaces" — the exact gap between a competency graph and a
-              decision engine. */}
-          <div
-            style={{
-              background: "rgba(var(--teal-rgb),0.06)",
-              border: "1px solid rgba(var(--teal-rgb),0.2)",
-              borderRadius: 16,
-              padding: "24px 28px",
-              marginBottom: 32,
-              display: "flex",
-              gap: 16,
-              alignItems: "flex-start",
-            }}
-          >
-            <span
-              className="mono"
-              style={{
-                flexShrink: 0,
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                color: "var(--teal)",
-                background: "rgba(var(--teal-rgb),0.12)",
-                border: "1px solid rgba(var(--teal-rgb),0.3)",
-                borderRadius: 100,
-                padding: "4px 12px",
-                textTransform: "uppercase",
-              }}
-            >
-              {t("sampleInsightLabel")}
-            </span>
-            <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7 }}>{t("sampleInsightText")}</p>
-          </div>
-
-          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, display: "flex", justifyContent: "center" }}>
-            <CapabilityPyramid dimensionLevels={SAMPLE_AVERAGES} />
-          </div>
-        </section>
-        </Reveal>
-
-        <Reveal>
-        <section style={{ padding: "0 24px 100px", maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-              {t("successionLabel")}
-            </span>
-            <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
-              {t("successionHeadline")}
-            </h2>
-            <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 16, maxWidth: 640, margin: "16px auto 0", lineHeight: 1.7 }}>
-              {t("successionSubtext")}
-            </p>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              { name: "Priya Kapoor", fit: 68, reasoning: t("successionRank1Reasoning"), gap: t("successionRank1Gap") },
-              { name: "Amara Osei", fit: 65, reasoning: t("successionRank2Reasoning"), gap: t("successionRank2Gap") },
-              { name: "Daniel Mensah", fit: 44, reasoning: t("successionRank3Reasoning"), gap: t("successionRank3Gap") },
-            ].map((c, i) => (
-              <div
-                key={c.name}
-                style={{
-                  background: "var(--navy-mid)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 14,
-                  padding: "22px 26px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 20,
-                }}
-              >
-                <div
-                  className="mono"
-                  style={{
-                    flexShrink: 0,
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    color: i === 0 ? "#0A0F1E" : "var(--text)",
-                    background: i === 0 ? "var(--teal)" : "rgba(255,255,255,0.06)",
-                    border: i === 0 ? "none" : "1px solid var(--border)",
-                  }}
-                >
-                  {i + 1}
-                </div>
-                <Avatar name={c.name} avatarUrl={null} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{c.name}</span>
-                    <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)" }}>
-                      {t("successionFitLabel", { percent: c.fit })}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 4 }}>{c.reasoning}</p>
-                  <p style={{ fontSize: 12.5, color: "var(--amber)", lineHeight: 1.6 }}>{c.gap}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginTop: 24, maxWidth: 600, marginInline: "auto", lineHeight: 1.7 }}>
-            {t("successionDisclaimer")}
-          </p>
-        </section>
-        </Reveal>
-
-        <Reveal>
-        <section
-          id="capabilities"
-          style={{
-            padding: "80px 24px",
-            background: "var(--navy-mid)",
-            borderTop: "1px solid var(--border)",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 56 }}>
-              <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-                {t("capabilitiesLabel")}
-              </span>
-              <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
-                {t("capabilitiesHeadline")}
-              </h2>
-            </div>
-            {/* Hairline-divider grid (Zoho-suite structure, dark-theme
-                translation): the 1px gap over a border-colored background
-                paints clean internal gridlines at any column count, with a
-                single rounded, clipped outer frame — no floating cards. No
-                per-cell CTA on purpose: these are features of one product,
-                not separate apps to "try" individually. */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 1,
-                background: "var(--border)",
-                border: "1px solid var(--border)",
-                borderRadius: 16,
-                overflow: "hidden",
-              }}
-            >
-              {capabilities.map((c) => (
-                <div key={c.title} style={{ background: "var(--navy)", padding: 28 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
-                      {c.title}
-                    </h3>
-                    <span
-                      style={{
-                        flexShrink: 0,
-                        width: 38,
-                        height: 38,
-                        borderRadius: 10,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "var(--teal)",
-                        background: "rgba(var(--teal-rgb),0.1)",
-                        border: "1px solid rgba(var(--teal-rgb),0.2)",
-                      }}
-                    >
-                      <c.icon size={18} />
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7 }}>{c.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        </Reveal>
-
-        <Reveal>
-        <section style={{ padding: "100px 24px", maxWidth: 1000, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <span className="mono" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", color: "var(--teal)", textTransform: "uppercase" }}>
-              {t("howItWorksLabel")}
-            </span>
-            <h2 className="font-display" style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 700, letterSpacing: "-0.02em", marginTop: 12, color: "var(--text)" }}>
-              {t("howItWorksHeadline")}
-            </h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
-            {steps.map((s) => (
-              <div key={s.n} style={{ textAlign: "center" }}>
-                <div
-                  className="mono"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: "50%",
-                    background: "rgba(var(--teal-rgb),0.1)",
-                    border: "1px solid rgba(var(--teal-rgb),0.3)",
-                    color: "var(--teal)",
-                    fontWeight: 600,
-                    fontSize: 17,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                  }}
-                >
-                  {s.n}
-                </div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{s.title}</h3>
-                <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>{s.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-        </Reveal>
+        <SectionTabs tabs={tabs} pagePath="/enterprise" />
 
         <Reveal>
         <section
