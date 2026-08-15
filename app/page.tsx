@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import DecisionsSection from "@/components/DecisionsSection";
@@ -8,7 +9,7 @@ import Methodology from "@/components/Methodology";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import PlatformChatWidget from "@/components/PlatformChatWidget";
-import Reveal from "@/components/Reveal";
+import HomeTabs from "@/components/HomeTabs";
 import { detectVisitorCountry } from "@/lib/billing/detectCountry";
 import { tierForCountry } from "@/lib/billing/pricingTiers";
 
@@ -19,37 +20,28 @@ import { tierForCountry } from "@/lib/billing/pricingTiers";
 export default async function Home() {
   const country = await detectVisitorCountry();
   const region = tierForCountry(country);
+  const t = await getTranslations("common");
+
+  // Tabbed instead of one long scroll (tester feedback: "super long and
+  // unorganized") — Hero stays outside the tabs since it's the first
+  // impression, not something to hide behind a click. Order mirrors the
+  // previous scroll order exactly, so nothing's reprioritized, just
+  // reachable directly instead of scrolled past.
+  const tabs = [
+    { key: "how-it-works", label: t("howItWorks"), content: <HowItWorks /> },
+    { key: "live-demo", label: t("liveDemo"), content: <SkillRadar /> },
+    { key: "decisions", label: t("decisions"), content: <DecisionsSection namespace="individualDecisions" /> },
+    { key: "methodology", label: t("methodology"), content: <Methodology /> },
+    { key: "features", label: t("features"), content: <Features /> },
+    { key: "pricing", label: t("pricing"), content: <Pricing initialRegion={region} /> },
+  ];
 
   return (
     <>
       <Navbar />
       <main>
         <Hero />
-        {/* Orientation before depth (2026-08 UX audit, §2/§6): a first-time
-            visitor gets "what is this and how does it work" immediately
-            after the hero, before the more detailed/technical sections
-            that assume that context. SkillRadar (the live Gap Analysis
-            demo) moves up right after it — it's the single strongest proof
-            of what the product does, not something to bury three sections
-            deep behind Decisions/Methodology. */}
-        <Reveal>
-          <HowItWorks />
-        </Reveal>
-        <Reveal>
-          <SkillRadar />
-        </Reveal>
-        <Reveal>
-          <DecisionsSection namespace="individualDecisions" />
-        </Reveal>
-        <Reveal>
-          <Methodology />
-        </Reveal>
-        <Reveal>
-          <Features />
-        </Reveal>
-        <Reveal>
-          <Pricing initialRegion={region} />
-        </Reveal>
+        <HomeTabs tabs={tabs} />
       </main>
       <Footer />
       <PlatformChatWidget />

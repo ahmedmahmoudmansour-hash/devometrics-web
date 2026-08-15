@@ -85,11 +85,19 @@ export default async function CoachPage() {
           </Link>
         </div>
         <CoachMemoryCard memory={growMemory ?? null} />
+        {/* initialVoice was "off" — a brand-new profile has never explicitly
+            chosen a voice, and defaulting to silent meant first-time users
+            (and testers) experienced the Coach as mute with no obvious cue
+            that Speech was a toggle away. "sarah" matches the fallback
+            named voice already used elsewhere when switching Text -> Speech
+            and back. An account that has explicitly set "off" keeps that
+            choice — this only changes the fallback for profiles where
+            coach_voice was never set at all. */}
         <CoachChat
           initialMessages={messages ?? []}
           userName={profile?.full_name ?? "You"}
           userAvatarUrl={profile?.avatar_url ?? null}
-          initialVoice={profile?.coach_voice ?? "off"}
+          initialVoice={profile?.coach_voice ?? "sarah"}
         />
       </div>
     </div>

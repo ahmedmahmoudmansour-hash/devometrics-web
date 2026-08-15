@@ -1,6 +1,8 @@
 {
   "common": {
     "howItWorks": "كيف يعمل",
+    "liveDemo": "عرض حي",
+    "decisions": "القرارات",
     "features": "المزايا",
     "methodology": "المنهجية",
     "pricing": "الأسعار",

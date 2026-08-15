@@ -30,7 +30,7 @@ export default function AuthShell({
           padding: "48px 44px",
         }}
       >
-        <Logo size={34} />
+        <Logo size={44} />
 
         <div>
           <p
@@ -87,7 +87,7 @@ export default function AuthShell({
       >
         <div style={{ width: "100%", maxWidth: 400 }}>
           <div className="md:hidden" style={{ marginBottom: 24 }}>
-            <Logo size={30} />
+            <Logo size={40} />
           </div>
           <Link
             href="/"

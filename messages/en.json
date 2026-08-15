@@ -1,6 +1,8 @@
 {
   "common": {
     "howItWorks": "How it works",
+    "liveDemo": "Live Demo",
+    "decisions": "Decisions",
     "features": "Features",
     "methodology": "Methodology",
     "pricing": "Pricing",

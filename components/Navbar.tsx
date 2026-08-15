@@ -64,7 +64,7 @@ export default function Navbar() {
         }}
       >
         <Link href="/" style={{ textDecoration: "none" }}>
-          <Logo size={32} />
+          <Logo size={40} />
         </Link>
 
         {/* Desktop links */}

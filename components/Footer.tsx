@@ -69,7 +69,7 @@ export default function Footer() {
         >
           {/* Brand column */}
           <div>
-            <Logo size={32} />
+            <Logo size={42} />
             <p
               style={{
                 fontSize: 14,
