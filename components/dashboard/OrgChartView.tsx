@@ -456,7 +456,14 @@ export default function OrgChartView({
             <div
               ref={canvasContentRef}
               onClick={handleCanvasClick}
-              style={{ position: "absolute", left: PAD, top: PAD, cursor: placingAnnotation ? "crosshair" : "default" }}
+              // width/height are required, not cosmetic — every child in
+              // here is itself position:absolute, so without an explicit
+              // size this div collapses to 0x0 (absolutely-positioned
+              // children never contribute to an unsized ancestor's auto
+              // size) and a click on visually-empty canvas space lands on
+              // whatever's behind it instead of this div, so onClick never
+              // fires there at all.
+              style={{ position: "absolute", left: PAD, top: PAD, width: maxX, height: maxY, cursor: placingAnnotation ? "crosshair" : "default" }}
             >
               {config.annotations.map((a) => (
                 <OrgChartAnnotationBox
