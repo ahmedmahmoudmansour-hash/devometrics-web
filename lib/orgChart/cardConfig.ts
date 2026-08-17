@@ -30,6 +30,17 @@ export type OrgChartFilters = {
   countries: string[];
   businessUnits: string[];
   departments: string[];
+  // "Build a chart from scratch": hand-pick exactly who appears (any
+  // function, not department-specific), rather than starting from
+  // everyone and narrowing down. When manualMode is true, includedIds
+  // (tagged "member:<uuid>" / "position:<uuid>") is the ONLY thing that
+  // decides visibility — countries/businessUnits/departments above are
+  // ignored entirely while it's active. Reporting lines between whoever's
+  // picked are still computed from real data (lib/orgChart/tree.ts's
+  // pruning), same as every other filter mode — this only changes WHO is
+  // eligible to appear, never how the lines between them are drawn.
+  manualMode: boolean;
+  includedIds: string[];
 };
 
 // Free-floating notes on the canvas — not attached to any position or
@@ -70,7 +81,7 @@ export const EXECUTIVE_MIN_DEPTH = 1;
 export const EXECUTIVE_MAX_DEPTH = 5;
 export const EXECUTIVE_DEFAULT_DEPTH = 2;
 
-const NO_FILTERS: OrgChartFilters = { countries: [], businessUnits: [], departments: [] };
+const NO_FILTERS: OrgChartFilters = { countries: [], businessUnits: [], departments: [], manualMode: false, includedIds: [] };
 
 function toggles(overrides: Partial<OrgChartCardToggles>): OrgChartCardToggles {
   return {

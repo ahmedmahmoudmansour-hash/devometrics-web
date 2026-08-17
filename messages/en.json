@@ -1919,7 +1919,16 @@
     "addNoteArmedButton": "Click the chart to place it…",
     "addNoteHint": "Click anywhere on the chart to drop your note there.",
     "notePlaceholder": "Type a note…",
-    "deleteNote": "Delete note"
+    "deleteNote": "Delete note",
+    "buildFromScratch": "Build chart from scratch",
+    "editSelection": "Edit selection",
+    "manualModeBanner": "{count, plural, =0 {Hand-picked chart — no one added yet} one {Hand-picked chart — # person} other {Hand-picked chart — # people}}",
+    "exitManualMode": "Show everyone",
+    "pickerTitle": "Choose who's on this chart",
+    "pickerSearchPlaceholder": "Search people or positions…",
+    "pickerCount": "{count, plural, =0 {No one selected yet} one {# selected} other {# selected}}",
+    "pickerEmpty": "No matches.",
+    "pickerDone": "Done"
   },
   "orgChartPositionCard": {
     "kindStructural": "Structural",

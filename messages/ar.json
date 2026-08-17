@@ -1919,7 +1919,16 @@
     "addNoteArmedButton": "انقر على المخطط لوضعها…",
     "addNoteHint": "انقر في أي مكان على المخطط لوضع ملاحظتك هناك.",
     "notePlaceholder": "اكتب ملاحظة…",
-    "deleteNote": "حذف الملاحظة"
+    "deleteNote": "حذف الملاحظة",
+    "buildFromScratch": "إنشاء مخطط من الصفر",
+    "editSelection": "تعديل الاختيار",
+    "manualModeBanner": "{count, plural, =0 {مخطط مُختار يدويًا — لم يُضَف أحد بعد} one {مخطط مُختار يدويًا — شخص واحد} other {مخطط مُختار يدويًا — # أشخاص}}",
+    "exitManualMode": "عرض الجميع",
+    "pickerTitle": "اختر من يظهر في هذا المخطط",
+    "pickerSearchPlaceholder": "ابحث عن أشخاص أو مناصب…",
+    "pickerCount": "{count, plural, =0 {لم يتم اختيار أحد بعد} one {# مُختار} other {# مُختارين}}",
+    "pickerEmpty": "لا توجد نتائج مطابقة.",
+    "pickerDone": "تم"
   },
   "orgChartPositionCard": {
     "kindStructural": "هيكلي",

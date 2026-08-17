@@ -21,6 +21,7 @@ import { listSavedViews, updateSavedView, type OrgChartSavedView } from "@/lib/o
 import { loadOrgChartAnnotations, saveOrgChartAnnotations } from "@/lib/orgChart/annotations";
 import OrgChartCard, { type DropState } from "@/components/dashboard/OrgChartCard";
 import OrgChartAnnotationBox from "@/components/dashboard/OrgChartAnnotationBox";
+import OrgChartPeoplePicker from "@/components/dashboard/OrgChartPeoplePicker";
 import OrgChartPositionCard from "@/components/dashboard/OrgChartPositionCard";
 import OrgChartPositionPanel from "@/components/dashboard/OrgChartPositionPanel";
 import OrgChartControlBar from "@/components/dashboard/OrgChartControlBar";
@@ -96,6 +97,7 @@ export default function OrgChartView({
   // specific view's own config when set, or into the org-wide default
   // layer (lib/orgChart/annotations.ts) when not — see persistAnnotations.
   const [activeSavedView, setActiveSavedView] = useState<OrgChartSavedView | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const canvasContentRef = useRef<HTMLDivElement>(null);
   const annotationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,6 +134,12 @@ export default function OrgChartView({
   );
 
   const visibleIds = useMemo(() => {
+    // Manual mode ("build a chart from scratch") overrides every other
+    // filter dimension outright — includedIds is the complete, exact
+    // membership list, not one more thing to intersect with. Reporting
+    // lines between whoever's picked still come from pruneMergedForestFor
+    // Display below unchanged — this only decides who's eligible to appear.
+    if (config.filters.manualMode) return new Set(config.filters.includedIds);
     const hasAnyFilter = config.filters.countries.length > 0 || config.filters.businessUnits.length > 0 || config.filters.departments.length > 0;
     if (!hasAnyFilter) {
       return new Set([...effectiveRows.map((r) => memberTag(r.userId)), ...positions.map((p) => positionTag(p.id))]);
@@ -269,9 +277,18 @@ export default function OrgChartView({
 
   function handleApplySavedView(view: OrgChartSavedView) {
     const { presetKey: savedPresetKey, ...viewConfig } = view.config;
-    // annotations is a newer field — a view saved before this shipped has
-    // no key for it in its stored jsonb at all, not an empty array.
-    setConfig({ ...viewConfig, annotations: viewConfig.annotations ?? [] });
+    // annotations/manualMode/includedIds are newer fields — a view saved
+    // before they shipped has no key for them in its stored jsonb at all,
+    // not an empty/false default.
+    setConfig({
+      ...viewConfig,
+      annotations: viewConfig.annotations ?? [],
+      filters: {
+        ...viewConfig.filters,
+        manualMode: viewConfig.filters.manualMode ?? false,
+        includedIds: viewConfig.filters.includedIds ?? [],
+      },
+    });
     setPresetKey(savedPresetKey);
     setActiveSavedView(view);
     setExpandedBranchRootIds(new Set());
@@ -371,6 +388,36 @@ export default function OrgChartView({
     handleConfigChange({ ...config, filters: { ...config.filters, departments: department ? [department] : [] } }, presetKey);
   }
 
+  // "Build a chart from scratch": clears every other filter dimension and
+  // starts with nobody visible — the picker (opened alongside) is how the
+  // user adds people back in one at a time. Not department-specific; works
+  // for any hand-picked group (a cross-functional project team, a board
+  // slate, anything).
+  function handleStartFromScratch() {
+    handleConfigChange(
+      { ...config, filters: { countries: [], businessUnits: [], departments: [], manualMode: true, includedIds: [] } },
+      presetKey
+    );
+    setPickerOpen(true);
+  }
+
+  function handleExitManualMode() {
+    handleConfigChange({ ...config, filters: { ...config.filters, manualMode: false, includedIds: [] } }, presetKey);
+    setPickerOpen(false);
+  }
+
+  function handleToggleIncluded(taggedId: string) {
+    setConfig((prev) => ({
+      ...prev,
+      filters: {
+        ...prev.filters,
+        includedIds: prev.filters.includedIds.includes(taggedId)
+          ? prev.filters.includedIds.filter((id) => id !== taggedId)
+          : [...prev.filters.includedIds, taggedId],
+      },
+    }));
+  }
+
   const departmentChartOptions = useMemo(() => {
     const set = new Set<string>();
     for (const r of effectiveRows) if (r.department) set.add(r.department);
@@ -460,6 +507,15 @@ export default function OrgChartView({
           >
             {placingAnnotation ? t("addNoteArmedButton") : t("addNoteButton")}
           </button>
+          {config.filters.manualMode ? (
+            <button type="button" onClick={() => setPickerOpen(true)} style={addPositionButtonStyle()}>
+              {t("editSelection")}
+            </button>
+          ) : (
+            <button type="button" onClick={handleStartFromScratch} style={addPositionButtonStyle()}>
+              {t("buildFromScratch")}
+            </button>
+          )}
           <OrgChartToolsMenu
             savedViews={savedViews}
             currentConfig={config}
@@ -475,6 +531,51 @@ export default function OrgChartView({
       {error && <p className="no-print" style={{ color: "var(--danger)", fontSize: 12.5, marginBottom: 8 }}>{error}</p>}
       {placingAnnotation && (
         <p className="no-print" style={{ color: "var(--amber)", fontSize: 12.5, marginBottom: 8 }}>{t("addNoteHint")}</p>
+      )}
+      {config.filters.manualMode && (
+        <div
+          className="no-print"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            flexWrap: "wrap",
+            background: "rgba(var(--teal-rgb),0.08)",
+            border: "1px solid rgba(var(--teal-rgb),0.25)",
+            borderRadius: 10,
+            padding: "10px 14px",
+            marginBottom: 10,
+          }}
+        >
+          <span style={{ fontSize: 12.5, color: "var(--text)" }}>
+            {t("manualModeBanner", { count: config.filters.includedIds.length })}
+          </span>
+          <button
+            type="button"
+            onClick={handleExitManualMode}
+            style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}
+          >
+            {t("exitManualMode")}
+          </button>
+        </div>
+      )}
+
+      {pickerOpen && (
+        <OrgChartPeoplePicker
+          rows={effectiveRows}
+          positions={positions}
+          includedIds={config.filters.includedIds}
+          onToggle={handleToggleIncluded}
+          onClose={() => setPickerOpen(false)}
+          title={t("pickerTitle")}
+          searchPlaceholder={t("pickerSearchPlaceholder")}
+          countLabel={t("pickerCount", { count: config.filters.includedIds.length })}
+          emptyLabel={t("pickerEmpty")}
+          vacantLabel={t("addVacantRole")}
+          structuralLabel={t("addStructural")}
+          doneLabel={t("pickerDone")}
+        />
       )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

@@ -85,7 +85,11 @@ export default function OrgChartControlBar({
     onChange({ ...config, maxDepth: depth }, null);
   }
 
-  function toggleFilter(dimension: keyof OrgChartViewConfig["filters"], value: string) {
+  // Narrowed to the multiselect string[] dimensions specifically — filters
+  // also has manualMode (boolean) and includedIds (string[], but exclusive
+  // with these three, driven by OrgChartPeoplePicker instead), neither of
+  // which this generic add/remove toggle applies to.
+  function toggleFilter(dimension: "countries" | "businessUnits" | "departments", value: string) {
     const current = config.filters[dimension];
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
     onChange({ ...config, filters: { ...config.filters, [dimension]: next } }, activePresetKey);
