@@ -50,7 +50,7 @@ type NavItem = {
 // icons-only on narrow screens.
 function buildSections(
   hasDirectReports: boolean,
-  hasManager: boolean,
+  canSeeImpactCycle: boolean,
   hasOrgMembership: boolean
 ): { labelKey: string | null; items: NavItem[] }[] {
   return [
@@ -74,11 +74,13 @@ function buildSections(
         { href: "/dashboard/gap-analysis", labelKey: "gapAnalysis", icon: Target },
         { href: "/dashboard/resume", labelKey: "resume", icon: FileText, premium: true, featureKey: "resume_intelligence" },
         { href: "/dashboard/scorecard", labelKey: "scorecard", icon: LineChart },
-        // Only shown to someone with an actual manager assigned in the Org
-        // Chart — with no manager, this page can never have anything on it
-        // (no one to give a Manager's Perspective), so the link is just
-        // permanent clutter otherwise, not a real feature they can use.
-        ...(hasManager ? [{ href: "/dashboard/impact-cycle", labelKey: "impactCycle", icon: ClipboardCheck, featureKey: "performance_review" }] : []),
+        // Shown when there's a real manager to give a Manager's Perspective,
+        // OR a review already exists regardless (an admin can assign one
+        // via the employee-scope picker even when the person's manager is
+        // a vacant/structural position, not a real employee) — a review
+        // that's actually been assigned must always be reachable, not
+        // hidden just because manager_user_id happens to be null.
+        ...(canSeeImpactCycle ? [{ href: "/dashboard/impact-cycle", labelKey: "impactCycle", icon: ClipboardCheck, featureKey: "performance_review" }] : []),
         // Only shown to a real reporting-line manager (migration 0078) —
         // an individual contributor with no reports has nothing to do here.
         ...(hasDirectReports ? [{ href: "/dashboard/my-team", labelKey: "myTeam", icon: Users }] : []),
@@ -119,7 +121,7 @@ export default function SidebarNav({
   isPlatformAdmin,
   isFreeTier,
   hasDirectReports,
-  hasManager,
+  canSeeImpactCycle,
   hasOrgMembership,
   restrictedFeatures = [],
   nextOnboardingStep = null,
@@ -129,7 +131,7 @@ export default function SidebarNav({
   isPlatformAdmin: boolean;
   isFreeTier: boolean;
   hasDirectReports: boolean;
-  hasManager: boolean;
+  canSeeImpactCycle: boolean;
   hasOrgMembership: boolean;
   restrictedFeatures?: string[];
   // Only rendered away from the home page — that page already shows the
@@ -141,7 +143,7 @@ export default function SidebarNav({
   const tHome = useTranslations("dashboardHome");
   const pathname = usePathname();
   const restrictedSet = new Set(restrictedFeatures);
-  const sections = buildSections(hasDirectReports, hasManager, hasOrgMembership).map((section) => ({
+  const sections = buildSections(hasDirectReports, canSeeImpactCycle, hasOrgMembership).map((section) => ({
     ...section,
     items: section.items.filter((item) => !item.featureKey || !restrictedSet.has(item.featureKey)),
   }));

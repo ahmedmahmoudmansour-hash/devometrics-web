@@ -24,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) return <>{children}</>;
 
-  const [{ data: membership }, { data: profile }, { count: directReportCount }, nextOnboardingStep] = await Promise.all([
+  const [{ data: membership }, { data: profile }, { count: directReportCount }, { count: reviewCount }, nextOnboardingStep] = await Promise.all([
     supabase
       .from("organization_members")
       .select("role, manager_user_id, organization_id, organizations(brand_color, is_disabled)")
@@ -39,6 +39,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // breaking the whole layout if 0072's manager_user_id column isn't
     // migrated yet on this database.
     supabase.from("organization_members").select("*", { count: "exact", head: true }).eq("manager_user_id", user.id),
+    // Whether a review actually exists for this person, independent of
+    // whether they have a real (non-vacant) manager. Found via a real bug:
+    // an admin can explicitly assign someone to a review cycle (the
+    // employee-scope picker) regardless of their reporting line, but if
+    // that person's manager is a vacant/structural position rather than a
+    // real employee, manager_user_id is null — the Impact Cycle nav link
+    // was hidden outright in that case, so the review existed but was
+    // completely unreachable. A real assigned review must always be
+    // reachable, whether or not there's currently a real person who could
+    // give a Manager's Perspective on it.
+    supabase.from("performance_reviews").select("*", { count: "exact", head: true }).eq("employee_user_id", user.id),
     // Powers a persistent "what's next" nudge in the sidebar for a new
     // user who's navigated away from the home page's full checklist
     // (2026-08-13 feedback: people lose the "where do I start" thread once
@@ -60,7 +71,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const hasDirectReports = (directReportCount ?? 0) > 0;
-  const hasManager = !!membership?.manager_user_id;
+  // A real manager makes the Manager's Perspective step reachable; an
+  // already-assigned review makes it worth reaching regardless — see the
+  // reviewCount query above for why this can't be manager_user_id alone.
+  const canSeeImpactCycle = !!membership?.manager_user_id || (reviewCount ?? 0) > 0;
   const hasOrgMembership = !!membership;
   // Array, not the Set listMyRestrictedFeatures() returns — Set instances
   // aren't part of the RSC serialization boundary, and SidebarNav/
@@ -101,7 +115,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             isPlatformAdmin={!!profile?.is_admin}
             isFreeTier={isFreeTier}
             hasDirectReports={hasDirectReports}
-            hasManager={hasManager}
+            canSeeImpactCycle={canSeeImpactCycle}
             hasOrgMembership={hasOrgMembership}
             restrictedFeatures={restrictedFeatures}
             nextOnboardingStep={nextOnboardingStep}
@@ -113,7 +127,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         isCompanyAdmin={membership?.role === "admin"}
         isPlatformAdmin={!!profile?.is_admin}
         hasDirectReports={hasDirectReports}
-        hasManager={hasManager}
+        canSeeImpactCycle={canSeeImpactCycle}
         hasOrgMembership={hasOrgMembership}
       />
     </div>
