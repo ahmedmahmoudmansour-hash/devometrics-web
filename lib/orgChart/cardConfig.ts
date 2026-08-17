@@ -32,6 +32,18 @@ export type OrgChartFilters = {
   departments: string[];
 };
 
+// Free-floating notes on the canvas — not attached to any position or
+// person, unlike everything else the chart renders. x/y are pixel offsets
+// in the same coordinate space as card positions (the div at `left: PAD,
+// top: PAD` in OrgChartView), so an annotation drags and prints exactly
+// like a card does.
+export type OrgChartAnnotation = {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+};
+
 export type OrgChartViewConfig = {
   toggles: OrgChartCardToggles;
   density: CardDensity;
@@ -40,6 +52,7 @@ export type OrgChartViewConfig = {
   // sets the starting value.
   maxDepth: number | null;
   filters: OrgChartFilters;
+  annotations: OrgChartAnnotation[];
 };
 
 export type OrgChartPresetKey = "photo" | "nameOnly" | "positionOnly" | "compact" | "executive";
@@ -71,30 +84,35 @@ export const ORG_CHART_PRESETS: Record<OrgChartPresetKey, OrgChartViewConfig> = 
     density: "comfortable",
     maxDepth: null,
     filters: NO_FILTERS,
+    annotations: [],
   },
   nameOnly: {
     toggles: toggles({ showName: true }),
     density: "comfortable",
     maxDepth: null,
     filters: NO_FILTERS,
+    annotations: [],
   },
   positionOnly: {
     toggles: toggles({ showTitle: true, showDepartment: true }),
     density: "comfortable",
     maxDepth: null,
     filters: NO_FILTERS,
+    annotations: [],
   },
   compact: {
     toggles: toggles({ showPhoto: true, showName: true, showTitle: true }),
     density: "compact",
     maxDepth: null,
     filters: NO_FILTERS,
+    annotations: [],
   },
   executive: {
     toggles: toggles({ showPhoto: true, showName: true, showTitle: true, showDepartment: true, showPerformanceBadge: true, showSuccessionStatus: true }),
     density: "comfortable",
     maxDepth: EXECUTIVE_DEFAULT_DEPTH,
     filters: NO_FILTERS,
+    annotations: [],
   },
 };
 

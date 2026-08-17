@@ -1914,7 +1914,12 @@
     "newVacantRoleTitle": "منصب شاغر جديد",
     "newStructuralTitle": "قسم جديد",
     "departmentChartLabel": "الانتقال إلى مخطط قسم معيّن",
-    "departmentChartAll": "الكل (المؤسسي)"
+    "departmentChartAll": "الكل (المؤسسي)",
+    "addNoteButton": "+ إضافة ملاحظة",
+    "addNoteArmedButton": "انقر على المخطط لوضعها…",
+    "addNoteHint": "انقر في أي مكان على المخطط لوضع ملاحظتك هناك.",
+    "notePlaceholder": "اكتب ملاحظة…",
+    "deleteNote": "حذف الملاحظة"
   },
   "orgChartPositionCard": {
     "kindStructural": "هيكلي",

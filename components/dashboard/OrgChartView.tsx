@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
@@ -16,9 +16,10 @@ import {
   positionTag,
   type MergedDisplayNode,
 } from "@/lib/orgChart/mergedTree";
-import { defaultViewConfig, DEFAULT_PRESET_KEY, type OrgChartViewConfig, type OrgChartPresetKey } from "@/lib/orgChart/cardConfig";
+import { defaultViewConfig, DEFAULT_PRESET_KEY, type OrgChartViewConfig, type OrgChartPresetKey, type OrgChartAnnotation } from "@/lib/orgChart/cardConfig";
 import { listSavedViews, type OrgChartSavedView } from "@/lib/orgChart/savedViews";
 import OrgChartCard, { type DropState } from "@/components/dashboard/OrgChartCard";
+import OrgChartAnnotationBox from "@/components/dashboard/OrgChartAnnotationBox";
 import OrgChartPositionCard from "@/components/dashboard/OrgChartPositionCard";
 import OrgChartPositionPanel from "@/components/dashboard/OrgChartPositionPanel";
 import OrgChartControlBar from "@/components/dashboard/OrgChartControlBar";
@@ -87,6 +88,8 @@ export default function OrgChartView({
   const [error, setError] = useState<string | null>(null);
   const [lastSeenRows, setLastSeenRows] = useState(rows);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [placingAnnotation, setPlacingAnnotation] = useState(false);
+  const canvasContentRef = useRef<HTMLDivElement>(null);
 
   const nominatedSet = useMemo(() => new Set(nominatedUserIds), [nominatedUserIds]);
   const memberManagerPositionsMap = useMemo(() => new Map(Object.entries(memberManagerPositions)), [memberManagerPositions]);
@@ -147,8 +150,14 @@ export default function OrgChartView({
   }, [displayForest]);
 
   const allNodes = useMemo(() => laidOutRoots.flatMap((r) => flatten(r)), [laidOutRoots]);
-  const maxX = Math.max(CARD_W, ...allNodes.map((n) => n.x)) + CARD_W;
-  const maxY = Math.max(0, ...allNodes.map((n) => n.y)) + CARD_H;
+  // Notes live in an unrelated coordinate system (raw pixel offsets, not
+  // layout units) but share the same canvas, so the canvas bounds need to
+  // grow to fit a note dragged past the current tree's extent — otherwise
+  // it'd be clipped by the canvas container's overflow.
+  const annotationMaxX = config.annotations.length ? Math.max(...config.annotations.map((a) => a.x + 190)) : 0;
+  const annotationMaxY = config.annotations.length ? Math.max(...config.annotations.map((a) => a.y + 110)) : 0;
+  const maxX = Math.max(CARD_W, annotationMaxX, ...allNodes.map((n) => n.x)) + CARD_W;
+  const maxY = Math.max(0, annotationMaxY, ...allNodes.map((n) => n.y)) + CARD_H;
 
   const selected = selectedId ? parseTag(selectedId) : null;
   const selectedMemberRow = selected?.kind === "member" ? effectiveRows.find((r) => r.userId === selected.id) ?? null : null;
@@ -247,9 +256,46 @@ export default function OrgChartView({
 
   function handleApplySavedView(view: OrgChartSavedView) {
     const { presetKey: savedPresetKey, ...viewConfig } = view.config;
-    setConfig(viewConfig);
+    // annotations is a newer field — a view saved before this shipped has
+    // no key for it in its stored jsonb at all, not an empty array.
+    setConfig({ ...viewConfig, annotations: viewConfig.annotations ?? [] });
     setPresetKey(savedPresetKey);
     setExpandedBranchRootIds(new Set());
+  }
+
+  function handleAddAnnotationAt(x: number, y: number) {
+    const annotation: OrgChartAnnotation = { id: crypto.randomUUID(), text: "", x: Math.max(0, x - 90), y: Math.max(0, y - 20) };
+    setConfig((prev) => ({ ...prev, annotations: [...prev.annotations, annotation] }));
+    setPlacingAnnotation(false);
+  }
+
+  function handleCanvasClick(e: React.MouseEvent) {
+    // Only the empty canvas itself should drop a note — a click that
+    // bubbled up from a card or an existing note (e.target !== the wrapper
+    // this handler is bound to) means the user clicked something else
+    // while still armed, not the blank chart.
+    if (!placingAnnotation || !canvasContentRef.current || e.target !== e.currentTarget) return;
+    const rect = canvasContentRef.current.getBoundingClientRect();
+    handleAddAnnotationAt(e.clientX - rect.left, e.clientY - rect.top);
+  }
+
+  // Text/move/delete deliberately use setConfig directly rather than
+  // handleConfigChange — that helper also resets presetKey to null and
+  // clears expandedBranchRootIds, which is right for a real structural
+  // change (a toggle, a filter) but wrong here: typing a keystroke into a
+  // note shouldn't collapse whatever branch someone had expanded, and a
+  // note's presence doesn't invalidate "this view started from the
+  // Executive preset" the way changing which fields show on every card does.
+  function handleAnnotationTextChange(id: string, text: string) {
+    setConfig((prev) => ({ ...prev, annotations: prev.annotations.map((a) => (a.id === id ? { ...a, text } : a)) }));
+  }
+
+  function handleAnnotationMove(id: string, x: number, y: number) {
+    setConfig((prev) => ({ ...prev, annotations: prev.annotations.map((a) => (a.id === id ? { ...a, x, y } : a)) }));
+  }
+
+  function handleAnnotationDelete(id: string) {
+    setConfig((prev) => ({ ...prev, annotations: prev.annotations.filter((a) => a.id !== id) }));
   }
 
   function handleAddPosition(kind: "vacant_role" | "structural") {
@@ -355,6 +401,13 @@ export default function OrgChartView({
               </div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => setPlacingAnnotation((v) => !v)}
+            style={placingAnnotation ? addNoteArmedButtonStyle() : addPositionButtonStyle()}
+          >
+            {placingAnnotation ? t("addNoteArmedButton") : t("addNoteButton")}
+          </button>
           <OrgChartToolsMenu
             savedViews={savedViews}
             currentConfig={config}
@@ -368,6 +421,9 @@ export default function OrgChartView({
       </div>
 
       {error && <p className="no-print" style={{ color: "var(--danger)", fontSize: 12.5, marginBottom: 8 }}>{error}</p>}
+      {placingAnnotation && (
+        <p className="no-print" style={{ color: "var(--amber)", fontSize: 12.5, marginBottom: 8 }}>{t("addNoteHint")}</p>
+      )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="print-plan" style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 16, background: "var(--navy-mid)" }}>
@@ -397,7 +453,22 @@ export default function OrgChartView({
               </g>
             </svg>
 
-            <div style={{ position: "absolute", left: PAD, top: PAD }}>
+            <div
+              ref={canvasContentRef}
+              onClick={handleCanvasClick}
+              style={{ position: "absolute", left: PAD, top: PAD, cursor: placingAnnotation ? "crosshair" : "default" }}
+            >
+              {config.annotations.map((a) => (
+                <OrgChartAnnotationBox
+                  key={a.id}
+                  annotation={a}
+                  onChangeText={handleAnnotationTextChange}
+                  onMove={handleAnnotationMove}
+                  onDelete={handleAnnotationDelete}
+                  deleteLabel={t("deleteNote")}
+                  placeholder={t("notePlaceholder")}
+                />
+              ))}
               {allNodes.map((n) => (
                 <div key={n.node.id} style={{ position: "absolute", left: n.x - CARD_W / 2, top: n.y }}>
                   {n.node.kind === "member" ? (
@@ -544,6 +615,19 @@ function addPositionButtonStyle(): React.CSSProperties {
     background: "transparent",
     border: "1px solid var(--border)",
     color: "var(--text-muted)",
+    borderRadius: 8,
+    padding: "7px 12px",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+  };
+}
+
+function addNoteArmedButtonStyle(): React.CSSProperties {
+  return {
+    background: "rgba(240,184,64,0.12)",
+    border: "1px solid var(--amber)",
+    color: "var(--amber)",
     borderRadius: 8,
     padding: "7px 12px",
     fontSize: 12,

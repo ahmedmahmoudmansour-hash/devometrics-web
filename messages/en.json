@@ -1914,7 +1914,12 @@
     "newVacantRoleTitle": "New vacant role",
     "newStructuralTitle": "New department",
     "departmentChartLabel": "Jump to a department's chart",
-    "departmentChartAll": "All (Corporate)"
+    "departmentChartAll": "All (Corporate)",
+    "addNoteButton": "+ Add note",
+    "addNoteArmedButton": "Click the chart to place it…",
+    "addNoteHint": "Click anywhere on the chart to drop your note there.",
+    "notePlaceholder": "Type a note…",
+    "deleteNote": "Delete note"
   },
   "orgChartPositionCard": {
     "kindStructural": "Structural",
