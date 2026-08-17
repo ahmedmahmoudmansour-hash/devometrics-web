@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import Anthropic from "@anthropic-ai/sdk";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { getRoleplayScenario } from "@/lib/roleplay/scenarios";
+import { getRoleplayScenario, localizeScenario } from "@/lib/roleplay/scenarios";
 import { getCustomScenario } from "@/lib/roleplay/customScenarios";
 import { buildRoleplaySystemPrompt } from "@/lib/roleplay/systemPrompt";
 import { LOCALE_COOKIE, resolveApiLocale } from "@/lib/i18n/request";
@@ -55,10 +56,21 @@ export async function POST(request: Request) {
     endScenario?: boolean;
   };
 
-  const scenario = getRoleplayScenario(scenarioSlug) ?? (await getCustomScenario(scenarioSlug, user.id));
-  if (!scenario) {
+  const rawScenario = getRoleplayScenario(scenarioSlug) ?? (await getCustomScenario(scenarioSlug, user.id));
+  if (!rawScenario) {
     return NextResponse.json({ error: "Unknown scenario" }, { status: 400 });
   }
+  // Route Handlers don't go through next-intl's own request-locale
+  // resolution (see lib/i18n/request.ts) — resolveApiLocale is the same
+  // cookie/profile-fallback logic the LANGUAGE instruction below uses, so
+  // getTranslations here reads the exact locale the model is being told to
+  // reply in. Without this, the scenario's English setup/opening line went
+  // into the prompt even in Arabic mode — the model was told "respond
+  // entirely in Arabic" while reading English scene-setting, which is what
+  // caused replies to code-switch instead of staying fully Arabic.
+  const locale = resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language);
+  const tScenario = await getTranslations({ locale, namespace: "roleplayScenarios" });
+  const scenario = localizeScenario(rawScenario, tScenario);
   if (!message?.trim()) {
     return NextResponse.json({ error: "A message is required" }, { status: 400 });
   }
@@ -154,7 +166,7 @@ export async function POST(request: Request) {
     scenario,
     profile: profile ?? null,
     relevantAssessments: Array.from(latestBySlug.values()),
-    locale: resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language),
+    locale,
   });
 
   // Streamed like the Coach route: text deltas reach the client as Claude
