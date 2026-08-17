@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { submitSelfAssessment, acknowledgeReview } from "@/lib/performanceReviews/actions";
-import { helpDraftReflection } from "@/lib/performanceReviews/ai";
+import { helpDraftRecommendations } from "@/lib/performanceReviews/ai";
 import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail } from "@/lib/performanceReviews/types";
 import { describeCycleTimeline, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
 import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
@@ -81,10 +81,10 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   function draftFromNotes() {
     setAiError(null);
     startAiTransition(async () => {
-      const result = await helpDraftReflection(review.id, roughNotes);
+      const result = await helpDraftRecommendations(review.id, roughNotes);
       if ("error" in result) setAiError(result.error);
       else {
-        setSelfReflection(result.reflection);
+        setRecommendations(result.recommendations);
         setShowAiHelper(false);
         setRoughNotes("");
       }
@@ -121,35 +121,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       </div>
 
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{t("yourReflection")}</p>
-          <button type="button" onClick={() => setShowAiHelper((v) => !v)} style={aiButtonStyle()}>
-            {t("helpMeWriteThis")}
-          </button>
-        </div>
-
-        {showAiHelper && (
-          <div style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-            <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 8 }}>
-              {t("roughNotesDesc")}
-            </p>
-            <textarea
-              value={roughNotes}
-              onChange={(e) => setRoughNotes(e.target.value)}
-              placeholder={t("roughNotesPlaceholder")}
-              style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
-            />
-            {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginTop: 6 }}>{aiError}</p>}
-            <button
-              type="button"
-              onClick={draftFromNotes}
-              disabled={aiPending || !roughNotes.trim()}
-              style={{ marginTop: 8, background: "#a78bfa", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: aiPending || !roughNotes.trim() ? 0.6 : 1 }}
-            >
-              {aiPending ? t("drafting") : t("draftIt")}
-            </button>
-          </div>
-        )}
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("yourReflection")}</p>
 
         <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("howWouldYouRate")}</label>
         <select value={selfRating} onChange={(e) => setSelfRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
@@ -180,7 +152,37 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
           placeholder={t("developmentAreasPlaceholder")}
           style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
         />
-        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, marginTop: 12, display: "block" }}>{t("recommendationsLabel")}</label>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 5 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>{t("recommendationsLabel")}</label>
+          <button type="button" onClick={() => setShowAiHelper((v) => !v)} style={aiButtonStyle()}>
+            {t("helpMeWriteThis")}
+          </button>
+        </div>
+
+        {showAiHelper && (
+          <div style={{ background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 8, padding: 12, marginBottom: 8 }}>
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 8 }}>
+              {t("roughNotesDesc")}
+            </p>
+            <textarea
+              value={roughNotes}
+              onChange={(e) => setRoughNotes(e.target.value)}
+              placeholder={t("roughNotesPlaceholder")}
+              style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
+            />
+            {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginTop: 6 }}>{aiError}</p>}
+            <button
+              type="button"
+              onClick={draftFromNotes}
+              disabled={aiPending || !roughNotes.trim()}
+              style={{ marginTop: 8, background: "#a78bfa", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: aiPending || !roughNotes.trim() ? 0.6 : 1 }}
+            >
+              {aiPending ? t("drafting") : t("draftIt")}
+            </button>
+          </div>
+        )}
+
         <textarea
           value={recommendations}
           onChange={(e) => setRecommendations(e.target.value)}

@@ -381,11 +381,17 @@ export async function draftConclusion(reviewId: string): Promise<{ error: string
   }
 }
 
-// Employee-side: turns their own rough notes into a polished first-person
-// reflection paragraph — never fabricates content, only rephrases what they
-// already gave it. Same "organize a note" pattern as Workspace's AI
-// summarizer, applied to a review reflection instead of a free note.
-export async function helpDraftReflection(reviewId: string, roughNotes: string): Promise<{ error: string } | { reflection: string }> {
+// Employee-side: turns their own rough notes about what support/resources/
+// changes would help into a clear Recommendations paragraph. Deliberately
+// NOT offered on Reflection, Key Strengths, or Development Areas — those
+// exist specifically to capture the employee's own voice unassisted (an AI-
+// polished self-reflection tells a manager nothing real about how someone
+// actually sees their year), whereas Recommendations is closer to
+// logistics — support needed, not personal disclosure — so drafting help
+// there doesn't undercut the point of the field the way it would elsewhere.
+// Never fabricates content, only organizes what they actually gave it —
+// same "organize a note" pattern as Workspace's AI summarizer.
+export async function helpDraftRecommendations(reviewId: string, roughNotes: string): Promise<{ error: string } | { recommendations: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -410,9 +416,9 @@ export async function helpDraftReflection(reviewId: string, roughNotes: string):
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
-      max_tokens: 500,
+      max_tokens: 400,
       system:
-        "Turn this person's rough notes into a clear, first-person reflection paragraph for their own performance review. Use only what they actually wrote — never add accomplishments, numbers, or claims they didn't mention. Keep their voice; don't inflate it into corporate-speak. Plain text only, no headers or bullet points.",
+        "Turn this person's rough notes into a clear, first-person Recommendations paragraph for their own performance review — support, resources, or changes that would help them going forward. Use only what they actually wrote — never add requests or claims they didn't mention. Keep their voice; don't inflate it into corporate-speak. Plain text only, no headers or bullet points.",
       messages: [{ role: "user", content: trimmed }],
     });
     await recordAiUsage(supabase, {
@@ -425,9 +431,9 @@ export async function helpDraftReflection(reviewId: string, roughNotes: string):
     });
     const text = response.content.find((b) => b.type === "text");
     if (!text || text.type !== "text") throw new Error("No text output");
-    return { reflection: text.text.trim() };
+    return { recommendations: text.text.trim() };
   } catch (err) {
-    console.error("helpDraftReflection failed:", err);
+    console.error("helpDraftRecommendations failed:", err);
     return { error: "Couldn't draft this right now — try again in a moment." };
   }
 }
