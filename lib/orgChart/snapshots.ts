@@ -34,20 +34,26 @@ export type OrgChartSnapshotSummary = {
   createdByName: string | null;
 };
 
-export type OrgChartSnapshotDetailRow = {
+// Generic over {children: T[]} the same way tree.ts's OrgChartNode/DisplayNode
+// are, so lib/orgChart/tree.ts's layout()/flatten()/subtreeWidth() work on
+// this unchanged — a snapshot renders through the exact same layout math the
+// live chart uses, just fed a much lighter node (a snapshot only ever needs
+// a label/subtitle, never the full WorkforceRow shape the live chart's
+// cards render).
+export type OrgChartSnapshotTreeNode = {
   id: string;
   kind: "member" | "position";
   label: string;
   subtitle: string | null;
   positionKind: "vacant_role" | "structural" | null;
-  managerLabel: string | null;
+  children: OrgChartSnapshotTreeNode[];
 };
 
 export type OrgChartSnapshotDetail = {
   id: string;
   name: string;
   createdAt: string;
-  rows: OrgChartSnapshotDetailRow[];
+  roots: OrgChartSnapshotTreeNode[];
 };
 
 // Builds the point-in-time payload a snapshot stores — denormalized
@@ -158,10 +164,12 @@ export async function listOrgChartSnapshots(): Promise<OrgChartSnapshotSummary[]
   }));
 }
 
-// Resolves a stored snapshot's payload into a flat, sorted "who reported to
-// whom as of <date>" list — every name/label comes from the snapshot's own
-// denormalized data, never a live join, so this stays accurate even for a
-// long-since-changed org.
+// Resolves a stored snapshot's payload into a reporting-line forest — every
+// label comes from the snapshot's own denormalized data, never a live join,
+// so this stays accurate even for a long-since-changed org. Structurally
+// the same shape as the live chart's buildReportingForest (tree.ts): a node
+// with no resolvable parent tag becomes a root rather than being dropped,
+// and a visited-set guards against ever hanging on a corrupt chain.
 export async function getOrgChartSnapshotDetail(id: string): Promise<OrgChartSnapshotDetail | null> {
   const data = await buildCompanyData();
   if (!data.organizationId) return null;
@@ -175,33 +183,47 @@ export async function getOrgChartSnapshotDetail(id: string): Promise<OrgChartSna
   if (!row) return null;
 
   const payload = row.snapshot;
-  const memberNameById = new Map(payload.members.map((m) => [m.userId, m.name]));
-  const positionTitleById = new Map(payload.positions.map((p) => [p.id, p.title]));
 
-  function managerLabelFor(managerUserId: string | null, managerPositionId: string | null): string | null {
-    if (managerUserId) return memberNameById.get(managerUserId) ?? null;
-    if (managerPositionId) return positionTitleById.get(managerPositionId) ?? null;
-    return null;
+  type Entry = { node: OrgChartSnapshotTreeNode; parentTag: string | null };
+  const byTag = new Map<string, Entry>();
+
+  for (const m of payload.members) {
+    const tag = `member:${m.userId}`;
+    const parentTag = m.managerUserId ? `member:${m.managerUserId}` : m.managerPositionId ? `position:${m.managerPositionId}` : null;
+    byTag.set(tag, { node: { id: tag, kind: "member", label: m.name, subtitle: m.title, positionKind: null, children: [] }, parentTag });
+  }
+  for (const p of payload.positions) {
+    const tag = `position:${p.id}`;
+    const parentTag = p.parentPositionId ? `position:${p.parentPositionId}` : p.parentMemberUserId ? `member:${p.parentMemberUserId}` : null;
+    byTag.set(tag, { node: { id: tag, kind: "position", label: p.title, subtitle: null, positionKind: p.kind, children: [] }, parentTag });
   }
 
-  const rows: OrgChartSnapshotDetailRow[] = [
-    ...payload.members.map((m) => ({
-      id: `member:${m.userId}`,
-      kind: "member" as const,
-      label: m.name,
-      subtitle: m.title,
-      positionKind: null,
-      managerLabel: managerLabelFor(m.managerUserId, m.managerPositionId),
-    })),
-    ...payload.positions.map((p) => ({
-      id: `position:${p.id}`,
-      kind: "position" as const,
-      label: p.title,
-      subtitle: null,
-      positionKind: p.kind,
-      managerLabel: managerLabelFor(p.parentMemberUserId, p.parentPositionId),
-    })),
-  ].sort((a, b) => a.label.localeCompare(b.label));
+  const childrenByParentTag = new Map<string, string[]>();
+  const rootTags: string[] = [];
+  for (const [tag, entry] of byTag) {
+    // A parent tag that isn't itself a node in this snapshot (removed since,
+    // or simply never existed) degrades to "unassigned root" — same policy
+    // as the live chart, nobody just vanishes from the picture.
+    if (entry.parentTag && byTag.has(entry.parentTag) && entry.parentTag !== tag) {
+      const list = childrenByParentTag.get(entry.parentTag) ?? [];
+      list.push(tag);
+      childrenByParentTag.set(entry.parentTag, list);
+    } else {
+      rootTags.push(tag);
+    }
+  }
 
-  return { id: row.id, name: row.name, createdAt: row.created_at, rows };
+  function build(tag: string, visited: Set<string>): OrgChartSnapshotTreeNode {
+    const entry = byTag.get(tag)!;
+    if (visited.has(tag)) return { ...entry.node, children: [] };
+    const nextVisited = new Set(visited).add(tag);
+    const children = (childrenByParentTag.get(tag) ?? [])
+      .map((childTag) => build(childTag, nextVisited))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return { ...entry.node, children };
+  }
+
+  const roots = rootTags.map((tag) => build(tag, new Set())).sort((a, b) => a.label.localeCompare(b.label));
+
+  return { id: row.id, name: row.name, createdAt: row.created_at, roots };
 }

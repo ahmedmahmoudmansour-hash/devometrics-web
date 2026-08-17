@@ -17,7 +17,8 @@ import {
   type MergedDisplayNode,
 } from "@/lib/orgChart/mergedTree";
 import { defaultViewConfig, DEFAULT_PRESET_KEY, type OrgChartViewConfig, type OrgChartPresetKey, type OrgChartAnnotation } from "@/lib/orgChart/cardConfig";
-import { listSavedViews, type OrgChartSavedView } from "@/lib/orgChart/savedViews";
+import { listSavedViews, updateSavedView, type OrgChartSavedView } from "@/lib/orgChart/savedViews";
+import { loadOrgChartAnnotations, saveOrgChartAnnotations } from "@/lib/orgChart/annotations";
 import OrgChartCard, { type DropState } from "@/components/dashboard/OrgChartCard";
 import OrgChartAnnotationBox from "@/components/dashboard/OrgChartAnnotationBox";
 import OrgChartPositionCard from "@/components/dashboard/OrgChartPositionCard";
@@ -89,7 +90,14 @@ export default function OrgChartView({
   const [lastSeenRows, setLastSeenRows] = useState(rows);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [placingAnnotation, setPlacingAnnotation] = useState(false);
+  // The saved view whose notes/config are currently "live" on screen —
+  // null means the unsaved default chart (no named view picked yet).
+  // Tracked so annotation edits know where to auto-persist: into this
+  // specific view's own config when set, or into the org-wide default
+  // layer (lib/orgChart/annotations.ts) when not — see persistAnnotations.
+  const [activeSavedView, setActiveSavedView] = useState<OrgChartSavedView | null>(null);
   const canvasContentRef = useRef<HTMLDivElement>(null);
+  const annotationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const nominatedSet = useMemo(() => new Set(nominatedUserIds), [nominatedUserIds]);
   const memberManagerPositionsMap = useMemo(() => new Map(Object.entries(memberManagerPositions)), [memberManagerPositions]);
@@ -97,6 +105,11 @@ export default function OrgChartView({
 
   useEffect(() => {
     listSavedViews().then(setSavedViews);
+    // The default chart's own notes (relevant only until/unless the user
+    // picks a named saved view, which brings its own annotations instead).
+    loadOrgChartAnnotations().then((defaultAnnotations) => {
+      setConfig((prev) => (prev.annotations.length === 0 ? { ...prev, annotations: defaultAnnotations } : prev));
+    });
   }, []);
 
   // Clears optimistic patches once the server's real rows land (a fresh
@@ -260,12 +273,46 @@ export default function OrgChartView({
     // no key for it in its stored jsonb at all, not an empty array.
     setConfig({ ...viewConfig, annotations: viewConfig.annotations ?? [] });
     setPresetKey(savedPresetKey);
+    setActiveSavedView(view);
     setExpandedBranchRootIds(new Set());
+  }
+
+  // Auto-persists annotation changes so a note survives a refresh without a
+  // separate explicit "Save current view" click. Writes into whichever
+  // saved view is currently active — each named chart (HR, Finance,
+  // Executive Board...) keeps its own distinct notes — or the org-wide
+  // default layer (lib/orgChart/annotations.ts) when no named view has been
+  // picked yet. Debounced for text edits (typing a sentence shouldn't fire
+  // a network write per keystroke); add/move/delete commit immediately
+  // since those are discrete, infrequent events.
+  function persistConfig(nextConfig: OrgChartViewConfig, debounce: boolean) {
+    const run = () => {
+      if (activeSavedView) {
+        updateSavedView(activeSavedView.id, activeSavedView.name, { ...nextConfig, presetKey }).then((result) => {
+          if (result && "error" in result) setError(result.error);
+          else setSavedViews((prev) => prev.map((v) => (v.id === activeSavedView.id ? { ...v, config: { ...nextConfig, presetKey } } : v)));
+        });
+      } else {
+        saveOrgChartAnnotations(nextConfig.annotations).then((result) => {
+          if (result.error) setError(result.error);
+        });
+      }
+    };
+    if (!debounce) {
+      run();
+      return;
+    }
+    if (annotationSaveTimer.current) clearTimeout(annotationSaveTimer.current);
+    annotationSaveTimer.current = setTimeout(run, 600);
   }
 
   function handleAddAnnotationAt(x: number, y: number) {
     const annotation: OrgChartAnnotation = { id: crypto.randomUUID(), text: "", x: Math.max(0, x - 90), y: Math.max(0, y - 20) };
-    setConfig((prev) => ({ ...prev, annotations: [...prev.annotations, annotation] }));
+    setConfig((prev) => {
+      const next = { ...prev, annotations: [...prev.annotations, annotation] };
+      persistConfig(next, false);
+      return next;
+    });
     setPlacingAnnotation(false);
   }
 
@@ -279,23 +326,28 @@ export default function OrgChartView({
     handleAddAnnotationAt(e.clientX - rect.left, e.clientY - rect.top);
   }
 
-  // Text/move/delete deliberately use setConfig directly rather than
-  // handleConfigChange — that helper also resets presetKey to null and
-  // clears expandedBranchRootIds, which is right for a real structural
-  // change (a toggle, a filter) but wrong here: typing a keystroke into a
-  // note shouldn't collapse whatever branch someone had expanded, and a
-  // note's presence doesn't invalidate "this view started from the
-  // Executive preset" the way changing which fields show on every card does.
   function handleAnnotationTextChange(id: string, text: string) {
-    setConfig((prev) => ({ ...prev, annotations: prev.annotations.map((a) => (a.id === id ? { ...a, text } : a)) }));
+    setConfig((prev) => {
+      const next = { ...prev, annotations: prev.annotations.map((a) => (a.id === id ? { ...a, text } : a)) };
+      persistConfig(next, true);
+      return next;
+    });
   }
 
   function handleAnnotationMove(id: string, x: number, y: number) {
-    setConfig((prev) => ({ ...prev, annotations: prev.annotations.map((a) => (a.id === id ? { ...a, x, y } : a)) }));
+    setConfig((prev) => {
+      const next = { ...prev, annotations: prev.annotations.map((a) => (a.id === id ? { ...a, x, y } : a)) };
+      persistConfig(next, false);
+      return next;
+    });
   }
 
   function handleAnnotationDelete(id: string) {
-    setConfig((prev) => ({ ...prev, annotations: prev.annotations.filter((a) => a.id !== id) }));
+    setConfig((prev) => {
+      const next = { ...prev, annotations: prev.annotations.filter((a) => a.id !== id) };
+      persistConfig(next, false);
+      return next;
+    });
   }
 
   function handleAddPosition(kind: "vacant_role" | "structural") {

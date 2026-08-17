@@ -37,6 +37,15 @@ export type OrgChartFilters = {
 // in the same coordinate space as card positions (the div at `left: PAD,
 // top: PAD` in OrgChartView), so an annotation drags and prints exactly
 // like a card does.
+//
+// Lives inside OrgChartViewConfig — each named Saved View (lib/orgChart/
+// savedViews.ts) is its own real chart (HR, Finance, Executive Board...)
+// and each needs its own distinct set of notes, not one note layer shared
+// across every chart. OrgChartView.tsx auto-persists annotation changes
+// back into whichever saved view is currently active (see
+// lib/orgChart/annotations.ts for the fallback used before any named view
+// has been picked) so a note survives a refresh without a separate
+// explicit "Save current view" click.
 export type OrgChartAnnotation = {
   id: string;
   text: string;

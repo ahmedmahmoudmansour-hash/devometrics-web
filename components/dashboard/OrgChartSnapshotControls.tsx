@@ -11,6 +11,7 @@ import {
   type OrgChartSnapshotDetail,
 } from "@/lib/orgChart/snapshots";
 import { resetOrgChart } from "@/lib/orgChart/reset";
+import OrgChartSnapshotChart from "@/components/dashboard/OrgChartSnapshotChart";
 
 const buttonStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -236,7 +237,7 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, maxWidth: 560, width: "100%", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+            style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, maxWidth: "min(1100px, 95vw)", width: "100%", maxHeight: "85vh", display: "flex", flexDirection: "column" }}
           >
             {detailLoading || !detail ? (
               <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("loading")}</p>
@@ -246,20 +247,7 @@ export default function OrgChartSnapshotControls({ organizationName }: { organiz
                 <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 14 }}>
                   {t("snapshotDetailAsOf", { date: new Date(detail.createdAt).toLocaleString() })}
                 </p>
-                <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {detail.rows.map((row) => (
-                    <div key={row.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12.5, borderBottom: "1px solid var(--border)", paddingBottom: 6 }}>
-                      <span style={{ color: "var(--text)" }}>
-                        {row.label}
-                        {row.subtitle ? <span style={{ color: "var(--text-muted)" }}> — {row.subtitle}</span> : null}
-                        {row.positionKind ? (
-                          <span style={{ color: "var(--text-muted)" }}> — {row.positionKind === "vacant_role" ? t("vacantRole") : t("structural")}</span>
-                        ) : null}
-                      </span>
-                      <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>{row.managerLabel ?? t("noManager")}</span>
-                    </div>
-                  ))}
-                </div>
+                <OrgChartSnapshotChart roots={detail.roots} vacantLabel={t("vacantRole")} structuralLabel={t("structural")} />
                 <button
                   type="button"
                   onClick={() => setDetail(null)}

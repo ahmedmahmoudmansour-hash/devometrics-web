@@ -35,7 +35,7 @@ export default function OrgChartSavedViewsMenu({
     const config: SavedOrgChartConfig = { ...currentConfig, presetKey: currentPresetKey };
     startTransition(async () => {
       const result = await createSavedView(trimmed, config);
-      if (result?.error) setError(result.error);
+      if ("error" in result) setError(result.error);
       else {
         setName("");
         setSaveDialogOpen(false);

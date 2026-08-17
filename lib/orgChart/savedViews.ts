@@ -36,7 +36,7 @@ export async function listSavedViews(): Promise<OrgChartSavedView[]> {
   return (rows ?? []).map((r) => ({ id: r.id, name: r.name, config: r.config, createdAt: r.created_at }));
 }
 
-export async function createSavedView(name: string, config: SavedOrgChartConfig) {
+export async function createSavedView(name: string, config: SavedOrgChartConfig): Promise<{ success: true } | { error: string }> {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
   const supabase = await createClient();
@@ -60,7 +60,7 @@ export async function createSavedView(name: string, config: SavedOrgChartConfig)
   return { success: true };
 }
 
-export async function updateSavedView(id: string, name: string, config: SavedOrgChartConfig) {
+export async function updateSavedView(id: string, name: string, config: SavedOrgChartConfig): Promise<{ success: true } | { error: string }> {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) return { error: "Not authorized" };
   const supabase = await createClient();
