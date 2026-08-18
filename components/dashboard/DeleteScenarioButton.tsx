@@ -3,10 +3,18 @@
 import { useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { deleteCustomScenario } from "@/app/dashboard/roleplay/customActions";
+import { useConfirmClick } from "@/lib/ui/useConfirmClick";
 
 export default function DeleteScenarioButton({ scenarioId }: { scenarioId: string }) {
   const t = useTranslations("deleteScenarioButton");
+  const tConfirm = useTranslations("confirmActions");
   const [isPending, startTransition] = useTransition();
+
+  const { confirming, handleClick } = useConfirmClick(() => {
+    startTransition(async () => {
+      await deleteCustomScenario(scenarioId);
+    });
+  });
 
   return (
     <button
@@ -15,9 +23,7 @@ export default function DeleteScenarioButton({ scenarioId }: { scenarioId: strin
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        startTransition(async () => {
-          await deleteCustomScenario(scenarioId);
-        });
+        handleClick();
       }}
       aria-label={t("deleteAriaLabel")}
       style={{
@@ -34,7 +40,7 @@ export default function DeleteScenarioButton({ scenarioId }: { scenarioId: strin
         opacity: isPending ? 0.5 : 1,
       }}
     >
-      {t("delete")}
+      {confirming ? tConfirm("clickAgainToConfirm") : t("delete")}
     </button>
   );
 }

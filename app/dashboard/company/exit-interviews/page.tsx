@@ -7,27 +7,11 @@ import { getLatestExitInterviewAnalysis } from "@/lib/exitInterviews/ai";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import ExitInterviewForm from "@/components/dashboard/ExitInterviewForm";
 import ExitInterviewAnalysisPanel from "@/components/dashboard/ExitInterviewAnalysisPanel";
-import DeleteExitInterviewButton from "@/components/dashboard/DeleteExitInterviewButton";
+import ExitInterviewsTable from "@/components/dashboard/ExitInterviewsTable";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "Exit Interviews — Devometrics" };
-
-const cellStyle: React.CSSProperties = {
-  padding: "10px 14px",
-  fontSize: 13,
-  borderBottom: "1px solid var(--border)",
-  color: "var(--text)",
-  verticalAlign: "top",
-};
-const headStyle: React.CSSProperties = {
-  ...cellStyle,
-  color: "var(--text-muted)",
-  fontWeight: 700,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-};
 
 export default async function ExitInterviewsPage() {
   const t = await getTranslations("exitInterviewsPage");
@@ -67,36 +51,7 @@ export default async function ExitInterviewsPage() {
             <p style={{ color: "var(--text-muted)", fontSize: 14 }}>{t("noInterviewsYet")}</p>
           </div>
         ) : (
-          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colName")}</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colDepartment")}</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}>{t("colSeparationType")}</th>
-                    <th style={{ ...headStyle, textAlign: "left", whiteSpace: "nowrap" }}>{t("colLastDay")}</th>
-                    <th style={{ ...headStyle, textAlign: "left" }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {interviews.map((iv) => (
-                    <tr key={iv.id}>
-                      <td style={cellStyle}>{iv.employee_name}</td>
-                      <td style={{ ...cellStyle, color: iv.department ? "var(--text)" : "var(--text-muted)" }}>{iv.department ?? "—"}</td>
-                      <td style={cellStyle}>{t(`separation${iv.separation_type.charAt(0).toUpperCase()}${iv.separation_type.slice(1)}`)}</td>
-                      <td style={{ ...cellStyle, whiteSpace: "nowrap", color: "var(--text-muted)" }}>
-                        {iv.last_day ? new Date(iv.last_day).toLocaleDateString() : "—"}
-                      </td>
-                      <td style={cellStyle}>
-                        <DeleteExitInterviewButton id={iv.id} label={t("deleteButton")} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ExitInterviewsTable interviews={interviews} />
         )}
       </div>
     </div>

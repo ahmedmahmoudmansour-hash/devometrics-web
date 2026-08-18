@@ -12,6 +12,7 @@ import { generateInterviewQuestions } from "@/lib/hiring/postingActions";
 import { CANDIDATE_CV_BUCKET, CANDIDATE_CV_MAX_BYTES, CANDIDATE_CV_ALLOWED_MIME_TYPES } from "@/lib/hiring/constants";
 import { HIRING_STAGES, stageLabel } from "@/lib/hiring/types";
 import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { useConfirmClick } from "@/lib/ui/useConfirmClick";
 import type { JobPosting, JobPostingCompetencyRequirement, HiringCandidate, HiringStage } from "@/lib/hiring/types";
 
 const card: React.CSSProperties = {
@@ -392,6 +393,12 @@ function CandidateCard({
   // candidate.stage since that's what it's bound to when nothing's pending.
   const [pendingStage, setPendingStage] = useState<HiringStage | null>(null);
   const [note, setNote] = useState("");
+  const { confirming, handleClick: handleRemoveClick } = useConfirmClick(() =>
+    startTransition(async () => {
+      await deleteCandidate(candidate.id);
+      onChanged();
+    })
+  );
 
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: "rgba(255,255,255,0.02)" }}>
@@ -438,16 +445,10 @@ function CandidateCard({
         <button
           type="button"
           disabled={isPending}
-          style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 11, cursor: "pointer", marginLeft: "auto" }}
-          onClick={() =>
-            startTransition(async () => {
-              if (!confirm(t("removeConfirm", { name: candidate.full_name }))) return;
-              await deleteCandidate(candidate.id);
-              onChanged();
-            })
-          }
+          style={{ background: "none", border: "none", color: confirming ? "var(--danger)" : "var(--text-muted)", fontSize: 11, cursor: "pointer", marginLeft: "auto" }}
+          onClick={handleRemoveClick}
         >
-          {t("remove")}
+          {confirming ? t("removeConfirm", { name: candidate.full_name }) : t("remove")}
         </button>
       </div>
       {pendingStage && (

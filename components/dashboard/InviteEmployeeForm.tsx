@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { UserPlus, Upload } from "lucide-react";
 import { inviteEmployee, revokeInvite, bulkInviteEmployees, type BulkInviteRow, type BulkInviteResult } from "@/lib/organizations/actions";
+import { useConfirmClick } from "@/lib/ui/useConfirmClick";
 
 const fieldStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -26,6 +27,24 @@ const labelStyle: React.CSSProperties = {
 
 function inviteAgeDays(createdAt: string): number {
   return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000));
+}
+
+function RevokeInviteButton({ inviteId }: { inviteId: string }) {
+  const t = useTranslations("inviteEmployeeForm");
+  const tConfirm = useTranslations("confirmActions");
+  const [isPending, startTransition] = useTransition();
+  const { confirming, handleClick } = useConfirmClick(() => startTransition(() => revokeInvite(inviteId)));
+
+  return (
+    <button
+      type="button"
+      disabled={isPending}
+      onClick={handleClick}
+      style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
+    >
+      {confirming ? tConfirm("clickAgainToConfirm") : t("revoke")}
+    </button>
+  );
 }
 
 function modeButtonStyle(active: boolean): React.CSSProperties {
@@ -392,13 +411,7 @@ export default function InviteEmployeeForm({
                   )}
                   <span style={{ color: "var(--text-muted)" }}> · {t("invitedAgo", { days: inviteAgeDays(invite.created_at) })}</span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => startTransition(() => revokeInvite(invite.id))}
-                  style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
-                >
-                  {t("revoke")}
-                </button>
+                <RevokeInviteButton inviteId={invite.id} />
               </div>
             ))}
           </div>

@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { removeKnowledgeHubAssignment } from "@/lib/knowledgeHub/actions";
+import { useConfirmClick } from "@/lib/ui/useConfirmClick";
 
 export default function RemoveKnowledgeHubAssignmentButton({
   assignmentId,
@@ -13,19 +14,22 @@ export default function RemoveKnowledgeHubAssignmentButton({
   contentId: string;
 }) {
   const t = useTranslations("removeKnowledgeHubAssignmentButton");
+  const tConfirm = useTranslations("confirmActions");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  const { confirming, handleClick } = useConfirmClick(() => {
+    startTransition(async () => {
+      await removeKnowledgeHubAssignment(assignmentId, contentId);
+      router.refresh();
+    });
+  });
 
   return (
     <button
       type="button"
       disabled={isPending}
-      onClick={() =>
-        startTransition(async () => {
-          await removeKnowledgeHubAssignment(assignmentId, contentId);
-          router.refresh();
-        })
-      }
+      onClick={handleClick}
       style={{
         background: "none",
         border: "none",
@@ -35,7 +39,7 @@ export default function RemoveKnowledgeHubAssignmentButton({
         opacity: isPending ? 0.5 : 1,
       }}
     >
-      {t("remove")}
+      {confirming ? tConfirm("clickAgainToConfirm") : t("remove")}
     </button>
   );
 }

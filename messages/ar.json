@@ -1,4 +1,7 @@
 {
+  "confirmActions": {
+    "clickAgainToConfirm": "انقر مرة أخرى للتأكيد"
+  },
   "common": {
     "howItWorks": "كيف يعمل",
     "liveDemo": "عرض حي",
@@ -5086,6 +5089,9 @@
     "saveButton": "حفظ مقابلة الخروج",
     "cancelButton": "إلغاء",
     "noInterviewsYet": "لا توجد مقابلات خروج مسجّلة بعد.",
+    "allDepartments": "كل الأقسام",
+    "allSeparationTypes": "كل أنواع الانفصال",
+    "noInterviewsMatchFilter": "لا توجد مقابلات خروج مطابقة لهذا التصفية.",
     "colName": "الاسم",
     "colDepartment": "القسم",
     "colSeparationType": "نوع إنهاء الخدمة",

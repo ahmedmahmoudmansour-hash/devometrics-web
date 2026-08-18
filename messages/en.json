@@ -1,4 +1,7 @@
 {
+  "confirmActions": {
+    "clickAgainToConfirm": "Click again to confirm"
+  },
   "common": {
     "howItWorks": "How it works",
     "liveDemo": "Live Demo",
@@ -5086,6 +5089,9 @@
     "saveButton": "Save exit interview",
     "cancelButton": "Cancel",
     "noInterviewsYet": "No exit interviews recorded yet.",
+    "allDepartments": "All departments",
+    "allSeparationTypes": "All separation types",
+    "noInterviewsMatchFilter": "No exit interviews match this filter.",
     "colName": "Name",
     "colDepartment": "Department",
     "colSeparationType": "Separation type",
