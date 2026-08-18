@@ -7,13 +7,26 @@ import { listWorkflowTemplates, cloneStarterTemplate, listOrganizationMembersFor
 import { STARTER_KEYS, STARTER_TEMPLATES } from "@/lib/performanceReviews/starterTemplates";
 import { describeCycleTimeline, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
 import ImpactCycleReviewRow from "@/components/dashboard/ImpactCycleReviewRow";
-import type { PerformanceReviewCycle, ReviewListItem } from "@/lib/performanceReviews/types";
+import { reviewStatusLabel, type PerformanceReviewCycle, type ReviewListItem, type ReviewStatus } from "@/lib/performanceReviews/types";
 import type { WorkflowTemplate } from "@/lib/performanceReviews/workflowTypes";
 
 const CYCLE_STATUS_COLOR: Record<string, string> = {
   draft: "148,163,184",
   open: "0,201,167",
   closed: "148,163,184",
+};
+
+// Not started reads as "needs attention" (amber, matching this theme's
+// existing warning color), acknowledged/closed read as done (teal), and the
+// two in-between submission states stay neutral — a 3-tier traffic light
+// rather than 5 distinct colors, which would be noise at a glance.
+const REVIEW_STATUS_ORDER: ReviewStatus[] = ["not_started", "self_submitted", "manager_submitted", "acknowledged", "closed"];
+const REVIEW_STATUS_COLOR: Record<ReviewStatus, string> = {
+  not_started: "var(--amber-rgb)",
+  self_submitted: "148,163,184",
+  manager_submitted: "148,163,184",
+  acknowledged: "var(--teal-rgb)",
+  closed: "var(--teal-rgb)",
 };
 
 function inputStyle(): React.CSSProperties {
@@ -203,16 +216,19 @@ function cycleStatusLabel(t: (key: string) => string, status: "draft" | "open" |
 
 export default function PerformanceReviewsManager({ initialCycles, organizationId }: { initialCycles: PerformanceReviewCycle[]; organizationId: string }) {
   const t = useTranslations("performanceReviewsManager");
+  const tLabels = useTranslations("performanceReviewLabels");
   const [cycles, setCycles] = useState(initialCycles);
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(initialCycles[0]?.id ?? null);
   const [reviews, setReviews] = useState<ReviewListItem[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ReviewStatus | null>(null);
   const [, startTransition] = useTransition();
 
   async function loadReviews(cycleId: string) {
     setLoadingReviews(true);
     const items = await listReviewsForCycle(cycleId);
     setReviews(items);
+    setStatusFilter(null);
     setLoadingReviews(false);
   }
 
@@ -316,11 +332,52 @@ export default function PerformanceReviewsManager({ initialCycles, organizationI
               <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("noEmployeesInCycle")}</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {reviews.map((item) => (
-                <ImpactCycleReviewRow key={item.id} item={item} onChanged={() => selectedCycleId && loadReviews(selectedCycleId)} />
-              ))}
-            </div>
+            <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {REVIEW_STATUS_ORDER.map((status) => {
+                  const count = reviews.filter((r) => r.status === status).length;
+                  if (count === 0) return null;
+                  const color = REVIEW_STATUS_COLOR[status];
+                  const active = statusFilter === status;
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => setStatusFilter(active ? null : status)}
+                      style={{
+                        background: active ? `rgba(${color},0.18)` : `rgba(${color},0.08)`,
+                        border: `1px solid rgba(${color},${active ? 0.5 : 0.25})`,
+                        borderRadius: 999,
+                        padding: "5px 12px",
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        color: `rgb(${color})`,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {reviewStatusLabel(tLabels, status)} · {count}
+                    </button>
+                  );
+                })}
+                {statusFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter(null)}
+                    style={{ background: "none", border: "none", fontSize: 11.5, color: "var(--text-muted)", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    {t("clearStatusFilter")}
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {reviews
+                  .filter((item) => !statusFilter || item.status === statusFilter)
+                  .map((item) => (
+                    <ImpactCycleReviewRow key={item.id} item={item} onChanged={() => selectedCycleId && loadReviews(selectedCycleId)} />
+                  ))}
+              </div>
+            </>
           )}
         </>
       )}

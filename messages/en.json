@@ -1429,7 +1429,8 @@
     "groupTalent": "Talent",
     "groupHiringGrowth": "Hiring & Growth",
     "groupPerformanceFeedback": "Performance & Feedback",
-    "permissions": "Permissions"
+    "permissions": "Permissions",
+    "settings": "Settings"
   },
   "chooseWorkspacePage": {
     "title": "Which workspace do you want?",
@@ -1551,6 +1552,7 @@
     "resultsInvited": "✓ {count, plural, one {# invited} other {# invited}}",
     "resultsExtra": " — {duplicate} already invited, {invalid} skipped (no valid email)",
     "pendingHeading": "Pending ({count})",
+    "invitedAgo": "invited {days, plural, =0 {today} one {# day ago} other {# days ago}}",
     "revoke": "Revoke",
     "noValidRowsError": "No rows with an Email column value were found in that file.",
     "readFileError": "Could not read that file — make sure it's a .csv or .xlsx export.",
@@ -2448,6 +2450,7 @@
     },
     "loading": "Loading…",
     "noEmployeesInCycle": "No employees in this cycle yet.",
+    "clearStatusFilter": "Clear filter",
     "workflowLabel": "Workflow",
     "workflowOrgDefault": "Use your org's default workflow",
     "workflowStartersGroup": "Start from a template",

@@ -7,6 +7,7 @@ import OrganizationContactsForm from "@/components/dashboard/OrganizationContact
 import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandingForm";
 import EmailMessagesForm from "@/components/dashboard/EmailMessagesForm";
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
+import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 
 // Split out of app/dashboard/company/page.tsx (the 2026-08 UX audit's
@@ -38,6 +39,8 @@ export default async function CompanySettingsPage() {
             {t("settingsSubtitle", { name: data.organizationName ?? "" })}
           </p>
         </div>
+
+        <CompanyNavTabs active="settings" />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <OrganizationProfileForm

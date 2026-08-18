@@ -24,6 +24,10 @@ const labelStyle: React.CSSProperties = {
   display: "block",
 };
 
+function inviteAgeDays(createdAt: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000));
+}
+
 function modeButtonStyle(active: boolean): React.CSSProperties {
   return {
     display: "inline-flex",
@@ -107,7 +111,7 @@ export default function InviteEmployeeForm({
   pendingInvites,
 }: {
   organizationId: string;
-  pendingInvites: { id: string; email: string; title: string | null; department: string | null; country: string | null }[];
+  pendingInvites: { id: string; email: string; title: string | null; department: string | null; country: string | null; created_at: string }[];
 }) {
   const t = useTranslations("inviteEmployeeForm");
   const [mode, setMode] = useState<"single" | "import">("single");
@@ -386,6 +390,7 @@ export default function InviteEmployeeForm({
                       — {[invite.title, invite.department, invite.country].filter(Boolean).join(" · ")}
                     </span>
                   )}
+                  <span style={{ color: "var(--text-muted)" }}> · {t("invitedAgo", { days: inviteAgeDays(invite.created_at) })}</span>
                 </span>
                 <button
                   type="button"

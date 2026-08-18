@@ -1429,7 +1429,8 @@
     "groupTalent": "المواهب",
     "groupHiringGrowth": "التوظيف والتطوير",
     "groupPerformanceFeedback": "الأداء والتغذية الراجعة",
-    "permissions": "الصلاحيات"
+    "permissions": "الصلاحيات",
+    "settings": "الإعدادات"
   },
   "chooseWorkspacePage": {
     "title": "أي مساحة عمل تريد؟",
@@ -1551,6 +1552,7 @@
     "resultsInvited": "✓ {count, plural, one {تمت دعوة واحد} other {تمت دعوة #}}",
     "resultsExtra": " — {duplicate} مدعوون بالفعل، {invalid} تم تخطيهم (بلا بريد إلكتروني صالح)",
     "pendingHeading": "قيد الانتظار ({count})",
+    "invitedAgo": "تمت الدعوة {days, plural, =0 {اليوم} one {منذ # يوم} other {منذ # أيام}}",
     "revoke": "إلغاء",
     "noValidRowsError": "لم يُعثر على أي صف يحتوي على قيمة في عمود البريد الإلكتروني في ذلك الملف.",
     "readFileError": "تعذّرت قراءة الملف — تأكد من أنه بصيغة ‎.csv أو ‎.xlsx صحيحة.",
@@ -2448,6 +2450,7 @@
     },
     "loading": "جارٍ التحميل…",
     "noEmployeesInCycle": "لا يوجد موظفون في هذه الدورة بعد.",
+    "clearStatusFilter": "مسح التصفية",
     "workflowLabel": "سير العمل",
     "workflowOrgDefault": "استخدام سير العمل الافتراضي للمؤسسة",
     "workflowStartersGroup": "البدء من قالب",

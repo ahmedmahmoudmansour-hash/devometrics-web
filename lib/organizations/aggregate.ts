@@ -90,7 +90,7 @@ export type CompanyData = {
   // an honest starting signal, not a claim of having solved succession
   // planning end to end.
   leadershipReadiness: { userId: string; name: string; avatarUrl: string | null; score: number }[];
-  pendingInvites: { id: string; email: string; title: string | null; department: string | null; country: string | null }[];
+  pendingInvites: { id: string; email: string; title: string | null; department: string | null; country: string | null; created_at: string }[];
   organizationCompetencies: OrganizationCompetency[];
 };
 
@@ -180,11 +180,11 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       .returns<{ id: string; user_id: string; title: string | null; role: string; created_at: string }[]>(),
     supabase
       .from("organization_invites")
-      .select("id, email, title")
+      .select("id, email, title, created_at")
       .eq("organization_id", membership.organization_id)
       .is("accepted_at", null)
       .order("created_at", { ascending: false })
-      .returns<{ id: string; email: string; title: string | null }[]>(),
+      .returns<{ id: string; email: string; title: string | null; created_at: string }[]>(),
     // New table (migration 0035) — a query error here (e.g. migration not
     // run yet) just yields an empty framework, never breaks the rest of
     // this dashboard.
