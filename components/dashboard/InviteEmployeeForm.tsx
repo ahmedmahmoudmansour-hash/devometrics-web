@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import * as XLSX from "xlsx";
 import { useTranslations } from "next-intl";
 import { UserPlus, Upload } from "lucide-react";
 import { inviteEmployee, revokeInvite, bulkInviteEmployees, type BulkInviteRow, type BulkInviteResult } from "@/lib/organizations/actions";
@@ -61,7 +60,13 @@ const HEADER_MAP: Record<string, keyof BulkInviteRow> = {
   location: "location",
 };
 
-function parseWorkbook(data: ArrayBuffer): BulkInviteRow[] {
+// xlsx is a genuinely heavy parsing/writing library for something only two
+// narrow actions on this page ever touch (a template download, a bulk-
+// import file parse) — dynamically imported so it's not part of the
+// Employees page's initial bundle for every admin who never opens the
+// import UI at all.
+async function parseWorkbook(data: ArrayBuffer): Promise<BulkInviteRow[]> {
+  const XLSX = await import("xlsx");
   const workbook = XLSX.read(data, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
@@ -78,7 +83,8 @@ function parseWorkbook(data: ArrayBuffer): BulkInviteRow[] {
   });
 }
 
-function downloadTemplate() {
+async function downloadTemplate() {
+  const XLSX = await import("xlsx");
   const worksheet = XLSX.utils.json_to_sheet([
     {
       Email: "jane@company.com",
@@ -164,9 +170,9 @@ export default function InviteEmployeeForm({
     setImportResults(null);
     setImportFileName(file.name);
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
-        const rows = parseWorkbook(reader.result as ArrayBuffer).filter((r) => r.email);
+        const rows = (await parseWorkbook(reader.result as ArrayBuffer)).filter((r) => r.email);
         if (rows.length === 0) {
           setImportError(t("noValidRowsError"));
           setImportRows([]);
@@ -291,7 +297,7 @@ export default function InviteEmployeeForm({
             </label>
             <button
               type="button"
-              onClick={downloadTemplate}
+              onClick={() => { void downloadTemplate(); }}
               style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
             >
               {t("downloadTemplate")}

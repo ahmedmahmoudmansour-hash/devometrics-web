@@ -678,13 +678,13 @@ export async function assignTaskToEmployee(
   return { success: true };
 }
 
-// Bulk variant of assignTaskToEmployee — same milestone-per-employee shape
-// (each employee has their own development plan, resolved or lazily
-// created), so this just loops the existing single-employee action rather
-// than reinventing plan resolution or the milestone-assignment email.
-// Runs in parallel and reports how many actually succeeded rather than
-// failing the whole batch if one employee's row has a problem — same
-// "partial success is still useful" posture as bulkInviteEmployees.
+// Bulk variant of assignTaskToEmployee — batched the same way as
+// bulkAssignAssessment right below: a single multi-row insert for the
+// per-employee development plans, a single multi-row insert for the
+// milestones, then the per-recipient assignment emails fired concurrently
+// via allSettled. Replaces the old N-employee Promise.all fan-out (N
+// parallel plan+milestone insert pairs plus N synchronous email sends),
+// which risked real timeouts/rate-limits at "select all" scale.
 export async function bulkAssignMilestone(
   employeeUserIds: string[],
   fields: { title: string; description?: string; targetDate?: string }
@@ -693,14 +693,37 @@ export async function bulkAssignMilestone(
   const title = fields.title.trim();
   if (!title) return { error: "Goal title is required" };
 
-  const results = await Promise.all(
-    employeeUserIds.map((employeeUserId) => assignTaskToEmployee(employeeUserId, null, { ...fields, title }))
-  );
-  const assigned = results.filter((r) => "success" in r).length;
-  if (assigned === 0) return { error: "Could not assign — try again" };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
 
+  const { data: plans, error: planError } = await supabase
+    .from("development_plans")
+    .insert(employeeUserIds.map((employeeUserId) => ({ user_id: employeeUserId, title: "Personal Development Plan" })))
+    .select("id, user_id")
+    .returns<{ id: string; user_id: string }[]>();
+  if (planError || !plans) return { error: "Could not assign — try again" };
+
+  const { error: milestoneError } = await supabase.from("milestones").insert(
+    plans.map((plan) => ({
+      plan_id: plan.id,
+      title,
+      description: fields.description?.trim() || null,
+      target_date: fields.targetDate || null,
+      assigned_by: user.id,
+    }))
+  );
+  if (milestoneError) return { error: "Could not assign — try again" };
+
+  await Promise.allSettled(
+    plans.map((plan) => sendMilestoneAssignmentEmail(supabase, plan.user_id, title, fields.targetDate ?? null))
+  );
+
+  for (const employeeUserId of employeeUserIds) revalidatePath(`/dashboard/company/${employeeUserId}`);
   revalidatePath("/dashboard/company/employees");
-  return { success: true, assigned };
+  return { success: true, assigned: plans.length };
 }
 
 // Same posture as sendMilestoneAssignmentEmail right above — best-effort,
