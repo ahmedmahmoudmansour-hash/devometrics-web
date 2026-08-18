@@ -1654,6 +1654,15 @@
     "scheduling": "جارٍ الجدولة…",
     "cancel": "إلغاء"
   },
+  "overdueAssignmentsWidget": {
+    "title": "{count, plural, one {مهمة واحدة متأخرة} two {مهمتان متأخرتان} few {# مهام متأخرة} many {# مهمة متأخرة} other {# مهمة متأخرة}}",
+    "categoryMilestone": "{count, plural, one {هدف واحد} two {هدفان} few {# أهداف} many {# هدفًا} other {# هدف}}",
+    "categoryAssessment": "{count, plural, one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+    "categoryKnowledgeHub": "{count, plural, one {مستند تدريبي واحد} two {مستندان تدريبيان} few {# مستندات تدريبية} many {# مستندًا تدريبيًا} other {# مستند تدريبي}}",
+    "dueOn": "الاستحقاق {date}",
+    "unknownEmployee": "موظف غير معروف",
+    "andNMore": "و{count, plural, one {# آخر} two {# آخران} few {# آخرين} many {# آخرين} other {# آخرين}}"
+  },
   "companyEmployeesPage": {
     "backToProgress": "← العودة إلى التقدم",
     "teamMemberCount": "{count, plural, one {# عضو فريق} other {# أعضاء فريق}}",
@@ -2892,6 +2901,7 @@
     "backToHiring": "← العودة إلى التوظيف"
   },
   "hiringPipelineBoard": {
+    "daysInStage": "{days, plural, =0 {في هذه المرحلة اليوم} one {يوم واحد في هذه المرحلة} two {يومان في هذه المرحلة} few {# أيام في هذه المرحلة} many {# يومًا في هذه المرحلة} other {# يوم في هذه المرحلة}}",
     "requiredCompetencies": "الكفاءات المطلوبة",
     "requiredCompetenciesDescription": "مدى حاجة هذا الدور إلى كل من الأبعاد الثمانية الثابتة (0–100) — وهو الهدف الذي تُقيَّم مقابله السيرة الذاتية لكل مرشح أدناه.",
     "topCandidatesByCvScore": "أفضل المرشحين حسب تقييم السيرة الذاتية",

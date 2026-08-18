@@ -72,6 +72,17 @@ function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+// updated_at is bumped on every moveCandidateStage call (candidateActions.ts)
+// and nowhere else, so "time since updated_at" is exactly "time in the
+// current stage" — no separate stage-entry timestamp needed. 14 days is a
+// generic staleness threshold (not configurable) — same "sensible default
+// ships faster than a settings surface" call this codebase already made for
+// the mid-year trigger threshold.
+const STALE_STAGE_DAYS = 14;
+function daysInStage(updatedAt: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 86400000));
+}
+
 function scoreColor(score: number): string {
   if (score >= 70) return "var(--teal)";
   if (score >= 40) return "var(--amber)";
@@ -414,6 +425,25 @@ function CandidateCard({
       </div>
       <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{candidate.email}</p>
       <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+        {(() => {
+          const days = daysInStage(candidate.updated_at);
+          const stale = days >= STALE_STAGE_DAYS;
+          return (
+            <span
+              style={{
+                fontSize: 9.5,
+                fontWeight: stale ? 700 : 400,
+                color: stale ? "rgb(var(--amber-rgb))" : "var(--text-muted)",
+                background: stale ? "rgba(var(--amber-rgb),0.12)" : "transparent",
+                border: stale ? "1px solid rgba(var(--amber-rgb),0.3)" : "1px solid var(--border)",
+                borderRadius: 999,
+                padding: "1px 6px",
+              }}
+            >
+              {t("daysInStage", { days })}
+            </span>
+          );
+        })()}
         {candidate.cv_storage_path && (
           <span style={{ fontSize: 9.5, color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 999, padding: "1px 6px" }}>CV</span>
         )}

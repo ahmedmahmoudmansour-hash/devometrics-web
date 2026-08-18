@@ -1654,6 +1654,15 @@
     "scheduling": "Scheduling…",
     "cancel": "Cancel"
   },
+  "overdueAssignmentsWidget": {
+    "title": "{count, plural, one {# overdue assignment} other {# overdue assignments}}",
+    "categoryMilestone": "{count, plural, one {# goal} other {# goals}}",
+    "categoryAssessment": "{count, plural, one {# assessment} other {# assessments}}",
+    "categoryKnowledgeHub": "{count, plural, one {# training doc} other {# training docs}}",
+    "dueOn": "due {date}",
+    "unknownEmployee": "Unknown employee",
+    "andNMore": "and {count, plural, one {# more} other {# more}}"
+  },
   "companyEmployeesPage": {
     "backToProgress": "← Back to progress",
     "teamMemberCount": "{count, plural, one {# team member} other {# team members}}",
@@ -2892,6 +2901,7 @@
     "backToHiring": "← Back to Hiring"
   },
   "hiringPipelineBoard": {
+    "daysInStage": "{days, plural, =0 {in this stage today} one {# day in this stage} other {# days in this stage}}",
     "requiredCompetencies": "Required competencies",
     "requiredCompetenciesDescription": "How strongly this role needs each of the 8 fixed dimensions (0–100) — the target every candidate's CV is scored against below.",
     "topCandidatesByCvScore": "Top candidates by CV score",

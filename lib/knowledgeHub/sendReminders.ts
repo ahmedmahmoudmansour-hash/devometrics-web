@@ -8,7 +8,7 @@ type ReminderRow = {
   email: string;
   full_name: string | null;
   content_title: string;
-  due_date: string;
+  due_date: string | null;
   overdue: boolean;
   custom_subject: string | null;
   custom_message: string | null;
@@ -38,28 +38,41 @@ export async function sendDueKnowledgeHubReminders(
     const firstName = row.full_name?.trim().split(" ")[0] || "there";
 
     try {
+      // No due_date at all only ever happens for the is_new_hire_content
+      // branch of due_knowledge_hub_reminders (migration 0127) — a soft
+      // nudge with no specific deadline, distinct from both the "overdue"
+      // and "due soon" framings the dated branch uses.
+      const noDueDate = row.due_date === null;
+
       await sendEmail(
         row.email,
         row.custom_subject ||
-          (row.overdue
-            ? `Training overdue on Devometrics: ${row.content_title}`
-            : `Training due soon on Devometrics: ${row.content_title}`),
+          (noDueDate
+            ? `Still open on Devometrics: ${row.content_title}`
+            : row.overdue
+              ? `Training overdue on Devometrics: ${row.content_title}`
+              : `Training due soon on Devometrics: ${row.content_title}`),
         renderEmail({
-          preheader: `${row.content_title} — ${row.overdue ? "overdue" : `due ${row.due_date}`}`,
+          preheader: `${row.content_title} — ${noDueDate ? "still not completed" : row.overdue ? "overdue" : `due ${row.due_date}`}`,
           footerNote: "You're getting this because your organization assigned you training on Devometrics.",
           bodyHtml: `
             <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
             ${customMessageHtml(row.custom_message)}
             ${
-              row.overdue
-                ? `<h3 style="color:#c2410c;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Overdue</h3>
+              noDueDate
+                ? `<h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Still open</h3>
                    <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
-                     ${escapeHtml(row.content_title)} <span style="color:#8892a4;font-size:13px;">· was due ${escapeHtml(row.due_date)}</span>
+                     ${escapeHtml(row.content_title)} <span style="color:#8892a4;font-size:13px;">· assigned as part of your onboarding, not yet completed</span>
                    </p>`
-                : `<h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Due soon</h3>
-                   <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
-                     ${escapeHtml(row.content_title)} <span style="color:#8892a4;font-size:13px;">· due ${escapeHtml(row.due_date)}</span>
-                   </p>`
+                : row.overdue
+                  ? `<h3 style="color:#c2410c;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Overdue</h3>
+                     <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
+                       ${escapeHtml(row.content_title)} <span style="color:#8892a4;font-size:13px;">· was due ${escapeHtml(row.due_date!)}</span>
+                     </p>`
+                  : `<h3 style="color:#097066;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;">Due soon</h3>
+                     <p style="font-size:15px;line-height:1.7;margin:0 0 20px;">
+                       ${escapeHtml(row.content_title)} <span style="color:#8892a4;font-size:13px;">· due ${escapeHtml(row.due_date!)}</span>
+                     </p>`
             }
             <p style="margin:28px 0 0;">
               <a href="https://devometrics.com/dashboard/knowledge-hub" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>

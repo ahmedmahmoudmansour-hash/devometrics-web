@@ -1,15 +1,18 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0120 THROUGH 0126
+-- DEVOMETRICS -- PENDING MIGRATIONS: 0120 THROUGH 0128
 --
 -- Everything through 0119 has been confirmed applied already.
 -- 0120-0123 are the 5-part program's original batch; 0124 is a
 -- UX-audit follow-up (two more customizable alert emails) added
 -- right after; 0125 adds a small standalone table for Org Chart
--- free-text notes; 0126 is a process-delay-audit follow-up (manager-
--- action reminders for the manager_assessment step and probation
--- acceptance, plus a bugfix to the existing self-assessment reminder).
--- Every statement is idempotent, so re-running any part that already
--- succeeded is still safe.
+-- free-text notes; 0126-0128 are all process-delay-audit follow-ups
+-- — 0126 adds manager-action reminders for the manager_assessment
+-- step and probation acceptance (plus a bugfix to the existing
+-- self-assessment reminder), 0127 extends the Knowledge Hub reminder
+-- to cover undated new-hire content, 0128 adds a read-only RPC
+-- aggregating overdue milestones/assessments/Knowledge Hub content
+-- org-wide. Every statement is idempotent, so re-running any part
+-- that already succeeded is still safe.
 --
 -- Apply in this exact order.
 --
@@ -685,3 +688,157 @@ $$;
 
 revoke all on function public.due_performance_review_reminders(text) from public;
 grant execute on function public.due_performance_review_reminders(text) to anon, authenticated;
+
+-- ============================================================
+-- 0127_new_hire_content_reminder_gap.sql
+-- ============================================================
+-- 0127: Remind new hires about undated Knowledge Hub content
+--
+-- Process-delay audit follow-up: due_knowledge_hub_reminders (0085/0101)
+-- only ever fires when the CONTENT has a due_date, but new-hire content
+-- (is_new_hire_content, migration 0120) is never required to have one —
+-- most onboarding/reference documents are ongoing, not deadline-bound. A
+-- new hire who never opens such a document today gets no reminder, ever.
+--
+-- due_date lives on knowledge_hub_content, not per-assignment, so it's
+-- shared across every employee that content is assigned to — a per-hire
+-- "due N days after their hire date" default isn't representable there
+-- without turning one shared field into a per-assignment one, which is a
+-- bigger schema change than this gap warrants. Instead this widens the
+-- reminder query with an OR branch keyed off knowledge_hub_assignments.
+-- created_at (the actual per-employee assignment timestamp) for the
+-- specific case of undated new-hire content: still-incomplete after 7
+-- days from assignment, then re-reminded every 3 days same as everything
+-- else via the existing last_reminder_sent_at column.
+
+create or replace function public.due_knowledge_hub_reminders(secret text)
+returns table(
+  assignment_id uuid,
+  user_id uuid,
+  email text,
+  full_name text,
+  content_title text,
+  due_date date,
+  overdue boolean,
+  custom_subject text,
+  custom_message text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select a.id, u.id, u.email, p.full_name, c.title, c.due_date, coalesce(c.due_date < current_date, false),
+    oem.custom_subject, oem.custom_message
+  from public.knowledge_hub_assignments a
+  join public.knowledge_hub_content c on c.id = a.content_id and c.archived_at is null
+  join auth.users u on u.id = a.employee_user_id
+  left join public.profiles p on p.id = u.id
+  left join lateral (
+    select om.organization_id from public.organization_members om where om.user_id = u.id limit 1
+  ) org on true
+  left join public.organization_email_messages oem
+    on oem.organization_id = org.organization_id and oem.email_type = 'knowledge_hub_reminder'
+  where secret = (select value from public.app_secrets where key = 'cron_secret')
+    and u.email is not null
+    and (
+      (c.due_date is not null and c.due_date <= current_date + interval '7 days')
+      or (c.due_date is null and c.is_new_hire_content and a.created_at <= now() - interval '7 days')
+    )
+    and not exists (
+      select 1 from public.knowledge_hub_completions comp
+      where comp.content_id = a.content_id and comp.employee_user_id = a.employee_user_id
+    )
+    and (a.last_reminder_sent_at is null or a.last_reminder_sent_at < now() - interval '3 days');
+$$;
+
+revoke all on function public.due_knowledge_hub_reminders(text) from public;
+grant execute on function public.due_knowledge_hub_reminders(text) to anon, authenticated;
+
+-- ============================================================
+-- 0128_overdue_assignments_summary.sql
+-- ============================================================
+-- 0128: Org-wide overdue assignments summary
+--
+-- Process-delay audit follow-up: overdue milestones, assessments, and
+-- Knowledge Hub content each already have their own per-employee reminder
+-- email, but there was no aggregate view anywhere — an admin had to open
+-- each employee's own page one at a time to see what's overdue for them.
+-- This adds a single read-only RPC combining all three, gated by
+-- is_org_admin (a live authenticated-caller check, not the cron-secret
+-- pattern the reminder functions use, since this is called from the
+-- Employees page, not a cron job). Reuses the exact same "is this actually
+-- complete" logic each category's own due_*_reminders function already
+-- established (dual-path assessment completion, milestone.completed,
+-- knowledge_hub_completions) rather than inventing a second definition of
+-- "overdue" that could silently drift from what the reminder emails mean.
+--
+-- plpgsql (not plain sql) only because of the explicit is_org_admin guard
+-- at the top — this is a directly-called RPC, not a helper invoked from
+-- inside another table's RLS policy, so raising an exception on an
+-- unauthorized caller is the normal, intended behavior here (same posture
+-- as reset_org_chart), not the "must never throw" RLS-helper case.
+
+create or replace function public.get_overdue_assignments(target_organization_id uuid)
+returns table(
+  employee_user_id uuid,
+  employee_name text,
+  category text,
+  title text,
+  due_date date
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_org_admin(target_organization_id) then
+    raise exception 'Not authorized';
+  end if;
+
+  return query
+    select m.employee_user_id, p.full_name, 'milestone'::text, m.title, m.target_date
+    from (
+      select dp.user_id as employee_user_id, mi.title, mi.target_date
+      from public.milestones mi
+      join public.development_plans dp on dp.id = mi.plan_id
+      where mi.completed = false and mi.target_date is not null and mi.target_date < current_date
+    ) m
+    join public.profiles p on p.id = m.employee_user_id
+    join public.organization_members om on om.user_id = m.employee_user_id and om.organization_id = target_organization_id
+
+    union all
+
+    select a.employee_user_id, p.full_name, 'assessment'::text, a.assessment_slug, a.due_date
+    from public.assigned_assessments a
+    join public.profiles p on p.id = a.employee_user_id
+    join public.organization_members om on om.user_id = a.employee_user_id and om.organization_id = target_organization_id
+    where a.due_date is not null and a.due_date < current_date
+      and not exists (
+        select 1 from public.assessment_results res
+        where res.user_id = a.employee_user_id and res.assessment_slug = a.assessment_slug
+      )
+      and not exists (
+        select 1 from public.case_study_exercise_attempts att
+        where att.user_id = a.employee_user_id and att.exercise_slug = a.assessment_slug and att.submitted_at is not null
+      )
+
+    union all
+
+    select ka.employee_user_id, p.full_name, 'knowledgeHub'::text, c.title, c.due_date
+    from public.knowledge_hub_assignments ka
+    join public.knowledge_hub_content c on c.id = ka.content_id and c.archived_at is null
+    join public.profiles p on p.id = ka.employee_user_id
+    join public.organization_members om on om.user_id = ka.employee_user_id and om.organization_id = target_organization_id
+    where c.due_date is not null and c.due_date < current_date
+      and not exists (
+        select 1 from public.knowledge_hub_completions comp
+        where comp.content_id = ka.content_id and comp.employee_user_id = ka.employee_user_id
+      )
+
+    order by due_date asc
+    limit 50;
+end;
+$$;
+
+revoke all on function public.get_overdue_assignments(uuid) from public;
+grant execute on function public.get_overdue_assignments(uuid) to authenticated;

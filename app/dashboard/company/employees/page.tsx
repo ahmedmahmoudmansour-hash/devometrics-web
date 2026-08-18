@@ -11,7 +11,9 @@ import EmployeesTable from "@/components/dashboard/EmployeesTable";
 import TabbedSections from "@/components/dashboard/TabbedSections";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
+import OverdueAssignmentsWidget from "@/components/dashboard/OverdueAssignmentsWidget";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
+import { getOverdueAssignments } from "@/lib/organizations/overdueAssignments";
 import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
@@ -24,6 +26,7 @@ export default async function CompanyEmployeesPage() {
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
+  const overdueItems = data.organizationId ? await getOverdueAssignments(data.organizationId) : [];
 
   const cellStyle: React.CSSProperties = {
     padding: "10px 14px",
@@ -92,6 +95,8 @@ export default async function CompanyEmployeesPage() {
         <CompanyNavTabs active="employees" />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <OverdueAssignmentsWidget items={overdueItems} />
+
           {/* The one place an admin actually looks to add someone —
               previously lived on the company overview page, then briefly
               moved to Settings during the page split; Settings reads as
