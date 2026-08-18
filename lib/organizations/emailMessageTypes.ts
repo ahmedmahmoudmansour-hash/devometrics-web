@@ -18,6 +18,10 @@
 // probation_review_ready_alert / midyear_checkin_scheduled_alert (0124) —
 // added on a UX audit pass after the 5-part program shipped without any
 // notification for either automation firing at all.
+// manager_assessment_reminder / probation_acceptance_reminder (0126) —
+// added on a process-delay audit pass: neither the manager_assessment step
+// nor the probation hiring-manager-acceptance gate had ANY recurring
+// reminder before this, so either could stall a review indefinitely.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -33,6 +37,8 @@ export const EMAIL_MESSAGE_TYPES = [
   "knowledge_hub_content_updated",
   "probation_review_ready_alert",
   "midyear_checkin_scheduled_alert",
+  "manager_assessment_reminder",
+  "probation_acceptance_reminder",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

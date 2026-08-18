@@ -1636,7 +1636,11 @@
     "type_probation_review_ready_alert": "Probation review ready for acceptance",
     "hint_probation_review_ready_alert": "Sent to the hiring manager when a new hire's probation review has been created and is waiting for them to review and accept it.",
     "type_midyear_checkin_scheduled_alert": "Mid-year check-in scheduled",
-    "hint_midyear_checkin_scheduled_alert": "Sent to an employee when a mid-year check-in cycle has been scheduled for them."
+    "hint_midyear_checkin_scheduled_alert": "Sent to an employee when a mid-year check-in cycle has been scheduled for them.",
+    "type_manager_assessment_reminder": "Manager's Perspective reminder",
+    "hint_manager_assessment_reminder": "Sent to a manager (or an org admin, if no manager is assigned) when an open review's Manager's Perspective hasn't been submitted yet — repeats every 7 days until it is.",
+    "type_probation_acceptance_reminder": "Probation acceptance reminder",
+    "hint_probation_acceptance_reminder": "Sent to the hiring manager (or an org admin, if no manager is assigned) when a probation review is still waiting to be accepted — repeats every 7 days until it is."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",

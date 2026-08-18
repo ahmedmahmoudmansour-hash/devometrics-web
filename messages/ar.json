@@ -1636,7 +1636,11 @@
     "type_probation_review_ready_alert": "مراجعة فترة التجربة جاهزة للقبول",
     "hint_probation_review_ready_alert": "تُرسل إلى المدير المباشر عند إنشاء مراجعة فترة تجربة لموظف جديد وتكون بانتظار مراجعته وقبوله لها.",
     "type_midyear_checkin_scheduled_alert": "تمت جدولة مراجعة منتصف العام",
-    "hint_midyear_checkin_scheduled_alert": "تُرسل إلى الموظف عند جدولة دورة مراجعة منتصف عام له."
+    "hint_midyear_checkin_scheduled_alert": "تُرسل إلى الموظف عند جدولة دورة مراجعة منتصف عام له.",
+    "type_manager_assessment_reminder": "تذكير بتقييم المدير",
+    "hint_manager_assessment_reminder": "تُرسل إلى المدير (أو إلى مسؤول المؤسسة إن لم يكن هناك مدير معيّن) عندما لا يكون تقييم المدير في مراجعة مفتوحة قد قُدّم بعد — وتتكرر كل 7 أيام حتى يُقدَّم.",
+    "type_probation_acceptance_reminder": "تذكير بقبول فترة التجربة",
+    "hint_probation_acceptance_reminder": "تُرسل إلى مدير التوظيف (أو إلى مسؤول المؤسسة إن لم يكن هناك مدير معيّن) عندما تظل مراجعة فترة التجربة بانتظار القبول — وتتكرر كل 7 أيام حتى تُقبَل."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "مُجدولة للحذف في {date}",
