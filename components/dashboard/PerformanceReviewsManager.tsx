@@ -374,7 +374,7 @@ export default function PerformanceReviewsManager({ initialCycles, organizationI
                 {reviews
                   .filter((item) => !statusFilter || item.status === statusFilter)
                   .map((item) => (
-                    <ImpactCycleReviewRow key={item.id} item={item} onChanged={() => selectedCycleId && loadReviews(selectedCycleId)} />
+                    <ImpactCycleReviewRow key={item.id} item={item} onChanged={() => selectedCycleId && loadReviews(selectedCycleId)} canExport />
                   ))}
               </div>
             </>

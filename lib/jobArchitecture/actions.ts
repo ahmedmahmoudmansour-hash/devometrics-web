@@ -264,10 +264,20 @@ const JD_TOOL = {
     type: "object" as const,
     properties: {
       summary: { type: "string", description: "2-3 sentence overview of the role and its purpose on the team — no invented mission/values language not implied by the data given." },
+      reportingLine: {
+        type: "string",
+        description:
+          "1 sentence stating who this role reports to and its track, using ONLY the job family and track given (e.g. 'Reports into the Product function, on the management track'). Never invent a specific manager name or title not given.",
+      },
       responsibilities: {
         type: "array",
         items: { type: "string" },
         description: "5-8 action-verb-led bullet points, grounded strictly in the responsibilities text given — never invent duties.",
+      },
+      kpis: {
+        type: "array",
+        items: { type: "string" },
+        description: "3-5 measurable success-indicator bullets a person in this role would be evaluated against, inferred strictly from the stated responsibilities and grade — never invent a specific numeric target (e.g. a dollar figure or percentage) not implied by the data.",
       },
       requirements: {
         type: "array",
@@ -279,16 +289,30 @@ const JD_TOOL = {
         items: { type: "string" },
         description: "2-4 clearly-optional bullet points.",
       },
+      compensationBand: {
+        type: "string",
+        description:
+          "1 sentence describing compensation in terms of the role's grade band ONLY (e.g. 'Grade 6 — see the compensation framework for this band's exact range'). Never invent a specific currency amount or number, since no salary data is provided.",
+      },
+      growthPath: {
+        type: "string",
+        description:
+          "1-2 sentences on what this role can grow into. If specific transition target roles are given, name them. If none are given, say growth paths for this role haven't been mapped yet in Job Architecture — never invent a specific next-role title that wasn't given.",
+      },
     },
-    required: ["summary", "responsibilities", "requirements", "niceToHaves"],
+    required: ["summary", "reportingLine", "responsibilities", "kpis", "requirements", "niceToHaves", "compensationBand", "growthPath"],
   },
 };
 
 export type GeneratedJD = {
   summary: string;
+  reportingLine: string;
   responsibilities: string[];
+  kpis: string[];
   requirements: string[];
   niceToHaves: string[];
+  compensationBand: string;
+  growthPath: string;
 };
 
 function formatJD(title: string, jd: GeneratedJD): string {
@@ -297,12 +321,24 @@ function formatJD(title: string, jd: GeneratedJD): string {
     "",
     jd.summary,
     "",
+    "Reporting Line",
+    jd.reportingLine,
+    "",
     "Responsibilities",
     ...jd.responsibilities.map((r) => `- ${r}`),
+    "",
+    "Key Performance Indicators",
+    ...jd.kpis.map((r) => `- ${r}`),
     "",
     "Requirements",
     ...jd.requirements.map((r) => `- ${r}`),
     ...(jd.niceToHaves.length ? ["", "Nice to have", ...jd.niceToHaves.map((r) => `- ${r}`)] : []),
+    "",
+    "Compensation Band",
+    jd.compensationBand,
+    "",
+    "Growth Path",
+    jd.growthPath,
   ].join("\n");
 }
 
@@ -337,16 +373,39 @@ export async function generateJobDescription(roleId: string): Promise<{ error: s
       .map((r) => `${r.dimension}: target ${r.target_level}/100`)
       .join("\n") || "(none defined)";
 
+  // Real, already-mapped growth paths (Job Architecture's own role_transitions
+  // table) rather than letting the model invent a plausible-sounding next
+  // role — if nothing's mapped yet, the tool schema tells it to say so
+  // honestly instead of guessing. Resolved as two plain queries (not an
+  // embedded join) since job_roles is referenced by both from_role_id and
+  // to_role_id on this table — same "resolve titles via a separate lookup"
+  // pattern buildCompanyData already uses for role_transitions.
+  const { data: transitions } = await supabase
+    .from("role_transitions")
+    .select("to_role_id, transition_type")
+    .eq("from_role_id", roleId)
+    .returns<{ to_role_id: string; transition_type: string }[]>();
+  let transitionLines = "(none mapped yet)";
+  if (transitions && transitions.length > 0) {
+    const { data: toRoles } = await supabase
+      .from("job_roles")
+      .select("id, title")
+      .in("id", transitions.map((t) => t.to_role_id))
+      .returns<{ id: string; title: string }[]>();
+    const titleById = new Map((toRoles ?? []).map((r) => [r.id, r.title]));
+    transitionLines = transitions.map((t) => `${titleById.get(t.to_role_id) ?? "Unknown role"} (${t.transition_type})`).join(", ") || "(none mapped yet)";
+  }
+
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
   try {
     const { data: jd, model, inputTokens, outputTokens } = await callOpenRouterJson<GeneratedJD>({
       model: "openai/gpt-5.4-mini",
-      maxTokens: 1200,
+      maxTokens: 1600,
       system:
-        "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, or requirements not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output.",
-      user: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}`,
+        "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, requirements, reporting relationships, compensation figures, or next-role titles not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output.",
+      user: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}\n\nMAPPED GROWTH PATHS (Job Architecture's own transition data — use ONLY these, if any):\n${transitionLines}`,
       jsonSchema: { name: "record_job_description", schema: JD_TOOL.input_schema },
     });
     const formatted = formatJD(role.title, jd);

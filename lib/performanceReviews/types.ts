@@ -96,6 +96,14 @@ export type CompetencyRating = {
   rating: number;
   note: string | null;
   organization_competency_id: string | null;
+  // Only populated by getMyCurrentReview (the employee's own read-only
+  // view) — resolved from organization_competencies since dimension is
+  // null for a rating tied to an org competency with no fixed-dimension
+  // mapping, so dimensionLabel() alone can't render a name for it.
+  // ImpactCycleReviewRow (the manager-side editor) resolves this itself
+  // separately, keyed off the workflow step's own config, and never sets
+  // this field.
+  organizationCompetencyName?: string | null;
 };
 
 export type ReviewListItem = PerformanceReview & {
@@ -134,6 +142,13 @@ export type ReviewDetail = {
   // yet.
   uplineSignoffs: UplineSignoff[];
   instanceSteps: InstanceStep[];
+  // True when an eligible (level 2+) upline manager exists for this
+  // employee but none has signed off yet — process-transparency only
+  // (see lib/performanceReviews/timeline.ts's describeReviewStage comment):
+  // lets the employee's view say "optional Department Head Review still
+  // pending" without exposing any signoff content, and without implying
+  // one is guaranteed to happen (it's opt-in and may never occur).
+  hasPendingDepartmentHeadReview: boolean;
 };
 
 // One link in the Org Chart's manager_user_id chain above an employee —

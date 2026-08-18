@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { requireAdmin } from "@/lib/jobArchitecture/actions";
 
-const SECTION_HEADINGS = new Set(["Responsibilities", "Requirements", "Nice to have"]);
+const SECTION_HEADINGS = new Set([
+  "Reporting Line",
+  "Responsibilities",
+  "Key Performance Indicators",
+  "Requirements",
+  "Nice to have",
+  "Compensation Band",
+  "Growth Path",
+]);
 
 // The saved JD is a single flattened string (title, blank line, summary,
 // blank line, "Responsibilities" + "- " bullets, ...) — see formatJD() in

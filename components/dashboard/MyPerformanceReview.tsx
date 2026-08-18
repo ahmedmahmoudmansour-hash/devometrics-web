@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { submitSelfAssessment, acknowledgeReview } from "@/lib/performanceReviews/actions";
 import { helpDraftRecommendations } from "@/lib/performanceReviews/ai";
 import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail } from "@/lib/performanceReviews/types";
-import { describeCycleTimeline, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
+import { describeCycleTimeline, describeReviewStage, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
 import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import CustomStepResponseForm from "./CustomStepResponseForm";
 
@@ -49,7 +49,8 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   const tLabels = useTranslations("performanceReviewLabels");
   const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
-  const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs, instanceSteps } = detail;
+  const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs, instanceSteps, hasPendingDepartmentHeadReview } = detail;
+  const stage = describeReviewStage(review.status, instanceSteps);
   const customSteps = instanceSteps.filter((s) => s.step_type === "custom");
 
   const [selfRating, setSelfRating] = useState(self?.rating ?? 3);
@@ -116,6 +117,12 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
                 </span>
               ) : null;
             })()}
+          </p>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", marginTop: 4 }}>
+            {t(`reviewStage.${stage}`)}
+            {hasPendingDepartmentHeadReview && (
+              <span style={{ color: "var(--text-muted)", fontWeight: 500 }}> · {t("departmentHeadReviewPending")}</span>
+            )}
           </p>
         </div>
       </div>
@@ -249,9 +256,11 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("competenciesManagerView")}</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {competencyRatings.map((r) => (
-              <div key={r.dimension} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12.5, color: "var(--text)" }}>{dimensionLabel(tDim, r.dimension as CompetencyDimension)}</span>
+            {competencyRatings.map((r, i) => (
+              <div key={r.organization_competency_id ?? r.dimension ?? i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12.5, color: "var(--text)" }}>
+                  {r.organization_competency_id ? (r.organizationCompetencyName ?? t("unnamedCompetency")) : dimensionLabel(tDim, r.dimension as CompetencyDimension)}
+                </span>
                 <span style={{ fontSize: 11.5, color: "var(--teal)", fontWeight: 700 }}>{competencyRatingLabel(tLabels, r.rating)}</span>
               </div>
             ))}

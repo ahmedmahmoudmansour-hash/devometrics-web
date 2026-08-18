@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { getMyOrganizationId } from "@/lib/organizations/membership";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
+import { getOrganizationCompetenciesByIds } from "@/lib/organizations/competencies";
 import type {
   PerformanceReviewCycle,
   PerformanceReview,
@@ -14,6 +15,7 @@ import type {
   CompetencyRating,
   ReviewListItem,
   ReviewDetail,
+  ReviewStatus,
   GoalStatus,
   UplineChainEntry,
   UplineSignoff,
@@ -660,6 +662,31 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
     getInstanceSteps(review.id),
   ]);
 
+  // A rating tied to an org competency with no fixed-dimension mapping has
+  // dimension = null, so dimensionLabel() alone renders nothing for it —
+  // resolve the org competency's own name here so MyPerformanceReview can
+  // fall back to it (see CompetencyRating.organizationCompetencyName).
+  const orgCompetencyIds = [
+    ...new Set((competencyRatings ?? []).map((r) => r.organization_competency_id).filter((id): id is string => id !== null)),
+  ];
+  const orgCompetencies = await getOrganizationCompetenciesByIds(orgCompetencyIds);
+  const orgCompetencyNameById = new Map(orgCompetencies.map((c) => [c.id, c.name]));
+  const resolvedCompetencyRatings = (competencyRatings ?? []).map((r) => ({
+    ...r,
+    organizationCompetencyName: r.organization_competency_id ? (orgCompetencyNameById.get(r.organization_competency_id) ?? null) : null,
+  }));
+
+  // Department Head Review is level 2+ only (level 1 is the direct
+  // manager, already covered by the ordinary manager_assessment step —
+  // see getUplineChain/submitUplineSignoff's own "Level (2+)" comment).
+  // "Pending" here means at least one eligible level exists and NONE has
+  // signed off yet — once any one has, the completed-signoffs section
+  // below already surfaces it, so this flag stops being needed for that
+  // review.
+  const uplineChain = await getUplineChain(review.id);
+  const hasEligibleUplineLevel = uplineChain.some((c) => c.level >= 2);
+  const hasCompletedSignoff = uplineSignoffs.some((s) => s.signed_off_at !== null);
+
   return {
     detail: {
       review,
@@ -668,11 +695,12 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
       manager: manager ?? null,
       goals: goals ?? [],
       pastGoals,
-      competencyRatings: competencyRatings ?? [],
+      competencyRatings: resolvedCompetencyRatings,
       employeeName: profile?.full_name ?? "You",
       employeeEmail: profile?.email ?? "",
       uplineSignoffs: uplineSignoffs.filter((s) => s.signed_off_at !== null),
       instanceSteps,
+      hasPendingDepartmentHeadReview: hasEligibleUplineLevel && !hasCompletedSignoff,
     },
   };
 }
@@ -1019,4 +1047,85 @@ export async function getCustomStepAggregateForEmployee(instanceStepId: string):
     .maybeSingle<CustomStepAggregate>();
   if (error) return null;
   return data ?? null;
+}
+
+export type ReviewExportData = {
+  employeeName: string;
+  cycleName: string;
+  status: ReviewStatus;
+  conclusion: string | null;
+  self: SelfAssessment | null;
+  manager: ManagerAssessment | null;
+  managerName: string | null;
+  competencyRatings: CompetencyRating[];
+  goals: ReviewGoal[];
+  // ALL signoffs, not just completed ones — unlike getMyCurrentReview
+  // (the employee's own view), this is HR-only, so there's no reason to
+  // hide a pending one from the person exporting the record.
+  uplineSignoffs: UplineSignoff[];
+};
+
+// HR-only: gathers everything a completed appraisal's Word export needs.
+// Deliberately org-admin-gated only — see the export route itself for why
+// this is never offered to the employee or their manager. Reuses the same
+// per-table queries ImpactCycleReviewRow's own loadAll() already relies on
+// (RLS already permits an org admin to read every one of these tables for
+// their own org) rather than getMyCurrentReview, which is hardcoded to
+// auth.uid() and therefore can't fetch an arbitrary employee's review.
+export async function getReviewExportData(reviewId: string): Promise<{ data: ReviewExportData } | { error: string }> {
+  const companyData = await buildCompanyData();
+  if (!companyData.isOrgAdmin || !companyData.organizationId) return { error: "Not authorized" };
+
+  const supabase = await createClient();
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("employee_user_id, status, conclusion, performance_review_cycles(name)")
+    .eq("id", reviewId)
+    .eq("organization_id", companyData.organizationId)
+    .maybeSingle<{ employee_user_id: string; status: ReviewStatus; conclusion: string | null; performance_review_cycles: { name: string } }>();
+  if (!review) return { error: "Review not found" };
+
+  const [{ data: self }, { data: manager }, { data: competencyRatings }, { data: goals }, { data: profile }, uplineSignoffs] = await Promise.all([
+    supabase.from("performance_review_self_assessments").select("*").eq("review_id", reviewId).maybeSingle<SelfAssessment>(),
+    supabase.from("performance_review_manager_assessments").select("*").eq("review_id", reviewId).maybeSingle<ManagerAssessment>(),
+    supabase.from("performance_review_competency_ratings").select("*").eq("review_id", reviewId).returns<CompetencyRating[]>(),
+    supabase.from("performance_review_goals").select("*").eq("review_id", reviewId).order("created_at").returns<ReviewGoal[]>(),
+    supabase.from("profiles").select("full_name").eq("id", review.employee_user_id).maybeSingle<{ full_name: string | null }>(),
+    getUplineSignoffs(reviewId),
+  ]);
+
+  let managerName: string | null = null;
+  if (manager?.reviewer_user_id) {
+    const { data: managerProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", manager.reviewer_user_id)
+      .maybeSingle<{ full_name: string | null }>();
+    managerName = managerProfile?.full_name ?? null;
+  }
+
+  const orgCompetencyIds = [
+    ...new Set((competencyRatings ?? []).map((r) => r.organization_competency_id).filter((id): id is string => id !== null)),
+  ];
+  const orgCompetencies = await getOrganizationCompetenciesByIds(orgCompetencyIds);
+  const orgCompetencyNameById = new Map(orgCompetencies.map((c) => [c.id, c.name]));
+  const resolvedCompetencyRatings = (competencyRatings ?? []).map((r) => ({
+    ...r,
+    organizationCompetencyName: r.organization_competency_id ? (orgCompetencyNameById.get(r.organization_competency_id) ?? null) : null,
+  }));
+
+  return {
+    data: {
+      employeeName: profile?.full_name ?? "Unknown",
+      cycleName: review.performance_review_cycles.name,
+      status: review.status,
+      conclusion: review.conclusion,
+      self: self ?? null,
+      manager: manager ?? null,
+      managerName,
+      competencyRatings: resolvedCompetencyRatings,
+      goals: goals ?? [],
+      uplineSignoffs,
+    },
+  };
 }

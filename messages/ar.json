@@ -2157,6 +2157,14 @@
     "acceptButton": "مراجعة وقبول"
   },
   "myPerformanceReview": {
+    "reviewStage": {
+      "withYou": "معك حاليًا — انطباعك الذاتي مفتوح",
+      "withManager": "مع مديرك حاليًا",
+      "readyToClose": "اكتمل تقييم المدير — جاهزة للإغلاق",
+      "acknowledged": "تم الاطلاع عليها — بانتظار الإغلاق",
+      "closed": "مغلقة"
+    },
+    "departmentHeadReviewPending": "كما تنتظر مراجعة اختيارية من رئيس القسم",
     "yourReflection": "انطباعك الذاتي",
     "helpMeWriteThis": "✨ ساعدني في كتابة هذا",
     "roughNotesDesc": "دوّن ملاحظات أولية — النقاط المختصرة كافية — وسيحوّلها هذا إلى فقرة باستخدام ما كتبته فقط.",
@@ -2187,6 +2195,7 @@
     "actualSuffix": " · الفعلي: {actual}",
     "competenciesManagerView": "الكفاءات — منظور المدير لهذه الدورة",
     "singleSourceNote": "مصدر واحد، تقييم المدير لهذه الدورة — يختلف عن درجات تحليل الفجوة المقاسة الخاصة بك.",
+    "unnamedCompetency": "الكفاءة",
     "managersPerspective": "منظور المدير",
     "sharedOn": "تمت المشاركة {date} — مصدر واحد، تقييم المدير، لم يتم التحقق منه بشكل مستقل.",
     "confirmed": "✓ تم التأكيد {date}",
@@ -2247,6 +2256,7 @@
     "perspectiveScore": " · المنظور {rating}/5",
     "hide": "إخفاء",
     "open": "فتح",
+    "exportWord": "تصدير .docx",
     "managersPerspective": "منظور المدير",
     "ratingLabel": "التقييم (1–5)",
     "feedbackLabel": "الملاحظات",

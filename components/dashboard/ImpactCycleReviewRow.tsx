@@ -695,7 +695,21 @@ function UplineSignoffSection({
   );
 }
 
-export default function ImpactCycleReviewRow({ item, onChanged }: { item: ReviewListItem; onChanged: () => void }) {
+export default function ImpactCycleReviewRow({
+  item,
+  onChanged,
+  canExport,
+}: {
+  item: ReviewListItem;
+  onChanged: () => void;
+  // Org-admin-only (per Ahmed: not the employee, not their manager) — only
+  // PerformanceReviewsManager (the admin's Impact Cycles page) passes this;
+  // MyTeamReviews (the manager's own page) never does. The docx route
+  // itself is the real gate (getReviewExportData re-checks isOrgAdmin), so
+  // this prop only controls whether the button is offered, not whether the
+  // download would work if someone reached the URL directly.
+  canExport?: boolean;
+}) {
   const t = useTranslations("impactCycleReviewRow");
   const tLabels = useTranslations("performanceReviewLabels");
   const [expanded, setExpanded] = useState(false);
@@ -758,9 +772,19 @@ export default function ImpactCycleReviewRow({ item, onChanged }: { item: Review
             {item.managerRating !== null ? t("perspectiveScore", { rating: item.managerRating }) : ""}
           </p>
         </div>
-        <button type="button" onClick={toggle} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 11.5, color: "var(--text-muted)", cursor: "pointer" }}>
-          {expanded ? t("hide") : t("open")}
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {canExport && (
+            <a
+              href={`/api/performance-reviews/${item.id}/export/docx`}
+              style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 11.5, color: "var(--text-muted)", textDecoration: "none" }}
+            >
+              {t("exportWord")}
+            </a>
+          )}
+          <button type="button" onClick={toggle} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 11.5, color: "var(--text-muted)", cursor: "pointer" }}>
+            {expanded ? t("hide") : t("open")}
+          </button>
+        </div>
       </div>
 
       {expanded && (
