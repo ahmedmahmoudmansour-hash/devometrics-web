@@ -844,6 +844,120 @@ export async function acknowledgeReview(reviewId: string, comment: string) {
   return { success: true };
 }
 
+// Employee-initiated escalation (migration 0136) — deliberately distinct
+// from acknowledgeReview above: acknowledging means "I've seen this,
+// confirm and close it out," escalating means "I disagree, please have
+// this reviewed further" — opposite intents, never bundled into one
+// action. A comment is required (the RPC itself also enforces this) since
+// an escalation with no stated reason gives whoever picks it up nothing to
+// act on. Non-blocking: doesn't gate close_review or anything else.
+export async function escalateReview(reviewId: string, comment: string) {
+  const supabase = await createClient();
+  const restrictedError = await performanceReviewRestrictedError(supabase);
+  if (restrictedError) return { error: restrictedError };
+
+  const trimmedComment = comment.trim();
+  if (!trimmedComment) return { error: "Tell us why you'd like this reviewed further" };
+
+  const { error } = await supabase.rpc("request_review_escalation", {
+    target_review_id: reviewId,
+    p_comment: trimmedComment,
+  });
+  if (error) {
+    console.error("escalateReview failed:", error);
+    return { error: "Could not save — try again." };
+  }
+  revalidatePath("/dashboard/impact-cycle");
+
+  try {
+    await notifyReviewEscalation(supabase, { reviewId, comment: trimmedComment });
+  } catch (err) {
+    console.error("escalateReview: notification failed (non-fatal):", err);
+  }
+
+  return { success: true };
+}
+
+// Notifies an eligible upline manager (level 2+, same chain-walk
+// getUplineChain already computes for the Department Head Review UI) if
+// one exists, and an org admin either way — an escalation always reaches
+// HR even in an org with no configured escalation levels. Admin
+// resolution mirrors the same "one admin, limit 1" pattern used
+// throughout this file.
+async function notifyReviewEscalation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  params: { reviewId: string; comment: string }
+): Promise<void> {
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("organization_id, employee_user_id, performance_review_cycles(name)")
+    .eq("id", params.reviewId)
+    .maybeSingle<{ organization_id: string; employee_user_id: string; performance_review_cycles: { name: string } }>();
+  if (!review) return;
+
+  const { data: employeeProfile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", review.employee_user_id)
+    .maybeSingle<{ full_name: string | null }>();
+  const employeeName = employeeProfile?.full_name ?? "An employee";
+
+  const recipientUserIds = new Set<string>();
+  const chain = await getUplineChain(params.reviewId);
+  const eligibleUpline = chain.find((c) => c.level >= 2);
+  if (eligibleUpline) recipientUserIds.add(eligibleUpline.managerUserId);
+
+  const { data: adminRow } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", review.organization_id)
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle<{ user_id: string }>();
+  if (adminRow?.user_id) recipientUserIds.add(adminRow.user_id);
+  if (recipientUserIds.size === 0) return;
+
+  const { data: recipientProfiles } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .in("id", [...recipientUserIds])
+    .returns<{ id: string; email: string | null }[]>();
+  const recipientEmails = [...new Set((recipientProfiles ?? []).map((p) => p.email).filter((e): e is string => !!e))];
+  if (recipientEmails.length === 0) return;
+
+  const override = await getEmailMessageOverride(review.organization_id, "review_escalation_requested_alert");
+  const cycleName = review.performance_review_cycles?.name ?? "their review";
+  const subject = override.subject || `${employeeName} escalated ${cycleName}`;
+  const bodyHtml = `
+    <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(employeeName)} escalated ${escapeHtml(cycleName)}</h2>
+    ${customMessageHtml(override.message)}
+    <p style="font-size:15px;line-height:1.7;margin:0 0 12px;">
+      They've explicitly asked for this review to get another look, with this note:
+    </p>
+    <blockquote style="margin:0 0 20px;padding:12px 16px;border-left:3px solid #c2410c;background:#fdf3ee;color:#16161a;font-size:14.5px;line-height:1.6;">
+      ${escapeHtml(params.comment)}
+    </blockquote>
+    <p style="margin:0;">
+      <a href="https://devometrics.com/dashboard/my-team" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open the review →</a>
+    </p>
+  `;
+  const preheader = `${employeeName} requested escalation: "${params.comment.slice(0, 100)}"`;
+
+  await Promise.allSettled(
+    recipientEmails.map((email) =>
+      sendEmail(
+        email,
+        subject,
+        renderEmail({
+          preheader,
+          bodyHtml,
+          footerNote: "Sent because an employee explicitly escalated their performance review on Devometrics.",
+        })
+      )
+    )
+  );
+}
+
 // Notifies BOTH the employee's manager and an org admin whenever they leave
 // a comment while acknowledging their review — not just for a low-rating
 // dispute specifically (a comment could just as easily be positive), since

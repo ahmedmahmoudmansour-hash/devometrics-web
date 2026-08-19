@@ -1650,7 +1650,9 @@
     "type_review_reopened_alert": "تنبيه بإعادة فتح المراجعة",
     "hint_review_reopened_alert": "تُرسل إلى الموظف ومسؤول المؤسسة عند إعادة فتح مراجعة أداء مغلقة بسبب إعادة تقديم منظور المدير.",
     "type_department_head_review_reminder": "تذكير بمراجعة رئيس القسم",
-    "hint_department_head_review_reminder": "تُرسل إلى مدير أعلى مؤهل عندما لا تكون مراجعة رئيس القسم الاختيارية في دورة مفتوحة قد اعتُمدت بعد — وتتكرر كل 7 أيام حتى تُعتمد."
+    "hint_department_head_review_reminder": "تُرسل إلى مدير أعلى مؤهل عندما لا تكون مراجعة رئيس القسم الاختيارية في دورة مفتوحة قد اعتُمدت بعد — وتتكرر كل 7 أيام حتى تُعتمد.",
+    "type_review_escalation_requested_alert": "تنبيه بطلب تصعيد المراجعة",
+    "hint_review_escalation_requested_alert": "تُرسل إلى مدير أعلى مؤهل (إن وُجد) ومسؤول المؤسسة عندما يصعّد الموظف مراجعته صراحةً — إجراء أقوى ومتعمّد يختلف عن مجرد ترك تعليق عند الاطلاع."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "مُجدولة للحذف في {date}",
@@ -2230,6 +2232,12 @@
     "confirmAndCloseLabel": "التأكيد والإغلاق (تعليق اختياري)",
     "confirmCommentPlaceholder": "أي شيء تريد تسجيله إلى جانب تأكيدك…",
     "confirmAndCloseButton": "التأكيد والإغلاق",
+    "escalated": "⚠ تم التصعيد {date}",
+    "escalateToggle": "لا أوافق — أطلب مراجعة إضافية",
+    "escalateLabel": "أخبرنا لماذا تريد مراجعة هذا مرة أخرى",
+    "escalateCommentPlaceholder": "ما الذي لا توافق عليه ولماذا…",
+    "escalateButton": "تصعيد للمراجعة",
+    "cancel": "إلغاء",
     "developmentNeeds": "احتياجات التطوير",
     "managerHasntShared": "لم يشارك مديرك منظوره بعد.",
     "uplineReview": "مراجعة رئيس القسم",
@@ -2286,6 +2294,8 @@
     "hide": "إخفاء",
     "open": "فتح",
     "exportWord": "تصدير .docx",
+    "escalated": "⚠ تم التصعيد",
+    "escalationComment": "ملاحظة التصعيد: \"{comment}\"",
     "managersPerspective": "منظور المدير",
     "ratingLabel": "التقييم (1–5)",
     "feedbackLabel": "الملاحظات",

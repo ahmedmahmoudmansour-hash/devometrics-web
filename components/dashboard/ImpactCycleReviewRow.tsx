@@ -796,12 +796,22 @@ export default function ImpactCycleReviewRow({
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>
             {item.employeeName}
             {item.cycleName && <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{t("cycleNamePrefix", { cycleName: item.cycleName })}</span>}
+            {item.escalation_requested_at && (
+              <span style={{ marginInlineStart: 8, fontSize: 10.5, fontWeight: 700, color: "var(--amber)", background: "rgba(var(--amber-rgb),0.12)", border: "1px solid rgba(var(--amber-rgb),0.3)", borderRadius: 999, padding: "2px 8px" }}>
+                {t("escalated")}
+              </span>
+            )}
           </p>
           <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
             {reviewStatusLabel(tLabels, item.status)}
             {item.selfRating !== null ? t("reflectionScore", { rating: item.selfRating }) : ""}
             {item.managerRating !== null ? t("perspectiveScore", { rating: item.managerRating }) : ""}
           </p>
+          {item.escalation_requested_at && item.escalation_comment && (
+            <p style={{ fontSize: 11.5, color: "var(--text)", marginTop: 4, maxWidth: 480 }}>
+              {t("escalationComment", { comment: item.escalation_comment })}
+            </p>
+          )}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {canExport && (

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { submitSelfAssessment, acknowledgeReview, setSelfCompetencyRating } from "@/lib/performanceReviews/actions";
+import { submitSelfAssessment, acknowledgeReview, escalateReview, setSelfCompetencyRating } from "@/lib/performanceReviews/actions";
 import { helpDraftRecommendations } from "@/lib/performanceReviews/ai";
 import {
   reviewStatusLabel,
@@ -170,6 +170,24 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   const [ackComment, setAckComment] = useState(review.employee_acknowledgment_comment ?? "");
   const [ackError, setAckError] = useState<string | null>(null);
   const [ackPending, startAckTransition] = useTransition();
+
+  // Deliberately separate from ackComment/saveAck above: acknowledging
+  // means "I've seen this, confirm and close it out"; escalating means "I
+  // disagree, please have this reviewed further" — opposite intents, never
+  // bundled into one action.
+  const [showEscalate, setShowEscalate] = useState(false);
+  const [escalationComment, setEscalationComment] = useState("");
+  const [escalationError, setEscalationError] = useState<string | null>(null);
+  const [escalationPending, startEscalationTransition] = useTransition();
+
+  function saveEscalation() {
+    setEscalationError(null);
+    startEscalationTransition(async () => {
+      const result = await escalateReview(review.id, escalationComment);
+      if (result?.error) setEscalationError(result.error);
+      else router.refresh();
+    });
+  }
 
   function saveSelf() {
     setSelfError(null);
@@ -420,6 +438,53 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
                   {ackPending ? t("saving") : t("confirmAndCloseButton")}
                 </button>
               </>
+            )}
+          </div>
+
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+            {review.escalation_requested_at ? (
+              <p style={{ fontSize: 12.5, color: "var(--amber)" }}>
+                {t("escalated", { date: new Date(review.escalation_requested_at).toLocaleDateString() })}
+                {review.escalation_comment ? ` — "${review.escalation_comment}"` : ""}
+              </p>
+            ) : showEscalate ? (
+              <>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>
+                  {t("escalateLabel")}
+                </label>
+                <textarea
+                  value={escalationComment}
+                  onChange={(e) => setEscalationComment(e.target.value)}
+                  placeholder={t("escalateCommentPlaceholder")}
+                  style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
+                />
+                {escalationError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{escalationError}</p>}
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={saveEscalation}
+                    disabled={escalationPending}
+                    style={{ background: "var(--amber)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: escalationPending ? 0.6 : 1 }}
+                  >
+                    {escalationPending ? t("saving") : t("escalateButton")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowEscalate(false)}
+                    style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
+                  >
+                    {t("cancel")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowEscalate(true)}
+                style={{ background: "none", border: "none", padding: 0, color: "var(--text-muted)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
+              >
+                {t("escalateToggle")}
+              </button>
             )}
           </div>
         </div>

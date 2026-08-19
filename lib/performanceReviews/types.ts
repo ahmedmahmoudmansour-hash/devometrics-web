@@ -45,6 +45,14 @@ export type PerformanceReview = {
   requires_hiring_manager_acceptance: boolean;
   hiring_manager_accepted_at: string | null;
   hiring_manager_accepted_by: string | null;
+  // Employee-initiated escalation (migration 0136) — distinct from
+  // employee_acknowledgment_comment: acknowledging means "I've seen this,
+  // confirm and close it out"; escalating means "I disagree, please have
+  // this reviewed further" — the opposite intent, so it's never bundled
+  // into the same action. Non-blocking: doesn't gate close_review or
+  // anything else, purely a visible signal + a notification.
+  escalation_requested_at: string | null;
+  escalation_comment: string | null;
 };
 
 export type SelfAssessment = {

@@ -36,6 +36,10 @@
 // department_head_review_reminder (0135) — the optional Department Head
 // Review was the one manager-facing step left with no recurring reminder;
 // an eligible upline manager who never signs off was never nudged.
+// review_escalation_requested_alert (0136) — an employee-initiated
+// escalation ("I disagree, please have this reviewed further"), distinct
+// from the passive acknowledgment-comment alert — notifies an eligible
+// upline manager (if one exists) and an org admin.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -57,6 +61,7 @@ export const EMAIL_MESSAGE_TYPES = [
   "review_acknowledgment_comment_alert",
   "review_reopened_alert",
   "department_head_review_reminder",
+  "review_escalation_requested_alert",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

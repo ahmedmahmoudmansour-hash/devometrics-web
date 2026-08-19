@@ -1650,7 +1650,9 @@
     "type_review_reopened_alert": "Review reopened alert",
     "hint_review_reopened_alert": "Sent to the employee and an org admin when a closed performance review is reopened by a resubmitted Manager's Perspective.",
     "type_department_head_review_reminder": "Department Head Review reminder",
-    "hint_department_head_review_reminder": "Sent to an eligible upline manager when the optional Department Head Review on an open cycle hasn't been signed off yet — repeats every 7 days until it is."
+    "hint_department_head_review_reminder": "Sent to an eligible upline manager when the optional Department Head Review on an open cycle hasn't been signed off yet — repeats every 7 days until it is.",
+    "type_review_escalation_requested_alert": "Review escalation requested alert",
+    "hint_review_escalation_requested_alert": "Sent to an eligible upline manager (if one exists) and an org admin when an employee explicitly escalates their review — a stronger, deliberate action distinct from just leaving an acknowledgment comment."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",
@@ -2230,6 +2232,12 @@
     "confirmAndCloseLabel": "Confirm & close it out (optional comment)",
     "confirmCommentPlaceholder": "Anything you want on record alongside your confirmation…",
     "confirmAndCloseButton": "Confirm & close it out",
+    "escalated": "⚠ Escalated {date}",
+    "escalateToggle": "I disagree — request further review",
+    "escalateLabel": "Tell us why you'd like this reviewed further",
+    "escalateCommentPlaceholder": "What you disagree with and why…",
+    "escalateButton": "Escalate for review",
+    "cancel": "Cancel",
     "developmentNeeds": "Development needs",
     "managerHasntShared": "Your manager hasn't shared their Perspective yet.",
     "uplineReview": "Department Head Review",
@@ -2286,6 +2294,8 @@
     "hide": "Hide",
     "open": "Open",
     "exportWord": "Export .docx",
+    "escalated": "⚠ Escalated",
+    "escalationComment": "Escalation note: \"{comment}\"",
     "managersPerspective": "Manager's Perspective",
     "ratingLabel": "Rating (1–5)",
     "feedbackLabel": "Feedback",
