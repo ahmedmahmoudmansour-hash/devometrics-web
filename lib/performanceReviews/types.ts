@@ -87,6 +87,15 @@ export function competencyRatingLabel(t: Translator, rating: number): string {
   return t(`competencyRating.${rating}`);
 }
 
+// A generic (not per-dimension) behavioral anchor for each of the 5
+// levels — "Meets Expectations" alone doesn't say what actually separates
+// a 3 from a 4. Same scale everywhere a 1-5 rating is entered (the overall
+// self/manager score and every competency rating), so one generic anchor
+// set covers all of them rather than needing one per dimension.
+export function competencyRatingDescription(t: Translator, rating: number): string {
+  return t(`competencyRatingDescription.${rating}`);
+}
+
 export function goalStatusLabel(t: Translator, status: GoalStatus): string {
   return t(`goalStatus.${status}`);
 }

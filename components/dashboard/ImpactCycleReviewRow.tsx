@@ -33,6 +33,7 @@ import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimens
 import {
   reviewStatusLabel,
   competencyRatingLabel,
+  competencyRatingDescription,
   goalStatusLabel,
   type ReviewListItem,
   type ReviewGoal,
@@ -293,6 +294,11 @@ function CompetencyRatingsEditor({
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [, startTransition] = useTransition();
+  // Tracks the in-progress selected value per row (keyed by dimension or
+  // org-competency id) so the behavioral-anchor description below each
+  // select always reflects what's currently picked, not what was last
+  // saved/suggested.
+  const [liveValues, setLiveValues] = useState<Record<string, number>>({});
 
   const dimensionsToShow = config && config.fixed_dimensions.length > 0 ? config.fixed_dimensions : [...COMPETENCY_DIMENSIONS];
   const ratingByDim = new Map(ratings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => [r.dimension as string, r]));
@@ -352,6 +358,7 @@ function CompetencyRatingsEditor({
           const suggestion = suggestions?.find((s) => s.dimension === dim && !s.organizationCompetencyId);
           const ctx = contextByDim.get(dim);
           const isFixedLabel = (COMPETENCY_DIMENSIONS as readonly string[]).includes(dim);
+          const currentValue = liveValues[dim] ?? suggestion?.rating ?? existing?.rating ?? existing?.self_rating ?? 3;
           return (
             <div key={dim} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "6px 10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -366,8 +373,12 @@ function CompetencyRatingsEditor({
                   )}
                 </div>
                 <select
-                  defaultValue={suggestion?.rating ?? existing?.rating ?? existing?.self_rating ?? 3}
-                  onChange={(e) => save(dim, Number(e.target.value), existing?.note ?? suggestion?.note ?? "")}
+                  value={currentValue}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    setLiveValues((prev) => ({ ...prev, [dim]: next }));
+                    save(dim, next, existing?.note ?? suggestion?.note ?? "");
+                  }}
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
                 >
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -377,6 +388,7 @@ function CompetencyRatingsEditor({
                   ))}
                 </select>
               </div>
+              <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, currentValue)}</p>
               {suggestion && !existing && (
                 <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
               )}
@@ -392,13 +404,18 @@ function CompetencyRatingsEditor({
         {organizationCompetencies.map((c) => {
           const existing = ratingByOrgCompetency.get(c.id);
           const suggestion = suggestions?.find((s) => s.organizationCompetencyId === c.id);
+          const currentValue = liveValues[c.id] ?? suggestion?.rating ?? existing?.rating ?? existing?.self_rating ?? 3;
           return (
             <div key={c.id} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "6px 10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontSize: 12, color: "var(--text)" }}>{c.name}</span>
                 <select
-                  defaultValue={suggestion?.rating ?? existing?.rating ?? existing?.self_rating ?? 3}
-                  onChange={(e) => save(c.mappedDimension ?? "", Number(e.target.value), existing?.note ?? suggestion?.note ?? "", c.id)}
+                  value={currentValue}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    setLiveValues((prev) => ({ ...prev, [c.id]: next }));
+                    save(c.mappedDimension ?? "", next, existing?.note ?? suggestion?.note ?? "", c.id);
+                  }}
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
                 >
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -408,6 +425,7 @@ function CompetencyRatingsEditor({
                   ))}
                 </select>
               </div>
+              <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, currentValue)}</p>
               {suggestion && !existing && (
                 <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
               )}
@@ -516,13 +534,14 @@ function ManagerAssessmentSection({
       </div>
       {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("ratingLabel")}</label>
-      <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
+      <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer" }}>
         {[1, 2, 3, 4, 5].map((n) => (
           <option key={n} value={n}>
             {n} — {competencyRatingLabel(tLabels, n)}
           </option>
         ))}
       </select>
+      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, marginBottom: 10, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, rating)}</p>
       <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("feedbackLabel")}</label>
       <textarea
         value={feedback}

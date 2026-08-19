@@ -2129,6 +2129,13 @@
       "4": "Exceeds Expectations",
       "5": "Outstanding"
     },
+    "competencyRatingDescription": {
+      "1": "Consistently falls short — needs close guidance and support to complete core responsibilities.",
+      "2": "Inconsistent — meets some expectations but is still building proficiency and often needs guidance.",
+      "3": "Reliable and independent — consistently meets what the role requires, with sound judgment.",
+      "4": "Above expectations — regularly takes initiative and delivers high-quality results with little oversight.",
+      "5": "Sets the standard — exceptional impact, judgment, and initiative that goes beyond the role."
+    },
     "goalStatus": {
       "not_started": "Not started",
       "in_progress": "In progress",

@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { submitSelfAssessment, acknowledgeReview, setSelfCompetencyRating } from "@/lib/performanceReviews/actions";
 import { helpDraftRecommendations } from "@/lib/performanceReviews/ai";
-import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail, type CompetencyRating } from "@/lib/performanceReviews/types";
+import {
+  reviewStatusLabel,
+  competencyRatingLabel,
+  competencyRatingDescription,
+  goalStatusLabel,
+  type ReviewDetail,
+  type CompetencyRating,
+} from "@/lib/performanceReviews/types";
 import { describeCycleTimeline, describeReviewStage, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { OrganizationCompetencyOption } from "@/lib/organizations/competencies";
@@ -68,6 +75,12 @@ function SelfCompetencyRatingsEditor({
   const tDim = useTranslations("competencyDimensions");
   const router = useRouter();
   const [, startTransition] = useTransition();
+  // Tracks the in-progress selected value per row (keyed by dimension or
+  // org-competency id) so the behavioral-anchor description below each
+  // select always reflects what's currently picked, not what was last
+  // saved — the select auto-saves on change, but router.refresh() takes a
+  // moment to land.
+  const [liveValues, setLiveValues] = useState<Record<string, number>>({});
 
   const ratingByDim = new Map(ratings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => [r.dimension as string, r]));
   const ratingByOrgCompetency = new Map(ratings.filter((r) => r.organization_competency_id).map((r) => [r.organization_competency_id as string, r]));
@@ -80,13 +93,18 @@ function SelfCompetencyRatingsEditor({
   }
 
   function renderRow(key: string, label: string, existing: CompetencyRating | undefined, onSave: (rating: number) => void) {
+    const currentValue = liveValues[key] ?? existing?.self_rating ?? 3;
     return (
       <div key={key} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "8px 10px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <span style={{ fontSize: 12.5, color: "var(--text)" }}>{label}</span>
           <select
-            defaultValue={existing?.self_rating ?? 3}
-            onChange={(e) => onSave(Number(e.target.value))}
+            value={currentValue}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              setLiveValues((prev) => ({ ...prev, [key]: next }));
+              onSave(next);
+            }}
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
           >
             {[1, 2, 3, 4, 5].map((n) => (
@@ -96,7 +114,8 @@ function SelfCompetencyRatingsEditor({
             ))}
           </select>
         </div>
-        <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+        <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, currentValue)}</p>
+        <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
           {existing?.rating !== null && existing?.rating !== undefined
             ? t("managerRatedThis", { rating: competencyRatingLabel(tLabels, existing.rating) })
             : t("managerNotYetRated")}
@@ -211,13 +230,14 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
         <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("yourReflection")}</p>
 
         <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("howWouldYouRate")}</label>
-        <select value={selfRating} onChange={(e) => setSelfRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer", marginBottom: 10 }}>
+        <select value={selfRating} onChange={(e) => setSelfRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer" }}>
           {[1, 2, 3, 4, 5].map((n) => (
             <option key={n} value={n}>
               {n} — {competencyRatingLabel(tLabels, n)}
             </option>
           ))}
         </select>
+        <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 6, marginBottom: 10, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, selfRating)}</p>
         <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("reflectionLabel")}</label>
         <textarea
           value={selfReflection}
