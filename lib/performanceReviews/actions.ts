@@ -26,7 +26,7 @@ import type { CustomStepCompletion, CustomStepAggregate } from "./workflowTypes"
 import { createAutomatedSingleEmployeeCycle } from "./cycleAutomation";
 import { isRecipeEnabled, firedRecently, logAutomation } from "@/lib/automations/engine";
 import { sendEmail } from "@/lib/email/resend";
-import { renderEmail, customMessageHtml } from "@/lib/email/template";
+import { renderEmail, customMessageHtml, escapeHtml } from "@/lib/email/template";
 import { getEmailMessageOverride } from "@/lib/organizations/emailMessages";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -755,16 +755,117 @@ export async function acknowledgeReview(reviewId: string, comment: string) {
   const restrictedError = await performanceReviewRestrictedError(supabase);
   if (restrictedError) return { error: restrictedError };
 
+  const trimmedComment = comment.trim();
   const { error } = await supabase.rpc("acknowledge_review", {
     target_review_id: reviewId,
-    p_comment: comment.trim(),
+    p_comment: trimmedComment,
   });
   if (error) {
     console.error("acknowledgeReview failed:", error);
     return { error: "Could not save — try again." };
   }
   revalidatePath("/dashboard/impact-cycle");
+
+  // Process-delay audit follow-up (2026-08-19): a manager rating is never
+  // locked (they or an admin can always resubmit one), so the practical
+  // path for an employee who disagrees with their score is informal —
+  // raise it, the manager revises. But until now nothing routed that
+  // signal anywhere: the acknowledgment comment just sat in the database,
+  // visible only to someone who happened to open this specific review.
+  // Best-effort, never blocks the acknowledgment itself, which already
+  // succeeded above.
+  if (trimmedComment) {
+    try {
+      await notifyReviewAcknowledgmentComment(supabase, { reviewId, comment: trimmedComment });
+    } catch (err) {
+      console.error("acknowledgeReview: comment notification failed (non-fatal):", err);
+    }
+  }
+
   return { success: true };
+}
+
+// Notifies BOTH the employee's manager and an org admin whenever they leave
+// a comment while acknowledging their review — not just for a low-rating
+// dispute specifically (a comment could just as easily be positive), since
+// there's no reliable way to distinguish "disagreement" from any other
+// written feedback, and either way a human should see it rather than it
+// sitting silently in the database. Admin resolution mirrors the same
+// "one admin, limit 1" pattern migration 0126's manager-action-reminder
+// fallback already established.
+async function notifyReviewAcknowledgmentComment(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  params: { reviewId: string; comment: string }
+): Promise<void> {
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("organization_id, employee_user_id, performance_review_cycles(name)")
+    .eq("id", params.reviewId)
+    .maybeSingle<{ organization_id: string; employee_user_id: string; performance_review_cycles: { name: string } }>();
+  if (!review) return;
+
+  const [{ data: employeeProfile }, { data: memberRow }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", review.employee_user_id).maybeSingle<{ full_name: string | null }>(),
+    supabase
+      .from("organization_members")
+      .select("manager_user_id")
+      .eq("organization_id", review.organization_id)
+      .eq("user_id", review.employee_user_id)
+      .maybeSingle<{ manager_user_id: string | null }>(),
+  ]);
+  const employeeName = employeeProfile?.full_name ?? "An employee";
+
+  const recipientUserIds = new Set<string>();
+  if (memberRow?.manager_user_id) recipientUserIds.add(memberRow.manager_user_id);
+  const { data: adminRow } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", review.organization_id)
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle<{ user_id: string }>();
+  if (adminRow?.user_id) recipientUserIds.add(adminRow.user_id);
+  if (recipientUserIds.size === 0) return;
+
+  const { data: recipientProfiles } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .in("id", [...recipientUserIds])
+    .returns<{ id: string; email: string | null }[]>();
+  const recipientEmails = [...new Set((recipientProfiles ?? []).map((p) => p.email).filter((e): e is string => !!e))];
+  if (recipientEmails.length === 0) return;
+
+  const override = await getEmailMessageOverride(review.organization_id, "review_acknowledgment_comment_alert");
+  const cycleName = review.performance_review_cycles?.name ?? "their review";
+  const subject = override.subject || `${employeeName} left a comment on their ${cycleName}`;
+  const bodyHtml = `
+    <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(employeeName)} left a comment on ${escapeHtml(cycleName)}</h2>
+    ${customMessageHtml(override.message)}
+    <p style="font-size:15px;line-height:1.7;margin:0 0 12px;">
+      They wrote this when confirming they'd seen their review — worth a look, whether it's a question, a concern, or just a note:
+    </p>
+    <blockquote style="margin:0 0 20px;padding:12px 16px;border-left:3px solid #3f7a67;background:#f4f6f5;color:#16161a;font-size:14.5px;line-height:1.6;">
+      ${escapeHtml(params.comment)}
+    </blockquote>
+    <p style="margin:0;">
+      <a href="https://devometrics.com/dashboard/my-team" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open the review →</a>
+    </p>
+  `;
+  const preheader = `${employeeName}: "${params.comment.slice(0, 100)}"`;
+
+  await Promise.allSettled(
+    recipientEmails.map((email) =>
+      sendEmail(
+        email,
+        subject,
+        renderEmail({
+          preheader,
+          bodyHtml,
+          footerNote: "Sent because they left a comment while acknowledging their performance review on Devometrics.",
+        })
+      )
+    )
+  );
 }
 
 // ---------- Escalation: skip-level visibility + co-sign ----------

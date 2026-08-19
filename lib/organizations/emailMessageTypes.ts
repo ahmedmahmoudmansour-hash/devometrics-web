@@ -26,6 +26,10 @@
 // used to fire completely privately (only the employee's own tasks), an
 // asymmetry with high_potential_to_succession which already notifies the
 // manager on a good score. Now mirrors that pattern for a low one too.
+// review_acknowledgment_comment_alert (0131) — an employee's acknowledgment
+// comment (e.g. disagreement with a low rating) used to sit silently in the
+// database, visible only to someone who happened to open that specific
+// review. Now routes to the manager and an org admin.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -44,6 +48,7 @@ export const EMAIL_MESSAGE_TYPES = [
   "manager_assessment_reminder",
   "probation_acceptance_reminder",
   "low_assessment_score_manager_alert",
+  "review_acknowledgment_comment_alert",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 
