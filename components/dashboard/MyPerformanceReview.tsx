@@ -443,12 +443,19 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
 
           <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
             {review.escalation_requested_at ? (
-              <p style={{ fontSize: 12.5, color: review.escalation_resolved_at ? "var(--text-muted)" : "var(--amber)" }}>
-                {review.escalation_resolved_at
-                  ? t("escalationResolvedOn", { date: new Date(review.escalation_resolved_at).toLocaleDateString() })
-                  : t("escalated", { date: new Date(review.escalation_requested_at).toLocaleDateString() })}
-                {review.escalation_comment ? ` — "${review.escalation_comment}"` : ""}
-              </p>
+              <>
+                <p style={{ fontSize: 12.5, color: review.escalation_resolved_at ? "var(--text-muted)" : "var(--amber)" }}>
+                  {review.escalation_resolved_at
+                    ? t("escalationResolvedOn", { date: new Date(review.escalation_resolved_at).toLocaleDateString() })
+                    : t("escalated", { date: new Date(review.escalation_requested_at).toLocaleDateString() })}
+                  {review.escalation_comment ? ` — "${review.escalation_comment}"` : ""}
+                </p>
+                {review.escalation_resolved_at && review.escalation_resolution_comment && (
+                  <p style={{ fontSize: 12.5, color: "var(--text)", marginTop: 4 }}>
+                    {t("resolutionComment", { comment: review.escalation_resolution_comment })}
+                  </p>
+                )}
+              </>
             ) : showEscalate ? (
               <>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>

@@ -40,6 +40,9 @@
 // escalation ("I disagree, please have this reviewed further"), distinct
 // from the passive acknowledgment-comment alert — notifies an eligible
 // upline manager (if one exists) and an org admin.
+// review_escalation_resolved_alert (0138) — notifies the employee, with
+// HR's resolution comment, once their escalation is marked resolved.
+// Informational only — no sign-off required from them.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -62,6 +65,7 @@ export const EMAIL_MESSAGE_TYPES = [
   "review_reopened_alert",
   "department_head_review_reminder",
   "review_escalation_requested_alert",
+  "review_escalation_resolved_alert",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

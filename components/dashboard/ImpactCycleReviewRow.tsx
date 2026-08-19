@@ -20,7 +20,6 @@ import {
   getMyUserId,
   resolveReviewEscalation,
 } from "@/lib/performanceReviews/actions";
-import { useConfirmClick } from "@/lib/ui/useConfirmClick";
 import {
   suggestFocusAreas,
   draftManagerPerspective,
@@ -745,7 +744,6 @@ export default function ImpactCycleReviewRow({
 }) {
   const t = useTranslations("impactCycleReviewRow");
   const tLabels = useTranslations("performanceReviewLabels");
-  const tConfirm = useTranslations("confirmActions");
   const [expanded, setExpanded] = useState(false);
   const [goals, setGoals] = useState<ReviewGoal[]>([]);
   const [pastGoals, setPastGoals] = useState<ReviewGoal[]>([]);
@@ -756,16 +754,27 @@ export default function ImpactCycleReviewRow({
   const [uplineSignoffs, setUplineSignoffs] = useState<UplineSignoff[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [organizationMembers, setOrganizationMembers] = useState<{ userId: string; name: string; email: string }[]>([]);
+  // Comment required (migration 0138) — so "Mark resolved" opens a small
+  // form instead of just needing a confirm-click, same shape as the
+  // employee's own "Escalate" flow (showEscalate toggle) in
+  // MyPerformanceReview.tsx.
+  const [showResolve, setShowResolve] = useState(false);
+  const [resolveComment, setResolveComment] = useState("");
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [resolvePending, startResolveTransition] = useTransition();
-  const { confirming: resolveConfirming, handleClick: handleResolveEscalation } = useConfirmClick(() => {
+
+  function handleResolveEscalation() {
     setResolveError(null);
     startResolveTransition(async () => {
-      const result = await resolveReviewEscalation(item.id);
+      const result = await resolveReviewEscalation(item.id, resolveComment);
       if (result && "error" in result) setResolveError(result.error);
-      else onChanged();
+      else {
+        setShowResolve(false);
+        setResolveComment("");
+        onChanged();
+      }
     });
-  });
+  }
 
   async function loadAll() {
     const [g, pg, r, ctx, chain, signoffs, uid] = await Promise.all([
@@ -830,27 +839,60 @@ export default function ImpactCycleReviewRow({
               {t("escalationComment", { comment: item.escalation_comment })}
             </p>
           )}
+          {item.escalation_resolved_at && item.escalation_resolution_comment && (
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4, maxWidth: 480 }}>
+              {t("resolutionComment", { comment: item.escalation_resolution_comment })}
+            </p>
+          )}
           {item.escalation_requested_at && !item.escalation_resolved_at && (
-            <div style={{ marginTop: 6 }}>
-              <button
-                type="button"
-                disabled={resolvePending}
-                onClick={handleResolveEscalation}
-                style={{
-                  background: "none",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  padding: "3px 10px",
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: resolveConfirming ? "var(--danger)" : "var(--text-muted)",
-                  cursor: "pointer",
-                  opacity: resolvePending ? 0.6 : 1,
-                }}
-              >
-                {resolveConfirming ? tConfirm("clickAgainToConfirm") : t("markResolved")}
-              </button>
-              {resolveError && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 4 }}>{resolveError}</p>}
+            <div style={{ marginTop: 6, maxWidth: 420 }}>
+              {showResolve ? (
+                <>
+                  <textarea
+                    value={resolveComment}
+                    onChange={(e) => setResolveComment(e.target.value)}
+                    placeholder={t("resolveCommentPlaceholder")}
+                    style={{
+                      width: "100%",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 6,
+                      padding: "6px 8px",
+                      fontSize: 11.5,
+                      color: "var(--text)",
+                      minHeight: 50,
+                      resize: "vertical",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                  {resolveError && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 4 }}>{resolveError}</p>}
+                  <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                    <button
+                      type="button"
+                      disabled={resolvePending}
+                      onClick={handleResolveEscalation}
+                      style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 6, padding: "4px 12px", fontSize: 10.5, fontWeight: 700, cursor: "pointer", opacity: resolvePending ? 0.6 : 1 }}
+                    >
+                      {resolvePending ? t("saving") : t("markResolved")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowResolve(false)}
+                      style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 12px", fontSize: 10.5, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer" }}
+                    >
+                      {t("cancel")}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowResolve(true)}
+                  style={{ background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 10px", fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", cursor: "pointer" }}
+                >
+                  {t("markResolved")}
+                </button>
+              )}
             </div>
           )}
         </div>

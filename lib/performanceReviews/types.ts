@@ -59,6 +59,10 @@ export type PerformanceReview = {
   // set, so there's still a record of what happened).
   escalation_resolved_at: string | null;
   escalation_resolved_by: string | null;
+  // Required (migration 0138) — for symmetry with the employee's own
+  // required escalation_comment, and so the audit trail says HOW it was
+  // addressed, not just that it was.
+  escalation_resolution_comment: string | null;
 };
 
 export type SelfAssessment = {

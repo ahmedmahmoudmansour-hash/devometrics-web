@@ -963,16 +963,82 @@ async function notifyReviewEscalation(
 // request: escalation_requested_at/escalation_comment stay set, so
 // there's still a record of what happened, just no longer reading as an
 // open item.
-export async function resolveReviewEscalation(reviewId: string): Promise<{ success: true } | { error: string }> {
+// Comment is required (migration 0138) — for symmetry with escalateReview's
+// own required comment, and so the audit trail says HOW a concern was
+// addressed, not just that it was. Notifies the employee with this comment
+// (see notifyReviewEscalationResolved below) — informational only, no
+// sign-off required from them, per the CEO's own call on that point.
+export async function resolveReviewEscalation(reviewId: string, comment: string): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("resolve_review_escalation", { target_review_id: reviewId });
+  const trimmedComment = comment.trim();
+  if (!trimmedComment) return { error: "Tell us how this was resolved" };
+
+  const { error } = await supabase.rpc("resolve_review_escalation", { target_review_id: reviewId, p_comment: trimmedComment });
   if (error) {
     console.error("resolveReviewEscalation failed:", error);
     return { error: "Could not save — try again." };
   }
   revalidatePath("/dashboard/company/impact-cycles");
   revalidatePath("/dashboard/impact-cycle");
+
+  try {
+    await notifyReviewEscalationResolved(supabase, { reviewId, comment: trimmedComment });
+  } catch (err) {
+    console.error("resolveReviewEscalation: notification failed (non-fatal):", err);
+  }
+
   return { success: true };
+}
+
+// Notifies the employee (only — not the manager/admin who just resolved it)
+// with HR's resolution comment, so they find out their escalation was
+// addressed and how, without any further action required from them.
+async function notifyReviewEscalationResolved(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  params: { reviewId: string; comment: string }
+): Promise<void> {
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("organization_id, employee_user_id, performance_review_cycles(name)")
+    .eq("id", params.reviewId)
+    .maybeSingle<{ organization_id: string; employee_user_id: string; performance_review_cycles: { name: string } }>();
+  if (!review) return;
+
+  const { data: employeeProfile } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", review.employee_user_id)
+    .maybeSingle<{ full_name: string | null; email: string | null }>();
+  if (!employeeProfile?.email) return;
+  const firstName = employeeProfile.full_name?.trim().split(" ")[0] || "there";
+  const cycleName = review.performance_review_cycles?.name ?? "your review";
+
+  try {
+    const override = await getEmailMessageOverride(review.organization_id, "review_escalation_resolved_alert");
+    await sendEmail(
+      employeeProfile.email,
+      override.subject || `Your ${cycleName} escalation has been resolved`,
+      renderEmail({
+        preheader: `Here's how your escalation on ${cycleName} was addressed`,
+        bodyHtml: `
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0 0 12px;">
+            The concern you raised on your <strong>${escapeHtml(cycleName)}</strong> has been resolved:
+          </p>
+          <blockquote style="margin:0 0 20px;padding:12px 16px;border-left:3px solid #3f7a67;background:#f4f6f5;color:#16161a;font-size:14.5px;line-height:1.6;">
+            ${escapeHtml(params.comment)}
+          </blockquote>
+          <p style="margin:0;">
+            <a href="https://devometrics.com/dashboard/impact-cycle" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open your review →</a>
+          </p>
+        `,
+        footerNote: "Sent because an escalation you raised on Devometrics was marked resolved.",
+      })
+    );
+  } catch (err) {
+    console.error("notifyReviewEscalationResolved: email failed (non-fatal):", err);
+  }
 }
 
 export type EscalatedReview = {
