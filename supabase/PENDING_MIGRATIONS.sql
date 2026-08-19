@@ -1,5 +1,5 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0129 THROUGH 0132
+-- DEVOMETRICS -- PENDING MIGRATIONS: 0129 THROUGH 0135
 --
 -- Everything through 0128 has been confirmed applied. 0129 adds a
 -- single column (is_new_hire) to organization_invites, gating whether
@@ -9,7 +9,11 @@
 -- review acknowledgment comment -> manager + admin notification).
 -- 0132 adds employee self-rating on competencies (self_rating/self_note
 -- columns + a new employee-only RPC), alongside the existing
--- manager rating on the same row.
+-- manager rating on the same row. 0133 gives probation cycles a real
+-- 90-day timeline (closes_at). 0134 widens the email-type constraint
+-- for two more alerts (review reopened; Department Head Review
+-- reminder). 0135 adds the Department Head Review reminder itself
+-- (a new internal-only dedup table + two RPCs).
 --
 -- Ahmed is batching these — hold off running until he confirms he's
 -- ready, rather than prompting after each one.
@@ -180,3 +184,303 @@ $$;
 
 revoke all on function public.set_self_competency_rating(uuid, text, integer, text, uuid) from public;
 grant execute on function public.set_self_competency_rating(uuid, text, integer, text, uuid) to authenticated;
+
+-- ============================================================
+-- 0133_probation_timeline.sql
+-- ============================================================
+-- 0133: Give probation reviews a timeline
+--
+-- create_automated_review_cycle (0122) only ever set opens_at — never
+-- closes_at — so a probation cycle had no deadline at all: it could sit at
+-- "manager submitted, HR reviewing" indefinitely with no urgency signal,
+-- unlike every other cycle type. Fixed at the source (this RPC) rather
+-- than in a new column/table: closes_at already exists on
+-- performance_review_cycles, and MyPerformanceReview/PerformanceReviewsManager
+-- already render describeCycleTimeline's "closes in N days"/"overdue by N
+-- days" off it — setting the column is enough to get that UI for free, no
+-- new frontend code needed.
+--
+-- 90 days is a fixed default, not an org-configurable setting — the CEO
+-- raised configurable probation length as an open question earlier this
+-- program and it was deliberately left unresolved; a sensible universal
+-- default ships faster than a second settings surface and can become
+-- configurable later if real usage asks for it (same reasoning the
+-- mid-year trigger's 2/5 threshold used). mid_year_checkin is unaffected
+-- (closes_at stays null for it, exactly as before).
+
+create or replace function public.create_automated_review_cycle(
+  p_employee_user_id uuid,
+  p_starter_key text,
+  p_cycle_name text,
+  p_opens_at date default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_org_id uuid;
+  v_template_id uuid;
+  v_cycle_id uuid;
+  v_review_id uuid;
+  v_step_id uuid;
+  v_admin_user_id uuid;
+  v_closes_at date;
+begin
+  select organization_id into v_org_id
+  from public.organization_members
+  where user_id = p_employee_user_id
+  limit 1;
+
+  if v_org_id is null then
+    raise exception 'Employee is not a member of any organization';
+  end if;
+
+  if not (
+    p_employee_user_id = auth.uid()
+    or public.is_org_admin(v_org_id)
+    or public.is_manager_of_user(p_employee_user_id)
+  ) then
+    raise exception 'Not authorized';
+  end if;
+
+  if p_starter_key not in ('probation_review', 'mid_year_checkin') then
+    raise exception 'Unsupported starter key for automated cycles: %', p_starter_key;
+  end if;
+
+  if p_starter_key = 'probation_review' then
+    v_closes_at := coalesce(p_opens_at, current_date) + interval '90 days';
+  else
+    v_closes_at := null;
+  end if;
+
+  insert into public.performance_review_workflow_templates (organization_id, name, is_default)
+  values (v_org_id, coalesce(nullif(trim(p_cycle_name), ''), p_starter_key) || ' Template', false)
+  returning id into v_template_id;
+
+  if p_starter_key = 'probation_review' then
+    insert into public.performance_review_workflow_steps (template_id, position, step_type, title, data)
+    values
+      (v_template_id, 0, 'manager_assessment', 'Probation Assessment', '{}'::jsonb),
+      (v_template_id, 1, 'custom', 'HR Review',
+        '{"custom_kind":"hr_review","response_shape":"approval","multi_respondent":false,"min_respondents":null,"max_respondents":null,"assignment":{"mode":"role","role":"org_admin"},"anonymize_to_employee":false,"ai_assist_enabled":true}'::jsonb),
+      (v_template_id, 2, 'conclusion', 'Outcome', '{}'::jsonb);
+  else -- mid_year_checkin
+    insert into public.performance_review_workflow_steps (template_id, position, step_type, title, data)
+    values
+      (v_template_id, 0, 'self_assessment', 'Self-Reflection', '{}'::jsonb),
+      (v_template_id, 1, 'goals', 'Goals & Progress', '{}'::jsonb),
+      (v_template_id, 2, 'manager_assessment', 'Manager''s Perspective', '{}'::jsonb),
+      (v_template_id, 3, 'conclusion', 'Conclusion', '{}'::jsonb);
+  end if;
+
+  insert into public.performance_review_cycles (organization_id, name, status, created_by, opens_at, closes_at, workflow_template_id)
+  values (v_org_id, coalesce(nullif(trim(p_cycle_name), ''), initcap(replace(p_starter_key, '_', ' '))), 'open', auth.uid(), p_opens_at, v_closes_at, v_template_id)
+  returning id into v_cycle_id;
+
+  insert into public.performance_review_cycle_participants (cycle_id, employee_user_id)
+  values (v_cycle_id, p_employee_user_id);
+
+  insert into public.performance_reviews (cycle_id, organization_id, employee_user_id, requires_hiring_manager_acceptance)
+  values (v_cycle_id, v_org_id, p_employee_user_id, p_starter_key = 'probation_review')
+  returning id into v_review_id;
+
+  insert into public.performance_review_instance_steps (review_id, workflow_step_id, position, step_type, title, description, data)
+  select v_review_id, ws.id, ws.position, ws.step_type, ws.title, ws.description, ws.data
+  from public.performance_review_workflow_steps ws
+  where ws.template_id = v_template_id
+  order by ws.position;
+
+  if p_starter_key = 'probation_review' then
+    select id into v_step_id
+    from public.performance_review_instance_steps
+    where review_id = v_review_id and step_type = 'custom'
+    limit 1;
+
+    select user_id into v_admin_user_id
+    from public.organization_members
+    where organization_id = v_org_id and role = 'admin'
+    limit 1;
+
+    if v_step_id is not null and v_admin_user_id is not null then
+      insert into public.performance_review_custom_step_assignments (instance_step_id, review_id, assignee_user_id, assigned_by)
+      values (v_step_id, v_review_id, v_admin_user_id, null)
+      on conflict (instance_step_id, assignee_user_id) do nothing;
+    end if;
+  end if;
+
+  return v_review_id;
+end;
+$$;
+
+revoke all on function public.create_automated_review_cycle(uuid, text, text, date) from public;
+grant execute on function public.create_automated_review_cycle(uuid, text, text, date) to authenticated;
+
+-- ============================================================
+-- 0134_reopen_and_dept_head_alert_emails.sql
+-- ============================================================
+-- 0134: Two more customizable automation-fired alert emails
+--
+-- review_reopened_alert: submit_manager_assessment has no status guard, so
+-- resubmitting a rating on a closed review silently reopens it — now
+-- notifies the employee and an org admin.
+-- department_head_review_reminder: the optional Department Head Review was
+-- the one manager-facing step left with no recurring reminder (0126 added
+-- the manager-assessment and probation-acceptance reminders, but not this
+-- one) — an eligible upline manager who never signs off was never nudged.
+-- The actual reminder RPCs for the second one are in 0135; this migration
+-- just widens the constraint for both so 0135 doesn't need to touch it
+-- again. Same named-constraint widening pattern as
+-- 0107/0110/0115/0124/0126/0130/0131 established specifically so this
+-- never needs to guess a Postgres-generated constraint name.
+
+alter table public.organization_email_messages
+  drop constraint if exists organization_email_messages_email_type_check;
+alter table public.organization_email_messages
+  add constraint organization_email_messages_email_type_check
+  check (email_type in (
+    'task_reminder', 'certification_reminder', 'knowledge_hub_reminder',
+    'performance_review_reminder', 'assessment_reminder',
+    'knowledge_hub_assignment', 'employee_invite',
+    'hire_to_onboarding_manager_alert', 'high_potential_manager_alert',
+    'onboarding_step_reminder', 'onboarding_manager_approval_reminder',
+    'milestone_assignment', 'interview_stage_notice', 'assessment_assignment',
+    'knowledge_hub_content_updated', 'probation_review_ready_alert',
+    'midyear_checkin_scheduled_alert', 'manager_assessment_reminder',
+    'probation_acceptance_reminder', 'low_assessment_score_manager_alert',
+    'review_acknowledgment_comment_alert', 'review_reopened_alert',
+    'department_head_review_reminder'
+  ));
+
+-- ============================================================
+-- 0135_department_head_review_reminders.sql
+-- ============================================================
+-- 0135: Department Head Review reminders
+--
+-- Migration 0126 added recurring reminders for the manager_assessment step
+-- and probation acceptance — but the optional Department Head Review
+-- (level 2+ upline signoff, submit_upline_signoff) was left out. It's the
+-- one manager-facing step in this app with no reminder at all: an eligible
+-- upline manager who never signs off is simply never nudged.
+--
+-- performance_review_upline_signoffs only ever gets a row once someone
+-- actually submits (see submit_upline_signoff) — there's no pre-seeded
+-- "pending" row to attach a last_reminder_sent_at column to, and eligible
+-- levels are computed dynamically from the org's review_escalation_levels
+-- setting by walking organization_members.manager_user_id, not stored
+-- anywhere. So this needs its own small dedup table (below) plus a
+-- recursive CTE to walk the chain, rather than reusing
+-- performance_reviews.last_manager_reminder_sent_at (0126) — that column
+-- is already shared by the manager-assessment/probation-acceptance
+-- reminders, and reusing it here would let this reminder suppress those or
+-- vice versa, which are genuinely different recipients for different
+-- steps.
+
+-- RLS enabled with ZERO policies — deliberately unreachable via the API
+-- (SELECT included) for every role including authenticated. Pure
+-- cron-bookkeeping: only the SECURITY DEFINER functions below ever touch
+-- it, the same posture as any other internal-only table in this schema.
+create table if not exists public.performance_review_upline_reminder_log (
+  review_id uuid not null references public.performance_reviews(id) on delete cascade,
+  manager_user_id uuid not null,
+  last_reminder_sent_at timestamptz not null default now(),
+  primary key (review_id, manager_user_id)
+);
+
+alter table public.performance_review_upline_reminder_log enable row level security;
+
+create or replace function public.due_department_head_review_reminders(secret text)
+returns table(
+  review_id uuid,
+  recipient_user_id uuid,
+  email text,
+  full_name text,
+  employee_name text,
+  cycle_name text,
+  custom_subject text,
+  custom_message text
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  with recursive chain as (
+    -- Level 1 = the employee's direct manager, walked the same way
+    -- getUplineChain (lib/performanceReviews/actions.ts) does it — level 1
+    -- is excluded below since that's the ordinary manager_assessment step,
+    -- already covered by 0126.
+    select
+      r.id as review_id,
+      r.organization_id,
+      r.employee_user_id,
+      1 as level,
+      om.manager_user_id,
+      least(coalesce(o.review_escalation_levels, 1), 10) as max_level
+    from public.performance_reviews r
+    join public.performance_review_cycles cyc on cyc.id = r.cycle_id
+    join public.organization_members om on om.user_id = r.employee_user_id and om.organization_id = r.organization_id
+    join public.organizations o on o.id = r.organization_id
+    where cyc.status = 'open' and om.manager_user_id is not null
+
+    union all
+
+    select
+      c.review_id,
+      c.organization_id,
+      c.employee_user_id,
+      c.level + 1,
+      om2.manager_user_id,
+      c.max_level
+    from chain c
+    join public.organization_members om2 on om2.user_id = c.manager_user_id and om2.organization_id = c.organization_id
+    where c.level < c.max_level and om2.manager_user_id is not null
+  )
+  select
+    c.review_id,
+    c.manager_user_id,
+    p.email,
+    p.full_name,
+    emp.full_name,
+    cyc.name,
+    oem.custom_subject,
+    oem.custom_message
+  from chain c
+  join public.performance_reviews r on r.id = c.review_id
+  join public.performance_review_cycles cyc on cyc.id = r.cycle_id
+  join public.profiles p on p.id = c.manager_user_id
+  join public.profiles emp on emp.id = c.employee_user_id
+  left join public.organization_email_messages oem
+    on oem.organization_id = c.organization_id and oem.email_type = 'department_head_review_reminder'
+  where secret = (select value from public.app_secrets where key = 'cron_secret')
+    and c.level >= 2
+    and p.email is not null
+    and not exists (
+      select 1 from public.performance_review_upline_signoffs s
+      where s.review_id = c.review_id and s.manager_user_id = c.manager_user_id and s.signed_off_at is not null
+    )
+    and not exists (
+      select 1 from public.performance_review_upline_reminder_log l
+      where l.review_id = c.review_id and l.manager_user_id = c.manager_user_id
+        and l.last_reminder_sent_at > now() - interval '7 days'
+    );
+$$;
+
+revoke all on function public.due_department_head_review_reminders(text) from public;
+grant execute on function public.due_department_head_review_reminders(text) to anon, authenticated;
+
+create or replace function public.mark_department_head_review_reminder_sent(secret text, target_review_id uuid, target_manager_user_id uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.performance_review_upline_reminder_log (review_id, manager_user_id, last_reminder_sent_at)
+  select target_review_id, target_manager_user_id, now()
+  where secret = (select value from public.app_secrets where key = 'cron_secret')
+  on conflict (review_id, manager_user_id) do update set last_reminder_sent_at = now();
+$$;
+
+revoke all on function public.mark_department_head_review_reminder_sent(text, uuid, uuid) from public;
+grant execute on function public.mark_department_head_review_reminder_sent(text, uuid, uuid) to anon, authenticated;

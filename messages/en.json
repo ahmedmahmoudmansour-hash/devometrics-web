@@ -1646,7 +1646,11 @@
     "type_low_assessment_score_manager_alert": "Low assessment score manager alert",
     "hint_low_assessment_score_manager_alert": "Sent to a manager when their direct report scores below 50 on a self-report assessment, alongside the follow-up tasks created for the employee themself.",
     "type_review_acknowledgment_comment_alert": "Review acknowledgment comment alert",
-    "hint_review_acknowledgment_comment_alert": "Sent to the employee's manager and an org admin when they leave a comment while acknowledging their performance review — e.g. disagreement with a rating, a question, or anything else worth a look."
+    "hint_review_acknowledgment_comment_alert": "Sent to the employee's manager and an org admin when they leave a comment while acknowledging their performance review — e.g. disagreement with a rating, a question, or anything else worth a look.",
+    "type_review_reopened_alert": "Review reopened alert",
+    "hint_review_reopened_alert": "Sent to the employee and an org admin when a closed performance review is reopened by a resubmitted Manager's Perspective.",
+    "type_department_head_review_reminder": "Department Head Review reminder",
+    "hint_department_head_review_reminder": "Sent to an eligible upline manager when the optional Department Head Review on an open cycle hasn't been signed off yet — repeats every 7 days until it is."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",

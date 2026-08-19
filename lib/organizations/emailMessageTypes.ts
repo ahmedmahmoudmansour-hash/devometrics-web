@@ -30,6 +30,12 @@
 // comment (e.g. disagreement with a low rating) used to sit silently in the
 // database, visible only to someone who happened to open that specific
 // review. Now routes to the manager and an org admin.
+// review_reopened_alert (0134) — submit_manager_assessment has no status
+// guard, so resubmitting a rating on a closed review silently reopens it.
+// Now notifies the employee and an org admin when that happens.
+// department_head_review_reminder (0135) — the optional Department Head
+// Review was the one manager-facing step left with no recurring reminder;
+// an eligible upline manager who never signs off was never nudged.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -49,6 +55,8 @@ export const EMAIL_MESSAGE_TYPES = [
   "probation_acceptance_reminder",
   "low_assessment_score_manager_alert",
   "review_acknowledgment_comment_alert",
+  "review_reopened_alert",
+  "department_head_review_reminder",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

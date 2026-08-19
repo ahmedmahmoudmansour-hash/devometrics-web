@@ -5,6 +5,7 @@ import { renderEmail, escapeHtml, customMessageHtml } from "@/lib/email/template
 import { sendDueKnowledgeHubReminders } from "@/lib/knowledgeHub/sendReminders";
 import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/sendReminders";
 import { sendDueManagerActionReminders } from "@/lib/performanceReviews/sendManagerReminders";
+import { sendDueDepartmentHeadReviewReminders } from "@/lib/performanceReviews/sendDepartmentHeadReminders";
 import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
 import { sendDueScheduledFeatureEmails } from "@/lib/organizations/featureEmails";
 
@@ -27,11 +28,14 @@ type ReminderRow = {
 // function itself).
 //
 // Also sends Knowledge Hub due/overdue reminders (sendDueKnowledgeHubReminders),
-// performance review / assessment reminders, and manager-action reminders
+// performance review / assessment reminders, manager-action reminders
 // (sendDueManagerActionReminders — nudges a manager to submit their
-// Manager's Perspective or accept a probation review) — all piggybacking on
-// this same daily run rather than getting a separate Vercel Cron entry —
-// see each function's own comment for why (Hobby plan's cron-count cap).
+// Manager's Perspective or accept a probation review), and Department Head
+// Review reminders (sendDueDepartmentHeadReviewReminders — nudges an
+// eligible upline manager to sign off on the optional escalation step) —
+// all piggybacking on this same daily run rather than getting a separate
+// Vercel Cron entry — see each function's own comment for why (Hobby
+// plan's cron-count cap).
 // Onboarding step / manager-approval reminders (added 0107) were removed
 // when the standalone Onboarding feature was retired in favor of Knowledge
 // Hub new-hire content (migration 0120) — see lib/onboarding/ (deleted).
@@ -114,6 +118,7 @@ export async function GET(request: Request) {
   const knowledgeHubResult = await sendDueKnowledgeHubReminders(supabase, secret);
   const performanceReviewResult = await sendDuePerformanceReviewReminders(supabase, secret);
   const managerActionResult = await sendDueManagerActionReminders(supabase, secret);
+  const departmentHeadReviewResult = await sendDueDepartmentHeadReviewReminders(supabase, secret);
   const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
   const scheduledFeatureEmailsResult = await sendDueScheduledFeatureEmails(supabase, secret);
 
@@ -121,6 +126,7 @@ export async function GET(request: Request) {
     candidates: rows?.length ?? 0,
     performanceReviews: performanceReviewResult,
     managerActions: managerActionResult,
+    departmentHeadReviews: departmentHeadReviewResult,
     assessments: assessmentResult,
     sent,
     knowledgeHub: knowledgeHubResult,

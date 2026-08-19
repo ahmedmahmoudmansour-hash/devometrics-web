@@ -327,6 +327,19 @@ export async function submitManagerAssessment(reviewId: string, rating: number, 
   const restrictedError = await performanceReviewRestrictedError(supabase);
   if (restrictedError) return { error: restrictedError };
 
+  // submit_manager_assessment has no status guard — resubmitting after
+  // close silently flips status back to 'manager_submitted', reopening a
+  // review with no audit trail or notification to anyone, including the
+  // employee. Capture the PRE-submit status here (before the RPC changes
+  // it) so we can tell after the fact whether this call just reopened
+  // something that was closed.
+  const { data: priorReview } = await supabase
+    .from("performance_reviews")
+    .select("status")
+    .eq("id", reviewId)
+    .maybeSingle<{ status: ReviewStatus }>();
+  const wasClosed = priorReview?.status === "closed";
+
   // development_needs now travels inside the RPC's own SECURITY DEFINER
   // upsert (migration 0103) — it used to be written via a plain client
   // .update() here, but that table has never had an INSERT/UPDATE RLS
@@ -341,6 +354,14 @@ export async function submitManagerAssessment(reviewId: string, rating: number, 
   if (error) {
     console.error("submitManagerAssessment failed:", error);
     return { error: "Could not save — try again." };
+  }
+
+  if (wasClosed) {
+    try {
+      await notifyReviewReopened(supabase, reviewId);
+    } catch (err) {
+      console.error("submitManagerAssessment: reopen notification failed (non-fatal):", err);
+    }
   }
 
   // Mid-year trigger (Part 5(e)) — a below-standard manager rating starts a
@@ -900,6 +921,76 @@ async function notifyReviewAcknowledgmentComment(
           preheader,
           bodyHtml,
           footerNote: "Sent because they left a comment while acknowledging their performance review on Devometrics.",
+        })
+      )
+    )
+  );
+}
+
+// Only ever called when submitManagerAssessment detects the review's status
+// was 'closed' immediately before this submit — submit_manager_assessment
+// has no status guard, so a resubmitted rating silently reopens a closed
+// review with no audit trail otherwise. Notifies BOTH the employee (it's
+// their record, and a "closed" review changing again without their
+// knowledge is exactly the kind of silent-change risk the acknowledgment-
+// comment work above was built to avoid) and an org admin (same "one
+// admin, limit 1" resolution used everywhere else in this file).
+async function notifyReviewReopened(supabase: Awaited<ReturnType<typeof createClient>>, reviewId: string): Promise<void> {
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("organization_id, employee_user_id, performance_review_cycles(name)")
+    .eq("id", reviewId)
+    .maybeSingle<{ organization_id: string; employee_user_id: string; performance_review_cycles: { name: string } }>();
+  if (!review) return;
+
+  const { data: employeeProfile } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", review.employee_user_id)
+    .maybeSingle<{ full_name: string | null; email: string | null }>();
+  const employeeName = employeeProfile?.full_name ?? "An employee";
+
+  const recipientUserIds = new Set<string>([review.employee_user_id]);
+  const { data: adminRow } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", review.organization_id)
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle<{ user_id: string }>();
+  if (adminRow?.user_id) recipientUserIds.add(adminRow.user_id);
+
+  const { data: recipientProfiles } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .in("id", [...recipientUserIds])
+    .returns<{ id: string; email: string | null }[]>();
+  const recipientEmails = [...new Set((recipientProfiles ?? []).map((p) => p.email).filter((e): e is string => !!e))];
+  if (recipientEmails.length === 0) return;
+
+  const override = await getEmailMessageOverride(review.organization_id, "review_reopened_alert");
+  const cycleName = review.performance_review_cycles?.name ?? "the review";
+  const subject = override.subject || `${employeeName}'s ${cycleName} was reopened`;
+  const bodyHtml = `
+    <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(employeeName)}'s ${escapeHtml(cycleName)} was reopened</h2>
+    ${customMessageHtml(override.message)}
+    <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+      This review had already been closed, but a Manager's Perspective was just resubmitted on it, which reopens it. Worth a look if that wasn't expected.
+    </p>
+    <p style="margin:0;">
+      <a href="https://devometrics.com/dashboard/impact-cycle" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open the review →</a>
+    </p>
+  `;
+
+  await Promise.allSettled(
+    recipientEmails.map((email) =>
+      sendEmail(
+        email,
+        subject,
+        renderEmail({
+          preheader: `${cycleName} was reopened after being closed`,
+          bodyHtml,
+          footerNote: "Sent because a closed performance review on Devometrics was just reopened.",
         })
       )
     )
