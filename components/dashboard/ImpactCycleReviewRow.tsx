@@ -18,7 +18,9 @@ import {
   submitUplineSignoff,
   getAppraisalCompetencyContext,
   getMyUserId,
+  resolveReviewEscalation,
 } from "@/lib/performanceReviews/actions";
+import { useConfirmClick } from "@/lib/ui/useConfirmClick";
 import {
   suggestFocusAreas,
   draftManagerPerspective,
@@ -743,6 +745,7 @@ export default function ImpactCycleReviewRow({
 }) {
   const t = useTranslations("impactCycleReviewRow");
   const tLabels = useTranslations("performanceReviewLabels");
+  const tConfirm = useTranslations("confirmActions");
   const [expanded, setExpanded] = useState(false);
   const [goals, setGoals] = useState<ReviewGoal[]>([]);
   const [pastGoals, setPastGoals] = useState<ReviewGoal[]>([]);
@@ -753,6 +756,16 @@ export default function ImpactCycleReviewRow({
   const [uplineSignoffs, setUplineSignoffs] = useState<UplineSignoff[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [organizationMembers, setOrganizationMembers] = useState<{ userId: string; name: string; email: string }[]>([]);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [resolvePending, startResolveTransition] = useTransition();
+  const { confirming: resolveConfirming, handleClick: handleResolveEscalation } = useConfirmClick(() => {
+    setResolveError(null);
+    startResolveTransition(async () => {
+      const result = await resolveReviewEscalation(item.id);
+      if (result && "error" in result) setResolveError(result.error);
+      else onChanged();
+    });
+  });
 
   async function loadAll() {
     const [g, pg, r, ctx, chain, signoffs, uid] = await Promise.all([
@@ -796,9 +809,14 @@ export default function ImpactCycleReviewRow({
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>
             {item.employeeName}
             {item.cycleName && <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{t("cycleNamePrefix", { cycleName: item.cycleName })}</span>}
-            {item.escalation_requested_at && (
+            {item.escalation_requested_at && !item.escalation_resolved_at && (
               <span style={{ marginInlineStart: 8, fontSize: 10.5, fontWeight: 700, color: "var(--amber)", background: "rgba(var(--amber-rgb),0.12)", border: "1px solid rgba(var(--amber-rgb),0.3)", borderRadius: 999, padding: "2px 8px" }}>
                 {t("escalated")}
+              </span>
+            )}
+            {item.escalation_resolved_at && (
+              <span style={{ marginInlineStart: 8, fontSize: 10.5, fontWeight: 600, color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px" }}>
+                {t("escalationResolved")}
               </span>
             )}
           </p>
@@ -811,6 +829,29 @@ export default function ImpactCycleReviewRow({
             <p style={{ fontSize: 11.5, color: "var(--text)", marginTop: 4, maxWidth: 480 }}>
               {t("escalationComment", { comment: item.escalation_comment })}
             </p>
+          )}
+          {item.escalation_requested_at && !item.escalation_resolved_at && (
+            <div style={{ marginTop: 6 }}>
+              <button
+                type="button"
+                disabled={resolvePending}
+                onClick={handleResolveEscalation}
+                style={{
+                  background: "none",
+                  border: "1px solid var(--border)",
+                  borderRadius: 6,
+                  padding: "3px 10px",
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: resolveConfirming ? "var(--danger)" : "var(--text-muted)",
+                  cursor: "pointer",
+                  opacity: resolvePending ? 0.6 : 1,
+                }}
+              >
+                {resolveConfirming ? tConfirm("clickAgainToConfirm") : t("markResolved")}
+              </button>
+              {resolveError && <p style={{ color: "var(--danger)", fontSize: 11, marginTop: 4 }}>{resolveError}</p>}
+            </div>
           )}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

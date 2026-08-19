@@ -958,6 +958,63 @@ async function notifyReviewEscalation(
   );
 }
 
+// Manager/admin-only (migration 0137) — clears the "Escalated" badge once
+// the concern's actually been addressed. Doesn't erase the original
+// request: escalation_requested_at/escalation_comment stay set, so
+// there's still a record of what happened, just no longer reading as an
+// open item.
+export async function resolveReviewEscalation(reviewId: string): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("resolve_review_escalation", { target_review_id: reviewId });
+  if (error) {
+    console.error("resolveReviewEscalation failed:", error);
+    return { error: "Could not save — try again." };
+  }
+  revalidatePath("/dashboard/company/impact-cycles");
+  revalidatePath("/dashboard/impact-cycle");
+  return { success: true };
+}
+
+export type EscalatedReview = {
+  reviewId: string;
+  employeeUserId: string;
+  employeeName: string | null;
+  cycleName: string;
+  escalationRequestedAt: string;
+  escalationComment: string | null;
+};
+
+// Org-wide "who's currently escalated" summary (migration 0137) — same gap
+// pattern getOverdueAssignments (lib/organizations/overdueAssignments.ts,
+// migration 0128) already solved for milestones/assessments/Knowledge Hub,
+// extended to cover escalations too. Admin-gated by the RPC itself
+// (is_org_admin), same live-caller-check posture as get_overdue_assignments.
+export async function getEscalatedReviews(organizationId: string): Promise<EscalatedReview[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_escalated_reviews", { target_organization_id: organizationId });
+  if (error) {
+    console.error("get_escalated_reviews failed:", error);
+    return [];
+  }
+  return (
+    data as {
+      review_id: string;
+      employee_user_id: string;
+      employee_name: string | null;
+      cycle_name: string;
+      escalation_requested_at: string;
+      escalation_comment: string | null;
+    }[]
+  ).map((row) => ({
+    reviewId: row.review_id,
+    employeeUserId: row.employee_user_id,
+    employeeName: row.employee_name,
+    cycleName: row.cycle_name,
+    escalationRequestedAt: row.escalation_requested_at,
+    escalationComment: row.escalation_comment,
+  }));
+}
+
 // Notifies BOTH the employee's manager and an org admin whenever they leave
 // a comment while acknowledging their review — not just for a low-rating
 // dispute specifically (a comment could just as easily be positive), since

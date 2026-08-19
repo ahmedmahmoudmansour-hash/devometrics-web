@@ -53,6 +53,12 @@ export type PerformanceReview = {
   // anything else, purely a visible signal + a notification.
   escalation_requested_at: string | null;
   escalation_comment: string | null;
+  // Manager/admin-only (migration 0137) — clears the "Escalated" badge
+  // once the concern's actually been addressed, without erasing the
+  // original request (escalation_requested_at/escalation_comment stay
+  // set, so there's still a record of what happened).
+  escalation_resolved_at: string | null;
+  escalation_resolved_by: string | null;
 };
 
 export type SelfAssessment = {

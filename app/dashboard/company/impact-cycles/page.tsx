@@ -2,12 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
-import { listReviewCycles } from "@/lib/performanceReviews/actions";
+import { listReviewCycles, getEscalatedReviews } from "@/lib/performanceReviews/actions";
 import { getOrCreateDefaultWorkflowTemplate } from "@/lib/performanceReviews/workflowActions";
 import { listOrganizationCompetencies } from "@/lib/organizations/competencies";
 import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import PerformanceReviewsManager from "@/components/dashboard/PerformanceReviewsManager";
+import EscalatedReviewsWidget from "@/components/dashboard/EscalatedReviewsWidget";
 import EscalationLevelsSetting from "@/components/dashboard/EscalationLevelsSetting";
 import PerformanceReviewWorkflowEditor from "@/components/dashboard/PerformanceReviewWorkflowEditor";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
@@ -52,6 +53,8 @@ export default async function ImpactCyclesPage() {
         </div>
 
         <CompanyNavTabs active="performanceReviews" />
+
+        {data.organizationId && <EscalatedReviewsWidget items={await getEscalatedReviews(data.organizationId)} />}
 
         {data.organizationId && (
           <FeatureEmailComposer

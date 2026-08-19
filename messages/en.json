@@ -1675,6 +1675,11 @@
     "unknownEmployee": "Unknown employee",
     "andNMore": "and {count, plural, one {# more} other {# more}}"
   },
+  "escalatedReviewsWidget": {
+    "title": "{count, plural, one {# escalated review} other {# escalated reviews}}",
+    "unknownEmployee": "Unknown employee",
+    "commentQuoted": "\"{comment}\""
+  },
   "companyEmployeesPage": {
     "backToProgress": "← Back to progress",
     "teamMemberCount": "{count, plural, one {# team member} other {# team members}}",
@@ -2233,6 +2238,7 @@
     "confirmCommentPlaceholder": "Anything you want on record alongside your confirmation…",
     "confirmAndCloseButton": "Confirm & close it out",
     "escalated": "⚠ Escalated {date}",
+    "escalationResolvedOn": "Escalated, resolved {date}",
     "escalateToggle": "I disagree — request further review",
     "escalateLabel": "Tell us why you'd like this reviewed further",
     "escalateCommentPlaceholder": "What you disagree with and why…",
@@ -2296,6 +2302,8 @@
     "exportWord": "Export .docx",
     "escalated": "⚠ Escalated",
     "escalationComment": "Escalation note: \"{comment}\"",
+    "escalationResolved": "Escalation resolved",
+    "markResolved": "Mark resolved",
     "managersPerspective": "Manager's Perspective",
     "ratingLabel": "Rating (1–5)",
     "feedbackLabel": "Feedback",

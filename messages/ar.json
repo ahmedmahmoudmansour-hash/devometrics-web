@@ -1675,6 +1675,11 @@
     "unknownEmployee": "موظف غير معروف",
     "andNMore": "و{count, plural, one {# آخر} two {# آخران} few {# آخرين} many {# آخرين} other {# آخرين}}"
   },
+  "escalatedReviewsWidget": {
+    "title": "{count, plural, one {مراجعة واحدة مصعّدة} two {مراجعتان مصعّدتان} few {# مراجعات مصعّدة} many {# مراجعة مصعّدة} other {# مراجعة مصعّدة}}",
+    "unknownEmployee": "موظف غير معروف",
+    "commentQuoted": "\"{comment}\""
+  },
   "companyEmployeesPage": {
     "backToProgress": "← العودة إلى التقدم",
     "teamMemberCount": "{count, plural, one {# عضو فريق} other {# أعضاء فريق}}",
@@ -2233,6 +2238,7 @@
     "confirmCommentPlaceholder": "أي شيء تريد تسجيله إلى جانب تأكيدك…",
     "confirmAndCloseButton": "التأكيد والإغلاق",
     "escalated": "⚠ تم التصعيد {date}",
+    "escalationResolvedOn": "تم التصعيد، وحُلّ في {date}",
     "escalateToggle": "لا أوافق — أطلب مراجعة إضافية",
     "escalateLabel": "أخبرنا لماذا تريد مراجعة هذا مرة أخرى",
     "escalateCommentPlaceholder": "ما الذي لا توافق عليه ولماذا…",
@@ -2296,6 +2302,8 @@
     "exportWord": "تصدير .docx",
     "escalated": "⚠ تم التصعيد",
     "escalationComment": "ملاحظة التصعيد: \"{comment}\"",
+    "escalationResolved": "تم حل التصعيد",
+    "markResolved": "تحديد كمحلول",
     "managersPerspective": "منظور المدير",
     "ratingLabel": "التقييم (1–5)",
     "feedbackLabel": "الملاحظات",
