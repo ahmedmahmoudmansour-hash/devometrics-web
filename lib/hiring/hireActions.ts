@@ -71,6 +71,10 @@ export async function markCandidateHired(candidateId: string, employeeFields: Hi
     email: candidate.email,
     invited_by: user.id,
     candidate_id: candidate.id,
+    // A candidate hired through this pipeline is unambiguously a genuine
+    // new hire (migration 0129) — unlike a direct invite, which defaults
+    // false and requires the admin to opt in explicitly.
+    is_new_hire: true,
     title: (employeeFields.title ?? posting?.title ?? "").trim().slice(0, 120) || null,
     department: employeeFields.department?.trim().slice(0, 120) || null,
     country: employeeFields.country?.trim().slice(0, 120) || null,

@@ -282,7 +282,11 @@ export async function inviteEmployee(
   managerName?: string,
   managerEmail?: string,
   businessUnit?: string,
-  location?: string
+  location?: string,
+  // Defaults false — an admin must explicitly opt in per person. This is
+  // what gates the hire_to_probation automation (checkAndConsumeInvite);
+  // hire_to_onboarding's welcome content still fires regardless.
+  isNewHire?: boolean
 ) {
   const supabase = await createClient();
   const {
@@ -324,6 +328,7 @@ export async function inviteEmployee(
     manager_email: managerEmail?.trim() || null,
     business_unit: businessUnit?.trim() || null,
     location: location?.trim() || null,
+    is_new_hire: isNewHire ?? false,
   });
   if (error) return { error: "Could not send invite — they may already be invited" };
 
@@ -342,6 +347,9 @@ export type BulkInviteRow = {
   managerEmail?: string;
   businessUnit?: string;
   location?: string;
+  // Defaults false (see inviteEmployee's isNewHire) — set per-row from the
+  // import file's "New Hire" column, if present.
+  isNewHire?: boolean;
 };
 
 export type BulkInviteResult = { email: string; status: "invited" | "duplicate" | "invalid" };
@@ -391,6 +399,7 @@ export async function bulkInviteEmployees(
     manager_email: row.managerEmail?.trim() || null,
     business_unit: row.businessUnit?.trim() || null,
     location: row.location?.trim() || null,
+    is_new_hire: row.isNewHire ?? false,
   });
 
   const { error: batchError } = await supabase
@@ -538,12 +547,20 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
       orgName: org?.name ?? "your new workspace",
       managerEmail: invite.manager_email ?? null,
     });
-    await runHireToProbation(supabase, {
-      organizationId: invite.organization_id,
-      employeeUserId: user.id,
-      employeeName: profile?.full_name || user.email,
-      managerEmail: invite.manager_email ?? null,
-    });
+    // Unlike runHireWelcome above, probation only auto-starts for a
+    // confirmed new hire (migration 0129) — either they came through the
+    // Hiring pipeline (markCandidateHired always sets is_new_hire true) or
+    // the admin explicitly checked "This is a new hire" on a direct invite.
+    // Otherwise an admin bulk-adding existing staff would spin up a
+    // probation review for every one of them.
+    if (invite.is_new_hire) {
+      await runHireToProbation(supabase, {
+        organizationId: invite.organization_id,
+        employeeUserId: user.id,
+        employeeName: profile?.full_name || user.email,
+        managerEmail: invite.manager_email ?? null,
+      });
+    }
   }
 
   return true;

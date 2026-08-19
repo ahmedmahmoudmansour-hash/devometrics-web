@@ -70,7 +70,7 @@ function normalizeHeader(h: string): string {
   return h.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-const HEADER_MAP: Record<string, keyof BulkInviteRow> = {
+const HEADER_MAP: Record<string, Exclude<keyof BulkInviteRow, "isNewHire">> = {
   email: "email",
   title: "title",
   jobtitle: "title",
@@ -82,6 +82,13 @@ const HEADER_MAP: Record<string, keyof BulkInviteRow> = {
   businessunit: "businessUnit",
   location: "location",
 };
+
+// Handled separately from HEADER_MAP since it's boolean, not text — a
+// column an admin bulk-adding EXISTING staff can simply leave out (every
+// row then defaults to false, no probation review auto-starts for anyone —
+// see migration 0129). Only set when the column is present and non-blank.
+const NEW_HIRE_HEADERS = new Set(["newhire", "isnewhire"]);
+const TRUTHY_VALUES = new Set(["yes", "y", "true", "1"]);
 
 // xlsx is a genuinely heavy parsing/writing library for something only two
 // narrow actions on this page ever touch (a template download, a bulk-
@@ -97,9 +104,14 @@ async function parseWorkbook(data: ArrayBuffer): Promise<BulkInviteRow[]> {
   return raw.map((rawRow) => {
     const row: BulkInviteRow = { email: "" };
     for (const [header, value] of Object.entries(rawRow)) {
-      const field = HEADER_MAP[normalizeHeader(header)];
-      if (!field) continue;
+      const normalized = normalizeHeader(header);
       const text = String(value ?? "").trim();
+      if (NEW_HIRE_HEADERS.has(normalized)) {
+        if (text) row.isNewHire = TRUTHY_VALUES.has(text.toLowerCase());
+        continue;
+      }
+      const field = HEADER_MAP[normalized];
+      if (!field) continue;
       if (text) row[field] = text;
     }
     return row;
@@ -118,6 +130,7 @@ async function downloadTemplate() {
       "Manager Email": "amara@company.com",
       "Business Unit": "Growth",
       Location: "Cairo",
+      "New Hire": "Yes",
     },
   ]);
   const workbook = XLSX.utils.book_new();
@@ -144,6 +157,10 @@ export default function InviteEmployeeForm({
   const [managerEmail, setManagerEmail] = useState("");
   const [businessUnit, setBusinessUnit] = useState("");
   const [location, setLocation] = useState("");
+  // Unchecked by default — an admin bulk-adding existing staff shouldn't
+  // have to remember to leave anything off; probation only auto-starts
+  // when this is deliberately checked (migration 0129).
+  const [isNewHire, setIsNewHire] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -168,7 +185,8 @@ export default function InviteEmployeeForm({
         managerName,
         managerEmail,
         businessUnit,
-        location
+        location,
+        isNewHire
       );
       if (result?.error) {
         setError(result.error);
@@ -181,6 +199,7 @@ export default function InviteEmployeeForm({
         setManagerEmail("");
         setBusinessUnit("");
         setLocation("");
+        setIsNewHire(false);
       }
     });
   }
@@ -278,6 +297,10 @@ export default function InviteEmployeeForm({
               <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} style={fieldStyle} />
             </div>
           </div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--text)", marginBottom: 14, cursor: "pointer" }}>
+            <input type="checkbox" checked={isNewHire} onChange={(e) => setIsNewHire(e.target.checked)} />
+            {t("isNewHireLabel")}
+          </label>
           <button
             type="submit"
             disabled={isPending}
@@ -326,6 +349,7 @@ export default function InviteEmployeeForm({
               {t("downloadTemplate")}
             </button>
           </div>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>{t("newHireColumnHint")}</p>
           {importFileName && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{importFileName}</p>}
           {importError && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 10 }}>{importError}</p>}
 

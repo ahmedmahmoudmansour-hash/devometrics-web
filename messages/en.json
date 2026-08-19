@@ -1541,6 +1541,8 @@
     "managerEmailLabel": "Manager email",
     "businessUnitLabel": "Business unit",
     "locationLabel": "Location",
+    "isNewHireLabel": "This is a new hire — automatically start their probation review (if that automation is on)",
+    "newHireColumnHint": "Add an optional \"New Hire\" column (Yes/No) to flag which rows are genuine new hires — leave it out and nothing is flagged, so bulk-adding existing staff won't start probation reviews for anyone.",
     "sendInvite": "Send invite",
     "sending": "Sending…",
     "chooseFile": "Choose .csv or .xlsx file",

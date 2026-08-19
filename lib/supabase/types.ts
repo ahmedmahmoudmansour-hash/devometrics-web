@@ -155,6 +155,11 @@ export type OrganizationInvite = {
   // created via markCandidateHired(); lets checkAndConsumeInvite() seed the
   // new employee's first Gap Analysis from their pre-hire CV score.
   candidate_id?: string | null;
+  // Added in migration 0129 — gates whether hire_to_probation auto-starts
+  // on acceptance. markCandidateHired() always sets this true; direct
+  // invites (single or bulk) default false unless the admin explicitly
+  // marks the person as a new hire.
+  is_new_hire?: boolean;
 };
 
 export type CaseStudyResponse = {
