@@ -1840,6 +1840,11 @@
     "notPlacedInRole": "— Not placed in a role —",
     "savingLabel": "Saving…"
   },
+  "startProbationReviewButton": {
+    "start": "Start Probation Review",
+    "hint": "Creates a probation review for this employee, hidden from them until their manager accepts it — same as the automated one at hire time.",
+    "started": "Probation review started — their manager has been notified to review and accept it."
+  },
   "managerNotesSection": {
     "title": "Manager notes",
     "description": "Optional, qualitative notes about {firstName} for you and other admins — visible only here, never AI-generated, never shown to the employee. Used as additional context in AI reports and succession rankings when present.",

@@ -5,6 +5,7 @@ import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
 import AssignAssessmentForm from "@/components/dashboard/AssignAssessmentForm";
+import StartProbationReviewButton from "@/components/dashboard/StartProbationReviewButton";
 import EmployeeReportExportBar from "@/components/dashboard/EmployeeReportExportBar";
 import GenerateAssessmentSummaryButton from "@/components/dashboard/GenerateAssessmentSummaryButton";
 import Avatar from "@/components/Avatar";
@@ -443,6 +444,7 @@ export default async function EmployeeDetailPage({
           />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
+          <StartProbationReviewButton employeeUserId={userId} />
           <ManagerNotesSection employeeUserId={userId} notes={managerNotes} employeeName={profile.name} />
           <FlightRiskPanel employeeUserId={userId} initial={flightRisk} />
         </div>

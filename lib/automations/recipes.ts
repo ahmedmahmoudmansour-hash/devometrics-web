@@ -74,6 +74,37 @@ export async function runHireWelcome(
   });
 }
 
+// Shared by runHireToProbation (below) and the admin-facing manual "Start
+// Probation Review" action (lib/performanceReviews/probation.ts) — both
+// need identical copy telling the manager a probation review needs their
+// acceptance. Same email-not-DB-write reasoning as runHireWelcome above
+// (no service-role key to write into the manager's own rows).
+export async function sendProbationReadyAlert(
+  supabase: SupabaseServerClient,
+  params: { organizationId: string; employeeName: string; managerEmail: string }
+): Promise<void> {
+  try {
+    const override = await getEmailMessageOverride(params.organizationId, "probation_review_ready_alert");
+    await sendEmail(
+      params.managerEmail,
+      override.subject || `${params.employeeName}'s probation review is ready for your acceptance`,
+      renderEmail({
+        preheader: `Review and accept ${params.employeeName}'s probation review to activate it`,
+        bodyHtml: `
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)}'s probation review is ready</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+            A probation review has been started for them, but it stays hidden from them until you review and accept it from My Team.
+          </p>
+        `,
+        footerNote: "Sent because a probation review was started for them on Devometrics.",
+      })
+    );
+  } catch (err) {
+    console.error("sendProbationReadyAlert failed (non-fatal):", err);
+  }
+}
+
 // Fires from inside checkAndConsumeInvite() — same self-scoped-session
 // posture as runHireWelcome above. Starts a single-employee probation
 // review hidden from the new hire until their hiring manager accepts it
@@ -101,29 +132,12 @@ export async function runHireToProbation(
 
   // UX audit follow-up: the automation used to fire completely silently —
   // the review just sat on My Team until a manager happened to visit.
-  // Same email-not-DB-write reasoning as runHireWelcome above (no
-  // service-role key to write into the manager's own rows).
   if (params.managerEmail) {
-    try {
-      const override = await getEmailMessageOverride(params.organizationId, "probation_review_ready_alert");
-      await sendEmail(
-        params.managerEmail,
-        override.subject || `${params.employeeName}'s probation review is ready for your acceptance`,
-        renderEmail({
-          preheader: `Review and accept ${params.employeeName}'s probation review to activate it`,
-          bodyHtml: `
-            <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(params.employeeName)}'s probation review is ready</h2>
-            ${customMessageHtml(override.message)}
-            <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
-              A probation review has been started for them, but it stays hidden from them until you review and accept it from My Team.
-            </p>
-          `,
-          footerNote: "Sent automatically because your workspace has the \"New hire probation review\" automation turned on.",
-        })
-      );
-    } catch (err) {
-      console.error("runHireToProbation: manager email failed (non-fatal):", err);
-    }
+    await sendProbationReadyAlert(supabase, {
+      organizationId: params.organizationId,
+      employeeName: params.employeeName,
+      managerEmail: params.managerEmail,
+    });
   }
 
   await logAutomation(supabase, {
