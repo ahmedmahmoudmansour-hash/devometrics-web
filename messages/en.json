@@ -1642,7 +1642,9 @@
     "type_manager_assessment_reminder": "Manager's Perspective reminder",
     "hint_manager_assessment_reminder": "Sent to a manager (or an org admin, if no manager is assigned) when an open review's Manager's Perspective hasn't been submitted yet — repeats every 7 days until it is.",
     "type_probation_acceptance_reminder": "Probation acceptance reminder",
-    "hint_probation_acceptance_reminder": "Sent to the hiring manager (or an org admin, if no manager is assigned) when a probation review is still waiting to be accepted — repeats every 7 days until it is."
+    "hint_probation_acceptance_reminder": "Sent to the hiring manager (or an org admin, if no manager is assigned) when a probation review is still waiting to be accepted — repeats every 7 days until it is.",
+    "type_low_assessment_score_manager_alert": "Low assessment score manager alert",
+    "hint_low_assessment_score_manager_alert": "Sent to a manager when their direct report scores below 50 on a self-report assessment, alongside the follow-up tasks created for the employee themself."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",

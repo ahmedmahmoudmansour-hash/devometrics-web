@@ -169,11 +169,67 @@ export async function runLowScoreToReassessment(
     { user_id: params.userId, title: `Retake your ${name} assessment`, recurring: "none", date: addDaysIso(60) },
   ]);
 
+  // Manager visibility (process-delay audit follow-up, 2026-08-19): this
+  // used to fire completely privately — an asymmetry with the good-score
+  // case, where high_potential_to_succession already notifies the manager.
+  // Mirrors that recipe's shape exactly, including its 30-day
+  // dedup-then-early-return (per employee, not per assessment — there's no
+  // finer-grained key in workflow_automation_log, and "this employee
+  // scored low on something" is a reasonable coarse signal either way) and
+  // its "don't log a firing that never actually reached anyone" posture.
+  const alreadyFired = await firedRecently(supabase, {
+    organizationId: params.organizationId,
+    recipeKey: "low_score_to_reassessment",
+    subjectUserId: params.userId,
+    days: 30,
+  });
+  if (alreadyFired) return;
+
+  const { data: memberRow } = await supabase
+    .from("organization_members")
+    .select("manager_user_id")
+    .eq("organization_id", params.organizationId)
+    .eq("user_id", params.userId)
+    .maybeSingle<{ manager_user_id: string | null }>();
+  if (!memberRow?.manager_user_id) return; // no manager on file in the Org Chart — nothing to notify
+
+  const [{ data: managerProfile }, { data: employeeProfile }] = await Promise.all([
+    supabase.from("profiles").select("email").eq("id", memberRow.manager_user_id).maybeSingle<{ email: string | null }>(),
+    supabase.from("profiles").select("full_name").eq("id", params.userId).maybeSingle<{ full_name: string | null }>(),
+  ]);
+  if (!managerProfile?.email) return;
+
+  const employeeName = employeeProfile?.full_name ?? "A team member";
+  try {
+    // Worded supportively, not punitively — same posture as the mid-year
+    // check-in alert (submitManagerAssessment): this is decision support
+    // for the manager to offer help, not a disciplinary notice.
+    const override = await getEmailMessageOverride(params.organizationId, "low_assessment_score_manager_alert");
+    await sendEmail(
+      managerProfile.email,
+      override.subject || `${employeeName} may want a hand with their ${name} results`,
+      renderEmail({
+        preheader: `Follow-up steps have already been set up for them`,
+        bodyHtml: `
+          <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(employeeName)} — ${escapeHtml(name)}</h2>
+          ${customMessageHtml(override.message)}
+          <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+            Their latest ${escapeHtml(name)} result suggests this could use some attention. Follow-up steps have already been set up on their own Tasks — a quick check-in from you could help too.
+          </p>
+        `,
+        footerNote: "Sent automatically because your workspace has the \"Low assessment score follow-up\" automation turned on.",
+      })
+    );
+  } catch (err) {
+    console.error("runLowScoreToReassessment: manager email failed (non-fatal):", err);
+    return; // don't log a firing that never actually reached anyone
+  }
+
   await logAutomation(supabase, {
     organizationId: params.organizationId,
     recipeKey: "low_score_to_reassessment",
     subjectUserId: params.userId,
-    summary: `Follow-up tasks created after a ${params.score}/100 result on ${name}.`,
+    summary: `Manager notified after a ${params.score}/100 result on ${name}.`,
   });
 }
 

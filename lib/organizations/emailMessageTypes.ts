@@ -22,6 +22,10 @@
 // added on a process-delay audit pass: neither the manager_assessment step
 // nor the probation hiring-manager-acceptance gate had ANY recurring
 // reminder before this, so either could stall a review indefinitely.
+// low_assessment_score_manager_alert (0130) — low_score_to_reassessment
+// used to fire completely privately (only the employee's own tasks), an
+// asymmetry with high_potential_to_succession which already notifies the
+// manager on a good score. Now mirrors that pattern for a low one too.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -39,6 +43,7 @@ export const EMAIL_MESSAGE_TYPES = [
   "midyear_checkin_scheduled_alert",
   "manager_assessment_reminder",
   "probation_acceptance_reminder",
+  "low_assessment_score_manager_alert",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 
