@@ -2136,6 +2136,8 @@
       "4": "Above expectations — regularly takes initiative and delivers high-quality results with little oversight.",
       "5": "Sets the standard — exceptional impact, judgment, and initiative that goes beyond the role."
     },
+    "showScaleLegend": "What do these levels mean?",
+    "hideScaleLegend": "Hide the scale",
     "goalStatus": {
       "not_started": "Not started",
       "in_progress": "In progress",

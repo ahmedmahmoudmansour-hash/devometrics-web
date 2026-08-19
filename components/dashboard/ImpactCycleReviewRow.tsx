@@ -45,6 +45,7 @@ import {
 } from "@/lib/performanceReviews/types";
 import type { InstanceStep, CompetencyRatingsStepConfig } from "@/lib/performanceReviews/workflowTypes";
 import CustomStepResponseForm from "./CustomStepResponseForm";
+import RatingScaleLegend from "./RatingScaleLegend";
 
 // Shared by both the admin's per-cycle roster (PerformanceReviewsManager)
 // and a real reporting-line manager's "My Team" list (MyTeamReviews) — one
@@ -345,6 +346,7 @@ function CompetencyRatingsEditor({
         </button>
       </div>
       {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
+      <RatingScaleLegend />
       {suggestions && (
         <div style={{ marginBottom: 8 }}>
           <button type="button" onClick={applyAll} style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}>

@@ -17,6 +17,7 @@ import { describeCycleTimeline, describeReviewStage, TIMELINE_TONE_COLOR } from 
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type { OrganizationCompetencyOption } from "@/lib/organizations/competencies";
 import CustomStepResponseForm from "./CustomStepResponseForm";
+import RatingScaleLegend from "./RatingScaleLegend";
 
 const GOAL_STATUS_COLOR: Record<string, string> = {
   not_started: "148,163,184",
@@ -127,7 +128,8 @@ function SelfCompetencyRatingsEditor({
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
       <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("rateYourCompetencies")}</p>
-      <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>{t("rateYourCompetenciesHint")}</p>
+      <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.5 }}>{t("rateYourCompetenciesHint")}</p>
+      <RatingScaleLegend />
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {fixedDimensions.map((dim) => {
           const existing = ratingByDim.get(dim);
