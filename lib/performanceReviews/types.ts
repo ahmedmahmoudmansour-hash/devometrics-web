@@ -1,4 +1,5 @@
 import type { InstanceStep } from "./workflowTypes";
+import type { OrganizationCompetencyOption } from "@/lib/organizations/competencies";
 
 export type ReviewCycleStatus = "draft" | "open" | "closed";
 
@@ -93,9 +94,18 @@ export function goalStatusLabel(t: Translator, status: GoalStatus): string {
 export type CompetencyRating = {
   review_id: string;
   dimension: string | null;
-  rating: number;
+  // Manager's rating — nullable since migration 0132: a row can now exist
+  // with only a self_rating, if the employee rates before the manager does.
+  rating: number | null;
   note: string | null;
   organization_competency_id: string | null;
+  // Employee's own rating of this same competency (migration 0132) — set
+  // via set_self_competency_rating, entirely independent of the manager's
+  // rating/note above, same "both authors' values on one row" shape the
+  // overall self-assessment vs. manager-assessment already uses.
+  self_rating: number | null;
+  self_note: string | null;
+  self_submitted_at: string | null;
   // Only populated by getMyCurrentReview (the employee's own read-only
   // view) — resolved from organization_competencies since dimension is
   // null for a rating tied to an org competency with no fixed-dimension
@@ -135,6 +145,11 @@ export type ReviewDetail = {
   goals: ReviewGoal[];
   pastGoals: ReviewGoal[];
   competencyRatings: CompetencyRating[];
+  // The competency_ratings step's own configured organization_competency_ids
+  // (migration 0132), resolved to name/id — a superset of ids that already
+  // have a rating, so MyPerformanceReview can render a self-rating input
+  // for every configured competency, not just already-rated ones.
+  competencyOrgOptions: OrganizationCompetencyOption[];
   employeeName: string;
   employeeEmail: string;
   // Read-only from the employee's side — only ever populated with signed-off

@@ -561,6 +561,37 @@ export async function setCompetencyRating(
   return { success: true };
 }
 
+// Employee-only counterpart of setCompetencyRating (migration 0132) —
+// set_self_competency_rating's own auth check rejects anyone but the
+// review's own employee, including their manager and org admins. Same
+// upsert shape, writing to self_rating/self_note instead — entirely
+// independent of the manager's rating/note on the same row.
+export async function setSelfCompetencyRating(
+  reviewId: string,
+  dimension: string,
+  rating: number,
+  note: string,
+  organizationCompetencyId?: string | null
+) {
+  const supabase = await createClient();
+  const restrictedError = await performanceReviewRestrictedError(supabase);
+  if (restrictedError) return { error: restrictedError };
+
+  const { error } = await supabase.rpc("set_self_competency_rating", {
+    target_review_id: reviewId,
+    p_dimension: dimension,
+    p_rating: rating,
+    p_note: note.trim() || null,
+    p_organization_competency_id: organizationCompetencyId ?? null,
+  });
+  if (error) {
+    console.error("setSelfCompetencyRating failed:", error);
+    return { error: "Could not save — the database may need migration 0132 run first." };
+  }
+  revalidatePath("/dashboard/impact-cycle");
+  return { success: true };
+}
+
 // ---------- Conclusion & close ----------
 
 export async function closeReview(reviewId: string, conclusion: string) {
@@ -662,13 +693,19 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
     getInstanceSteps(review.id),
   ]);
 
-  // A rating tied to an org competency with no fixed-dimension mapping has
-  // dimension = null, so dimensionLabel() alone renders nothing for it —
-  // resolve the org competency's own name here so MyPerformanceReview can
-  // fall back to it (see CompetencyRating.organizationCompetencyName).
-  const orgCompetencyIds = [
-    ...new Set((competencyRatings ?? []).map((r) => r.organization_competency_id).filter((id): id is string => id !== null)),
-  ];
+  // Resolve org-competency names from the competency_ratings STEP's own
+  // configured list (data.organization_competency_ids), not just ids that
+  // already have a rating row — the employee needs to see and self-rate
+  // every competency the step is configured for, including ones neither
+  // side has rated yet. Superset of "ids with existing ratings," so this
+  // one resolution covers both CompetencyRating.organizationCompetencyName
+  // (dimension is null for an org-competency rating with no fixed-
+  // dimension mapping, so dimensionLabel() alone can't render a name) and
+  // the full self-rating picklist MyPerformanceReview renders.
+  const competencyStep = instanceSteps.find((s) => s.step_type === "competency_ratings");
+  const configuredOrgCompetencyIds = competencyStep?.data.organization_competency_ids ?? [];
+  const ratedOrgCompetencyIds = (competencyRatings ?? []).map((r) => r.organization_competency_id).filter((id): id is string => id !== null);
+  const orgCompetencyIds = [...new Set([...configuredOrgCompetencyIds, ...ratedOrgCompetencyIds])];
   const orgCompetencies = await getOrganizationCompetenciesByIds(orgCompetencyIds);
   const orgCompetencyNameById = new Map(orgCompetencies.map((c) => [c.id, c.name]));
   const resolvedCompetencyRatings = (competencyRatings ?? []).map((r) => ({
@@ -696,6 +733,7 @@ export async function getMyCurrentReview(): Promise<{ detail: ReviewDetail | nul
       goals: goals ?? [],
       pastGoals,
       competencyRatings: resolvedCompetencyRatings,
+      competencyOrgOptions: orgCompetencies,
       employeeName: profile?.full_name ?? "You",
       employeeEmail: profile?.email ?? "",
       uplineSignoffs: uplineSignoffs.filter((s) => s.signed_off_at !== null),

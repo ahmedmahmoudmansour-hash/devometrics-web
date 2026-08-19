@@ -100,7 +100,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     children.push(heading("Competency Ratings"));
     for (const r of data.competencyRatings) {
       const label = r.organization_competency_id ? (r.organizationCompetencyName ?? "Competency") : (r.dimension ?? "Competency");
-      children.push(bullet(`${label}: ${competencyRatingLabel(tEn, r.rating)}`));
+      const managerPart = r.rating !== null ? `Manager: ${competencyRatingLabel(tEn, r.rating)}` : "Manager: not yet rated";
+      const selfPart = r.self_rating !== null ? `Self: ${competencyRatingLabel(tEn, r.self_rating)}` : null;
+      children.push(bullet(`${label} — ${[selfPart, managerPart].filter(Boolean).join(" · ")}`));
     }
   }
 

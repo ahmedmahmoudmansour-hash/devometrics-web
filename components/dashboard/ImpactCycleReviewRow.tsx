@@ -366,7 +366,7 @@ function CompetencyRatingsEditor({
                   )}
                 </div>
                 <select
-                  defaultValue={suggestion?.rating ?? existing?.rating ?? 3}
+                  defaultValue={suggestion?.rating ?? existing?.rating ?? existing?.self_rating ?? 3}
                   onChange={(e) => save(dim, Number(e.target.value), existing?.note ?? suggestion?.note ?? "")}
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
                 >
@@ -380,6 +380,11 @@ function CompetencyRatingsEditor({
               {suggestion && !existing && (
                 <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
               )}
+              {existing?.self_rating !== null && existing?.self_rating !== undefined && (
+                <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4 }}>
+                  {t("employeeSelfRated", { rating: competencyRatingLabel(tLabels, existing.self_rating) })}
+                </p>
+              )}
             </div>
           );
         })}
@@ -392,7 +397,7 @@ function CompetencyRatingsEditor({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontSize: 12, color: "var(--text)" }}>{c.name}</span>
                 <select
-                  defaultValue={suggestion?.rating ?? existing?.rating ?? 3}
+                  defaultValue={suggestion?.rating ?? existing?.rating ?? existing?.self_rating ?? 3}
                   onChange={(e) => save(c.mappedDimension ?? "", Number(e.target.value), existing?.note ?? suggestion?.note ?? "", c.id)}
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
                 >
@@ -405,6 +410,11 @@ function CompetencyRatingsEditor({
               </div>
               {suggestion && !existing && (
                 <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
+              )}
+              {existing?.self_rating !== null && existing?.self_rating !== undefined && (
+                <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4 }}>
+                  {t("employeeSelfRated", { rating: competencyRatingLabel(tLabels, existing.self_rating) })}
+                </p>
               )}
             </div>
           );

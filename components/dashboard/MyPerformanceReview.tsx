@@ -3,11 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { submitSelfAssessment, acknowledgeReview } from "@/lib/performanceReviews/actions";
+import { submitSelfAssessment, acknowledgeReview, setSelfCompetencyRating } from "@/lib/performanceReviews/actions";
 import { helpDraftRecommendations } from "@/lib/performanceReviews/ai";
-import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail } from "@/lib/performanceReviews/types";
+import { reviewStatusLabel, competencyRatingLabel, goalStatusLabel, type ReviewDetail, type CompetencyRating } from "@/lib/performanceReviews/types";
 import { describeCycleTimeline, describeReviewStage, TIMELINE_TONE_COLOR } from "@/lib/performanceReviews/timeline";
-import { dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import type { OrganizationCompetencyOption } from "@/lib/organizations/competencies";
 import CustomStepResponseForm from "./CustomStepResponseForm";
 
 const GOAL_STATUS_COLOR: Record<string, string> = {
@@ -44,10 +45,89 @@ function aiButtonStyle(): React.CSSProperties {
   };
 }
 
-export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }) {
+// Employee self-rating on competencies (migration 0132) — mirrors
+// ImpactCycleReviewRow's own CompetencyRatingsEditor layout/auto-save
+// pattern, but scoped to setSelfCompetencyRating (employee-only) and
+// without that component's AI-suggestion machinery, which is manager/
+// admin decision support, not something that belongs in the employee's
+// own subjective self-rating. Each select saves on change, same as the
+// manager-side editor — no separate submit button.
+function SelfCompetencyRatingsEditor({
+  reviewId,
+  fixedDimensions,
+  organizationCompetencies,
+  ratings,
+}: {
+  reviewId: string;
+  fixedDimensions: string[];
+  organizationCompetencies: OrganizationCompetencyOption[];
+  ratings: CompetencyRating[];
+}) {
   const t = useTranslations("myPerformanceReview");
   const tLabels = useTranslations("performanceReviewLabels");
   const tDim = useTranslations("competencyDimensions");
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+
+  const ratingByDim = new Map(ratings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => [r.dimension as string, r]));
+  const ratingByOrgCompetency = new Map(ratings.filter((r) => r.organization_competency_id).map((r) => [r.organization_competency_id as string, r]));
+
+  function save(dimension: string, rating: number, note: string, organizationCompetencyId?: string | null) {
+    startTransition(async () => {
+      await setSelfCompetencyRating(reviewId, dimension, rating, note, organizationCompetencyId);
+      router.refresh();
+    });
+  }
+
+  function renderRow(key: string, label: string, existing: CompetencyRating | undefined, onSave: (rating: number) => void) {
+    return (
+      <div key={key} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "8px 10px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ fontSize: 12.5, color: "var(--text)" }}>{label}</span>
+          <select
+            defaultValue={existing?.self_rating ?? 3}
+            onChange={(e) => onSave(Number(e.target.value))}
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 8px", fontSize: 11, color: "var(--text)", cursor: "pointer" }}
+          >
+            {[1, 2, 3, 4, 5].map((n) => (
+              <option key={n} value={n}>
+                {n} — {competencyRatingLabel(tLabels, n)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+          {existing?.rating !== null && existing?.rating !== undefined
+            ? t("managerRatedThis", { rating: competencyRatingLabel(tLabels, existing.rating) })
+            : t("managerNotYetRated")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
+      <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("rateYourCompetencies")}</p>
+      <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>{t("rateYourCompetenciesHint")}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {fixedDimensions.map((dim) => {
+          const existing = ratingByDim.get(dim);
+          const isFixedLabel = (COMPETENCY_DIMENSIONS as readonly string[]).includes(dim);
+          const label = isFixedLabel ? dimensionLabel(tDim, dim as CompetencyDimension) : dim;
+          return renderRow(dim, label, existing, (rating) => save(dim, rating, existing?.self_note ?? ""));
+        })}
+        {organizationCompetencies.map((c) => {
+          const existing = ratingByOrgCompetency.get(c.id);
+          return renderRow(c.id, c.name, existing, (rating) => save(c.mappedDimension ?? "", rating, existing?.self_note ?? "", c.id));
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }) {
+  const t = useTranslations("myPerformanceReview");
+  const tLabels = useTranslations("performanceReviewLabels");
   const router = useRouter();
   const { review, cycle, self, manager, goals, pastGoals, competencyRatings, uplineSignoffs, instanceSteps, hasPendingDepartmentHeadReview } = detail;
   const stage = describeReviewStage(review.status, instanceSteps);
@@ -252,24 +332,24 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
         </div>
       )}
 
-      {competencyRatings.length > 0 && (
-        <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("competenciesManagerView")}</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {competencyRatings.map((r, i) => (
-              <div key={r.organization_competency_id ?? r.dimension ?? i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12.5, color: "var(--text)" }}>
-                  {r.organization_competency_id ? (r.organizationCompetencyName ?? t("unnamedCompetency")) : dimensionLabel(tDim, r.dimension as CompetencyDimension)}
-                </span>
-                <span style={{ fontSize: 11.5, color: "var(--teal)", fontWeight: 700 }}>{competencyRatingLabel(tLabels, r.rating)}</span>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
-            {t("singleSourceNote")}
-          </p>
-        </div>
-      )}
+      {(() => {
+        const competencyStep = instanceSteps.find((s) => s.step_type === "competency_ratings");
+        if (!competencyStep && competencyRatings.length === 0) return null;
+        const fixedDimensions =
+          competencyStep && competencyStep.data.fixed_dimensions && competencyStep.data.fixed_dimensions.length > 0
+            ? competencyStep.data.fixed_dimensions
+            : competencyStep
+              ? [...COMPETENCY_DIMENSIONS]
+              : [...new Set(competencyRatings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => r.dimension as string))];
+        return (
+          <SelfCompetencyRatingsEditor
+            reviewId={review.id}
+            fixedDimensions={fixedDimensions}
+            organizationCompetencies={detail.competencyOrgOptions}
+            ratings={competencyRatings}
+          />
+        );
+      })()}
 
       {manager?.submitted_at ? (
         <div style={{ background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
