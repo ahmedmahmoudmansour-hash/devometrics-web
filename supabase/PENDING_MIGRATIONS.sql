@@ -932,6 +932,13 @@ alter table public.organization_email_messages
 alter table public.knowledge_hub_assignments
   add column if not exists manager_notified_at timestamptz;
 
+-- due_knowledge_hub_reminders' return row shape is changing (4 new output
+-- columns below) — Postgres refuses to widen an existing function's OUT
+-- parameters via create or replace (error 42P13), so the old signature
+-- must be dropped first. Same reasoning as resolve_review_escalation in
+-- 0138, just triggered by a return-type change instead of an arg change.
+drop function if exists public.due_knowledge_hub_reminders(text);
+
 create or replace function public.due_knowledge_hub_reminders(secret text)
 returns table(
   assignment_id uuid,
