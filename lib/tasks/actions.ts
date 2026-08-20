@@ -6,6 +6,7 @@ import { breakdownIntoSteps } from "./breakdown";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { PersonalTask, PersonalSubtask, TaskRecurring, TaskPriority } from "./types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -360,7 +361,7 @@ export async function breakdownMilestoneIntoTasks(milestoneId: string) {
 
   let steps: string[];
   try {
-    const result = await breakdownIntoSteps(milestone.title, milestone.description ?? undefined);
+    const result = await breakdownIntoSteps(milestone.title, milestone.description ?? undefined, await resolveCallerLocale(supabase, user.id));
     steps = result.steps;
     await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "task_breakdown", model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
   } catch {
@@ -405,7 +406,7 @@ export async function breakdownTaskIntoSubtasks(taskId: string) {
 
   let steps: string[];
   try {
-    const result = await breakdownIntoSteps(task.title);
+    const result = await breakdownIntoSteps(task.title, undefined, await resolveCallerLocale(supabase, user.id));
     steps = result.steps;
     await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "task_breakdown", model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
   } catch {

@@ -28,6 +28,21 @@ export function resolveApiLocale(cookieValue: string | undefined, profileLanguag
   return isSupportedLocale(profileLanguage ?? undefined) ? (profileLanguage as Locale) : DEFAULT_LOCALE;
 }
 
+// Convenience wrapper over resolveApiLocale for the common case: a
+// "use server" action that already has an authenticated supabase client
+// and user id, and needs to know which language to have an AI call
+// respond in. Centralized here so every AI-generation call site (Coach,
+// Job Architecture, Career Paths, Task Breakdown, Survey Questions, ...)
+// resolves locale the same way instead of re-deriving cookie+profile
+// lookup logic per file.
+export async function resolveCallerLocale(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<Locale> {
+  const { data: profile } = await supabase.from("profiles").select("language").eq("id", userId).maybeSingle<{ language: string | null }>();
+  return resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language);
+}
+
 export default getRequestConfig(async () => {
   const store = await cookies();
   const cookieValue = store.get(LOCALE_COOKIE)?.value;

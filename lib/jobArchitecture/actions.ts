@@ -7,6 +7,7 @@ import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { RoleTrack } from "@/lib/supabase/types";
 
 const MAX_NAME = 120;
@@ -227,11 +228,14 @@ export async function suggestRoleGrading(title: string, responsibilities: string
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const { data: raw, model, inputTokens, outputTokens } = await callOpenRouterJson<RoleGradingSuggestion>({
       model: "openai/gpt-5.4-mini",
       maxTokens: 1200,
       system:
+        `LANGUAGE: Write "level" and "rationale" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the title/responsibilities below happen to be stored in.\n\n` +
         "You are a compensation and job-architecture analyst. Grade roles consistently on a 1-10 band that rises with scope, autonomy, impact, and complexity, and define the competency profile a role genuinely requires. Ground every judgment strictly in the title and responsibilities given — never invent duties, headcount, or seniority that isn't stated. This is decision support an HR admin will review and edit, not an automated grading decision. Use ONLY the exact competency dimension names provided in the schema.",
       user: `ROLE TITLE: ${cleanTitle}\n\nRESPONSIBILITIES:\n${responsibilities.trim().slice(0, MAX_TEXT) || "(none provided — infer a sensible profile from the title alone, and keep confidence modest)"}`,
       jsonSchema: { name: "record_role_grading", schema: GRADING_TOOL.input_schema },
@@ -399,11 +403,14 @@ export async function generateJobDescription(roleId: string): Promise<{ error: s
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const { data: jd, model, inputTokens, outputTokens } = await callOpenRouterJson<GeneratedJD>({
       model: "openai/gpt-5.4-mini",
       maxTokens: 1600,
       system:
+        `LANGUAGE: Write the entire job description in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the role data below happens to be stored in.\n\n` +
         "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, requirements, reporting relationships, compensation figures, or next-role titles not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output.",
       user: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}\n\nMAPPED GROWTH PATHS (Job Architecture's own transition data — use ONLY these, if any):\n${transitionLines}`,
       jsonSchema: { name: "record_job_description", schema: JD_TOOL.input_schema },

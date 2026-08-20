@@ -1,5 +1,6 @@
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import type { SurveyQuestion } from "./types";
+import type { Locale } from "@/lib/i18n/request";
 
 export type SurveyQuestionsResult = { questions: SurveyQuestion[]; model: string; inputTokens: number; outputTokens: number };
 
@@ -42,11 +43,12 @@ const RECORD_TOOL = {
 // GPT-5.4 Mini via OpenRouter — drafting-shaped question set an admin
 // reviews and edits before publishing, same routing rationale as the other
 // "AI suggest/generate" drafting features.
-export async function generateSurveyQuestions(theme: string, focus?: string): Promise<SurveyQuestionsResult> {
+export async function generateSurveyQuestions(theme: string, focus?: string, locale: Locale = "en"): Promise<SurveyQuestionsResult> {
   const { data, model, inputTokens, outputTokens } = await callOpenRouterJson<{ questions: SurveyQuestion[] }>({
     model: "openai/gpt-5.4-mini",
     maxTokens: 2048,
     system:
+      `LANGUAGE: Write every question and answer option in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"} — employees will read and answer these directly, regardless of what language the theme/focus below happen to be written in.\n\n` +
       'You are drafting an anonymous internal pulse survey for a company\'s HR team. Write 5-8 clear, neutral, non-leading questions on the given theme. Mix "rating" questions (1-5 agreement/satisfaction scale — do not include the scale in the text, just the statement), a couple of "multiple_choice" questions where a fixed set of options genuinely fits better than a scale, and 1-2 "qualitative" open-ended questions that invite specific, actionable feedback a rating can\'t capture. Avoid jargon, avoid double-barreled questions (asking two things at once), and avoid anything that could pressure a specific answer.',
     user: `Theme: ${theme}${focus?.trim() ? `\n\nSpecific focus requested by HR: ${focus.trim()}` : ""}`,
     jsonSchema: { name: "record_survey_questions", schema: RECORD_TOOL.input_schema },

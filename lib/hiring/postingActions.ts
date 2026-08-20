@@ -8,6 +8,7 @@ import { suggestRoleGrading, type RoleGradingSuggestion } from "@/lib/jobArchite
 import { MAX_JOB_DESCRIPTION_LENGTH } from "@/lib/limits";
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { JobPostingStatus, InterviewQuestion } from "./types";
 
 const MAX_TITLE = 120;
@@ -245,6 +246,8 @@ export async function generateInterviewQuestions(postingId: string): Promise<{ e
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     // GPT-5.4 Mini via OpenRouter — drafting-shaped, decision support only,
     // same routing rationale as generateJobDescription/suggestRoleGrading.
@@ -252,6 +255,7 @@ export async function generateInterviewQuestions(postingId: string): Promise<{ e
       model: "openai/gpt-5.4-mini",
       maxTokens: 1500,
       system:
+        `LANGUAGE: Write "question" and "whatToListenFor" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the role/job description below happen to be written in.\n\n` +
         "You write behavioral, competency-based interview questions for Devometrics' Smart Hiring feature. This is decision support for the interviewer, never a script to read verbatim or an automated evaluation. Write one open-ended question per required competency (STAR-style: 'tell me about a time...', 'walk me through...') that would actually surface real evidence, not a hypothetical or a yes/no question. Ask the same core questions of every candidate for a given posting — consistency across candidates is what makes notes comparable and fair. Never invent facts about the role beyond what's given.",
       user: `ROLE: ${posting.title}\n\nJOB DESCRIPTION:\n${posting.job_description || "(none provided)"}\n\nREQUIRED COMPETENCIES:\n${reqLines}`,
       jsonSchema: { name: "record_interview_questions", schema: INTERVIEW_QUESTIONS_TOOL.input_schema },

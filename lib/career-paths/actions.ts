@@ -7,6 +7,7 @@ import { getMyOrganizationId } from "@/lib/organizations/membership";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { CareerPathBranch, GapAnalysis, Profile } from "@/lib/supabase/types";
 
 // Regeneration is a full Claude call — once per hour is plenty for a map
@@ -150,6 +151,8 @@ export async function generateCareerPaths(): Promise<{ error?: string; success?:
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   let currentRole: string;
   let branches: CareerPathBranch[];
   try {
@@ -160,6 +163,7 @@ export async function generateCareerPaths(): Promise<{ error?: string; success?:
       model: "openai/gpt-5.4-mini",
       maxTokens: 4000,
       system:
+        `LANGUAGE: Write every role name, description, and readiness note in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the background below happens to be written in.\n\n` +
         "You map realistic career paths for a professional on Devometrics, a career-development platform. Ground every judgment in the background actually provided — never invent employers, roles they didn't hold, or skills they didn't list. Readiness percentages must reflect their real competency data, not optimism. Do NOT include salary figures anywhere — the platform deliberately excludes compensation claims it cannot source.",
       user: background,
       jsonSchema: { name: "record_career_paths", schema: PATHS_TOOL.input_schema },

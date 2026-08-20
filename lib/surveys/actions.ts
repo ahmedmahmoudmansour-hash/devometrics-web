@@ -6,6 +6,7 @@ import { generateSurveyQuestions } from "./generateQuestions";
 import { aggregateSurveyResponses, type QuestionAggregate } from "./aggregate";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { SurveyAnswers, SurveyQuestion } from "./types";
 
 // AI-only, no DB writes — lets the admin review and edit the draft before
@@ -25,7 +26,7 @@ export async function previewSurveyQuestions(theme: string, focus?: string): Pro
   if (budgetCheck.error) return { error: budgetCheck.error };
 
   try {
-    const { questions, model, inputTokens, outputTokens } = await generateSurveyQuestions(theme, focus);
+    const { questions, model, inputTokens, outputTokens } = await generateSurveyQuestions(theme, focus, await resolveCallerLocale(supabase, user.id));
     await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "survey_questions", model, inputTokens, outputTokens });
     return { questions };
   } catch {

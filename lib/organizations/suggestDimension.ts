@@ -1,5 +1,6 @@
 import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import type { Locale } from "@/lib/i18n/request";
 
 export type DimensionSuggestionResult = { dimension: CompetencyDimension | null; rationale: string; model: string; inputTokens: number; outputTokens: number };
 
@@ -28,12 +29,13 @@ const RECORD_TOOL = {
 // suggest X" drafting batch rather than leaving one outlier on Sonnet.
 export async function suggestCompetencyDimension(
   name: string,
-  description?: string
+  description?: string,
+  locale: Locale = "en"
 ): Promise<DimensionSuggestionResult> {
   const { data, model, inputTokens, outputTokens } = await callOpenRouterJson<{ dimension: CompetencyDimension | null; rationale: string }>({
     model: "openai/gpt-5.4-mini",
     maxTokens: 300,
-    system: `Given a company's own custom competency name (and optional description), decide which single one of these fixed dimensions it best maps onto: ${COMPETENCY_DIMENSIONS.join(", ")}. If it's genuinely values-based or doesn't cleanly fit any of them (e.g. "Integrity" as a pure values statement), say so and return null rather than forcing a weak fit.`,
+    system: `LANGUAGE: Write "rationale" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the competency name/description below happen to be written in.\n\nGiven a company's own custom competency name (and optional description), decide which single one of these fixed dimensions it best maps onto: ${COMPETENCY_DIMENSIONS.join(", ")}. If it's genuinely values-based or doesn't cleanly fit any of them (e.g. "Integrity" as a pure values statement), say so and return null rather than forcing a weak fit.`,
     user: `Competency: ${name}${description?.trim() ? `\nDescription: ${description.trim()}` : ""}`,
     jsonSchema: { name: "record_dimension_suggestion", schema: RECORD_TOOL.input_schema },
   });

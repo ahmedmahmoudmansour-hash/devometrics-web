@@ -7,6 +7,7 @@ import { suggestCompetencyDimension } from "./suggestDimension";
 import { getMyOrganizationMembership } from "./actions";
 import { listMyRestrictedFeatures } from "./featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 function isValidDimension(value: string): value is CompetencyDimension {
   return (COMPETENCY_DIMENSIONS as readonly string[]).includes(value);
@@ -102,7 +103,7 @@ export async function suggestDimensionForCompetency(
   if (budgetCheck.error) return { error: budgetCheck.error };
 
   try {
-    const { dimension, rationale, model, inputTokens, outputTokens } = await suggestCompetencyDimension(name, description);
+    const { dimension, rationale, model, inputTokens, outputTokens } = await suggestCompetencyDimension(name, description, await resolveCallerLocale(supabase, user.id));
     await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "competency_dimension", model, inputTokens, outputTokens });
     return { success: true, dimension, rationale };
   } catch {
