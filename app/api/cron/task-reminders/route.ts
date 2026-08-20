@@ -7,6 +7,7 @@ import { sendDuePerformanceReviewReminders } from "@/lib/performanceReviews/send
 import { sendDueManagerActionReminders } from "@/lib/performanceReviews/sendManagerReminders";
 import { sendDueDepartmentHeadReviewReminders } from "@/lib/performanceReviews/sendDepartmentHeadReminders";
 import { sendDueAssessmentReminders } from "@/lib/assessments/sendReminders";
+import { sendDueHiringAttentionDigest } from "@/lib/hiring/attentionSummary";
 import { sendDueScheduledFeatureEmails } from "@/lib/organizations/featureEmails";
 
 type ReminderTask = { title: string; date: string; overdue: boolean };
@@ -120,6 +121,7 @@ export async function GET(request: Request) {
   const managerActionResult = await sendDueManagerActionReminders(supabase, secret);
   const departmentHeadReviewResult = await sendDueDepartmentHeadReviewReminders(supabase, secret);
   const assessmentResult = await sendDueAssessmentReminders(supabase, secret);
+  const hiringAttentionResult = await sendDueHiringAttentionDigest(supabase, secret);
   const scheduledFeatureEmailsResult = await sendDueScheduledFeatureEmails(supabase, secret);
 
   return NextResponse.json({
@@ -128,6 +130,7 @@ export async function GET(request: Request) {
     managerActions: managerActionResult,
     departmentHeadReviews: departmentHeadReviewResult,
     assessments: assessmentResult,
+    hiringAttention: hiringAttentionResult,
     sent,
     knowledgeHub: knowledgeHubResult,
     scheduledFeatureEmails: scheduledFeatureEmailsResult,

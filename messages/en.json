@@ -1652,7 +1652,17 @@
     "type_department_head_review_reminder": "Department Head Review reminder",
     "hint_department_head_review_reminder": "Sent to an eligible upline manager when the optional Department Head Review on an open cycle hasn't been signed off yet — repeats every 7 days until it is.",
     "type_review_escalation_requested_alert": "Review escalation requested alert",
-    "hint_review_escalation_requested_alert": "Sent to an eligible upline manager (if one exists) and an org admin when an employee explicitly escalates their review — a stronger, deliberate action distinct from just leaving an acknowledgment comment."
+    "hint_review_escalation_requested_alert": "Sent to an eligible upline manager (if one exists) and an org admin when an employee explicitly escalates their review — a stronger, deliberate action distinct from just leaving an acknowledgment comment.",
+    "type_review_escalation_resolved_alert": "Review escalation resolved alert",
+    "hint_review_escalation_resolved_alert": "Sent to the employee, with HR's resolution comment, once their escalation is marked resolved.",
+    "type_offer_stage_notice": "Offer stage notice",
+    "hint_offer_stage_notice": "Sent to a candidate when they're moved to the Offer stage in the hiring pipeline.",
+    "type_rejected_stage_notice": "Rejected stage notice",
+    "hint_rejected_stage_notice": "Sent to a candidate when they're moved to the Rejected stage in the hiring pipeline.",
+    "type_hiring_attention_digest": "Hiring attention digest",
+    "hint_hiring_attention_digest": "A weekly summary to every org admin when candidates are stuck 14+ days in a stage or postings have been open 30+ days with no candidates.",
+    "type_knowledge_hub_attempts_exhausted_alert": "Exam attempts exhausted alert",
+    "hint_knowledge_hub_attempts_exhausted_alert": "Sent to an org admin when someone uses every attempt on a Knowledge Hub exam without passing — they can't retake it themselves; an admin has to reset it."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "Scheduled for deletion on {date}",
@@ -1679,6 +1689,13 @@
     "title": "{count, plural, one {# escalated review} other {# escalated reviews}}",
     "unknownEmployee": "Unknown employee",
     "commentQuoted": "\"{comment}\""
+  },
+  "hiringAttentionWidget": {
+    "title": "{count, plural, one {# hiring item needs attention} other {# hiring items need attention}}",
+    "staleCandidate": "stuck in the {posting} pipeline",
+    "deadPosting": "open with no candidates",
+    "unknownCandidate": "Unknown candidate",
+    "daysAgo": "{count, plural, one {# day} other {# days}}"
   },
   "companyEmployeesPage": {
     "backToProgress": "← Back to progress",

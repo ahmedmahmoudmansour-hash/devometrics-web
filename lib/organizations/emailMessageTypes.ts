@@ -43,6 +43,19 @@
 // review_escalation_resolved_alert (0138) — notifies the employee, with
 // HR's resolution comment, once their escalation is marked resolved.
 // Informational only — no sign-off required from them.
+// offer_stage_notice / rejected_stage_notice (0139) — moveCandidateStage
+// used to only ever notify a candidate on the "interview" stage; moving
+// someone to "offer" or "rejected" sent nothing at all. A rejected
+// candidate had no way to even find out, since they have no dashboard
+// login to check status themselves.
+// hiring_attention_digest (0140) — hiring had zero entry in the daily
+// reminders cron, unlike every other domain audited this session. A
+// weekly per-org digest to every admin, not a per-item reminder.
+// knowledge_hub_attempts_exhausted_alert (0141) — submit_knowledge_hub_exam
+// tells the employee to "contact your admin" once they've used every
+// attempt, but there was no actual way to do that in-app and no admin was
+// ever told either — someone could permanently fail out of required
+// training silently.
 export const EMAIL_MESSAGE_TYPES = [
   "task_reminder",
   "knowledge_hub_reminder",
@@ -66,6 +79,10 @@ export const EMAIL_MESSAGE_TYPES = [
   "department_head_review_reminder",
   "review_escalation_requested_alert",
   "review_escalation_resolved_alert",
+  "offer_stage_notice",
+  "rejected_stage_notice",
+  "hiring_attention_digest",
+  "knowledge_hub_attempts_exhausted_alert",
 ] as const;
 export type EmailMessageType = (typeof EMAIL_MESSAGE_TYPES)[number];
 

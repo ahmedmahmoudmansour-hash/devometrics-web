@@ -4,10 +4,12 @@ import { Briefcase } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import HiringPostingsManager from "@/components/dashboard/HiringPostingsManager";
+import HiringAttentionWidget from "@/components/dashboard/HiringAttentionWidget";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { buildHiringOverview } from "@/lib/hiring/aggregate";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
+import { getHiringAttentionSummary } from "@/lib/hiring/attentionSummary";
 
 export const metadata = { title: "Hiring — Devometrics" };
 
@@ -33,6 +35,8 @@ export default async function HiringPage() {
         </div>
 
         <CompanyNavTabs active="hiring" />
+
+        {data.organizationId && <HiringAttentionWidget items={await getHiringAttentionSummary(data.organizationId)} />}
 
         {data.organizationId && (
           <FeatureEmailComposer

@@ -12,6 +12,14 @@ type ReminderRow = {
   overdue: boolean;
   custom_subject: string | null;
   custom_message: string | null;
+  // Added in migration 0141 — true once for a severely overdue (30+ day)
+  // assignment that hasn't already escalated. Separate from
+  // last_reminder_sent_at's 3-day cadence: this only needs to fire once,
+  // not every run, so it has its own dedup column (manager_notified_at).
+  escalate_to_manager: boolean;
+  manager_user_id: string | null;
+  manager_email: string | null;
+  manager_full_name: string | null;
 };
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -87,6 +95,38 @@ export async function sendDueKnowledgeHubReminders(
       sent++;
     } catch (err) {
       console.error(`Knowledge Hub reminder email failed for user ${row.user_id}:`, err);
+    }
+
+    // Manager escalation — fires once (mark_knowledge_hub_manager_notified
+    // sets manager_notified_at, so due_knowledge_hub_reminders never
+    // returns escalate_to_manager true again for this assignment). No
+    // manager on file just means it never escalates, same "nothing to
+    // notify" posture used everywhere else in this codebase.
+    if (row.escalate_to_manager && row.manager_email) {
+      try {
+        const firstName = row.manager_full_name?.trim().split(" ")[0] || "there";
+        const employeeName = row.full_name?.trim() || "Their direct report";
+        await sendEmail(
+          row.manager_email,
+          `${employeeName} hasn't completed required training on Devometrics`,
+          renderEmail({
+            preheader: `${row.content_title} is still not completed`,
+            footerNote: "You're getting this because your organization assigned training on Devometrics.",
+            bodyHtml: `
+              <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
+              <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+                <strong>${escapeHtml(employeeName)}</strong> still hasn't completed <strong>${escapeHtml(row.content_title)}</strong> after repeated reminders — worth a check-in.
+              </p>
+              <p style="margin:20px 0 0;">
+                <a href="https://devometrics.com/dashboard/my-team" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open My Team →</a>
+              </p>
+            `,
+          })
+        );
+        await supabase.rpc("mark_knowledge_hub_manager_notified", { secret, target_assignment_id: row.assignment_id });
+      } catch (err) {
+        console.error(`Knowledge Hub manager escalation email failed for assignment ${row.assignment_id}:`, err);
+      }
     }
   }
 

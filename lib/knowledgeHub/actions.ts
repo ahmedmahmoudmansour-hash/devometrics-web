@@ -645,11 +645,74 @@ export async function submitKnowledgeHubExam(
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("submit_knowledge_hub_exam", { p_content_id: contentId, p_answers: answers });
   const rows = data as { score_percent: number; passed: boolean; attempt_number: number }[] | null;
-  if (error || !rows?.[0]) return { error: error?.message ?? "Could not submit this exam" };
+  if (error || !rows?.[0]) {
+    // Process-delay audit follow-up (2026-08-20): submit_knowledge_hub_exam
+    // (migration 0087) tells the employee to "contact your admin" once
+    // exhausted, but there was never an actual way to do that in-app, and
+    // no admin was ever told either — someone could permanently fail out
+    // of required/compliance training silently. No separate dedup table:
+    // the client (KnowledgeHubContentViewer's usedAllAttempts state)
+    // already stops offering a retry once exhausted, so this RPC only
+    // realistically gets called once at the exact moment of exhaustion.
+    if (error?.message?.includes("contact your admin")) {
+      try {
+        await notifyExamAttemptsExhausted(supabase, contentId);
+      } catch (err) {
+        console.error("submitKnowledgeHubExam: exhausted-attempts notification failed (non-fatal):", err);
+      }
+    }
+    return { error: error?.message ?? "Could not submit this exam" };
+  }
 
   revalidatePath("/dashboard/knowledge-hub");
   revalidatePath(`/dashboard/knowledge-hub/${contentId}`);
   return { success: true, scorePercent: rows[0].score_percent, passed: rows[0].passed, attemptNumber: rows[0].attempt_number };
+}
+
+async function notifyExamAttemptsExhausted(supabase: Awaited<ReturnType<typeof createClient>>, contentId: string): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const [{ data: content }, { data: employeeProfile }] = await Promise.all([
+    supabase.from("knowledge_hub_content").select("organization_id, title, max_attempts").eq("id", contentId).maybeSingle<{ organization_id: string; title: string; max_attempts: number | null }>(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>(),
+  ]);
+  if (!content) return;
+  const employeeName = employeeProfile?.full_name ?? "An employee";
+
+  const { data: adminRow } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", content.organization_id)
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle<{ user_id: string }>();
+  if (!adminRow?.user_id) return;
+
+  const { data: adminProfile } = await supabase.from("profiles").select("email").eq("id", adminRow.user_id).maybeSingle<{ email: string | null }>();
+  if (!adminProfile?.email) return;
+
+  const override = await getEmailMessageOverride(content.organization_id, "knowledge_hub_attempts_exhausted_alert");
+  await sendEmail(
+    adminProfile.email,
+    override.subject || `${employeeName} used all their attempts on ${content.title}`,
+    renderEmail({
+      preheader: `They've used all ${content.max_attempts ?? ""} attempts and can't retake it themselves`,
+      bodyHtml: `
+        <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">${escapeHtml(employeeName)} used all their attempts</h2>
+        ${customMessageHtml(override.message)}
+        <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">
+          They've used all ${content.max_attempts ?? "their"} attempts on <strong>${escapeHtml(content.title)}</strong> and can't retake it themselves — it needs an admin to reset it for them.
+        </p>
+        <p style="margin:0;">
+          <a href="https://devometrics.com/dashboard/company/knowledge-hub" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:10px 22px;border-radius:8px;display:inline-block;font-size:14px;">Open Knowledge Hub →</a>
+        </p>
+      `,
+      footerNote: "Sent because someone exhausted their exam attempts on Knowledge Hub content on Devometrics.",
+    })
+  );
 }
 
 export type KnowledgeHubAttempt = {

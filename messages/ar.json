@@ -1652,7 +1652,17 @@
     "type_department_head_review_reminder": "تذكير بمراجعة رئيس القسم",
     "hint_department_head_review_reminder": "تُرسل إلى مدير أعلى مؤهل عندما لا تكون مراجعة رئيس القسم الاختيارية في دورة مفتوحة قد اعتُمدت بعد — وتتكرر كل 7 أيام حتى تُعتمد.",
     "type_review_escalation_requested_alert": "تنبيه بطلب تصعيد المراجعة",
-    "hint_review_escalation_requested_alert": "تُرسل إلى مدير أعلى مؤهل (إن وُجد) ومسؤول المؤسسة عندما يصعّد الموظف مراجعته صراحةً — إجراء أقوى ومتعمّد يختلف عن مجرد ترك تعليق عند الاطلاع."
+    "hint_review_escalation_requested_alert": "تُرسل إلى مدير أعلى مؤهل (إن وُجد) ومسؤول المؤسسة عندما يصعّد الموظف مراجعته صراحةً — إجراء أقوى ومتعمّد يختلف عن مجرد ترك تعليق عند الاطلاع.",
+    "type_review_escalation_resolved_alert": "تنبيه بحل تصعيد المراجعة",
+    "hint_review_escalation_resolved_alert": "تُرسل إلى الموظف، مع ملاحظة الحل من الموارد البشرية، عند تحديد التصعيد كمحلول.",
+    "type_offer_stage_notice": "تنبيه مرحلة العرض",
+    "hint_offer_stage_notice": "تُرسل إلى المرشح عند نقله إلى مرحلة العرض في مسار التوظيف.",
+    "type_rejected_stage_notice": "تنبيه مرحلة الرفض",
+    "hint_rejected_stage_notice": "تُرسل إلى المرشح عند نقله إلى مرحلة الرفض في مسار التوظيف.",
+    "type_hiring_attention_digest": "ملخص متابعة التوظيف",
+    "hint_hiring_attention_digest": "ملخص أسبوعي لكل مسؤولي المؤسسة عندما يظل المرشحون في نفس المرحلة 14 يومًا أو أكثر، أو تبقى الوظائف مفتوحة 30 يومًا أو أكثر دون مرشحين.",
+    "type_knowledge_hub_attempts_exhausted_alert": "تنبيه استنفاد محاولات الاختبار",
+    "hint_knowledge_hub_attempts_exhausted_alert": "تُرسل إلى مسؤول المؤسسة عندما يستخدم أحدهم كل محاولاته في اختبار مركز المعرفة دون اجتيازه — لا يمكنه إعادة المحاولة بنفسه، ويحتاج الأمر إلى إعادة تعيين من المسؤول."
   },
   "deleteCompanyButton": {
     "scheduledTitle": "مُجدولة للحذف في {date}",
@@ -1679,6 +1689,13 @@
     "title": "{count, plural, one {مراجعة واحدة مصعّدة} two {مراجعتان مصعّدتان} few {# مراجعات مصعّدة} many {# مراجعة مصعّدة} other {# مراجعة مصعّدة}}",
     "unknownEmployee": "موظف غير معروف",
     "commentQuoted": "\"{comment}\""
+  },
+  "hiringAttentionWidget": {
+    "title": "{count, plural, one {عنصر واحد في التوظيف يحتاج إلى اهتمام} two {عنصران في التوظيف يحتاجان إلى اهتمام} few {# عناصر في التوظيف تحتاج إلى اهتمام} many {# عنصرًا في التوظيف يحتاج إلى اهتمام} other {# عنصر في التوظيف يحتاج إلى اهتمام}}",
+    "staleCandidate": "عالق في مسار {posting}",
+    "deadPosting": "مفتوحة دون مرشحين",
+    "unknownCandidate": "مرشح غير معروف",
+    "daysAgo": "{count, plural, one {# يوم} two {# يومان} few {# أيام} many {# يومًا} other {# يوم}}"
   },
   "companyEmployeesPage": {
     "backToProgress": "← العودة إلى التقدم",

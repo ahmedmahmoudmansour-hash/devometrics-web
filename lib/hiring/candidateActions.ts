@@ -221,11 +221,24 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
 // address (the candidate has no Devometrics account), unlike every other
 // email in this app — deliberately no dashboard-login CTA here, since
 // there's no account to link to.
-async function sendInterviewStageEmail(
+// Generalized (process-delay audit follow-up, 2026-08-20) from what used to
+// be interview-only — moving a candidate to "offer" or "rejected" sent
+// nothing at all, an asymmetry with "interview" being the only stage that
+// ever told the candidate anything. Same shape for all three: an org-name
+// lookup, the org's customizable override, best-effort send. Copy differs
+// enough per stage (neutral/positive/respectful-decline) that each stage
+// keeps its own default subject/body text and its own customizable email
+// type, rather than one generic "stage changed" notice.
+async function sendCandidateStageEmail(
   supabase: Awaited<ReturnType<typeof createClient>>,
   organizationId: string,
   candidateEmail: string,
-  candidateName: string
+  candidateName: string,
+  params: {
+    emailType: "interview_stage_notice" | "offer_stage_notice" | "rejected_stage_notice";
+    defaultSubject: (orgName: string) => string;
+    bodyText: (orgName: string) => string;
+  }
 ): Promise<void> {
   const { data: org } = await supabase
     .from("organizations")
@@ -235,25 +248,25 @@ async function sendInterviewStageEmail(
   if (!org?.name) return;
 
   try {
-    const override = await getEmailMessageOverride(organizationId, "interview_stage_notice");
+    const override = await getEmailMessageOverride(organizationId, params.emailType);
     const firstName = candidateName.trim().split(" ")[0] || "there";
     await sendEmail(
       candidateEmail,
-      override.subject || `Your application with ${org.name} has moved to the interview stage`,
+      override.subject || params.defaultSubject(org.name),
       renderEmail({
         preheader: `Update on your application to ${org.name}`,
         bodyHtml: `
           <h2 style="color:#16161a;font-size:20px;margin:0 0 16px;">Hi ${escapeHtml(firstName)},</h2>
           ${customMessageHtml(override.message)}
           <p style="font-size:15px;line-height:1.7;margin:0;">
-            Your application with <strong>${escapeHtml(org.name)}</strong> has moved to the interview stage. The hiring team will be in touch with next steps.
+            ${params.bodyText(org.name)}
           </p>
         `,
         footerNote: `You're getting this because you applied to a role at ${org.name}.`,
       })
     );
   } catch (err) {
-    console.error(`Interview stage email failed for ${candidateEmail}:`, err);
+    console.error(`Candidate stage email (${params.emailType}) failed for ${candidateEmail}:`, err);
   }
 }
 
@@ -285,8 +298,29 @@ export async function moveCandidateStage(candidateId: string, toStage: HiringSta
     note: (note ?? "").trim().slice(0, 500),
   });
 
-  if (toStage === "interview" && candidate.email) {
-    await sendInterviewStageEmail(supabase, organizationId, candidate.email, candidate.full_name ?? "");
+  if (candidate.email) {
+    if (toStage === "interview") {
+      await sendCandidateStageEmail(supabase, organizationId, candidate.email, candidate.full_name ?? "", {
+        emailType: "interview_stage_notice",
+        defaultSubject: (orgName) => `Your application with ${orgName} has moved to the interview stage`,
+        bodyText: (orgName) =>
+          `Your application with <strong>${escapeHtml(orgName)}</strong> has moved to the interview stage. The hiring team will be in touch with next steps.`,
+      });
+    } else if (toStage === "offer") {
+      await sendCandidateStageEmail(supabase, organizationId, candidate.email, candidate.full_name ?? "", {
+        emailType: "offer_stage_notice",
+        defaultSubject: (orgName) => `Good news from ${orgName}`,
+        bodyText: (orgName) =>
+          `Congratulations! <strong>${escapeHtml(orgName)}</strong> would like to extend you an offer. The hiring team will be in touch shortly with the details.`,
+      });
+    } else if (toStage === "rejected") {
+      await sendCandidateStageEmail(supabase, organizationId, candidate.email, candidate.full_name ?? "", {
+        emailType: "rejected_stage_notice",
+        defaultSubject: (orgName) => `Update on your application with ${orgName}`,
+        bodyText: (orgName) =>
+          `Thank you for your interest in <strong>${escapeHtml(orgName)}</strong> and for taking the time to apply. After careful consideration, we've decided to move forward with other candidates for this role. We appreciate your interest and wish you the best in your search.`,
+      });
+    }
   }
 
   revalidatePath(`/dashboard/company/hiring/${candidate.posting_id}`);
