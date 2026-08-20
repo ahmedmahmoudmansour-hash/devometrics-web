@@ -154,6 +154,27 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   const stage = describeReviewStage(review.status, instanceSteps);
   const customSteps = instanceSteps.filter((s) => s.step_type === "custom");
 
+  // Same derivation the competency-ratings block below already used inline —
+  // hoisted here so saveSelf's completion gate and the block itself agree on
+  // exactly which competencies the employee is expected to rate.
+  const competencyStep = instanceSteps.find((s) => s.step_type === "competency_ratings");
+  const fixedDimensions =
+    competencyStep && competencyStep.data.fixed_dimensions && competencyStep.data.fixed_dimensions.length > 0
+      ? competencyStep.data.fixed_dimensions
+      : competencyStep
+        ? [...COMPETENCY_DIMENSIONS]
+        : [...new Set(competencyRatings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => r.dimension as string))];
+  const hasCompetenciesToRate = fixedDimensions.length > 0 || detail.competencyOrgOptions.length > 0;
+  const ratedDimensions = new Set(
+    competencyRatings.filter((r) => r.dimension && !r.organization_competency_id && r.self_rating !== null).map((r) => r.dimension as string)
+  );
+  const ratedOrgCompetencyIds = new Set(
+    competencyRatings.filter((r) => r.organization_competency_id && r.self_rating !== null).map((r) => r.organization_competency_id as string)
+  );
+  const unratedCompetencyCount =
+    fixedDimensions.filter((d) => !ratedDimensions.has(d)).length +
+    detail.competencyOrgOptions.filter((c) => !ratedOrgCompetencyIds.has(c.id)).length;
+
   const [selfRating, setSelfRating] = useState(self?.rating ?? 3);
   const [selfReflection, setSelfReflection] = useState(self?.reflection ?? "");
   const [keyStrengths, setKeyStrengths] = useState(self?.key_strengths ?? "");
@@ -161,6 +182,12 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
   const [developmentAreas, setDevelopmentAreas] = useState(self?.development_areas ?? "");
   const [selfError, setSelfError] = useState<string | null>(null);
   const [selfPending, startSelfTransition] = useTransition();
+
+  // Requires a reflection plus a self-rating on every competency below
+  // before the "submit" action is allowed to fire — otherwise a review
+  // could be marked submitted (flipping status/notifying the manager)
+  // while several competencies still sit at the select's unrated default.
+  const canSubmitSelf = selfReflection.trim().length > 0 && (!hasCompetenciesToRate || unratedCompetencyCount === 0);
 
   const [showAiHelper, setShowAiHelper] = useState(false);
   const [roughNotes, setRoughNotes] = useState("");
@@ -247,7 +274,8 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       </div>
 
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
-        <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("yourReflection")}</p>
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("yourReflection")}</p>
+        <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.4 }}>{t("yourReflectionResumeHint")}</p>
 
         <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 5, display: "block" }}>{t("howWouldYouRate")}</label>
         <select value={selfRating} onChange={(e) => setSelfRating(Number(e.target.value))} style={{ ...inputStyle(), cursor: "pointer" }}>
@@ -317,11 +345,20 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
           style={{ ...inputStyle(), minHeight: 60, resize: "vertical", fontFamily: "inherit" }}
         />
         {selfError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{selfError}</p>}
+        {!canSubmitSelf && (
+          <p style={{ color: "var(--text-muted)", fontSize: 11.5, marginTop: 6, lineHeight: 1.4 }}>
+            {!selfReflection.trim() && hasCompetenciesToRate && unratedCompetencyCount > 0
+              ? t("completionMissingBoth", { count: unratedCompetencyCount })
+              : !selfReflection.trim()
+                ? t("completionMissingReflection")
+                : t("completionMissingCompetencies", { count: unratedCompetencyCount })}
+          </p>
+        )}
         <button
           type="button"
           onClick={saveSelf}
-          disabled={selfPending}
-          style={{ marginTop: 10, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: selfPending ? 0.6 : 1 }}
+          disabled={selfPending || !canSubmitSelf}
+          style={{ marginTop: 10, background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: selfPending || !canSubmitSelf ? 0.6 : 1 }}
         >
           {selfPending ? t("saving") : self?.submitted_at ? t("updateReflection") : t("submitReflection")}
         </button>
@@ -373,14 +410,7 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       )}
 
       {(() => {
-        const competencyStep = instanceSteps.find((s) => s.step_type === "competency_ratings");
         if (!competencyStep && competencyRatings.length === 0) return null;
-        const fixedDimensions =
-          competencyStep && competencyStep.data.fixed_dimensions && competencyStep.data.fixed_dimensions.length > 0
-            ? competencyStep.data.fixed_dimensions
-            : competencyStep
-              ? [...COMPETENCY_DIMENSIONS]
-              : [...new Set(competencyRatings.filter((r) => r.dimension && !r.organization_competency_id).map((r) => r.dimension as string))];
         return (
           <SelfCompetencyRatingsEditor
             reviewId={review.id}

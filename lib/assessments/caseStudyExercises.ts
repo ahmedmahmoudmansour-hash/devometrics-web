@@ -50,6 +50,39 @@ export const CASE_STUDY_EXERCISES: CaseStudyExercise[] = [
     prompt:
       "Write the recommendation you'd bring to the board: what you'd do with the product line, the financial and people tradeoffs you weighed, and how you'd frame the decision to the team whose roles are affected either way.",
   },
+  {
+    slug: "market-shift-response",
+    title: "Responding to a Sudden Market Shift",
+    dimension: "Critical Thinking",
+    level: "Executive",
+    timeLimitMinutes: 25,
+    context:
+      "Your company's core product has held a stable 30% market share for the past three years. Six weeks ago, a well-funded competitor launched a stripped-down version of your product at 40% of your price, and early data shows it's pulling your price-sensitive customers. At the same time, your two most senior product engineers are pushing you to shift the roadmap toward a premium AI feature set that could open a new high-margin segment your board has been asking about for a year. Customer support is separately reporting a rise in churn complaints that trace back to onboarding friction, unrelated to either issue. You have a strategy off-site with the executive team in five days and are expected to walk in with one coherent point of view that ties these three threads together, not three separate reactions.",
+    prompt:
+      "Write the point of view you'd bring to the off-site: how do you read what's actually happening across these three signals together, what's your response, and what would you deliberately choose not to chase right now?",
+  },
+  {
+    slug: "leadership-succession-decision",
+    title: "The Leadership Succession Decision",
+    dimension: "Leadership",
+    level: "Leadership",
+    timeLimitMinutes: 20,
+    context:
+      "A team-lead role has opened up on your team. Two internal people want it. Priya has been with the company five years, is deeply trusted by the team, and kept things stable through two reorganizations — but her own manager has quietly told you her output has plateaued and she seems reluctant to make hard calls. Omar joined 14 months ago, is technically the strongest person on the team, and has been vocal about wanting to lead, but he's clashed with two peers over decisions they felt he made unilaterally. The team already knows a decision is coming, and morale is sensitive to how it lands. You need to decide and tell both of them this week.",
+    prompt:
+      'Decide who gets the role, and write out your reasoning. Then write what you\'d actually say to the candidate who doesn\'t get it — be specific, not just "keep it constructive."',
+  },
+  {
+    slug: "driving-growth-flat-budget",
+    title: "Driving Growth on a Flat Budget",
+    dimension: "Strategic Thinking",
+    level: "Professional",
+    timeLimitMinutes: 18,
+    context:
+      "You've been asked to grow your business unit's revenue by 20% next year with no increase to headcount or budget. You have three levers available: raising prices on your most loyal customer segment (low risk of churn, uncertain ceiling), pushing harder into a new customer segment your sales team has only lightly tested (higher potential, unproven), or cutting a low-margin product line to free up capacity for the other two (frees resources but takes a near-term revenue hit). Leadership wants your plan in two weeks, and whichever lever you don't pick, someone will ask why.",
+    prompt:
+      "Write the growth plan you'd bring to leadership: which lever(s) you'd pull, in what order, and how you'd defend the ones you chose not to.",
+  },
 ];
 
 export function getCaseStudyExercise(slug: string): CaseStudyExercise | null {
