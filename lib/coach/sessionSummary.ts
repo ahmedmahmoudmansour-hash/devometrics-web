@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { renderEmail, escapeHtml } from "@/lib/email/template";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { CoachMessage } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -73,6 +74,8 @@ export async function generateSessionSummary(): Promise<{ summary?: SessionSumma
     .map((m) => `${m.role === "user" ? "CLIENT" : "COACH"}: ${m.content}`)
     .join("\n\n");
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     // Haiku 4.5 — same reasoning as the Coach route: a bounded structured
     // extraction over an existing transcript, not a scored decision.
@@ -80,6 +83,7 @@ export async function generateSessionSummary(): Promise<{ summary?: SessionSumma
       model: "claude-haiku-4-5",
       max_tokens: 1500,
       system:
+        `LANGUAGE: Write entirely in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the transcript below happens to be written in.\n\n` +
         "You summarize an AI career-coaching session on Devometrics for the client's own records. Summarize only what was actually discussed — no invented commitments, no advice beyond what the coach actually gave.",
       tools: [SUMMARY_TOOL],
       tool_choice: { type: "tool", name: "record_session_summary" },

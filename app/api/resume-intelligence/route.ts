@@ -13,6 +13,7 @@ import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { Profile } from "@/lib/supabase/types";
 
 export async function POST(request: Request) {
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
       resumeText,
       targetRole: targetRole || null,
       onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "resume_intelligence", ...usage }),
+      locale: await resolveCallerLocale(supabase, user.id),
     });
   } catch {
     return NextResponse.json({ error: "Resume analysis failed — please try again" }, { status: 502 });

@@ -33,6 +33,7 @@ import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { buildBackgroundContext } from "@/lib/gap-analysis/backgroundContext";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { GapAnalysis, Profile } from "@/lib/supabase/types";
 
 function targetDateWeeksFromNow(weeks: number): string {
@@ -291,8 +292,11 @@ export async function generateQuickPlan(targetRole: string, cvText: string, hori
 
   let inferred;
   try {
-    inferred = await inferRoleContext(trimmedRole, effectiveCvText, (usage) =>
-      recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis_role_context", ...usage })
+    inferred = await inferRoleContext(
+      trimmedRole,
+      effectiveCvText,
+      (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis_role_context", ...usage }),
+      await resolveCallerLocale(supabase, user.id)
     );
   } catch {
     return { error: "Couldn't generate a plan for that role — please try again." };
@@ -305,6 +309,7 @@ export async function generateQuickPlan(targetRole: string, cvText: string, hori
       jobDescription: inferred.inferredJobDescription,
       targetRole: trimmedRole,
       onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis", ...usage }),
+      locale: await resolveCallerLocale(supabase, user.id),
     });
   } catch {
     return { error: "Plan generation failed — please try again." };

@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -53,11 +54,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
   }
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   // Was 10 — each search can now involve multiple internal code-execution
   // rounds (see maxDuration comment above), so this bounds worst-case
   // latency more tightly. Still generous enough for a 3-5 course list.
   const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 6 };
-  const userPrompt = `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.`;
+  const userPrompt = `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.${locale === "ar" ? " Write the entire list in Modern Standard Arabic (Fusha) — the course descriptions and prose, not just a translated label — regardless of what language your search results come back in." : ""}`;
 
   try {
     // Two-phase request — same fix and same reasoning as /api/trends.

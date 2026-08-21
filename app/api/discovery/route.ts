@@ -10,6 +10,7 @@ import {
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -69,8 +70,10 @@ export async function POST(request: Request) {
 
   let summary: string;
   try {
-    summary = await synthesizeDiscoveryProfile(answers, (usage) =>
-      recordAiUsage(supabase, { organizationId, userId: user.id, feature: "discovery_synthesis", ...usage })
+    summary = await synthesizeDiscoveryProfile(
+      answers,
+      (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "discovery_synthesis", ...usage }),
+      await resolveCallerLocale(supabase, user.id)
     );
   } catch {
     return NextResponse.json({ error: "Discovery synthesis failed — please try again" }, { status: 502 });

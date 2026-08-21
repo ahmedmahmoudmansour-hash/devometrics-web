@@ -5,11 +5,20 @@ import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_TEXT = 3000;
+
+// Every drafting call in this file is read directly by an employee or
+// manager, so it needs the same locale directive Coach/Roleplay already
+// use — without it, drafts came out in English regardless of the caller's
+// active UI locale.
+function languageDirective(locale: "en" | "ar"): string {
+  return `LANGUAGE: Write entirely in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the context below happens to be written in.\n\n`;
+}
 
 // actingUserId is the admin/manager actually running this AI action — the
 // one whose budget is charged — distinct from employeeUserId, whose Gap
@@ -108,11 +117,14 @@ export async function suggestFocusAreas(reviewId: string): Promise<{ error: stri
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, ctx.actingUserId);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 800,
       system:
+        languageDirective(locale) +
         "You are a manager's assistant drafting candidate Focus Areas for someone's Impact Cycle (a performance review period). Ground every suggestion in the measured gap-analysis data given — prioritize their highest-gap, highest-priority dimensions. Never invent facts about their work that weren't provided. This is a draft an admin will review, edit, and choose which to keep — not a final decision.",
       tools: [FOCUS_AREAS_TOOL],
       tool_choice: { type: "tool", name: "record_focus_areas" },
@@ -176,11 +188,14 @@ export async function draftManagerPerspective(reviewId: string): Promise<{ error
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, ctx.actingUserId);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 800,
       system:
+        languageDirective(locale) +
         "You are helping a manager draft their Perspective (rating + feedback + development needs) for someone's Impact Cycle. Ground everything strictly in the measured Gap Analysis data, the person's own self-reflection (if given), and their Focus Area statuses — never invent achievements or shortcomings that aren't evidenced. This is a first draft the manager will personally review and edit before sharing; it should read as genuinely specific, not generic corporate praise. Development needs should read as an opportunity, not a deficiency.",
       tools: [MANAGER_PERSPECTIVE_TOOL],
       tool_choice: { type: "tool", name: "record_manager_perspective" },
@@ -282,11 +297,14 @@ export async function suggestCompetencyRatings(
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, ctx.actingUserId);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1000,
       system:
+        languageDirective(locale) +
         `You are proposing starting-point manager competency ratings (1=Needs Development, 2=Developing, 3=Meets Expectations, 4=Exceeds Expectations, 5=Outstanding) for this Impact Cycle, one per item in this list: ${labels.join(", ")}. Translate the measured Gap Analysis levels (0-100 scale) into this 1-5 scale sensibly for items that match a Gap Analysis dimension, adjusted by their self-reflection where it adds real signal; for any item with no direct Gap Analysis equivalent, use the self-reflection and general judgment instead. These are drafts a manager will individually review and adjust — never invent evidence.`,
       tools: [buildCompetencyRatingsTool(labels)],
       tool_choice: { type: "tool", name: "record_competency_ratings" },
@@ -356,11 +374,14 @@ export async function draftConclusion(reviewId: string): Promise<{ error: string
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: ctx.organizationId, userId: ctx.actingUserId });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, ctx.actingUserId);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 500,
       system:
+        languageDirective(locale) +
         "Write a short closing Conclusion (3-5 sentences) for this Impact Cycle, synthesizing the self-reflection, Manager's Perspective, Focus Area outcomes, and competency ratings given. Balanced and specific — name what actually happened, not generic praise. This is a draft the manager will edit before closing the cycle.",
       messages: [{ role: "user", content: parts.join("\n\n") }],
     });
@@ -413,11 +434,14 @@ export async function helpDraftRecommendations(reviewId: string, roughNotes: str
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 400,
       system:
+        languageDirective(locale) +
         "Turn this person's rough notes into a clear, first-person Recommendations paragraph for their own performance review — support, resources, or changes that would help them going forward. Use only what they actually wrote — never add requests or claims they didn't mention. Keep their voice; don't inflate it into corporate-speak. Plain text only, no headers or bullet points.",
       messages: [{ role: "user", content: trimmed }],
     });

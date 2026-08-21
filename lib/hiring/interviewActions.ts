@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { MAX_INTERVIEW_NOTE_LENGTH } from "@/lib/limits";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { CandidateAssessment } from "./types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -145,11 +146,14 @@ export async function generateCandidateAssessment(candidateId: string): Promise<
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1500,
       system:
+        `LANGUAGE: Write every free-text field in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the interview notes below happen to be written in.\n\n` +
         "You assess a hiring candidate's interview performance for Devometrics' Smart Hiring feature, from a hiring manager's own written notes. This is DECISION SUPPORT for the hiring team, never an automated hire/no-hire decision. Ground every judgment strictly in what the notes actually describe — never invent answers, credentials, or behavior the notes don't mention. Where the notes are thin or vague on a topic, say so as a concern rather than guessing favorably. Do not consider or mention age, gender, nationality, or anything other than the evidence in the notes.",
       tools: [RECORD_TOOL],
       tool_choice: { type: "tool", name: "record_candidate_assessment" },

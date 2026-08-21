@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Locale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -44,12 +45,13 @@ export async function inferRoleContext(
   // Same onUsage pattern as extractCompetencies (lib/gap-analysis/extract.ts)
   // — lets a caller that needs cost tracking observe real token usage
   // without changing this function's return type for callers that don't.
-  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void
+  onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void,
+  locale: Locale = "en"
 ): Promise<RoleContext> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 1024,
-    system: `You are helping someone who named a target career role but doesn't have a real job description to paste. Infer what that role typically involves, grounded in well-established, general knowledge of the role and seniority level — do not invent a fake specific job posting, company, or salary. Then estimate a realistic timeline for this specific candidate to reach it, based on what their background actually shows.`,
+    system: `LANGUAGE: Write "inferredJobDescription" and "timelineRationale" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the candidate's background below happens to be written in.\n\nYou are helping someone who named a target career role but doesn't have a real job description to paste. Infer what that role typically involves, grounded in well-established, general knowledge of the role and seniority level — do not invent a fake specific job posting, company, or salary. Then estimate a realistic timeline for this specific candidate to reach it, based on what their background actually shows.`,
     tools: [RECORD_TOOL],
     tool_choice: { type: "tool", name: "record_role_context" },
     messages: [

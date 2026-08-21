@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { NoteInsight } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -128,12 +129,15 @@ export async function analyzeNote(id: string): Promise<{ insight?: NoteInsight; 
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   let insight: NoteInsight;
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1000,
       system:
+        `LANGUAGE: Write "summary" and "actionItems" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the note below happens to be written in.\n\n` +
         "You organize a professional's private working notes inside their career-development workspace. Work only with what they actually wrote — never invent facts, names, or commitments that aren't in the note.",
       tools: [INSIGHT_TOOL],
       tool_choice: { type: "tool", name: "record_note_insight" },

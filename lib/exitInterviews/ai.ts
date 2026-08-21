@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import { MIN_INTERVIEWS_FOR_ANALYSIS } from "./constants";
 import type { ExitInterview, ExitInterviewAnalysis, ExitInterviewAnalysisRecord } from "./types";
 
@@ -93,11 +94,14 @@ export async function analyzeExitInterviewThemes(): Promise<{ analysis?: ExitInt
     })
     .join("\n\n");
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 2000,
       system:
+        `LANGUAGE: Write every free-text field in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the interview text below happens to be written in.\n\n` +
         "You analyze exit interviews for an HR team to identify root causes of turnover. This is DECISION SUPPORT, never an automated conclusion — HR reads your analysis alongside their own judgment. Ground every claim strictly in what's actually in the interview text provided; never invent a pattern that isn't supported by the data, and say so plainly when the sample is too thin or mixed to support a clear finding. Never include anything that could identify a specific departed employee by name in your output — paraphrase and anonymize.",
       tools: [ANALYSIS_TOOL],
       tool_choice: { type: "tool", name: "record_exit_interview_analysis" },

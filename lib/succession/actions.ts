@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { SuccessionCandidate, SuccessionReport } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -231,12 +232,15 @@ export async function generateSuccessionReport(roleId: string): Promise<{ error?
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId: data.organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   let report: SuccessionReport;
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 3000,
       system:
+        `LANGUAGE: Write every free-text field in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the workforce data below happens to be recorded in.\n\n` +
         "You evaluate internal succession candidates for Devometrics' enterprise talent platform. This is DECISION SUPPORT for HR, never an automated decision — your rankings inform a human conversation. Ground every judgment in the measured competency data provided; never invent qualifications, tenure, or performance history that isn't in the data. Where the data is thin (employees without Gap Analyses), say so in the risk note rather than guessing. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided.",
       tools: [RANKING_TOOL],
       tool_choice: { type: "tool", name: "record_succession_ranking" },

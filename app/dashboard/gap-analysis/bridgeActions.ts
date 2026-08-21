@@ -7,6 +7,7 @@ import { BRIDGE_CONTENT_RATE_LIMIT_WINDOW_MINUTES, BRIDGE_CONTENT_RATE_LIMIT_MAX
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { BridgeContent } from "@/lib/learning/bridgeContent";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
@@ -123,6 +124,8 @@ export async function generateBridgeContent(dimension: string) {
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   // Call 1: web-search-only, plain text — grounds external resources in
   // reality instead of letting the model invent plausible-sounding course
   // names. Same tool and reasoning as /api/trends. Split into its own call
@@ -167,6 +170,7 @@ export async function generateBridgeContent(dimension: string) {
       model: "claude-sonnet-5",
       max_tokens: 2500,
       system:
+        `LANGUAGE: Write every free-text field (diagnosticNote, recommendedActivity, microLesson, reflectionQuestion, externalResources[].description) in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the verified resources below happen to be written in.\n\n` +
         "You create personalized development content for Devometrics, a career-development platform. This is grounded, honest guidance — never invent facts, statistics, or resources that weren't given to you. The micro-lesson should be genuinely substantive (a real short lesson, not filler), and the external resources list must ONLY reformat the verified resources provided in the prompt — if none were found, return an empty array rather than inventing any.",
       tools: [BRIDGE_CONTENT_TOOL],
       tool_choice: { type: "tool", name: "record_bridge_content" },

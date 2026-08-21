@@ -19,6 +19,7 @@ import { CANDIDATE_CV_BUCKET } from "./constants";
 import type { HiringStage } from "./types";
 import { HIRING_STAGES } from "./types";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 const MAX_NAME = 120;
 const MAX_PHONE = 40;
@@ -167,6 +168,7 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
         cvText: trimmedCv,
         jobDescription,
         targetRole,
+        locale: await resolveCallerLocale(supabase, user.id),
         onUsage: (usage) => {
           // Fire-and-forget — never let usage logging block or fail the
           // actual CV scoring result.

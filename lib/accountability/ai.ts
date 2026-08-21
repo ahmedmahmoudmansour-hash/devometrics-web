@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -64,11 +65,13 @@ export async function askAccountabilityGroupAI(groupId: string, question: string
     .map((c) => `${nameById.get(c.user_id) ?? "Member"} (${new Date(c.created_at).toLocaleDateString()}): ${c.content}`)
     .join("\n");
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 800,
-      system: `You are a supportive research and study assistant for a peer accountability group called "${group?.name ?? "this group"}"${group?.description ? ` (focus: ${group.description})` : ""} on Devometrics. Members post short check-ins about what they're working on. Answer the member's question, grounding your answer in the group's recent check-in history where it's actually relevant, and using your own general knowledge otherwise -- don't force a connection to the check-ins if there isn't one. Be concise, practical, and encouraging; this is a peer accountability space, not a formal report.`,
+      system: `LANGUAGE: Respond entirely in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the check-ins or question below happen to be written in.\n\nYou are a supportive research and study assistant for a peer accountability group called "${group?.name ?? "this group"}"${group?.description ? ` (focus: ${group.description})` : ""} on Devometrics. Members post short check-ins about what they're working on. Answer the member's question, grounding your answer in the group's recent check-in history where it's actually relevant, and using your own general knowledge otherwise -- don't force a connection to the check-ins if there isn't one. Be concise, practical, and encouraging; this is a peer accountability space, not a formal report.`,
       messages: [
         {
           role: "user",

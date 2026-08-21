@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { cookies } from "next/headers";
 import { buildPlatformChatSystemPrompt } from "@/lib/platformChat/systemPrompt";
 import { isRateLimited } from "@/lib/platformChat/rateLimiter";
 import { MAX_PLATFORM_CHAT_MESSAGE_LENGTH, MAX_PLATFORM_CHAT_HISTORY } from "@/lib/limits";
+import { LOCALE_COOKIE, resolveApiLocale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -34,12 +36,18 @@ export async function POST(request: Request) {
   // and resubmitted each turn, capped to keep the request bounded.
   const trimmedHistory = (history ?? []).slice(-MAX_PLATFORM_CHAT_HISTORY);
 
+  // No signed-in user on this unauthenticated widget, so no profile
+  // fallback — just the locale cookie the site's own toggle sets (same
+  // cookie anonymous marketing-site visitors already get, per
+  // lib/i18n/request.ts).
+  const locale = resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, undefined);
+
   let reply: string;
   try {
     const completion = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 512,
-      system: buildPlatformChatSystemPrompt(),
+      system: buildPlatformChatSystemPrompt(locale),
       messages: [...trimmedHistory, { role: "user" as const, content: message }],
     });
     reply = completion.content

@@ -11,6 +11,7 @@ import {
 import { isRateLimitExempt } from "@/lib/rateLimit/isExempt";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
       prompt: caseStudy.prompt,
       responseText,
       onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "case_study_scoring", ...usage }),
+      locale: await resolveCallerLocale(supabase, user.id),
     });
     return NextResponse.json(result);
   } catch {

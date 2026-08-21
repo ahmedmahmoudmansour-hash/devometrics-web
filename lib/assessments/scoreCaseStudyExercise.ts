@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Locale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -50,17 +51,19 @@ export async function scoreCaseStudyExercise({
   prompt,
   responseText,
   onUsage,
+  locale = "en",
 }: {
   dimension: string;
   context: string;
   prompt: string;
   responseText: string;
   onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
+  locale?: Locale;
 }): Promise<ExerciseReport> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 1500,
-    system: `You are scoring a timed Assessment Centre case study response for Devometrics, targeting the "${dimension}" competency. This is a heuristic judgment call, not a validated psychometric instrument. Score based on the concreteness and rigor of the reasoning actually shown — did the person name the real tradeoff, consider the people affected, make an actual decision rather than hedge? A short, decisive, well-reasoned answer should score as well as a longer one. Never invent detail the person didn't write, and never fabricate specifics about the scenario beyond what was given.`,
+    system: `LANGUAGE: Write "strengths", "gaps", and "recommendation" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the response below happens to be written in.\n\nYou are scoring a timed Assessment Centre case study response for Devometrics, targeting the "${dimension}" competency. This is a heuristic judgment call, not a validated psychometric instrument. Score based on the concreteness and rigor of the reasoning actually shown — did the person name the real tradeoff, consider the people affected, make an actual decision rather than hedge? A short, decisive, well-reasoned answer should score as well as a longer one. Never invent detail the person didn't write, and never fabricate specifics about the scenario beyond what was given.`,
     tools: [RECORD_TOOL],
     tool_choice: { type: "tool", name: "record_exercise_report" },
     messages: [

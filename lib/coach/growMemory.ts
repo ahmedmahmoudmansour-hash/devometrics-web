@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Locale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -47,7 +48,8 @@ const UPDATE_TOOL = {
 export async function updateGrowMemory(
   priorMemory: GrowState | null,
   latestUserMessage: string,
-  latestAssistantReply: string
+  latestAssistantReply: string,
+  locale: Locale = "en"
 ): Promise<GrowMemoryResult> {
   const priorContext = priorMemory
     ? `Goal: ${priorMemory.goal || "(none yet)"}\nReality: ${priorMemory.reality || "(none yet)"}\nOptions: ${priorMemory.options || "(none yet)"}\nWill: ${priorMemory.will || "(none yet)"}`
@@ -57,6 +59,7 @@ export async function updateGrowMemory(
     model: "claude-haiku-4-5",
     max_tokens: 512,
     system:
+      `LANGUAGE: Write every field in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"} — this memory is shown directly to the user in their own interface, regardless of what language the prior memory or latest exchange below happen to be written in.\n\n` +
       "You maintain a running GROW-model (Goal, Reality, Options, Will) summary of an ongoing career-coaching relationship. Given the prior summary and the latest exchange, call update_grow_memory with the new current state. Carry forward anything still true; do not discard established context just because it wasn't repeated this turn. Only change a field if this exchange actually moved it forward.",
     tool_choice: { type: "tool", name: "update_grow_memory" },
     tools: [UPDATE_TOOL],

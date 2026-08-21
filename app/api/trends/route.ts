@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -65,7 +66,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Job title is too long" }, { status: 400 });
   }
 
-  const jobTitleKey = normalizeJobTitle(jobTitle);
+  const locale = await resolveCallerLocale(supabase, user.id);
+  // Locale-suffixed — the cache is shared across ALL users (see migration
+  // 0053's header), so without this an Arabic-UI user could be served a
+  // cached English summary (or vice versa) generated for someone else's
+  // locale. Old pre-locale keys simply become unreachable, harmless orphans.
+  const jobTitleKey = `${normalizeJobTitle(jobTitle)}::${locale}`;
   const encoder = new TextEncoder();
 
   // Cache check — a query error here (e.g. migration 0053 not run yet)
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
   // meaningfully hurting thoroughness (observed live: a real run only used
   // 3 even with 4 available).
   const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 3 };
-  const userPrompt = `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.`;
+  const userPrompt = `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.${locale === "ar" ? " Write the entire summary in Modern Standard Arabic (Fusha) — the trend content and prose, not just a translated label — regardless of what language your search results come back in." : ""}`;
 
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {

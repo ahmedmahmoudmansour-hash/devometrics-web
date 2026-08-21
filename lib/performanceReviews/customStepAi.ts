@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 
 // Kept separate from ai.ts on purpose, so that file's five-function
 // core-only list stays visibly unchanged — this function is deliberately
@@ -59,11 +60,14 @@ export async function draftCustomStepResponse(
         ? "Write a short comment (1-3 sentences) explaining a 1-5 rating."
         : "Write a short paragraph response (3-6 sentences).";
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 400,
       system:
+        `LANGUAGE: Write entirely in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the rough notes below happen to be written in.\n\n` +
         `Turn this person's rough notes into a clear written response for a "${step.title}" step in a performance workflow${step.description ? ` (${step.description})` : ""}. ${shapeInstruction} Use only what they actually wrote — never add facts, names, or claims they didn't mention. Keep their voice. Plain text only, no headers or bullet points.`,
       messages: [{ role: "user", content: trimmedNotes || "(No rough notes given — write a brief, generic placeholder they can edit.)" }],
     });

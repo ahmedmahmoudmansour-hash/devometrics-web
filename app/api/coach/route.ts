@@ -180,6 +180,7 @@ export async function POST(request: Request) {
     content: message,
   });
 
+  const locale = resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language);
   const systemPrompt = buildCoachSystemPrompt({
     profile: profile ?? null,
     plans: plans ?? [],
@@ -189,7 +190,7 @@ export async function POST(request: Request) {
     assessmentResults: latestAssessments,
     discoveryProfile: discoveryProfile ?? null,
     growMemory: growMemory ?? null,
-    locale: resolveApiLocale((await cookies()).get(LOCALE_COOKIE)?.value, profile?.language),
+    locale,
   });
 
   const conversation = [
@@ -277,7 +278,8 @@ export async function POST(request: Request) {
             ? { goal: growMemory.goal ?? "", reality: growMemory.reality ?? "", options: growMemory.options ?? "", will: growMemory.will ?? "" }
             : null,
           message,
-          reply
+          reply,
+          locale
         );
         await supabase.from("coach_grow_memory").upsert({
           user_id: user.id,

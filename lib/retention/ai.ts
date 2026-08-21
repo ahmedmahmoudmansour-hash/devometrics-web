@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import { gatherFlightRiskSignals, computeConfidence } from "./signals";
 import type { FlightRiskScore } from "./types";
 
@@ -70,11 +71,14 @@ export async function computeFlightRiskScore(employeeUserId: string): Promise<{ 
 
   const managerNotesBlock = managerNotes.length > 0 ? `\n\nMANAGER NOTES (verbatim, manager-authored only — never AI coach conversations):\n${managerNotes.join("\n---\n")}` : "";
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1500,
       system:
+        `LANGUAGE: Write "contributingFactors" and "suggestedActions" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the signals below happen to be written in.\n\n` +
         "You assess employee flight risk for an HR team's retention planning. This is DECISION SUPPORT, never an automated conclusion — a human reads this alongside their own judgment before acting. Ground every claim strictly in the signals provided; never invent a pattern, sentiment, or fact the data doesn't support, and say so plainly when the record is thin rather than forcing confidence. Never consider or mention age, gender, nationality, disability, or any protected characteristic — reason only from the professional/engagement signals given.",
       tools: [FLIGHT_RISK_TOOL],
       tool_choice: { type: "tool", name: "record_flight_risk_assessment" },

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { COMPETENCY_DIMENSIONS, sanitizeCompetencyScores, type CompetencyScore } from "./dimensions";
+import type { Locale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -85,6 +86,7 @@ export async function extractCompetencies({
   targetRole,
   performanceData,
   onUsage,
+  locale = "en",
 }: {
   cvText: string;
   jobDescription: string;
@@ -95,6 +97,7 @@ export async function extractCompetencies({
   // this function's return type for its other two callers (personal Gap
   // Analysis), which don't need it.
   onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
+  locale?: Locale;
 }): Promise<CompetencyScore[]> {
   const response = await anthropic.messages.create({
     // Sonnet 5 handles this well for the vast majority of CVs. Escalate to
@@ -103,7 +106,7 @@ export async function extractCompetencies({
     // that escalation needs evidence, not a default.
     model: "claude-sonnet-5",
     max_tokens: 4096,
-    system: `You are the Devometrics competency extraction engine. Score the candidate against the target role across exactly these ${COMPETENCY_DIMENSIONS.length} fixed dimensions: ${COMPETENCY_DIMENSIONS.join(", ")}.
+    system: `LANGUAGE: Write "rationale" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the CV/job description below happen to be written in.\n\nYou are the Devometrics competency extraction engine. Score the candidate against the target role across exactly these ${COMPETENCY_DIMENSIONS.length} fixed dimensions: ${COMPETENCY_DIMENSIONS.join(", ")}.
 
 FRAMEWORK: Ground your scoring approach in established competency-science, not free-floating judgment. Specifically: use behaviorally-anchored reasoning in the style of Boyatzis' competency model (score what a person actually demonstrably does, not traits or potential), draw on the breadth of dimensions covered by SHL's Universal Competency Framework and O*NET's occupational competency taxonomy when judging what "Technical Skills," "Leadership," "Strategic Thinking," etc. concretely look like at different levels, and apply the same current-vs-target gap logic used in structured competency-gap methodologies. Do not cite specific papers, journals, or publication years — you do not have live access to any research database, and naming a specific citation you cannot verify would be fabrication. Naming the general, well-established frameworks above is honest; inventing a specific recent study is not.
 

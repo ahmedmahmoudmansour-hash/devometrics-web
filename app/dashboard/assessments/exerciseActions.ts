@@ -10,6 +10,7 @@ import { CASE_STUDY_RATE_LIMIT_WINDOW_MINUTES, CASE_STUDY_RATE_LIMIT_MAX_RUNS } 
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { hasOrganizationMembership } from "@/lib/organizations/membership";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { Profile } from "@/lib/supabase/types";
 
 const MAX_RESPONSE_LENGTH = 6000;
@@ -86,6 +87,7 @@ export async function submitExerciseAttempt(attemptId: string, slug: string, res
       prompt: exercise.prompt,
       responseText: trimmed,
       onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "case_study_scoring", ...usage }),
+      locale: await resolveCallerLocale(supabase, user.id),
     });
   } catch {
     return { error: "Scoring is temporarily unavailable — please try submitting again." };

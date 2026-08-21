@@ -8,6 +8,7 @@ import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { runHighPotentialToSuccession } from "@/lib/automations/recipes";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import {
   MAX_CV_LENGTH,
@@ -107,8 +108,11 @@ export async function POST(request: Request) {
   let timelineRationale: string | null = null;
   if (!effectiveJobDescription) {
     try {
-      const inferred = await inferRoleContext(targetRole, effectiveCvText, (usage) =>
-        recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis_role_context", ...usage })
+      const inferred = await inferRoleContext(
+        targetRole,
+        effectiveCvText,
+        (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis_role_context", ...usage }),
+        await resolveCallerLocale(supabase, user.id)
       );
       effectiveJobDescription = inferred.inferredJobDescription;
       roleContextInferred = true;
@@ -130,6 +134,7 @@ export async function POST(request: Request) {
       targetRole,
       performanceData,
       onUsage: (usage) => recordAiUsage(supabase, { organizationId, userId: user.id, feature: "gap_analysis", ...usage }),
+      locale: await resolveCallerLocale(supabase, user.id),
     });
   } catch {
     return NextResponse.json({ error: "Gap analysis failed — please try again" }, { status: 502 });

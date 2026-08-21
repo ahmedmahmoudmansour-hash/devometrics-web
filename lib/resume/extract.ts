@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { sanitizeResumeAnalysis, type ResumeAnalysisResult } from "./types";
+import type { Locale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -71,15 +72,17 @@ export async function extractResumeAnalysis({
   resumeText,
   targetRole,
   onUsage,
+  locale = "en",
 }: {
   resumeText: string;
   targetRole: string | null;
   onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
+  locale?: Locale;
 }): Promise<ResumeAnalysisResult> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 4096,
-    system: `You are the Devometrics Resume Intelligence engine. Analyze the resume across four dimensions in a single pass: ATS compatibility, keyword gap, achievement quality, and visibility.
+    system: `LANGUAGE: Write "atsIssues", "weakBullets.issue", "weakBullets.rewrite", and "visibilityRecommendations" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the resume below happens to be written in. Leave "weakBullets.original" exactly as written in the resume — never translate a verbatim quote.\n\nYou are the Devometrics Resume Intelligence engine. Analyze the resume across four dimensions in a single pass: ATS compatibility, keyword gap, achievement quality, and visibility.
 
 Ground every finding in the actual resume text — do not invent bullets, numbers, or achievements that aren't there. When rewriting a weak bullet, only strengthen its phrasing/structure; never fabricate a metric or outcome the original doesn't support. If a target role is provided, weight keyword analysis against it; otherwise infer the candidate's field from the resume itself and use general industry-standard keywords.
 

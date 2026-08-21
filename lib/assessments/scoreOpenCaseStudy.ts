@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Locale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -29,17 +30,19 @@ export async function scoreOpenCaseStudy({
   prompt,
   responseText,
   onUsage,
+  locale = "en",
 }: {
   assessmentName: string;
   scenario: string;
   prompt: string;
   responseText: string;
   onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number }) => void;
+  locale?: Locale;
 }): Promise<{ score: number; insight: string }> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-5",
     max_tokens: 1024,
-    system: `You are scoring one open-ended case study response as part of the Devometrics Assessment Center, for the "${assessmentName}" competency. This is a heuristic judgment call, not a validated psychometric instrument — score based on the concreteness, reasoning, and self-awareness actually shown in the response, not on writing quality or length. A short, specific, honest answer should score as well as a longer polished one. Ground the insight in something specific the person actually wrote — never invent detail they didn't provide.`,
+    system: `LANGUAGE: Write "insight" in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the response below happens to be written in.\n\nYou are scoring one open-ended case study response as part of the Devometrics Assessment Center, for the "${assessmentName}" competency. This is a heuristic judgment call, not a validated psychometric instrument — score based on the concreteness, reasoning, and self-awareness actually shown in the response, not on writing quality or length. A short, specific, honest answer should score as well as a longer polished one. Ground the insight in something specific the person actually wrote — never invent detail they didn't provide.`,
     tools: [RECORD_TOOL],
     tool_choice: { type: "tool", name: "record_case_study_score" },
     messages: [

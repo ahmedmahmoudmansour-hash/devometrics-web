@@ -15,6 +15,7 @@ import { BIG_FIVE_TRAITS, bigFiveInterpretation } from "@/lib/personality/bigFiv
 import { runHireWelcome, runHireToProbation } from "@/lib/automations/recipes";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -1027,12 +1028,15 @@ export async function generateEmployeeAssessmentSummary(employeeUserId: string) 
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
   let summary: { overallSummary: string; keyStrengths: string[]; developmentPriorities: string[]; standingNote: string };
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-5",
       max_tokens: 1500,
       system:
+        `LANGUAGE: Write the entire report in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the measured data below happens to be recorded in.\n\n` +
         "You write professional assessment-report narratives for Devometrics' enterprise talent platform, read by HR and people managers. This is decision support, not a verdict — ground every claim strictly in the measured data provided, never invent scores, tenure, or performance history that isn't given. Where data is thin (few or no assessments run), say so plainly rather than filling the gap with generic praise. Do not consider or mention age, gender, nationality, or anything other than the competency evidence provided. If working-style/Big Five context is given, use it only to suggest how someone might prefer to be coached or what kind of assignments might suit their style — never as a strength, weakness, or fitness judgment, and never as a factor in the keyStrengths or developmentPriorities lists. If a Cognitive Reasoning result is given, treat it the same way — it is a self-development input, never a general-intelligence or hiring/promotion judgment, and should not be framed as a strength or weakness. Write like a careful analyst, not a marketing brochure.",
       tools: [ASSESSMENT_SUMMARY_TOOL],
       tool_choice: { type: "tool", name: "record_assessment_summary" },

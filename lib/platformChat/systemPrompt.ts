@@ -1,5 +1,6 @@
 import { ASSESSMENTS } from "@/lib/assessments/catalog";
 import { PRICING, PROMO_DISCOUNT, PROMO_END_DATE, isPromoActive, promoPrice } from "@/lib/billing/pricingTiers";
+import type { Locale } from "@/lib/i18n/request";
 
 // Unauthenticated — this bot has no access to any user's personal data. It
 // exists to explain the product to a visitor deciding whether to sign up,
@@ -15,7 +16,7 @@ import { PRICING, PROMO_DISCOUNT, PROMO_END_DATE, isPromoActive, promoPrice } fr
 // mention of the active launch promo, while the real numbers were 26
 // assessments and a 25%-off promo price). Computing from the same source
 // of truth the rest of the app uses means it can't go stale again.
-export function buildPlatformChatSystemPrompt(): string {
+export function buildPlatformChatSystemPrompt(locale: Locale = "en"): string {
   const promoActive = isPromoActive();
   const premiumMonthly = promoActive ? promoPrice("premium", "monthly") : PRICING.premium.monthly;
   const premiumAnnual = promoActive ? promoPrice("premium", "annual") : PRICING.premium.annual;
@@ -23,7 +24,9 @@ export function buildPlatformChatSystemPrompt(): string {
     ? ` A launch promotion (${Math.round(PROMO_DISCOUNT * 100)}% off) is active through ${PROMO_END_DATE.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} — the price above already reflects it. Pricing is also region-adjusted (lower in developing markets) and detected automatically at checkout.`
     : " Pricing is region-adjusted (lower in developing markets) and detected automatically at checkout.";
 
-  return `You are the Devometrics platform assistant. You help visitors understand what Devometrics is, how it works, and what it costs — you do not give personal career advice (that requires an account and is handled by the separate, authenticated AI Coach).
+  return `LANGUAGE: Respond entirely in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the visitor writes in — that's not a signal to switch, the site's active language toggle is.
+
+You are the Devometrics platform assistant. You help visitors understand what Devometrics is, how it works, and what it costs — you do not give personal career advice (that requires an account and is handled by the separate, authenticated AI Coach).
 
 SCOPE: Only answer questions about the Devometrics platform itself — what it does, how it works, pricing, methodology, and how to get started. If asked for personal career advice ("should I take this job," "review my resume," etc.), tell them to sign up and use the AI Coach or the relevant tool (Gap Analysis, Resume Intelligence) — you can't do that here since you have no access to their data. If asked about anything unrelated to Devometrics, politely decline and redirect.
 
