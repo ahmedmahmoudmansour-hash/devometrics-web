@@ -86,9 +86,20 @@ export default function OrgChartView({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [savedViews, setSavedViews] = useState<OrgChartSavedView[]>([]);
   const [optimisticOverrides, setOptimisticOverrides] = useState<Map<string, string | null>>(new Map());
+  // Optimistic state for the three reparent shapes that previously had none
+  // (member->position, position->member, position->position) — without
+  // this, dragging one of those felt stuck/laggy for the whole round trip
+  // to the server and back, unlike a real-to-real drag which updates
+  // instantly via optimisticOverrides above.
+  const [optimisticPositionParentOverrides, setOptimisticPositionParentOverrides] = useState<
+    Map<string, { parentPositionId: string | null; parentMemberUserId: string | null }>
+  >(new Map());
+  const [optimisticMemberPositionOverrides, setOptimisticMemberPositionOverrides] = useState<Map<string, string | null>>(new Map());
   const [activeDragTag, setActiveDragTag] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSeenRows, setLastSeenRows] = useState(rows);
+  const [lastSeenPositions, setLastSeenPositions] = useState(positions);
+  const [lastSeenMemberManagerPositions, setLastSeenMemberManagerPositions] = useState(memberManagerPositions);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [placingAnnotation, setPlacingAnnotation] = useState(false);
   // The saved view whose notes/config are currently "live" on screen —
@@ -122,15 +133,38 @@ export default function OrgChartView({
     setLastSeenRows(rows);
     setOptimisticOverrides(new Map());
   }
+  if (positions !== lastSeenPositions) {
+    setLastSeenPositions(positions);
+    setOptimisticPositionParentOverrides(new Map());
+  }
+  if (memberManagerPositions !== lastSeenMemberManagerPositions) {
+    setLastSeenMemberManagerPositions(memberManagerPositions);
+    setOptimisticMemberPositionOverrides(new Map());
+  }
 
   const effectiveRows = useMemo(() => {
     if (optimisticOverrides.size === 0) return rows;
     return rows.map((r) => (optimisticOverrides.has(r.userId) ? { ...r, managerUserId: optimisticOverrides.get(r.userId) ?? null } : r));
   }, [rows, optimisticOverrides]);
 
+  const effectivePositions = useMemo(() => {
+    if (optimisticPositionParentOverrides.size === 0) return positions;
+    return positions.map((p) => (optimisticPositionParentOverrides.has(p.id) ? { ...p, ...optimisticPositionParentOverrides.get(p.id)! } : p));
+  }, [positions, optimisticPositionParentOverrides]);
+
+  const effectiveMemberManagerPositionsMap = useMemo(() => {
+    if (optimisticMemberPositionOverrides.size === 0) return memberManagerPositionsMap;
+    const next = new Map(memberManagerPositionsMap);
+    for (const [empId, posId] of optimisticMemberPositionOverrides) {
+      if (posId) next.set(empId, posId);
+      else next.delete(empId);
+    }
+    return next;
+  }, [memberManagerPositionsMap, optimisticMemberPositionOverrides]);
+
   const mergedEdgeMap = useMemo(
-    () => buildMergedManagerEdgeMap(effectiveRows, positions, memberManagerPositionsMap),
-    [effectiveRows, positions, memberManagerPositionsMap]
+    () => buildMergedManagerEdgeMap(effectiveRows, effectivePositions, effectiveMemberManagerPositionsMap),
+    [effectiveRows, effectivePositions, effectiveMemberManagerPositionsMap]
   );
 
   const visibleIds = useMemo(() => {
@@ -151,8 +185,8 @@ export default function OrgChartView({
   }, [effectiveRows, positions, config.filters]);
 
   const forest = useMemo(
-    () => buildMergedReportingForest(effectiveRows, positions, memberManagerPositionsMap),
-    [effectiveRows, positions, memberManagerPositionsMap]
+    () => buildMergedReportingForest(effectiveRows, effectivePositions, effectiveMemberManagerPositionsMap),
+    [effectiveRows, effectivePositions, effectiveMemberManagerPositionsMap]
   );
   const prunedForest = useMemo(() => pruneMergedForestForDisplay(forest, visibleIds), [forest, visibleIds]);
   const displayForest = useMemo(
@@ -228,13 +262,45 @@ export default function OrgChartView({
       return;
     }
     setError(null);
+    if (d.kind === "member") {
+      applyMemberReparentToPosition(d.id, target.id);
+    } else {
+      const parentPositionId = target.kind === "position" ? target.id : null;
+      const parentMemberUserId = target.kind === "member" ? target.id : null;
+      setOptimisticPositionParentOverrides((prev) => new Map(prev).set(d.id, { parentPositionId, parentMemberUserId }));
+      startTransition(async () => {
+        const result = await setPositionParent(d.id, parentPositionId, parentMemberUserId);
+        if (result && "error" in result) {
+          setError(result.error);
+          setOptimisticPositionParentOverrides((prev) => {
+            const next = new Map(prev);
+            next.delete(d.id);
+            return next;
+          });
+        } else {
+          router.refresh();
+        }
+      });
+    }
+  }
+
+  // Shared by both the drag-and-drop path and the "reports to" dropdown —
+  // same optimistic-set/rollback-on-error shape as applyReparent (member ->
+  // member), just against the member->position overlay instead of rows.
+  function applyMemberReparentToPosition(employeeUserId: string, positionId: string) {
+    setOptimisticMemberPositionOverrides((prev) => new Map(prev).set(employeeUserId, positionId));
     startTransition(async () => {
-      const result =
-        d.kind === "member"
-          ? await setMemberManagerPosition(d.id, target.id)
-          : await setPositionParent(d.id, target.kind === "position" ? target.id : null, target.kind === "member" ? target.id : null);
-      if (result && "error" in result) setError(result.error);
-      else router.refresh();
+      const result = await setMemberManagerPosition(employeeUserId, positionId);
+      if (result && "error" in result) {
+        setError(result.error);
+        setOptimisticMemberPositionOverrides((prev) => {
+          const next = new Map(prev);
+          next.delete(employeeUserId);
+          return next;
+        });
+      } else {
+        router.refresh();
+      }
     });
   }
 
@@ -248,11 +314,7 @@ export default function OrgChartView({
       applyReparent(employeeUserId, parsed.id);
     } else {
       setError(null);
-      startTransition(async () => {
-        const result = await setMemberManagerPosition(employeeUserId, parsed.id);
-        if (result && "error" in result) setError(result.error);
-        else router.refresh();
-      });
+      applyMemberReparentToPosition(employeeUserId, parsed.id);
     }
   }
 
@@ -726,8 +788,8 @@ export default function OrgChartView({
               value={
                 selectedMemberRow.managerUserId
                   ? `member:${selectedMemberRow.managerUserId}`
-                  : memberManagerPositionsMap.get(selectedMemberRow.userId)
-                    ? `position:${memberManagerPositionsMap.get(selectedMemberRow.userId)}`
+                  : effectiveMemberManagerPositionsMap.get(selectedMemberRow.userId)
+                    ? `position:${effectiveMemberManagerPositionsMap.get(selectedMemberRow.userId)}`
                     : ""
               }
               onChange={(e) => handleMemberReportsToChange(selectedMemberRow.userId, e.target.value)}
