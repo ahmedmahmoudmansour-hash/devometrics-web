@@ -140,24 +140,20 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
 
   // Every query below only depends on membership.organization_id, so they
   // run as one Promise.all batch instead of the sequential round-trips this
-  // used to be. Each stays a SEPARATE narrow select (rather than one wide
-  // organization_members.select("*")) deliberately: several of these
-  // columns were added in later migrations, and a missing column on one
-  // must never break another — a Supabase query error surfaces as `data:
-  // null` on that destructured result, not a thrown rejection, so grouping
-  // them into Promise.all preserves that same per-query isolation while
-  // paying for one round trip instead of five.
-  const [
-    { data: contactFields },
-    { data: members },
-    { data: invites },
-    { data: competencies },
-    { data: memberLocations },
-    { data: inviteLocations },
-    { data: memberHrFields },
-    { data: memberPerformance },
-    { data: memberManagers },
-  ] = await Promise.all([
+  // used to be. The organization_members columns (below) are ALL fetched in
+  // one single select rather than 5 separate narrow ones — that used to be
+  // split apart deliberately (department/country from 0048, manager/
+  // business-unit/location/archived from 0049, performance_rating from
+  // 0068, manager_user_id from 0072 each got their own query, so a column
+  // missing because one of those migrations hadn't run yet couldn't break
+  // the others). All four of those migrations are long since applied and
+  // stable, so that isolation isn't earning its cost anymore here — a
+  // Supabase query error still surfaces as `data: null` on the whole
+  // destructured result either way, same failure mode, just now paying for
+  // one round trip to this table instead of five. organizations/invites/
+  // competencies stay as their own separate selects since they're
+  // different tables, not different column-slices of the same one.
+  const [{ data: contactFields }, { data: members }, { data: invites }, { data: competencies }, { data: inviteLocations }] = await Promise.all([
     supabase
       .from("organizations")
       .select(
@@ -175,9 +171,31 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       }>(),
     supabase
       .from("organization_members")
-      .select("id, user_id, title, role, created_at")
+      .select(
+        "id, user_id, title, role, created_at, department, country, manager_name, manager_email, business_unit, location, employee_id, archived, performance_rating, performance_rating_note, performance_rating_updated_at, manager_user_id"
+      )
       .eq("organization_id", membership.organization_id)
-      .returns<{ id: string; user_id: string; title: string | null; role: string; created_at: string }[]>(),
+      .returns<
+        {
+          id: string;
+          user_id: string;
+          title: string | null;
+          role: string;
+          created_at: string;
+          department: string | null;
+          country: string | null;
+          manager_name: string | null;
+          manager_email: string | null;
+          business_unit: string | null;
+          location: string | null;
+          employee_id: string | null;
+          archived: boolean;
+          performance_rating: number | null;
+          performance_rating_note: string;
+          performance_rating_updated_at: string | null;
+          manager_user_id: string | null;
+        }[]
+      >(),
     supabase
       .from("organization_invites")
       .select("id, email, title, created_at")
@@ -194,51 +212,15 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       .eq("organization_id", membership.organization_id)
       .order("created_at", { ascending: true })
       .returns<OrganizationCompetency[]>(),
-    // department/country (migration 0048) — a missing column here must
-    // never take down the members/invites lists the rest of this dashboard
-    // depends on.
-    supabase
-      .from("organization_members")
-      .select("user_id, department, country")
-      .eq("organization_id", membership.organization_id)
-      .returns<{ user_id: string; department: string | null; country: string | null }[]>(),
     supabase
       .from("organization_invites")
       .select("id, department, country")
       .eq("organization_id", membership.organization_id)
       .is("accepted_at", null)
       .returns<{ id: string; department: string | null; country: string | null }[]>(),
-    // manager/business unit/location/archived (migration 0049) — before
-    // that migration runs, this yields nothing and every member simply
-    // shows as active with blank HR fields.
-    supabase
-      .from("organization_members")
-      .select("id, user_id, manager_name, manager_email, business_unit, location, employee_id, archived")
-      .eq("organization_id", membership.organization_id)
-      .returns<{ id: string; user_id: string; manager_name: string | null; manager_email: string | null; business_unit: string | null; location: string | null; employee_id: string | null; archived: boolean }[]>(),
-    // Performance rating (migration 0068) — same isolated-query pattern: a
-    // missing column before that migration runs just yields nothing, and
-    // every member shows as unrated rather than breaking the roster.
-    supabase
-      .from("organization_members")
-      .select("user_id, performance_rating, performance_rating_note, performance_rating_updated_at")
-      .eq("organization_id", membership.organization_id)
-      .returns<{ user_id: string; performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }[]>(),
-    // Reporting lines (migration 0072) — same isolated-query pattern: a
-    // missing column before that migration runs just yields nothing, and
-    // every member shows as unplaced in the reporting line rather than
-    // breaking the roster.
-    supabase
-      .from("organization_members")
-      .select("user_id, manager_user_id")
-      .eq("organization_id", membership.organization_id)
-      .returns<{ user_id: string; manager_user_id: string | null }[]>(),
   ]);
-  const locationByMemberUser = new Map((memberLocations ?? []).map((m) => [m.user_id, m]));
   const locationByInviteId = new Map((inviteLocations ?? []).map((i) => [i.id, i]));
-  const hrByMemberUser = new Map((memberHrFields ?? []).map((m) => [m.user_id, m]));
-  const performanceByMemberUser = new Map((memberPerformance ?? []).map((m) => [m.user_id, m]));
-  const managerByMemberUser = new Map((memberManagers ?? []).map((m) => [m.user_id, m.manager_user_id]));
+  const memberByUser = new Map((members ?? []).map((m) => [m.user_id, m]));
 
   const pendingInvites = (invites ?? []).map((invite) => ({
     ...invite,
@@ -248,7 +230,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
   const organizationCompetencies = competencies ?? [];
   // Archived members stay in the database for history but drop out of the
   // workforce view and every aggregate below.
-  const activeMembers = (members ?? []).filter((m) => hrByMemberUser.get(m.user_id)?.archived !== true);
+  const activeMembers = (members ?? []).filter((m) => m.archived !== true);
   const memberIds = activeMembers.map((m) => m.user_id);
   const titleByUser = new Map(activeMembers.map((m) => [m.user_id, m.title]));
   const roleByUser = new Map(activeMembers.map((m) => [m.user_id, m.role]));
@@ -338,13 +320,13 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       name: p.full_name ?? "—",
       email: p.email ?? "—",
       title: titleByUser.get(p.id) ?? null,
-      department: locationByMemberUser.get(p.id)?.department ?? null,
-      country: locationByMemberUser.get(p.id)?.country ?? null,
-      managerName: hrByMemberUser.get(p.id)?.manager_name ?? null,
-      managerEmail: hrByMemberUser.get(p.id)?.manager_email ?? null,
-      businessUnit: hrByMemberUser.get(p.id)?.business_unit ?? null,
-      location: hrByMemberUser.get(p.id)?.location ?? null,
-      employeeId: hrByMemberUser.get(p.id)?.employee_id ?? null,
+      department: memberByUser.get(p.id)?.department ?? null,
+      country: memberByUser.get(p.id)?.country ?? null,
+      managerName: memberByUser.get(p.id)?.manager_name ?? null,
+      managerEmail: memberByUser.get(p.id)?.manager_email ?? null,
+      businessUnit: memberByUser.get(p.id)?.business_unit ?? null,
+      location: memberByUser.get(p.id)?.location ?? null,
+      employeeId: memberByUser.get(p.id)?.employee_id ?? null,
       avatarUrl: p.avatar_url ?? null,
       careerHealthScore: analysis?.career_health_score ?? null,
       dimensionLevels,
@@ -353,10 +335,10 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       milestonesDone: stats.done,
       milestonesTotal: stats.total,
       pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
-      performanceRating: performanceByMemberUser.get(p.id)?.performance_rating ?? null,
-      performanceRatingNote: performanceByMemberUser.get(p.id)?.performance_rating_note ?? "",
-      performanceRatingUpdatedAt: performanceByMemberUser.get(p.id)?.performance_rating_updated_at ?? null,
-      managerUserId: managerByMemberUser.get(p.id) ?? null,
+      performanceRating: memberByUser.get(p.id)?.performance_rating ?? null,
+      performanceRatingNote: memberByUser.get(p.id)?.performance_rating_note ?? "",
+      performanceRatingUpdatedAt: memberByUser.get(p.id)?.performance_rating_updated_at ?? null,
+      managerUserId: memberByUser.get(p.id)?.manager_user_id ?? null,
       role: roleByUser.get(p.id) === "admin" ? "admin" : "member",
       memberSince: memberSinceByUser.get(p.id) ?? null,
     };
