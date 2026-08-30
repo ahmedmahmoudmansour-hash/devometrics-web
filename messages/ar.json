@@ -10,7 +10,7 @@
     "methodology": "المنهجية",
     "pricing": "الأسعار",
     "forEnterprise": "للشركات",
-    "getEarlyAccess": "احصل على وصول مبكر",
+    "getEarlyAccess": "أنشئ حسابك مجانًا",
     "audienceLabel": "اختر مسارك",
     "audienceIndividualTitle": "فرد",
     "audienceIndividualDescription": "تتبّع نموك الشخصي — اطّلع على فجوات كفاءاتك واحصل على خطة مرتبة بالأولوية لسدها.",
@@ -24,13 +24,12 @@
     "toggleMenu": "فتح القائمة"
   },
   "hero": {
-    "badge": "الآن في مرحلة الوصول المبكر — أنشئ حسابك مجانًا",
     "headlinePrefix": "كل خطوة مهنية،",
     "headlineHighlight": "مبنية على أدلة",
     "subheadline": "اعرف إن كنت جاهزًا فعلًا لتلك الترقية. اعرف أي مهارة تسد أكبر فجوة لديك بأسرع طريقة. اعرف بالضبط ما سيسأله مدير التوظيف — قبل أن يسأله.",
     "emailPlaceholder": "your@email.com",
-    "emailAriaLabel": "عنوان البريد الإلكتروني للوصول المبكر",
-    "submitCta": "احصل على وصول مبكر ←",
+    "emailAriaLabel": "عنوان البريد الإلكتروني",
+    "submitCta": "ابدأ مجانًا ←",
     "noCreditCard": "يستغرق الأمر 30 ثانية — دون الحاجة إلى بطاقة ائتمان.",
     "statDimensions": "أبعاد الكفاءة",
     "statHorizons": "آفاق الخطة",
@@ -64,6 +63,12 @@
     "step3Description": "يستخرج ديفومتركس كفاءاتك الحقيقية عبر 8 أبعاد ثابتة — تقنية، وقيادية، وتواصلية، وتفكير استراتيجي، وغيرها — ويقيّم كل بُعد، ويرسم الفجوات الدقيقة بين موقعك الحالي وما يتطلبه الدور منك.",
     "step4Title": "نفّذ خطتك",
     "step4Description": "احصل على خارطة طريق تطويرية مرتبة الأولويات ومحددة زمنيًا: مكاسب سريعة خلال 30 يومًا، ومحطات خلال 90 يومًا، وأهداف خلال 12 شهرًا. دورات وشهادات ومشاريع وإجراءات توجيهية محددة — مرتبة وفق أثرها في سد فجوتك، لا وفق شعبيتها فقط."
+  },
+  "productVideo": {
+    "label": "شاهد المنصة أثناء العمل",
+    "headline": "ديفومتركس في نحو 30 ثانية",
+    "subtext": "شاشات حقيقية، لا نموذج تجريبي — تحليل الفجوات، ولوحة القوى العاملة، والهيكل التنظيمي، والتحليلات، تباعًا.",
+    "playButtonLabel": "تشغيل فيديو جولة المنصة"
   },
   "features": {
     "label": "مزايا المنصة",
@@ -1283,6 +1288,7 @@
     "jack": "شاكر"
   },
   "coachChat": {
+    "greetingFallback": "مرحبًا، أنا {name}.",
     "summaryTitle": "ملخص الجلسة",
     "meetingNotes": "ملاحظات الاجتماع",
     "actionPlan": "خطة العمل",
@@ -1738,6 +1744,28 @@
     "leadershipReadinessSignal": "مؤشر الجاهزية القيادية",
     "leadershipReadinessDesc": "ترتيب اتجاهي حسب درجات القيادة، والتفكير الاستراتيجي، وإدارة الأفراد — وليس خطة تعاقب وظيفي رسمية. تحتاج خطة التعاقب الحقيقية إلى بيانات حرجية الدور، والهيكل التنظيمي، والجدول الزمني للجاهزية التي لا يجمعها هذا المنتج بعد؛ اعتبر هذا بداية نقاش، لا قرارًا.",
     "noRankingYet": "لم يُجرِ أحد تحليل الفجوة بعد، فلا يوجد ما يُرتَّب."
+  },
+  "employeeIntelligenceTimeline": {
+    "heading": "رحلة {name} المهنية",
+    "trendImproving": "تحسّن {source} من {previous} إلى {latest} خلال {count} دورات.",
+    "trendDeclining": "انخفض {source} من {previous} إلى {latest} خلال {count} دورات.",
+    "noTrendYet": "لا يوجد سجل كافٍ بعد لإظهار اتجاه — تحقق مرة أخرى بعد دورة أو دورتين إضافيتين.",
+    "seeDetail": "{count} أخرى"
+  },
+  "scoreEventSources": {
+    "gap_analysis": "تحليل الفجوة",
+    "career_health_snapshot": "الصحة المهنية",
+    "performance_review_self": "التقييم الذاتي",
+    "performance_review_manager": "تقييم المدير",
+    "performance_review_competency_self": "تقييم الكفاءة الذاتي",
+    "performance_review_competency_manager": "تقييم الكفاءة من المدير",
+    "knowledge_hub_exam": "اختبار مركز المعرفة",
+    "assessment_result": "التقييم",
+    "case_study_exercise": "دراسة الحالة",
+    "resume_analysis": "تحليل السيرة الذاتية",
+    "flight_risk": "مخاطر المغادرة",
+    "succession_fit": "ملاءمة التعاقب الوظيفي",
+    "scorm_completion": "وحدة تدريبية"
   },
   "employeeDetailPage": {
     "backToEmployees": "← العودة إلى الموظفين",
@@ -2538,6 +2566,7 @@
     "cancel": "إلغاء",
     "noneYet": "لا توجد دورات أداء بعد — أنشئ واحدة أعلاه لبدء جمع الانطباعات الذاتية ومنظورات المدراء.",
     "cycleStatusPrefix": "حالة الدورة:",
+    "exportExcel": "تصدير إلى إكسل",
     "cycleStatusDraft": "مسودة",
     "cycleStatusOpen": "مفتوحة",
     "cycleStatusClosed": "مغلقة",
@@ -2702,6 +2731,7 @@
     "respondedCount": "{responded} من {assigned} استجابوا",
     "hideResults": "إخفاء النتائج",
     "viewResults": "عرض النتائج",
+    "exportExcel": "تصدير إلى إكسل",
     "loading": "جارٍ التحميل…",
     "insufficientData": "استجاب {responded} فقط من أصل {assigned} حتى الآن — تبقى النتائج مخفية حتى يستجيب 3 أشخاص على الأقل، للحفاظ على إخفاء الهوية.",
     "aggregatedAcross": "مجمّعة من {count} استجابة مجهولة الهوية.",
@@ -2779,6 +2809,7 @@
     "actionsAriaLabel": "إجراءات",
     "examWithPassPercent": "امتحان ({percent}% للنجاح)",
     "readConfirmation": "تأكيد القراءة",
+    "scormLabel": "دورة SCORM",
     "manage": "إدارة ←",
     "archivedCount": "مؤرشف ({count})",
     "archivedOn": "أُرشف في {date}",
@@ -2787,6 +2818,12 @@
     "newHireBadge": "موظف جديد"
   },
   "knowledgeHubUploadForm": {
+    "contentKindLabel": "ماذا ترفع؟",
+    "documentKindOption": "مستند أو فيديو",
+    "scormKindOption": "حزمة SCORM",
+    "onlyZipSupported": "يُدعم فقط ملف SCORM 1.2 مضغوط (zip).",
+    "scormHint": "حزمة SCORM 1.2 مضغوطة تحتوي على imsmanifest.xml — الحد الأقصى 50 ميجابايت.",
+    "scormCompletionExplainer": "يُبلَّغ عن الإكمال تلقائيًا من الدورة نفسها أثناء متابعتها — لا حاجة لإعداد أي شيء هنا.",
     "onlyDocsSupported": "يُدعم فقط ملفات Word أو PDF أو Excel أو PowerPoint أو الفيديو (MP4/WebM/MOV).",
     "fileTooLarge": "الملف كبير جدًا — الحد الأقصى 50 ميجابايت.",
     "titleRequired": "العنوان مطلوب.",
@@ -2825,6 +2862,8 @@
     "unlimitedAttempts": "محاولات غير محدودة",
     "attemptsMax": "{count, plural, one {# محاولة} other {# محاولات}} كحد أقصى",
     "completedByConfirm": "يُكتمل بتأكيد قراءته",
+    "completedByScorm": "يُبلَّغ عن الإكمال من الدورة نفسها أثناء متابعة الأشخاص لها",
+    "exportExcel": "تصدير إلى إكسل",
     "dueLabel": "الاستحقاق {date}",
     "assigned": "معيَّن",
     "completionRate": "معدل الإكمال",
@@ -2900,6 +2939,7 @@
     "nothingAssigned": "لم يُعيَّن لك أي شيء بعد.",
     "examRequired": "امتحان مطلوب",
     "readConfirmation": "تأكيد القراءة",
+    "scormCourse": "دورة SCORM",
     "dueSuffix": " · الاستحقاق {date}",
     "passedScore": "ناجح — {percent}%",
     "completedScore": "مكتمل — {percent}%",
@@ -2934,7 +2974,12 @@
     "submitExam": "إرسال الامتحان",
     "cooldownMinutes": "{m} د",
     "cooldownHours": "{h} س",
-    "cooldownHoursMinutes": "{h} س {m} د"
+    "cooldownHoursMinutes": "{h} س {m} د",
+    "scormInProgress": "أكمل الدورة أعلاه — سيتم تسجيل نتيجتك تلقائيًا عند الانتهاء.",
+    "scormPassed": "✓ مكتمل",
+    "scormFailed": "لم تنجح بعد — يمكنك إعادة تشغيل الدورة أعلاه للمحاولة مجددًا.",
+    "scormPassedWithScore": "✓ مكتمل — {score}%",
+    "scormFailedWithScore": "لم تنجح بعد — {score}% — يمكنك إعادة تشغيل الدورة أعلاه للمحاولة مجددًا."
   },
   "hiringPage": {
     "backToProgress": "← العودة إلى التقدم",
@@ -5184,6 +5229,7 @@
     "backToProgress": "← العودة إلى التقدم",
     "title": "مقابلات الخروج",
     "description": "سجّل مقابلة خروج منظمة لكل حالة مغادرة، ثم شغّل تحليل الاتجاهات بمساعدة الذكاء الاصطناعي عبرها لاكتشاف الأسباب الجذرية — مؤشرات مخاطر المغادرة، ودوران الموظفين المرتبط بالإدارة، وأنماط الأقسام. للاستخدام الداخلي لفريق الموارد البشرية فقط؛ لا يرى الموظف المغادر سجله أبدًا.",
+    "exportExcel": "تصدير إلى إكسل",
     "recordButton": "+ سجّل مقابلة خروج",
     "recordFormHeader": "مقابلة خروج جديدة",
     "employeeNameLabel": "اسم الموظف",

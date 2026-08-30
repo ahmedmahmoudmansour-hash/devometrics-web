@@ -10,7 +10,7 @@
     "methodology": "Methodology",
     "pricing": "Pricing",
     "forEnterprise": "For Enterprise",
-    "getEarlyAccess": "Get early access",
+    "getEarlyAccess": "Sign up free",
     "audienceLabel": "Choose your path",
     "audienceIndividualTitle": "Individual",
     "audienceIndividualDescription": "Track your own growth — see your competency gaps and get a prioritized plan to close them.",
@@ -24,13 +24,12 @@
     "toggleMenu": "Toggle menu"
   },
   "hero": {
-    "badge": "Now in early access — create your account free",
     "headlinePrefix": "Every career move,",
     "headlineHighlight": "backed by evidence",
     "subheadline": "Know if you're actually ready for that promotion. Know which skill closes your biggest gap fastest. Know exactly what a hiring manager will ask — before they ask it.",
     "emailPlaceholder": "your@email.com",
-    "emailAriaLabel": "Email address for early access",
-    "submitCta": "Get early access →",
+    "emailAriaLabel": "Email address",
+    "submitCta": "Get started free →",
     "noCreditCard": "Takes 30 seconds — no credit card required.",
     "statDimensions": "Competency dimensions",
     "statHorizons": "Plan horizons",
@@ -64,6 +63,12 @@
     "step3Description": "Devometrics extracts your real competencies across 8 fixed dimensions — technical, leadership, communication, strategic thinking, and more — scores each one, and maps the precise gaps between where you are and where the role demands you to be.",
     "step4Title": "Execute your plan",
     "step4Description": "Receive a prioritized, time-bound development roadmap: 30-day quick wins, 90-day milestones, 12-month targets. Specific courses, certifications, projects, and coaching actions — ranked by impact on your gap, not just popularity."
+  },
+  "productVideo": {
+    "label": "See it in action",
+    "headline": "Devometrics, in about 30 seconds",
+    "subtext": "Real screens, not a mockup — gap analysis, the workforce dashboard, org chart, and analytics, back to back.",
+    "playButtonLabel": "Play the product tour video"
   },
   "features": {
     "label": "Platform features",
@@ -1283,6 +1288,7 @@
     "jack": "Jack"
   },
   "coachChat": {
+    "greetingFallback": "Hi, this is {name}.",
     "summaryTitle": "Session summary",
     "meetingNotes": "Meeting notes",
     "actionPlan": "Action plan",
@@ -1738,6 +1744,28 @@
     "leadershipReadinessSignal": "Leadership readiness signal",
     "leadershipReadinessDesc": "A directional ranking by Leadership, Strategic Thinking, and People Management scores — not a formal succession plan. A real succession plan needs role criticality, org-chart, and readiness-timeline data this product doesn't capture yet; treat this as a starting conversation, not a decision.",
     "noRankingYet": "No one has run a Gap Analysis yet, so there's nothing to rank."
+  },
+  "employeeIntelligenceTimeline": {
+    "heading": "{name}'s Talent Journey",
+    "trendImproving": "{source} improved {previous} → {latest} over {count} cycles.",
+    "trendDeclining": "{source} declined from {previous} to {latest} over {count} cycles.",
+    "noTrendYet": "Not enough history yet to show a trend — check back after another cycle or two.",
+    "seeDetail": "{count} more"
+  },
+  "scoreEventSources": {
+    "gap_analysis": "Gap Analysis",
+    "career_health_snapshot": "Career Health",
+    "performance_review_self": "Self-Assessment",
+    "performance_review_manager": "Manager Rating",
+    "performance_review_competency_self": "Self-Rated Competency",
+    "performance_review_competency_manager": "Manager-Rated Competency",
+    "knowledge_hub_exam": "Knowledge Hub Exam",
+    "assessment_result": "Assessment",
+    "case_study_exercise": "Case Study Exercise",
+    "resume_analysis": "Resume Analysis",
+    "flight_risk": "Flight Risk",
+    "succession_fit": "Succession Fit",
+    "scorm_completion": "Training Module"
   },
   "employeeDetailPage": {
     "backToEmployees": "← Back to employees",
@@ -2538,6 +2566,7 @@
     "cancel": "Cancel",
     "noneYet": "No Impact Cycles yet — create one above to start collecting Reflections and Manager's Perspectives.",
     "cycleStatusPrefix": "Cycle status:",
+    "exportExcel": "Export to Excel",
     "cycleStatusDraft": "draft",
     "cycleStatusOpen": "open",
     "cycleStatusClosed": "closed",
@@ -2702,6 +2731,7 @@
     "respondedCount": "{responded} of {assigned} responded",
     "hideResults": "Hide results",
     "viewResults": "View results",
+    "exportExcel": "Export to Excel",
     "loading": "Loading…",
     "insufficientData": "Only {responded} of {assigned} have responded so far — results stay hidden until at least 3 people respond, to keep answers anonymous.",
     "aggregatedAcross": "Aggregated across {count} anonymous responses.",
@@ -2779,6 +2809,7 @@
     "actionsAriaLabel": "Actions",
     "examWithPassPercent": "Exam ({percent}% to pass)",
     "readConfirmation": "Read confirmation",
+    "scormLabel": "SCORM course",
     "manage": "Manage →",
     "archivedCount": "Archived ({count})",
     "archivedOn": "Archived {date}",
@@ -2787,6 +2818,12 @@
     "newHireBadge": "New hire"
   },
   "knowledgeHubUploadForm": {
+    "contentKindLabel": "What are you uploading?",
+    "documentKindOption": "Document or video",
+    "scormKindOption": "SCORM package",
+    "onlyZipSupported": "Only a zipped SCORM 1.2 package is supported.",
+    "scormHint": "A zipped SCORM 1.2 package containing imsmanifest.xml — 50MB max.",
+    "scormCompletionExplainer": "Completion is reported by the course itself as people go through it — there's nothing to configure here.",
     "onlyDocsSupported": "Only Word, PDF, Excel, PowerPoint, or video (MP4/WebM/MOV) files are supported.",
     "fileTooLarge": "File is too large — 50MB max.",
     "titleRequired": "Title is required.",
@@ -2825,6 +2862,8 @@
     "unlimitedAttempts": "unlimited attempts",
     "attemptsMax": "{count, plural, one {# attempt} other {# attempts}} max",
     "completedByConfirm": "Completed by confirming they've read it",
+    "completedByScorm": "Completion is reported by the course itself as people go through it",
+    "exportExcel": "Export to Excel",
     "dueLabel": "Due {date}",
     "assigned": "Assigned",
     "completionRate": "Completion rate",
@@ -2900,6 +2939,7 @@
     "nothingAssigned": "Nothing assigned to you yet.",
     "examRequired": "Exam required",
     "readConfirmation": "Read confirmation",
+    "scormCourse": "SCORM course",
     "dueSuffix": " · due {date}",
     "passedScore": "Passed — {percent}%",
     "completedScore": "Completed — {percent}%",
@@ -2934,7 +2974,12 @@
     "submitExam": "Submit exam",
     "cooldownMinutes": "{m}m",
     "cooldownHours": "{h}h",
-    "cooldownHoursMinutes": "{h}h {m}m"
+    "cooldownHoursMinutes": "{h}h {m}m",
+    "scormInProgress": "Complete the course above — it'll record your result automatically when you finish.",
+    "scormPassed": "✓ Completed",
+    "scormFailed": "Not yet passed — you can relaunch the course above to try again.",
+    "scormPassedWithScore": "✓ Completed — {score}%",
+    "scormFailedWithScore": "Not yet passed — {score}% — you can relaunch the course above to try again."
   },
   "hiringPage": {
     "backToProgress": "← Back to progress",
@@ -5184,6 +5229,7 @@
     "backToProgress": "← Back to progress",
     "title": "Exit Interviews",
     "description": "Record a structured exit interview for every departure, then run AI-assisted trend analysis across them to spot root causes — flight-risk indicators, manager-related turnover, and department patterns. HR-internal only; departed employees never see their own record.",
+    "exportExcel": "Export to Excel",
     "recordButton": "+ Record an exit interview",
     "recordFormHeader": "New exit interview",
     "employeeNameLabel": "Employee name",

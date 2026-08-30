@@ -285,7 +285,7 @@ export default function CoachChat({
     handleVoiceChange(lastNamedVoice);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === lastNamedVoice)?.label ?? lastNamedVoice;
-    play(sanitizeForSpeech(latest ? latest.content : `Hi, this is ${label}.`), lastNamedVoice, locale === "ar" ? "ar" : "en");
+    play(sanitizeForSpeech(latest ? latest.content : t("greetingFallback", { name: label })), lastNamedVoice, locale === "ar" ? "ar" : "en");
   }
 
   // Picking a different voice replays the coach's latest line in that voice —
@@ -295,7 +295,7 @@ export default function CoachChat({
     handleVoiceChange(name);
     const latest = [...messages].reverse().find((m) => m.role === "assistant");
     const label = NAMED_VOICES.find((v) => v.value === name)?.label ?? name;
-    play(sanitizeForSpeech(latest ? latest.content : `Hi, this is ${label}.`), name, locale === "ar" ? "ar" : "en");
+    play(sanitizeForSpeech(latest ? latest.content : t("greetingFallback", { name: label })), name, locale === "ar" ? "ar" : "en");
   }
 
   async function send(rawText: string) {
