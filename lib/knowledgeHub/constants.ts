@@ -22,3 +22,12 @@ export const KNOWLEDGE_HUB_ALLOWED_MIME_TYPES = [
   "video/webm",
   "video/quicktime",
 ] as const;
+
+// SCORM packages are uploaded as a zip and unpacked server-side (see
+// lib/knowledgeHub/scorm/ingest.ts) — kept separate from the document/video
+// list above since a zip is never itself the thing shown in the file
+// picker's "accept" attribute for regular content uploads.
+export const KNOWLEDGE_HUB_SCORM_ZIP_MIME_TYPES = [
+  "application/zip",
+  "application/x-zip-compressed", // what some Windows-originated zips report instead
+] as const;

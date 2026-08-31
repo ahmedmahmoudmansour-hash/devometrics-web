@@ -135,7 +135,13 @@ export default async function CompanyKnowledgeHubPage() {
                   }}
                 >
                   <span>{c.title}</span>
-                  <span style={{ color: "var(--text-muted)" }}>{c.completion_type === "exam" ? t("examWithPassPercent", { percent: c.passing_score_percent }) : t("readConfirmation")}</span>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    {c.completion_type === "exam"
+                      ? t("examWithPassPercent", { percent: c.passing_score_percent })
+                      : c.completion_type === "scorm"
+                        ? t("scormLabel")
+                        : t("readConfirmation")}
+                  </span>
                 </Link>
               ))}
             </div>
@@ -205,10 +211,14 @@ export default async function CompanyKnowledgeHubPage() {
                           )}
                         </td>
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>
-                          {c.file_name.split(".").pop()?.toUpperCase()}
+                          {c.content_type === "scorm" ? "SCORM" : c.file_name.split(".").pop()?.toUpperCase()}
                         </td>
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>
-                          {c.completion_type === "exam" ? t("examWithPassPercent", { percent: c.passing_score_percent }) : t("readConfirmation")}
+                          {c.completion_type === "exam"
+                            ? t("examWithPassPercent", { percent: c.passing_score_percent })
+                            : c.completion_type === "scorm"
+                              ? t("scormLabel")
+                              : t("readConfirmation")}
                         </td>
                         <td style={{ ...cellStyle, color: "var(--text-muted)" }}>{c.due_date ?? "—"}</td>
                         <td style={{ ...cellStyle, textAlign: "right" }}>{assigned}</td>

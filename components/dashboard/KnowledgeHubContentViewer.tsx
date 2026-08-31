@@ -9,6 +9,7 @@ import {
   submitKnowledgeHubExam,
 } from "@/lib/knowledgeHub/actions";
 import type { KnowledgeHubCompletionType, KnowledgeHubExamQuestionForTaking } from "@/lib/supabase/types";
+import KnowledgeHubScormRuntime from "./KnowledgeHubScormRuntime";
 
 type Completion = { scorePercent: number | null; passed: boolean } | null;
 
@@ -24,6 +25,8 @@ export default function KnowledgeHubContentViewer({
   initialExamAttemptCount,
   initialLastAttemptAt,
   initialCompletion,
+  scormLaunchPath,
+  studentName,
 }: {
   contentId: string;
   fileName: string;
@@ -35,6 +38,10 @@ export default function KnowledgeHubContentViewer({
   initialExamAttemptCount: number;
   initialLastAttemptAt: string | null;
   initialCompletion: Completion;
+  // Only present when completionType === "scorm" (migration 0149) — the
+  // unpacked package's launch file, relative to its scorm proxy directory.
+  scormLaunchPath?: string | null;
+  studentName?: string;
 }) {
   const t = useTranslations("knowledgeHubContentViewer");
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -58,7 +65,14 @@ export default function KnowledgeHubContentViewer({
   const [examError, setExamError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const isScorm = completionType === "scorm";
+
   useEffect(() => {
+    // SCORM content is served through the same-origin scorm proxy route
+    // (app/api/knowledge-hub/scorm/...), not a Storage signed URL — see
+    // that route's header comment for why a signed URL (a different
+    // origin) would silently break the SCORM runtime bridge.
+    if (isScorm) return;
     let cancelled = false;
     getSignedKnowledgeHubUrl(contentId).then((result) => {
       if (cancelled) return;
@@ -68,7 +82,7 @@ export default function KnowledgeHubContentViewer({
     return () => {
       cancelled = true;
     };
-  }, [contentId]);
+  }, [contentId, isScorm]);
 
   // Only relevant while a failed exam is showing a cooldown countdown —
   // no point ticking otherwise.
@@ -141,7 +155,14 @@ export default function KnowledgeHubContentViewer({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
-        {urlError ? (
+        {isScorm && scormLaunchPath ? (
+          <KnowledgeHubScormRuntime
+            contentId={contentId}
+            launchUrl={`/api/knowledge-hub/scorm/${contentId}/${scormLaunchPath}`}
+            title={fileName}
+            studentName={studentName ?? ""}
+          />
+        ) : urlError ? (
           <p style={{ fontSize: 13, color: "var(--danger)" }}>{urlError}</p>
         ) : !signedUrl ? (
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("loadingDocument")}</p>
@@ -224,11 +245,17 @@ export default function KnowledgeHubContentViewer({
             )}
           </div>
         ) : completion && !examStarted ? (
-          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--teal)" }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: completion.passed ? "var(--teal)" : "var(--amber)" }}>
             {completionType === "exam"
               ? t("passedRequired", { score: completion.scorePercent ?? 0, required: passingScorePercent })
-              : t("confirmedRead")}
+              : completionType === "scorm"
+                ? completion.scorePercent !== null
+                  ? t(completion.passed ? "scormPassedWithScore" : "scormFailedWithScore", { score: completion.scorePercent })
+                  : t(completion.passed ? "scormPassed" : "scormFailed")
+                : t("confirmedRead")}
           </p>
+        ) : completionType === "scorm" ? (
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("scormInProgress")}</p>
         ) : completionType === "attestation" ? (
           <>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>

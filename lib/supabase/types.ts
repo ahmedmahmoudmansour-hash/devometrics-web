@@ -443,13 +443,22 @@ export type RoleplaySession = {
   updated_at: string;
 };
 
-export type KnowledgeHubCompletionType = "exam" | "attestation";
+// 'scorm' added by migration 0149 — a SCORM package reports its own
+// pass/fail via submit_scorm_completion, so it's a third completion
+// mechanism distinct from the exam/attestation UI flows.
+export type KnowledgeHubCompletionType = "exam" | "attestation" | "scorm";
 
 export type KnowledgeHubContent = {
   id: string;
   organization_id: string;
   title: string;
   description: string | null;
+  // For content_type 'document': the exact file path. For 'scorm'
+  // (migration 0149): the DIRECTORY prefix the unpacked package was
+  // re-uploaded under ({organization_id}/{content_id}/scorm) — dual
+  // meaning, disambiguated entirely by content_type, so this field is
+  // never used directly for scorm content (the same-origin scorm proxy
+  // route builds the real path from it + scorm_launch_path).
   storage_path: string;
   file_name: string;
   file_size_bytes: number;
@@ -463,6 +472,10 @@ export type KnowledgeHubContent = {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // Migration 0149 — 'document' unless this is an unpacked SCORM package.
+  content_type: "document" | "scorm";
+  scorm_version: "1.2" | null;
+  scorm_launch_path: string | null;
 };
 
 export type KnowledgeHubExamQuestion = {
@@ -501,7 +514,12 @@ export type KnowledgeHubCompletion = {
   method: KnowledgeHubCompletionType;
   score_percent: number | null;
   passed: boolean;
-  answers: { question_id: string; selected_index: number }[] | null;
+  // Exam answers for method='exam'; the raw cmi.* key/value bag the SCORM
+  // runtime adapter buffered for method='scorm' (migration 0149's
+  // submit_scorm_completion reuses this column rather than adding a new
+  // one — same "jsonb bag for one attempt" shape either way); null for
+  // method='attestation'.
+  answers: { question_id: string; selected_index: number }[] | Record<string, unknown> | null;
   completed_at: string;
 };
 

@@ -112,7 +112,11 @@ export default async function KnowledgeHubPage() {
                         <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{content.description}</p>
                       )}
                       <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        {content.completion_type === "exam" ? t("examRequired") : t("readConfirmation")}
+                        {content.completion_type === "exam"
+                          ? t("examRequired")
+                          : content.completion_type === "scorm"
+                            ? t("scormCourse")
+                            : t("readConfirmation")}
                         {content.due_date && !completion ? t("dueSuffix", { date: content.due_date }) : ""}
                       </p>
                     </div>
@@ -129,10 +133,10 @@ export default async function KnowledgeHubPage() {
                       }}
                     >
                       {completion
-                        ? content.completion_type === "exam"
+                        ? completion.score_percent !== null && (content.completion_type === "exam" || content.completion_type === "scorm")
                           ? completion.passed
-                            ? t("passedScore", { percent: completion.score_percent ?? 0 })
-                            : t("completedScore", { percent: completion.score_percent ?? 0 })
+                            ? t("passedScore", { percent: completion.score_percent })
+                            : t("completedScore", { percent: completion.score_percent })
                           : t("completed")
                         : isOverdue
                           ? t("overdue")

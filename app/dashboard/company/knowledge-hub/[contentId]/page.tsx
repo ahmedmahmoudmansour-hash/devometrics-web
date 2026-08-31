@@ -57,7 +57,9 @@ export default async function KnowledgeHubContentDetailPage({
                   percent: content.passing_score_percent,
                   attempts: content.max_attempts ? t("attemptsMax", { count: content.max_attempts }) : t("unlimitedAttempts"),
                 })
-              : t("completedByConfirm")}
+              : content.completion_type === "scorm"
+                ? t("completedByScorm")
+                : t("completedByConfirm")}
             {" · "}
             {content.file_name}
             {content.due_date && (
@@ -66,8 +68,26 @@ export default async function KnowledgeHubContentDetailPage({
               </>
             )}
           </p>
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <EditKnowledgeHubContentForm content={content} />
+            {report.rows.length > 0 && (
+              <a
+                href={`/api/company/export/knowledge-hub/${contentId}/xlsx`}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  padding: "8px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--text)",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("exportExcel")}
+              </a>
+            )}
           </div>
         </div>
 
@@ -80,7 +100,7 @@ export default async function KnowledgeHubContentDetailPage({
             <div style={{ fontSize: 22, fontWeight: 800, color: "var(--teal)" }}>{report.completionRate}%</div>
             <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("completionRate")}</div>
           </div>
-          {content.completion_type === "exam" && (
+          {(content.completion_type === "exam" || content.completion_type === "scorm") && (
             <>
               <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 20px" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>
@@ -117,11 +137,11 @@ export default async function KnowledgeHubContentDetailPage({
                     <th style={{ ...headStyle, textAlign: "left" }}>{t("colName")}</th>
                     <th style={{ ...headStyle, textAlign: "left" }}>{t("colStatus")}</th>
                     <th style={{ ...headStyle, textAlign: "left" }}>{t("colCompleted")}</th>
+                    {(content.completion_type === "exam" || content.completion_type === "scorm") && (
+                      <th style={{ ...headStyle, textAlign: "right" }}>{t("colScore")}</th>
+                    )}
                     {content.completion_type === "exam" && (
-                      <>
-                        <th style={{ ...headStyle, textAlign: "right" }}>{t("colScore")}</th>
-                        <th style={{ ...headStyle, textAlign: "right" }}>{t("colAttempts")}</th>
-                      </>
+                      <th style={{ ...headStyle, textAlign: "right" }}>{t("colAttempts")}</th>
                     )}
                     <th style={{ ...headStyle, textAlign: "right" }} aria-label={t("actionsAriaLabel")} />
                   </tr>
@@ -153,7 +173,7 @@ export default async function KnowledgeHubContentDetailPage({
                       <td style={{ ...cellStyle, color: "var(--text-muted)" }}>
                         {r.completedAt ? new Date(r.completedAt).toLocaleDateString() : "—"}
                       </td>
-                      {content.completion_type === "exam" && (
+                      {(content.completion_type === "exam" || content.completion_type === "scorm") && (
                         <td
                           style={{
                             ...cellStyle,

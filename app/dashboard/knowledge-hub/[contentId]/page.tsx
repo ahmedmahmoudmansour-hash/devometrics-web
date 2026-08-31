@@ -43,6 +43,15 @@ export default async function KnowledgeHubContentPage({
   const latestCompletion = completions?.[0] ?? null;
   const examAttemptCount = (completions ?? []).filter((c) => c.method === "exam").length;
 
+  // Only needed for SCORM content — seeds cmi.core.student_name for
+  // packages that display or log it. Not worth fetching for the common
+  // document/exam case, so this is skipped entirely otherwise.
+  let studentName = "";
+  if (content.content_type === "scorm") {
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle<{ full_name: string | null }>();
+    studentName = profile?.full_name ?? "";
+  }
+
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -72,6 +81,8 @@ export default async function KnowledgeHubContentPage({
               ? { scorePercent: latestCompletion.score_percent, passed: latestCompletion.passed }
               : null
           }
+          scormLaunchPath={content.scorm_launch_path}
+          studentName={studentName}
         />
       </div>
     </div>

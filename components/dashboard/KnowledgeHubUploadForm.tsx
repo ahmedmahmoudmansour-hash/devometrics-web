@@ -5,8 +5,16 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { createKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
-import { KNOWLEDGE_HUB_BUCKET, KNOWLEDGE_HUB_MAX_BYTES, KNOWLEDGE_HUB_ALLOWED_MIME_TYPES } from "@/lib/knowledgeHub/constants";
+import { validateAndRegisterScormPackage } from "@/lib/knowledgeHub/scorm/ingest";
+import {
+  KNOWLEDGE_HUB_BUCKET,
+  KNOWLEDGE_HUB_MAX_BYTES,
+  KNOWLEDGE_HUB_ALLOWED_MIME_TYPES,
+  KNOWLEDGE_HUB_SCORM_ZIP_MIME_TYPES,
+} from "@/lib/knowledgeHub/constants";
 import type { KnowledgeHubCompletionType } from "@/lib/supabase/types";
+
+type ContentKind = "document" | "scorm";
 
 type DraftQuestion = { prompt: string; options: string[]; correctIndex: number };
 
@@ -32,6 +40,7 @@ function sanitizeFileName(name: string): string {
 export default function KnowledgeHubUploadForm({ organizationId }: { organizationId: string }) {
   const t = useTranslations("knowledgeHubUploadForm");
   const [expanded, setExpanded] = useState(false);
+  const [kind, setKind] = useState<ContentKind>("document");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -53,8 +62,13 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       setFile(null);
       return;
     }
-    if (!(KNOWLEDGE_HUB_ALLOWED_MIME_TYPES as readonly string[]).includes(f.type)) {
-      setError(t("onlyDocsSupported"));
+    const allowedTypes: readonly string[] = kind === "scorm" ? KNOWLEDGE_HUB_SCORM_ZIP_MIME_TYPES : KNOWLEDGE_HUB_ALLOWED_MIME_TYPES;
+    // Some browsers/OSes report a zip's type as "" rather than a real MIME
+    // type — fall back to checking the extension in that case so a real
+    // zip isn't rejected on a browser quirk.
+    const looksLikeZip = kind === "scorm" && (allowedTypes.includes(f.type) || f.name.toLowerCase().endsWith(".zip"));
+    if (kind === "scorm" ? !looksLikeZip : !allowedTypes.includes(f.type)) {
+      setError(kind === "scorm" ? t("onlyZipSupported") : t("onlyDocsSupported"));
       return;
     }
     if (f.size > KNOWLEDGE_HUB_MAX_BYTES) {
@@ -102,11 +116,25 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
 
     if (!title.trim()) return setError(t("titleRequired"));
     if (!file) return setError(t("chooseFile"));
-    if (completionType === "exam") {
+    if (kind === "document" && completionType === "exam") {
       for (const q of questions) {
         if (!q.prompt.trim()) return setError(t("everyQuestionNeedsPrompt"));
         if (q.options.some((o) => !o.trim())) return setError(t("everyOptionNeedsText"));
       }
+    }
+
+    function resetForm() {
+      setTitle("");
+      setDescription("");
+      setFile(null);
+      setKind("document");
+      setCompletionType("attestation");
+      setMaxAttempts("");
+      setDueDate("");
+      setIsNewHireContent(false);
+      setQuestions([newQuestion()]);
+      setExpanded(false);
+      router.refresh();
     }
 
     setUploading(true);
@@ -117,37 +145,47 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       const { error: uploadError } = await supabase.storage.from(KNOWLEDGE_HUB_BUCKET).upload(storagePath, file);
       if (uploadError) throw new Error(uploadError.message);
 
-      startTransition(async () => {
-        const result = await createKnowledgeHubContent({
-          id: contentId,
-          title,
-          description,
-          storagePath,
-          fileName: file.name,
-          fileSizeBytes: file.size,
-          mimeType: file.type,
-          completionType,
-          passingScorePercent: passingScore,
-          maxAttempts: maxAttempts.trim() ? Number(maxAttempts) : null,
-          dueDate: dueDate || null,
-          isNewHireContent,
-          questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
+      if (kind === "scorm") {
+        startTransition(async () => {
+          const result = await validateAndRegisterScormPackage({
+            contentId,
+            title,
+            description,
+            rawZipStoragePath: storagePath,
+            maxAttempts: null,
+            dueDate: dueDate || null,
+            isNewHireContent,
+          });
+          if ("error" in result) {
+            setError(result.error);
+            return;
+          }
+          resetForm();
         });
-        if (result?.error) {
-          setError(result.error);
-          return;
-        }
-        setTitle("");
-        setDescription("");
-        setFile(null);
-        setCompletionType("attestation");
-        setMaxAttempts("");
-        setDueDate("");
-        setIsNewHireContent(false);
-        setQuestions([newQuestion()]);
-        setExpanded(false);
-        router.refresh();
-      });
+      } else {
+        startTransition(async () => {
+          const result = await createKnowledgeHubContent({
+            id: contentId,
+            title,
+            description,
+            storagePath,
+            fileName: file.name,
+            fileSizeBytes: file.size,
+            mimeType: file.type,
+            completionType,
+            passingScorePercent: passingScore,
+            maxAttempts: maxAttempts.trim() ? Number(maxAttempts) : null,
+            dueDate: dueDate || null,
+            isNewHireContent,
+            questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
+          });
+          if (result?.error) {
+            setError(result.error);
+            return;
+          }
+          resetForm();
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("uploadFailed"));
     } finally {
@@ -188,6 +226,37 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       <p style={{ fontSize: 15, color: "var(--text)", fontWeight: 600, marginBottom: 20 }}>{t("uploadContentHeader")}</p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 560 }}>
+        <div>
+          <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+            {t("contentKindLabel")}
+          </label>
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["document", "scorm"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  setKind(option);
+                  setFile(null);
+                  setError(null);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 100,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: kind === option ? "1px solid var(--teal)" : "1px solid var(--border)",
+                  background: kind === option ? "rgba(var(--teal-rgb),0.1)" : "transparent",
+                  color: kind === option ? "var(--teal)" : "var(--text-muted)",
+                }}
+              >
+                {option === "document" ? t("documentKindOption") : t("scormKindOption")}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <input
           type="text"
           required
@@ -209,11 +278,12 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           </label>
           <input
             type="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4,.webm,.mov"
+            accept={kind === "scorm" ? ".zip" : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4,.webm,.mov"}
             onChange={handleFileChange}
             style={{ fontSize: 13, color: "var(--text-muted)" }}
           />
           {file && <p style={{ fontSize: 12, color: "var(--teal)", marginTop: 4 }}>{file.name}</p>}
+          {kind === "scorm" && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>{t("scormHint")}</p>}
         </div>
 
         <div>
@@ -238,6 +308,12 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           {t("newHireContentLabel")}
         </label>
 
+        {kind === "scorm" && (
+          <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{t("scormCompletionExplainer")}</p>
+        )}
+
+        {kind === "document" && (
+        <>
         <div>
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
             {t("howCompletedLabel")}
@@ -378,6 +454,8 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
               {t("addQuestion")}
             </button>
           </div>
+        )}
+        </>
         )}
 
         {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
