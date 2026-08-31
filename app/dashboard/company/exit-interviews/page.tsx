@@ -23,12 +23,32 @@ export default async function ExitInterviewsPage() {
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div className="dashboard-wide-content">
-        <div style={{ marginBottom: 24 }}>
-          <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
-            {t("backToProgress")}
-          </Link>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>{t("title")}</h1>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>{t("description")}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <Link href="/dashboard" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
+              {t("backToProgress")}
+            </Link>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>{t("title")}</h1>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>{t("description")}</p>
+          </div>
+          {interviews.length > 0 && (
+            <a
+              href="/api/company/export/exit-interviews/xlsx"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--text)",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("exportExcel")}
+            </a>
+          )}
         </div>
 
         <CompanyNavTabs active="exitInterviews" />

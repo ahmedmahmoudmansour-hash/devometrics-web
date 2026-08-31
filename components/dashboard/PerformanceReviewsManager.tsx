@@ -286,7 +286,7 @@ export default function PerformanceReviewsManager({ initialCycles, organizationI
           </div>
 
           {selectedCycle && (
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("cycleStatusPrefix")}</span>
               {(["draft", "open", "closed"] as const).map((s) => (
                 <button
@@ -322,6 +322,24 @@ export default function PerformanceReviewsManager({ initialCycles, organizationI
                   </span>
                 ) : null;
               })()}
+              {reviews.length > 0 && (
+                <a
+                  href={`/api/company/export/appraisal/${selectedCycle.id}/xlsx`}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "var(--text)",
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t("exportExcel")}
+                </a>
+              )}
             </div>
           )}
 

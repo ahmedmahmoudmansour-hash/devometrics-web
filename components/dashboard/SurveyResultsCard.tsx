@@ -30,13 +30,32 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
             {surveyThemeLabel(tThemes, survey.theme)} · {t("respondedCount", { responded: survey.responseCount ?? 0, assigned: survey.assignedCount })}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={toggle}
-          style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "var(--teal)", cursor: "pointer" }}
-        >
-          {expanded ? t("hideResults") : t("viewResults")}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {results && "status" in results && results.status === "ready" && (
+            <a
+              href={`/api/company/export/surveys/${survey.id}/xlsx`}
+              style={{
+                background: "none",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: 12,
+                color: "var(--text)",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("exportExcel")}
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={toggle}
+            style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "var(--teal)", cursor: "pointer" }}
+          >
+            {expanded ? t("hideResults") : t("viewResults")}
+          </button>
+        </div>
       </div>
 
       {expanded && (
