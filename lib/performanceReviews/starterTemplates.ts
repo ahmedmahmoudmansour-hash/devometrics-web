@@ -22,16 +22,77 @@ export type StarterKey =
   | "startup_performance_cycle"
   | "manufacturing_performance_cycle";
 
-export type StarterStepSeed = { stepType: StepType; title: string; description?: string; data?: StepData };
+// Step titles/descriptions get written verbatim into a real, per-org DB row
+// the moment a template is cloned (see cloneStarterTemplate and
+// getOrCreateDefaultWorkflowTemplate in workflowActions.ts) — unlike the
+// template-level labelKey/descriptionKey above, which were already
+// translated via next-intl at pick-list render time, these had no
+// indirection at all and were landing in the DB as permanent English, even
+// for an org running the whole app in Arabic. core()/customStep() now
+// resolve each literal against TITLE_AR/DESCRIPTION_AR below, so every call
+// site keeps its plain English string (no signature change, no risk of
+// missing one) while still producing a real bilingual pair.
+export type Bilingual = { en: string; ar: string };
+export type StarterStepSeed = { stepType: StepType; title: Bilingual; description?: Bilingual; data?: StepData };
 
 export type StarterTemplate = { key: StarterKey; labelKey: string; descriptionKey: string; steps: StarterStepSeed[] };
 
+// Every unique title string passed to core()/customStep() below, translated
+// once. Falls back to the English string itself if a future call site adds
+// a title here without a matching entry — better a silently-English row
+// than a broken template clone.
+const TITLE_AR: Record<string, string> = {
+  "Self-Reflection": "التقييم الذاتي",
+  "Focus Areas": "مجالات التركيز",
+  "Competency Ratings": "تقييم الكفاءات",
+  "Manager's Perspective": "منظور المدير",
+  Conclusion: "الخلاصة",
+  "Quick Self-Check": "تقييم ذاتي سريع",
+  "This Quarter's Focus": "تركيز هذا الربع",
+  "Manager Check-in": "متابعة المدير",
+  "Probation Assessment": "تقييم فترة التجربة",
+  Outcome: "النتيجة",
+  "Goals & Progress": "الأهداف والتقدم",
+  "Quota & Pipeline Goals": "أهداف الحصة ومسار المبيعات",
+  "Sales Competencies": "كفاءات المبيعات",
+  "Strategic Priorities": "الأولويات الاستراتيجية",
+  "Leadership Competencies": "كفاءات القيادة",
+  "Board / Manager Perspective": "منظور المجلس / المدير",
+  "This Cycle's Bets": "رهانات هذه الدورة",
+  "Safety & Output Goals": "أهداف السلامة والإنتاجية",
+  "Supervisor's Perspective": "منظور المشرف",
+  "HR Review": "مراجعة الموارد البشرية",
+  "Executive Approval": "موافقة تنفيذية",
+  "360 Feedback": "تقييم 360 درجة",
+  "Skip-Level Review": "مراجعة المستوى الإداري الأعلى",
+};
+
+const DESCRIPTION_AR: Record<string, string> = {
+  "HR confirms the probation outcome.": "تؤكد الموارد البشرية نتيجة فترة التجربة.",
+  "A senior leader signs off on this review.": "يوقّع أحد كبار القادة على هذه المراجعة.",
+  "Peers and reports share feedback, pooled anonymously.": "يشارك الزملاء والتابعون ملاحظاتهم، وتُجمع بشكل مجهول الهوية.",
+  "The plant/site manager reviews before closing.": "يراجعها مدير المصنع أو الموقع قبل الإغلاق.",
+};
+
+function bilingualTitle(en: string): Bilingual {
+  return { en, ar: TITLE_AR[en] ?? en };
+}
+
+function bilingualDescription(en: string): Bilingual {
+  return { en, ar: DESCRIPTION_AR[en] ?? en };
+}
+
 function core(stepType: Exclude<StepType, "custom">, title: string, description?: string, data?: StepData): StarterStepSeed {
-  return { stepType, title, description, data };
+  return { stepType, title: bilingualTitle(title), description: description ? bilingualDescription(description) : undefined, data };
 }
 
 function customStep(title: string, description: string, config: Partial<CustomStepConfig> & { custom_kind: string }): StarterStepSeed {
-  return { stepType: "custom", title, description, data: { ...defaultCustomStepConfig(config.custom_kind), ...config } };
+  return {
+    stepType: "custom",
+    title: bilingualTitle(title),
+    description: bilingualDescription(description),
+    data: { ...defaultCustomStepConfig(config.custom_kind), ...config },
+  };
 }
 
 const STANDARD_FIVE: StarterStepSeed[] = [

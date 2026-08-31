@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
+import { resolveCallerLocale } from "@/lib/i18n/request";
 import { STARTER_TEMPLATES, type StarterKey } from "./starterTemplates";
 import type { WorkflowTemplate, WorkflowStep, StepType, StepData } from "./workflowTypes";
 
@@ -38,6 +39,10 @@ export async function getOrCreateDefaultWorkflowTemplate(
   let template = existing;
   if (!template) {
     const starter = STARTER_TEMPLATES.devometrics_best_practice;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const locale = user ? await resolveCallerLocale(supabase, user.id) : "en";
     const { data: created, error: createError } = await supabase
       .from("performance_review_workflow_templates")
       .insert({ organization_id: organizationId, name: "Standard Impact Cycle", is_default: true })
@@ -50,8 +55,8 @@ export async function getOrCreateDefaultWorkflowTemplate(
         template_id: template!.id,
         position: i,
         step_type: s.stepType,
-        title: s.title,
-        description: s.description ?? null,
+        title: locale === "ar" ? s.title.ar : s.title.en,
+        description: s.description ? (locale === "ar" ? s.description.ar : s.description.en) : null,
         data: s.data ?? {},
       }))
     );
@@ -219,6 +224,11 @@ export async function cloneStarterTemplate(
   const starter = STARTER_TEMPLATES[starterKey];
   if (!starter) return { error: "Unknown starter template" };
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const locale = user ? await resolveCallerLocale(supabase, user.id) : "en";
+
   const trimmedName = name.trim().slice(0, MAX_TITLE) || starter.key;
 
   const { count } = await supabase
@@ -239,8 +249,8 @@ export async function cloneStarterTemplate(
         template_id: created.id,
         position: i,
         step_type: s.stepType,
-        title: s.title,
-        description: s.description ?? null,
+        title: locale === "ar" ? s.title.ar : s.title.en,
+        description: s.description ? (locale === "ar" ? s.description.ar : s.description.en) : null,
         data: s.data ?? {},
       }))
     );

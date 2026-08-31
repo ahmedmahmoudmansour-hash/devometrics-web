@@ -186,7 +186,7 @@ export async function updateAvatarUrl(avatarUrl: string) {
 
 const VALID_COACH_VOICES = new Set(["off", "sarah", "theo", "megan", "jack"]);
 
-// Persists which of the 4 Speechmatics voices (or "off") the Coach should
+// Persists which of the 4 Azure-backed voices (or "off") the Coach should
 // narrate replies in, so the choice sticks across visits instead of
 // resetting every session.
 export async function updateCoachVoice(voice: string) {
