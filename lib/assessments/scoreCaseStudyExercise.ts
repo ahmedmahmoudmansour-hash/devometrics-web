@@ -86,10 +86,16 @@ export async function scoreCaseStudyExercise({
   }
 
   const result = toolUse.input as ExerciseReport;
+  // Defensive defaults, not just types -- confirmed live (2026-08-31) that
+  // Claude's tool-use doesn't strictly guarantee every schema field is
+  // present even when marked required; a response missing strengths/gaps
+  // previously crashed ExerciseAttempt's report rendering entirely
+  // (Cannot read properties of undefined (reading 'map')) instead of just
+  // showing a thinner report.
   return {
     score: Math.max(0, Math.min(100, Math.round(result.score))),
-    strengths: result.strengths,
-    gaps: result.gaps,
-    recommendation: result.recommendation,
+    strengths: Array.isArray(result.strengths) ? result.strengths : [],
+    gaps: Array.isArray(result.gaps) ? result.gaps : [],
+    recommendation: result.recommendation ?? "",
   };
 }

@@ -74,7 +74,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
             {t("strengths")}
           </h3>
           <ul style={{ display: "flex", flexDirection: "column", gap: 8, paddingInlineStart: 18 }}>
-            {report.strengths.map((s, i) => (
+            {(report.strengths ?? []).map((s, i) => (
               <li key={i} style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{s}</li>
             ))}
           </ul>
@@ -84,7 +84,7 @@ function ReportCard({ exercise, report }: { exercise: CaseStudyExercise; report:
             {t("gaps")}
           </h3>
           <ul style={{ display: "flex", flexDirection: "column", gap: 8, paddingInlineStart: 18 }}>
-            {report.gaps.map((g, i) => (
+            {(report.gaps ?? []).map((g, i) => (
               <li key={i} style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>{g}</li>
             ))}
           </ul>
