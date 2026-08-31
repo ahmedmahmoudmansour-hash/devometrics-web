@@ -22,6 +22,7 @@ import CareerMobilitySection from "@/components/dashboard/CareerMobilitySection"
 import ManagerNotesSection from "@/components/dashboard/ManagerNotesSection";
 import FlightRiskPanel from "@/components/dashboard/FlightRiskPanel";
 import { getLatestFlightRiskScore } from "@/lib/retention/ai";
+import EmployeeIntelligenceTimeline from "@/components/dashboard/EmployeeIntelligenceTimeline";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -43,6 +44,8 @@ export default async function EmployeeDetailPage({
   const tBands = await getTranslations("scoreBands");
   const tCatalog = await getTranslations("assessmentCatalog");
   const tExercise = await getTranslations("caseStudyExercises");
+  const tTimeline = await getTranslations("employeeIntelligenceTimeline");
+  const tScoreSource = await getTranslations("scoreEventSources");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const [data, flightRisk] = await Promise.all([buildEmployeeDetail(userId), getLatestFlightRiskScore(userId)]);
@@ -68,7 +71,22 @@ export default async function EmployeeDetailPage({
     performanceRating,
     performanceRatingNote,
     managerNotes,
+    scoreHistory,
   } = data;
+
+  // Most score_events dimensions are one of the 8 fixed CompetencyDimension
+  // values (Gap Analysis, performance-review competency ratings) and
+  // already have a real translation via the existing competencyDimensions
+  // namespace — reused here rather than adding a second, parallel set of
+  // per-dimension translation keys. Anything else (a source with no
+  // dimension, or a genuinely new dimension string) falls back to the
+  // source-level label.
+  const resolveScoreLabel = (source: string, dimension?: string) => {
+    if (dimension && (COMPETENCY_DIMENSIONS as readonly string[]).includes(dimension)) {
+      return dimensionLabel(tDim, dimension as (typeof COMPETENCY_DIMENSIONS)[number]);
+    }
+    return tScoreSource(source);
+  };
   const dimensionLevels = gapAnalysis
     ? Object.fromEntries(gapAnalysis.competencies.map((c) => [c.dimension, c.currentLevel]))
     : {};
@@ -195,6 +213,16 @@ export default async function EmployeeDetailPage({
             )}
           </div>
         )}
+
+        <div style={{ marginBottom: 20 }}>
+          <EmployeeIntelligenceTimeline
+            employeeName={profile.name}
+            scoreHistory={scoreHistory}
+            t={tTimeline}
+            resolveLabel={resolveScoreLabel}
+            dateLocale={dateLocale}
+          />
+        </div>
 
         {!gapAnalysis && assessmentResults.length === 0 && resumeScore === null ? (
           <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>

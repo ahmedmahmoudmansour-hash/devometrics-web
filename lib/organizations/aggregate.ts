@@ -18,6 +18,7 @@ import type {
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
+import { getLatestScoreEventsBySource, getScoreHistoryForEmployee, type ScoreEvent } from "@/lib/scoring/scoreEvents";
 
 export { resolveAssessmentName };
 import type { BigFiveTrait } from "@/lib/personality/bigFive";
@@ -63,6 +64,14 @@ export type WorkforceRow = {
   // this schema). Consumers must label it honestly ("time in this org"),
   // never "hire date"/"tenure" without that qualification.
   memberSince: string | null;
+  // Unified score-tracking layer (migration 0147) — one whole-score event
+  // per source this person has any history for (Gap Analysis, performance
+  // review ratings, Knowledge Hub exams, ...), each the most recent value
+  // for that source. Empty until the migration is run — degrades the same
+  // way every other newer-table field on this row does. Not yet consumed
+  // anywhere as of this pass; exists so a future cross-source view doesn't
+  // need a new query to add it.
+  latestScores: ScoreEvent[];
 };
 
 export type CompanyData = {
@@ -261,7 +270,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     };
   }
 
-  const [{ data: profiles }, { data: analyses }, { data: results }, { data: plans }] = await Promise.all([
+  const [{ data: profiles }, { data: analyses }, { data: results }, { data: plans }, latestScoresByUser] = await Promise.all([
     supabase.from("profiles").select("*").in("id", memberIds).returns<Profile[]>(),
     supabase
       .from("gap_analyses")
@@ -271,6 +280,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       .returns<GapAnalysis[]>(),
     supabase.from("assessment_results").select("*").in("user_id", memberIds).returns<AssessmentResult[]>(),
     supabase.from("development_plans").select("*").in("user_id", memberIds).returns<DevelopmentPlan[]>(),
+    getLatestScoreEventsBySource(supabase, memberIds),
   ]);
 
   const planIds = (plans ?? []).map((p) => p.id);
@@ -341,6 +351,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       managerUserId: memberByUser.get(p.id)?.manager_user_id ?? null,
       role: roleByUser.get(p.id) === "admin" ? "admin" : "member",
       memberSince: memberSinceByUser.get(p.id) ?? null,
+      latestScores: latestScoresByUser.get(p.id) ?? [],
     };
   });
 
@@ -431,6 +442,10 @@ export type EmployeeDetail = {
   performanceRatingNote: string;
   performanceRatingUpdatedAt: string | null;
   managerNotes: ManagerNote[];
+  // Unified score-tracking layer (migration 0147) — this person's full
+  // chronological score history across every source, feeding the Employee
+  // Intelligence Timeline. Empty until the migration is run.
+  scoreHistory: ScoreEvent[];
 };
 
 // Single-employee drill-down for the admin task-assignment flow. Authorization
@@ -461,6 +476,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     performanceRatingNote: "",
     performanceRatingUpdatedAt: null,
     managerNotes: [],
+    scoreHistory: [],
   };
 
   const supabase = await createClient();
@@ -520,6 +536,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     { data: summaryRow },
     { data: bigFiveRow },
     { data: managerNoteRows },
+    scoreHistory,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", employeeUserId).single<Profile>(),
     supabase
@@ -592,6 +609,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
       .eq("employee_user_id", employeeUserId)
       .order("created_at", { ascending: false })
       .returns<ManagerNote[]>(),
+    getScoreHistoryForEmployee(supabase, employeeUserId),
   ]);
 
   // Author names resolved in a second, batched query rather than a join —
@@ -721,5 +739,6 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     performanceRatingNote: performanceRow?.performance_rating_note ?? "",
     performanceRatingUpdatedAt: performanceRow?.performance_rating_updated_at ?? null,
     managerNotes,
+    scoreHistory,
   };
 }
