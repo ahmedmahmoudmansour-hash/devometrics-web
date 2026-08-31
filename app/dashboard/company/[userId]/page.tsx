@@ -81,9 +81,20 @@ export default async function EmployeeDetailPage({
   // per-dimension translation keys. Anything else (a source with no
   // dimension, or a genuinely new dimension string) falls back to the
   // source-level label.
+  //
+  // Self and manager competency ratings share the same source_id (one row
+  // per dimension per review, migration 0132) and so land in the same
+  // Timeline moment — discovered live (2026-08-31) that without this,
+  // expanding that moment showed the identical dimension name twice with
+  // no way to tell which rating was whose. Qualifying just these two
+  // sources keeps every other dimension-bearing source (Gap Analysis,
+  // which has no self/manager ambiguity) showing the plain dimension name.
   const resolveScoreLabel = (source: string, dimension?: string) => {
     if (dimension && (COMPETENCY_DIMENSIONS as readonly string[]).includes(dimension)) {
-      return dimensionLabel(tDim, dimension as (typeof COMPETENCY_DIMENSIONS)[number]);
+      const label = dimensionLabel(tDim, dimension as (typeof COMPETENCY_DIMENSIONS)[number]);
+      if (source === "performance_review_competency_self") return tTimeline("competencyBySelf", { dimension: label });
+      if (source === "performance_review_competency_manager") return tTimeline("competencyByManager", { dimension: label });
+      return label;
     }
     return tScoreSource(source);
   };

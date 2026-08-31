@@ -1750,7 +1750,9 @@
     "trendImproving": "تحسّن {source} من {previous} إلى {latest} خلال {count} دورات.",
     "trendDeclining": "انخفض {source} من {previous} إلى {latest} خلال {count} دورات.",
     "noTrendYet": "لا يوجد سجل كافٍ بعد لإظهار اتجاه — تحقق مرة أخرى بعد دورة أو دورتين إضافيتين.",
-    "seeDetail": "{count} أخرى"
+    "seeDetail": "{count} أخرى",
+    "competencyBySelf": "{dimension} (تقييم ذاتي)",
+    "competencyByManager": "{dimension} (تقييم المدير)"
   },
   "scoreEventSources": {
     "gap_analysis": "تحليل الفجوة",

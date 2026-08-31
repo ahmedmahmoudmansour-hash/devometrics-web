@@ -1750,7 +1750,9 @@
     "trendImproving": "{source} improved {previous} → {latest} over {count} cycles.",
     "trendDeclining": "{source} declined from {previous} to {latest} over {count} cycles.",
     "noTrendYet": "Not enough history yet to show a trend — check back after another cycle or two.",
-    "seeDetail": "{count} more"
+    "seeDetail": "{count} more",
+    "competencyBySelf": "{dimension} (self-rated)",
+    "competencyByManager": "{dimension} (manager-rated)"
   },
   "scoreEventSources": {
     "gap_analysis": "Gap Analysis",
