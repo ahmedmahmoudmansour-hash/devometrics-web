@@ -93,24 +93,6 @@ export default function Hero() {
           <Mascot size={100} className="float" />
         </div>
 
-        {/* Badge */}
-        <div
-          className="fade-up fade-up-1 mono"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            borderBottom: "1px solid rgba(var(--teal-rgb),0.35)",
-            paddingBlock: 6,
-            marginBottom: 32,
-          }}
-        >
-          <span className="teal-dot" style={{ width: 6, height: 6, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {t("badge")}
-          </span>
-        </div>
-
         {/* Headline */}
         <h1
           className="fade-up fade-up-2 font-display"
@@ -119,6 +101,7 @@ export default function Hero() {
             fontWeight: 700,
             letterSpacing: "-0.02em",
             lineHeight: 1.1,
+            marginTop: 16,
             marginBottom: 24,
             color: "var(--text)",
           }}

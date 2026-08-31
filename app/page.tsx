@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
+import ProductVideoSection from "@/components/ProductVideoSection";
 import AudiencePicker from "@/components/AudiencePicker";
 import DecisionsSection from "@/components/DecisionsSection";
 import HowItWorks from "@/components/HowItWorks";
@@ -42,6 +43,7 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero />
+        <ProductVideoSection />
         <AudiencePicker />
         <SectionTabs tabs={tabs} />
       </main>
