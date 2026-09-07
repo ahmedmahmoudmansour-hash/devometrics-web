@@ -2697,8 +2697,13 @@
   },
   "surveyBuilder": {
     "createASurvey": "إنشاء استبيان",
+    "editSurvey": "تعديل الاستبيان",
     "description": "يصوغ الذكاء الاصطناعي مزيجًا من أسئلة التقييم، والاختيار من متعدد، والأسئلة المفتوحة بناءً على الموضوع الذي تختاره — راجعها وعدّلها قبل التعيين. لا تظهر النتائج إلا كمجاميع مجهولة الهوية بمجرد استجابة 3 أشخاص على الأقل — لا تُظهر أبدًا من قال ماذا.",
+    "editDescription": "عدّل عنوان هذا الاستبيان وموضوعه وأسئلته — ممكن فقط قبل أن يستجيب أي شخص. جهة التعيين لا تتأثر بهذا التعديل.",
     "successMessage": "تم إنشاء الاستبيان بـ{count} سؤالًا وتعيينه.",
+    "savedMessage": "تم حفظ التغييرات.",
+    "saveChanges": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
     "titleLabel": "العنوان",
     "titlePlaceholder": "مثال: استطلاع نبض الثقافة للربع الثالث",
     "themeLabel": "الموضوع",
@@ -2731,6 +2736,7 @@
   },
   "surveyResultsCard": {
     "respondedCount": "{responded} من {assigned} استجابوا",
+    "editSurvey": "تعديل",
     "hideResults": "إخفاء النتائج",
     "viewResults": "عرض النتائج",
     "exportExcel": "تصدير إلى إكسل",
@@ -2828,11 +2834,17 @@
     "scormCompletionExplainer": "يُبلَّغ عن الإكمال تلقائيًا من الدورة نفسها أثناء متابعتها — لا حاجة لإعداد أي شيء هنا.",
     "onlyDocsSupported": "يُدعم فقط ملفات Word أو PDF أو Excel أو PowerPoint أو الفيديو (MP4/WebM/MOV).",
     "fileTooLarge": "الملف كبير جدًا — الحد الأقصى 50 ميجابايت.",
+    "fileTooLargeForType": "هذا النوع من الملفات محدود بـ {mb} ميجابايت.",
     "titleRequired": "العنوان مطلوب.",
     "chooseFile": "اختر ملفًا لرفعه.",
     "everyQuestionNeedsPrompt": "كل سؤال يحتاج إلى نص.",
     "everyOptionNeedsText": "كل خيار يحتاج إلى نص.",
     "uploadFailed": "فشل الرفع — حاول مرة أخرى.",
+    "uploadingPercent": "جارٍ الرفع… {percent}%",
+    "cancelUpload": "إلغاء الرفع",
+    "retryUpload": "إعادة المحاولة",
+    "addToCourseLabel": "إضافة إلى دورة — اختياري",
+    "noCourseOption": "بلا — محتوى مستقل",
     "uploadContent": "+ رفع محتوى",
     "uploadContentHeader": "رفع محتوى",
     "titlePlaceholder": "العنوان، مثال: مدونة السلوك 2026",
@@ -2857,6 +2869,25 @@
     "upload": "رفع",
     "cancel": "إلغاء",
     "newHireContentLabel": "تعيين تلقائيًا للموظفين الجدد"
+  },
+  "knowledgeHubCourses": {
+    "coursesHeading": "الدورات",
+    "newCourse": "+ دورة جديدة",
+    "courseTitlePlaceholder": "عنوان الدورة، مثال: تأهيل المدراء الجدد",
+    "courseDescriptionPlaceholder": "وصف اختياري",
+    "creating": "جارٍ الإنشاء…",
+    "createCourse": "إنشاء الدورة",
+    "cancel": "إلغاء",
+    "archiveCourse": "أرشفة",
+    "restoreCourse": "استعادة",
+    "deleteCourse": "حذف",
+    "confirmDeleteCourse": "حذف هذه الدورة؟ لا يمكن التراجع عن هذا.",
+    "moduleCount": "{count, plural, =0 {لا توجد وحدات} one {وحدة واحدة} two {وحدتان} few {# وحدات} many {# وحدة} other {# وحدة}}",
+    "noModulesYet": "لا توجد وحدات بعد — أضف واحدة من نموذج الرفع أعلاه واختر هذه الدورة.",
+    "moveUp": "تحريك لأعلى",
+    "moveDown": "تحريك لأسفل",
+    "assignedCompleted": "{assigned} مُكلَّف · {completed} مكتمل",
+    "archivedCoursesCount": "{count, plural, one {دورة واحدة مؤرشفة} two {دورتان مؤرشفتان} few {# دورات مؤرشفة} many {# دورة مؤرشفة} other {# دورة مؤرشفة}}"
   },
   "knowledgeHubContentDetailPage": {
     "backToKnowledgeHub": "← العودة إلى مركز المعرفة",
@@ -2922,6 +2953,7 @@
     "selectAll": "تحديد الكل",
     "assigning": "جارٍ التعيين…",
     "assignToCount": "تعيين لـ {count}",
+    "assignFailed": "تعذّر التعيين — حاول مرة أخرى.",
     "cancel": "إلغاء"
   },
   "removeKnowledgeHubAssignmentButton": {
@@ -2948,6 +2980,7 @@
     "completed": "مكتمل",
     "overdue": "متأخر",
     "notStarted": "لم يبدأ",
+    "courseProgress": "{completed}/{total} مكتمل",
     "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
   "knowledgeHubContentPage": {

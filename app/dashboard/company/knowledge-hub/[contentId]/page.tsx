@@ -118,7 +118,7 @@ export default async function KnowledgeHubContentDetailPage({
 
         <div style={{ marginBottom: 20 }}>
           <AssignKnowledgeHubContentModal
-            contentId={contentId}
+            target={{ kind: "content", contentId }}
             employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email }))}
             alreadyAssignedUserIds={report.rows.filter((r) => r.assignmentId).map((r) => r.employeeUserId)}
           />

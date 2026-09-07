@@ -12,9 +12,86 @@ import type {
   KnowledgeHubExamQuestionForTaking,
   KnowledgeHubCompletionType,
 } from "@/lib/supabase/types";
-import { KNOWLEDGE_HUB_BUCKET } from "./constants";
+import { KNOWLEDGE_HUB_BUCKET, getKnowledgeHubMaxBytes } from "./constants";
 
 type NewExamQuestion = { prompt: string; options: string[]; correctIndex: number };
+
+// Shared by createKnowledgeHubContent and the SCORM path
+// (validateAndRegisterScormPackage) — both call this before inserting a new
+// module row so a module added to a course always lands after every module
+// already in it, regardless of which upload path created it.
+export async function getNextCourseModulePosition(supabase: Awaited<ReturnType<typeof createClient>>, courseId: string): Promise<number> {
+  const { data } = await supabase
+    .from("knowledge_hub_content")
+    .select("course_position")
+    .eq("course_id", courseId)
+    .order("course_position", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ course_position: number }>();
+  return data ? data.course_position + 1 : 0;
+}
+
+// Shared by createKnowledgeHubContent and the SCORM path
+// (validateAndRegisterScormPackage) — computing the next course_position
+// and inserting the row are two separate round-trips, not one atomic
+// operation, so two uploads landing in the same course at nearly the same
+// instant could compute the SAME position. The partial unique index
+// (knowledge_hub_content_course_position_uidx, migration 0151) then
+// correctly rejects the second insert with a unique-violation (Postgres
+// code 23505) — genuinely different from a missing-migration error, and
+// self-healable by just recomputing the position and retrying, rather than
+// surfacing a confusing "the database may need migration 0084" message for
+// an unrelated cause. Only courses can hit this at all (course_position is
+// always 0, not user-facing, for standalone content), and even there it
+// needs two admins uploading into the same course within the same request
+// window — rare, but cheap to make self-healing rather than just better-
+// worded.
+export async function insertKnowledgeHubContentRow(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  courseId: string | null,
+  buildRow: (coursePosition: number) => Record<string, unknown>,
+  fallbackErrorMessage: string
+): Promise<{ error: string } | { success: true }> {
+  const maxAttempts = courseId ? 3 : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const coursePosition = courseId ? await getNextCourseModulePosition(supabase, courseId) : 0;
+    const { error } = await supabase.from("knowledge_hub_content").insert(buildRow(coursePosition));
+    if (!error) return { success: true };
+    if (courseId && error.code === "23505" && attempt < maxAttempts) continue; // position collision — recompute and retry
+    return { error: error.code === "23505" ? "Could not save content — try again." : fallbackErrorMessage };
+  }
+  return { error: "Could not save content — try again." };
+}
+
+// Reassignment semantics (Ahmed's decision): a course's assignees always
+// end up with its full current module list. When a new module lands in a
+// course that already has assignees (via any of its other modules), those
+// same employees are assigned the new module too — reusing
+// assignKnowledgeHubContent directly rather than duplicating its
+// upsert/diff/notify logic, so the "only genuinely-new assignees get
+// notified" behavior applies here for free (every auto-included employee
+// is, correctly, a brand-new assignee for THIS specific content id).
+export async function autoAssignNewCourseModule(courseId: string, newContentId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: otherModules } = await supabase
+    .from("knowledge_hub_content")
+    .select("id")
+    .eq("course_id", courseId)
+    .neq("id", newContentId)
+    .returns<{ id: string }[]>();
+  const otherModuleIds = (otherModules ?? []).map((m) => m.id);
+  if (otherModuleIds.length === 0) return;
+
+  const { data: existingAssignees } = await supabase
+    .from("knowledge_hub_assignments")
+    .select("employee_user_id")
+    .in("content_id", otherModuleIds)
+    .returns<{ employee_user_id: string }[]>();
+  const employeeUserIds = Array.from(new Set((existingAssignees ?? []).map((a) => a.employee_user_id)));
+  if (employeeUserIds.length === 0) return;
+
+  await assignKnowledgeHubContent(newContentId, employeeUserIds);
+}
 
 // Called after the client has already uploaded the file directly to Storage
 // (same split as avatar/org-logo uploads elsewhere in this app — the
@@ -36,6 +113,7 @@ export async function createKnowledgeHubContent(input: {
   dueDate?: string | null;
   isNewHireContent?: boolean;
   questions?: NewExamQuestion[];
+  courseId?: string | null;
 }) {
   const company = await buildCompanyData();
   if (!company.isOrgAdmin || !company.organizationId) return { error: "Not authorized" };
@@ -52,7 +130,22 @@ export async function createKnowledgeHubContent(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { error: contentError } = await supabase.from("knowledge_hub_content").insert({
+  // Server-side re-check — the client already enforced this at file
+  // selection (KnowledgeHubUploadForm's handleFileChange), but a client
+  // can't be trusted to have reported its own file size honestly, and the
+  // only real backstop before this was the Storage bucket's own (much
+  // higher, shared-across-types) hard limit. The file has already finished
+  // uploading to Storage by the time this runs (see the comment above this
+  // function) — a rejection here must clean that orphaned object up rather
+  // than leaving it to accumulate silently.
+  const maxBytes = getKnowledgeHubMaxBytes(input.mimeType, "document");
+  if (input.fileSizeBytes > maxBytes) {
+    await supabase.storage.from(KNOWLEDGE_HUB_BUCKET).remove([input.storagePath]);
+    return { error: `This file type is limited to ${Math.round(maxBytes / (1024 * 1024))}MB.` };
+  }
+
+  const courseId = input.courseId || null;
+  const insertResult = await insertKnowledgeHubContentRow(supabase, courseId, (coursePosition) => ({
     id: input.id,
     organization_id: company.organizationId,
     title,
@@ -67,10 +160,15 @@ export async function createKnowledgeHubContent(input: {
     due_date: input.dueDate || null,
     is_new_hire_content: input.isNewHireContent ?? false,
     created_by: user.id,
-  });
-  if (contentError) {
-    return { error: "Could not save content — the database may need migration 0084 run first." };
+    course_id: courseId,
+    course_position: coursePosition,
+  }), "Could not save content — the database may need migration 0084 run first.");
+  if ("error" in insertResult) {
+    await supabase.storage.from(KNOWLEDGE_HUB_BUCKET).remove([input.storagePath]);
+    return insertResult;
   }
+
+  if (courseId) await autoAssignNewCourseModule(courseId, input.id);
 
   if (input.completionType === "exam" && input.questions?.length) {
     const { data: insertedQuestions, error: questionsError } = await supabase
@@ -223,6 +321,160 @@ export async function assignKnowledgeHubContent(contentId: string, employeeUserI
 
   revalidatePath("/dashboard/company/knowledge-hub");
   revalidatePath(`/dashboard/company/knowledge-hub/${contentId}`);
+  return { success: true };
+}
+
+// ============================================================
+// Courses (migration 0151) — a grouping/ordering layer over the existing,
+// unmodified per-content architecture. Every module stays a normal
+// knowledge_hub_content row with its own assignment/completion/scoring
+// exactly as before courses existed; nothing here touches
+// knowledge_hub_completions, the exam/attestation/SCORM RPCs, or the
+// score_events trigger.
+// ============================================================
+
+export async function createKnowledgeHubCourse(title: string, description: string): Promise<{ error: string } | { success: true; courseId: string }> {
+  const company = await buildCompanyData();
+  if (!company.isOrgAdmin || !company.organizationId) return { error: "Not authorized" };
+
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) return { error: "Title is required" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data, error } = await supabase
+    .from("knowledge_hub_courses")
+    .insert({
+      organization_id: company.organizationId,
+      title: trimmedTitle,
+      description: description.trim() || null,
+      created_by: user.id,
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !data) {
+    return { error: "Could not create course — the database may need migration 0151 run first." };
+  }
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true, courseId: data.id };
+}
+
+// Assigns every module currently in the course to each employee, reusing
+// assignKnowledgeHubContent per-module — one course-level click fans out
+// into the same, already-correct per-module upsert/diff/notify calls an
+// admin would otherwise have to trigger individually per module.
+export async function assignKnowledgeHubCourse(courseId: string, employeeUserIds: string[]): Promise<{ error: string } | { success: true }> {
+  if (employeeUserIds.length === 0) return { error: "Select at least one employee" };
+
+  const supabase = await createClient();
+  const { data: modules } = await supabase
+    .from("knowledge_hub_content")
+    .select("id")
+    .eq("course_id", courseId)
+    .returns<{ id: string }[]>();
+  if (!modules || modules.length === 0) return { error: "This course has no modules yet." };
+
+  const results = await Promise.all(modules.map((m) => assignKnowledgeHubContent(m.id, employeeUserIds)));
+  const firstError = results.find((r): r is { error: string } => "error" in r);
+  if (firstError) return firstError;
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+// Simple up/down neighbor swap — no drag-and-drop dependency, matches this
+// app's generally lean dependency footprint. The partial unique index on
+// (course_id, course_position) means the two updates below must swap via a
+// temporary out-of-range value, or run as two updates that never collide;
+// simplest correct approach is a three-step swap through a scratch value.
+export async function reorderKnowledgeHubCourseModule(contentId: string, direction: "up" | "down"): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("knowledge_hub_content")
+    .select("course_id, course_position")
+    .eq("id", contentId)
+    .maybeSingle<{ course_id: string | null; course_position: number }>();
+  if (!current?.course_id) return { error: "This module isn't part of a course." };
+
+  // "up" wants the immediate predecessor (largest position below current's);
+  // "down" wants the immediate successor (smallest position above it).
+  const neighborBase = supabase.from("knowledge_hub_content").select("id, course_position").eq("course_id", current.course_id);
+  const { data: neighbor } =
+    direction === "up"
+      ? await neighborBase.lt("course_position", current.course_position).order("course_position", { ascending: false }).limit(1).maybeSingle<{ id: string; course_position: number }>()
+      : await neighborBase.gt("course_position", current.course_position).order("course_position", { ascending: true }).limit(1).maybeSingle<{ id: string; course_position: number }>();
+  if (!neighbor) return { error: direction === "up" ? "Already at the top." : "Already at the bottom." };
+
+  // Scratch value (-1) sidesteps the (course_id, course_position) unique
+  // index momentarily colliding with itself mid-swap. Each step's error is
+  // checked and, on the second or third step failing partway through (a
+  // network blip, say), the already-applied steps are best-effort rolled
+  // back — an unchecked failure here would otherwise leave a module
+  // permanently stuck at position -1, silently corrupting the course's
+  // order until someone noticed and fixed it by hand.
+  const { error: step1Error } = await supabase.from("knowledge_hub_content").update({ course_position: -1 }).eq("id", contentId);
+  if (step1Error) return { error: "Could not reorder — try again." };
+
+  const { error: step2Error } = await supabase.from("knowledge_hub_content").update({ course_position: current.course_position }).eq("id", neighbor.id);
+  if (step2Error) {
+    await supabase.from("knowledge_hub_content").update({ course_position: current.course_position }).eq("id", contentId);
+    return { error: "Could not reorder — try again." };
+  }
+
+  const { error: step3Error } = await supabase.from("knowledge_hub_content").update({ course_position: neighbor.course_position }).eq("id", contentId);
+  if (step3Error) {
+    await supabase.from("knowledge_hub_content").update({ course_position: neighbor.course_position }).eq("id", neighbor.id);
+    await supabase.from("knowledge_hub_content").update({ course_position: current.course_position }).eq("id", contentId);
+    return { error: "Could not reorder — try again." };
+  }
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+export async function archiveKnowledgeHubCourse(courseId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("knowledge_hub_courses").update({ archived_at: new Date().toISOString() }).eq("id", courseId).select("id");
+  if (error) return { error: "Could not archive this course." };
+  if (!data || data.length === 0) return { error: "Not authorized to archive this course." };
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+export async function unarchiveKnowledgeHubCourse(courseId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("knowledge_hub_courses").update({ archived_at: null }).eq("id", courseId).select("id");
+  if (error) return { error: "Could not restore this course." };
+  if (!data || data.length === 0) return { error: "Not authorized to restore this course." };
+
+  revalidatePath("/dashboard/company/knowledge-hub");
+  return { success: true };
+}
+
+// Only allowed when the course has zero linked modules — mirrors
+// deleteKnowledgeHubContent's existing rule of blocking destructive actions
+// on anything with real history/content attached. A populated course must
+// have its modules moved out (or just be archived) first; course_id's
+// "on delete set null" means even a manual DB-level delete couldn't cascade
+// into losing a module or its completion history regardless.
+export async function deleteKnowledgeHubCourse(courseId: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { count } = await supabase.from("knowledge_hub_content").select("id", { count: "exact", head: true }).eq("course_id", courseId);
+  if ((count ?? 0) > 0) {
+    return { error: "This course still has modules in it — move them out (or just archive the course) before deleting it." };
+  }
+
+  const { data, error } = await supabase.from("knowledge_hub_courses").delete().eq("id", courseId).select("id");
+  if (error) return { error: "Could not delete this course." };
+  if (!data || data.length === 0) return { error: "Not authorized to delete this course." };
+
+  revalidatePath("/dashboard/company/knowledge-hub");
   return { success: true };
 }
 

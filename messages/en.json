@@ -2697,8 +2697,13 @@
   },
   "surveyBuilder": {
     "createASurvey": "Create a survey",
+    "editSurvey": "Edit survey",
     "description": "AI drafts a mix of rating, multiple-choice, and open-ended questions from the theme you pick — review and edit them before assigning. Results only ever show as anonymous aggregates once at least 3 people have responded — never who said what.",
+    "editDescription": "Edit this survey's title, theme, and questions — only possible before anyone has responded. Who it's assigned to isn't affected by this edit.",
     "successMessage": "Survey created with {count} questions and assigned.",
+    "savedMessage": "Changes saved.",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
     "titleLabel": "Title",
     "titlePlaceholder": "e.g. Q3 Culture Pulse Check",
     "themeLabel": "Theme",
@@ -2731,6 +2736,7 @@
   },
   "surveyResultsCard": {
     "respondedCount": "{responded} of {assigned} responded",
+    "editSurvey": "Edit",
     "hideResults": "Hide results",
     "viewResults": "View results",
     "exportExcel": "Export to Excel",
@@ -2828,11 +2834,17 @@
     "scormCompletionExplainer": "Completion is reported by the course itself as people go through it — there's nothing to configure here.",
     "onlyDocsSupported": "Only Word, PDF, Excel, PowerPoint, or video (MP4/WebM/MOV) files are supported.",
     "fileTooLarge": "File is too large — 50MB max.",
+    "fileTooLargeForType": "This file type is limited to {mb}MB.",
     "titleRequired": "Title is required.",
     "chooseFile": "Choose a file to upload.",
     "everyQuestionNeedsPrompt": "Every question needs a prompt.",
     "everyOptionNeedsText": "Every option needs text.",
     "uploadFailed": "Upload failed — try again.",
+    "uploadingPercent": "Uploading… {percent}%",
+    "cancelUpload": "Cancel upload",
+    "retryUpload": "Retry",
+    "addToCourseLabel": "Add to course — optional",
+    "noCourseOption": "None — standalone content",
     "uploadContent": "+ Upload content",
     "uploadContentHeader": "Upload content",
     "titlePlaceholder": "Title, e.g. Code of Conduct 2026",
@@ -2857,6 +2869,25 @@
     "upload": "Upload",
     "cancel": "Cancel",
     "newHireContentLabel": "Assign automatically to new hires"
+  },
+  "knowledgeHubCourses": {
+    "coursesHeading": "Courses",
+    "newCourse": "+ New course",
+    "courseTitlePlaceholder": "Course title, e.g. New Manager Onboarding",
+    "courseDescriptionPlaceholder": "Optional description",
+    "creating": "Creating…",
+    "createCourse": "Create course",
+    "cancel": "Cancel",
+    "archiveCourse": "Archive",
+    "restoreCourse": "Restore",
+    "deleteCourse": "Delete",
+    "confirmDeleteCourse": "Delete this course? This can't be undone.",
+    "moduleCount": "{count, plural, =0 {No modules} one {# module} other {# modules}}",
+    "noModulesYet": "No modules yet — add one from the upload form above and pick this course.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "assignedCompleted": "{assigned} assigned · {completed} done",
+    "archivedCoursesCount": "{count, plural, one {# archived course} other {# archived courses}}"
   },
   "knowledgeHubContentDetailPage": {
     "backToKnowledgeHub": "← Back to Knowledge Hub",
@@ -2922,6 +2953,7 @@
     "selectAll": "Select all",
     "assigning": "Assigning…",
     "assignToCount": "Assign to {count}",
+    "assignFailed": "Could not assign — try again.",
     "cancel": "Cancel"
   },
   "removeKnowledgeHubAssignmentButton": {
@@ -2948,6 +2980,7 @@
     "completed": "Completed",
     "overdue": "Overdue",
     "notStarted": "Not started",
+    "courseProgress": "{completed}/{total} complete",
     "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
   "knowledgeHubContentPage": {

@@ -5,9 +5,20 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import KnowledgeHubUploadForm from "@/components/dashboard/KnowledgeHubUploadForm";
+import KnowledgeHubCourseManager, { type CourseModuleRow, type CourseRow } from "@/components/dashboard/KnowledgeHubCourseManager";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
-import type { KnowledgeHubContent } from "@/lib/supabase/types";
+import type { KnowledgeHubContent, KnowledgeHubCourse } from "@/lib/supabase/types";
+
+// A "use server" file can only export async functions (see
+// lib/knowledgeHub/scorm/constants.ts's header comment) — maxDuration can't
+// live in lib/knowledgeHub/scorm/ingest.ts itself, so it's set here on the
+// route that hosts the upload form invoking validateAndRegisterScormPackage
+// instead; Next.js applies a page/layout's maxDuration to every Server
+// Action invoked from that route. Matches the app/api/trends and
+// app/api/courses route precedent (60s) — SCORM's own processing budget
+// (45s) leaves headroom under this.
+export const maxDuration = 60;
 
 export default async function CompanyKnowledgeHubPage() {
   const t = await getTranslations("companyKnowledgeHubPage");
@@ -23,10 +34,24 @@ export default async function CompanyKnowledgeHubPage() {
     .order("created_at", { ascending: false })
     .returns<KnowledgeHubContent[]>();
 
+  const { data: courses } = await supabase
+    .from("knowledge_hub_courses")
+    .select("*")
+    .eq("organization_id", data.organizationId)
+    .order("created_at", { ascending: true })
+    .returns<KnowledgeHubCourse[]>();
+
   // Archived content is hidden from the active list but its row (and
-  // completion history) is never deleted — see migration 0085.
-  const content = (allContent ?? []).filter((c) => !c.archived_at);
-  const archivedContent = (allContent ?? []).filter((c) => c.archived_at);
+  // completion history) is never deleted — see migration 0085. Content
+  // belonging to a course (migration 0151) renders inside
+  // KnowledgeHubCourseManager instead of the flat table below — "content"/
+  // "archivedContent" from here on are standalone (course_id === null)
+  // items only.
+  const allActive = (allContent ?? []).filter((c) => !c.archived_at);
+  const allArchived = (allContent ?? []).filter((c) => c.archived_at);
+  const content = allActive.filter((c) => !c.course_id);
+  const archivedContent = allArchived.filter((c) => !c.course_id);
+  const courseContent = (allContent ?? []).filter((c) => c.course_id);
 
   // UX audit follow-up — an admin previously had no way to see the full set
   // of documents flagged is_new_hire_content (migration 0120) except by
@@ -34,7 +59,10 @@ export default async function CompanyKnowledgeHubPage() {
   // surfaces the whole "new-hire packet" at a glance.
   const newHireContent = content.filter((c) => c.is_new_hire_content);
 
-  const contentIds = content.map((c) => c.id);
+  // Includes course modules too — the course manager below needs the same
+  // per-module assigned/completed counts the flat table shows for
+  // standalone content.
+  const contentIds = (allContent ?? []).map((c) => c.id);
   const [{ data: assignments }, { data: completions }] = contentIds.length
     ? await Promise.all([
         supabase
@@ -73,6 +101,43 @@ export default async function CompanyKnowledgeHubPage() {
   const assignedCountByContent = new Map<string, number>();
   for (const [contentId, set] of assignedEmployeesByContent) assignedCountByContent.set(contentId, set.size);
 
+  function formatLabelFor(c: KnowledgeHubContent): string {
+    return c.content_type === "scorm" ? "SCORM" : c.file_name.split(".").pop()?.toUpperCase() ?? "";
+  }
+  function completionLabelFor(c: KnowledgeHubContent): string {
+    return c.completion_type === "exam"
+      ? t("examWithPassPercent", { percent: c.passing_score_percent })
+      : c.completion_type === "scorm"
+        ? t("scormLabel")
+        : t("readConfirmation");
+  }
+
+  const modulesByCourse: Record<string, CourseModuleRow[]> = {};
+  for (const c of courseContent.sort((a, b) => a.course_position - b.course_position)) {
+    const courseId = c.course_id!;
+    (modulesByCourse[courseId] ??= []).push({
+      id: c.id,
+      title: c.title,
+      formatLabel: formatLabelFor(c),
+      completionLabel: completionLabelFor(c),
+      assignedCount: assignedCountByContent.get(c.id) ?? 0,
+      completedCount: completedEmployeesByContent.get(c.id)?.size ?? 0,
+    });
+  }
+
+  const courseRows: CourseRow[] = (courses ?? []).map((course) => {
+    const moduleIds = courseContent.filter((c) => c.course_id === course.id).map((c) => c.id);
+    const assignedUserIds = new Set<string>();
+    for (const id of moduleIds) for (const userId of assignedEmployeesByContent.get(id) ?? []) assignedUserIds.add(userId);
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      archivedAt: course.archived_at,
+      assignedUserIds: Array.from(assignedUserIds),
+    };
+  });
+
   const cellStyle: React.CSSProperties = {
     padding: "10px 14px",
     fontSize: 13,
@@ -107,8 +172,14 @@ export default async function CompanyKnowledgeHubPage() {
         <CompanyNavTabs active="knowledgeHub" />
 
         <div style={{ marginBottom: 24 }}>
-          <KnowledgeHubUploadForm organizationId={data.organizationId} />
+          <KnowledgeHubUploadForm organizationId={data.organizationId} courses={(courses ?? []).filter((c) => !c.archived_at).map((c) => ({ id: c.id, title: c.title }))} />
         </div>
+
+        <KnowledgeHubCourseManager
+          courses={courseRows}
+          modulesByCourse={modulesByCourse}
+          employees={data.rows.map((r) => ({ userId: r.userId, name: r.name, email: r.email }))}
+        />
 
         <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
           <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>

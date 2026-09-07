@@ -476,6 +476,25 @@ export type KnowledgeHubContent = {
   content_type: "document" | "scorm";
   scorm_version: "1.2" | null;
   scorm_launch_path: string | null;
+  // Migration 0151 — null unless this module belongs to a
+  // knowledge_hub_course; course_position orders modules within one course.
+  course_id: string | null;
+  course_position: number;
+};
+
+// Migration 0151 — a pure grouping/ordering wrapper around existing
+// knowledge_hub_content rows (see KnowledgeHubContent.course_id above). No
+// due_date/is_new_hire_content here: those stay per-module, exactly as
+// before courses existed.
+export type KnowledgeHubCourse = {
+  id: string;
+  organization_id: string;
+  title: string;
+  description: string | null;
+  archived_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type KnowledgeHubExamQuestion = {

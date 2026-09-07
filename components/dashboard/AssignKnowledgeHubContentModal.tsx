@@ -3,16 +3,21 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { assignKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
+import { assignKnowledgeHubContent, assignKnowledgeHubCourse } from "@/lib/knowledgeHub/actions";
 
 type Employee = { userId: string; name: string; email: string };
 
+// `target` picks which underlying action fans out the assignment — a single
+// module (assignKnowledgeHubContent) or every module in a course at once
+// (assignKnowledgeHubCourse, which itself just calls assignKnowledgeHubContent
+// per module) — the rest of this component (selection UI, diffing already-
+// assigned people out) is identical either way.
 export default function AssignKnowledgeHubContentModal({
-  contentId,
+  target,
   employees,
   alreadyAssignedUserIds,
 }: {
-  contentId: string;
+  target: { kind: "content"; contentId: string } | { kind: "course"; courseId: string };
   employees: Employee[];
   alreadyAssignedUserIds: string[];
 }) {
@@ -39,9 +44,9 @@ export default function AssignKnowledgeHubContentModal({
     if (selected.length === 0) return;
     setError(null);
     startTransition(async () => {
-      const result = await assignKnowledgeHubContent(contentId, selected);
-      if (result?.error) {
-        setError(result.error);
+      const result = target.kind === "content" ? await assignKnowledgeHubContent(target.contentId, selected) : await assignKnowledgeHubCourse(target.courseId, selected);
+      if ("error" in result) {
+        setError(result.error ?? t("assignFailed"));
         return;
       }
       setSelected([]);

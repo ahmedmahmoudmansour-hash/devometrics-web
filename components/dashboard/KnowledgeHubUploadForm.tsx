@@ -3,14 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { createClient } from "@/lib/supabase/client";
 import { createKnowledgeHubContent } from "@/lib/knowledgeHub/actions";
 import { validateAndRegisterScormPackage } from "@/lib/knowledgeHub/scorm/ingest";
+import { useResumableUpload } from "@/lib/knowledgeHub/useResumableUpload";
 import {
   KNOWLEDGE_HUB_BUCKET,
-  KNOWLEDGE_HUB_MAX_BYTES,
   KNOWLEDGE_HUB_ALLOWED_MIME_TYPES,
   KNOWLEDGE_HUB_SCORM_ZIP_MIME_TYPES,
+  getKnowledgeHubMaxBytes,
 } from "@/lib/knowledgeHub/constants";
 import type { KnowledgeHubCompletionType } from "@/lib/supabase/types";
 
@@ -37,7 +37,7 @@ function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-export default function KnowledgeHubUploadForm({ organizationId }: { organizationId: string }) {
+export default function KnowledgeHubUploadForm({ organizationId, courses }: { organizationId: string; courses: { id: string; title: string }[] }) {
   const t = useTranslations("knowledgeHubUploadForm");
   const [expanded, setExpanded] = useState(false);
   const [kind, setKind] = useState<ContentKind>("document");
@@ -49,11 +49,12 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
   const [maxAttempts, setMaxAttempts] = useState<string>("");
   const [dueDate, setDueDate] = useState("");
   const [isNewHireContent, setIsNewHireContent] = useState(false);
+  const [courseId, setCourseId] = useState<string>("");
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const resumableUpload = useResumableUpload();
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -71,8 +72,13 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       setError(kind === "scorm" ? t("onlyZipSupported") : t("onlyDocsSupported"));
       return;
     }
-    if (f.size > KNOWLEDGE_HUB_MAX_BYTES) {
-      setError(t("fileTooLarge"));
+    // Checked here, at file selection, before any upload starts — not only
+    // at final DB insert (createKnowledgeHubContent re-checks server-side
+    // too, but nobody should sit through a multi-hundred-MB upload just to
+    // be rejected at the end for a size that was already knowable now).
+    const maxBytes = getKnowledgeHubMaxBytes(f.type, kind);
+    if (f.size > maxBytes) {
+      setError(t("fileTooLargeForType", { mb: Math.round(maxBytes / (1024 * 1024)) }));
       return;
     }
     setFile(f);
@@ -132,18 +138,17 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
       setMaxAttempts("");
       setDueDate("");
       setIsNewHireContent(false);
+      setCourseId("");
       setQuestions([newQuestion()]);
       setExpanded(false);
+      resumableUpload.reset();
       router.refresh();
     }
 
-    setUploading(true);
     try {
       const contentId = crypto.randomUUID();
       const storagePath = `${organizationId}/${contentId}/${sanitizeFileName(file.name)}`;
-      const supabase = createClient();
-      const { error: uploadError } = await supabase.storage.from(KNOWLEDGE_HUB_BUCKET).upload(storagePath, file);
-      if (uploadError) throw new Error(uploadError.message);
+      await resumableUpload.start(KNOWLEDGE_HUB_BUCKET, storagePath, file);
 
       if (kind === "scorm") {
         startTransition(async () => {
@@ -155,6 +160,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
             maxAttempts: null,
             dueDate: dueDate || null,
             isNewHireContent,
+            courseId: courseId || null,
           });
           if ("error" in result) {
             setError(result.error);
@@ -178,6 +184,7 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
             dueDate: dueDate || null,
             isNewHireContent,
             questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
+            courseId: courseId || null,
           });
           if (result?.error) {
             setError(result.error);
@@ -187,13 +194,17 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("uploadFailed"));
-    } finally {
-      setUploading(false);
+      // resumableUpload.start() already recorded the error internally
+      // (surfaced below via resumableUpload.error with Retry/Cancel); this
+      // catch just stops handleSubmit from falling through to the actions
+      // above on an upload that never finished.
+      if (!(err instanceof Error) || resumableUpload.status !== "error") {
+        setError(err instanceof Error ? err.message : t("uploadFailed"));
+      }
     }
   }
 
-  const busy = uploading || isPending;
+  const busy = resumableUpload.status === "uploading" || isPending;
 
   if (!expanded) {
     return (
@@ -307,6 +318,22 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           />
           {t("newHireContentLabel")}
         </label>
+
+        {courses.length > 0 && (
+          <div>
+            <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+              {t("addToCourseLabel")}
+            </label>
+            <select value={courseId} onChange={(e) => setCourseId(e.target.value)} style={{ ...inputStyle, maxWidth: 320 }}>
+              <option value="">{t("noCourseOption")}</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {kind === "scorm" && (
           <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>{t("scormCompletionExplainer")}</p>
@@ -456,6 +483,37 @@ export default function KnowledgeHubUploadForm({ organizationId }: { organizatio
           </div>
         )}
         </>
+        )}
+
+        {resumableUpload.status === "uploading" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>
+              <span>{t("uploadingPercent", { percent: resumableUpload.progress })}</span>
+              <button
+                type="button"
+                onClick={resumableUpload.cancel}
+                style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              >
+                {t("cancelUpload")}
+              </button>
+            </div>
+            <div style={{ height: 6, borderRadius: 100, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${resumableUpload.progress}%`, background: "var(--teal)", transition: "width 0.2s ease" }} />
+            </div>
+          </div>
+        )}
+
+        {resumableUpload.status === "error" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <p style={{ color: "var(--danger)", fontSize: 13, flex: 1 }}>{resumableUpload.error ?? t("uploadFailed")}</p>
+            <button
+              type="button"
+              onClick={resumableUpload.retry}
+              style={{ background: "none", border: "1px solid var(--teal)", color: "var(--teal)", borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+            >
+              {t("retryUpload")}
+            </button>
+          </div>
         )}
 
         {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}

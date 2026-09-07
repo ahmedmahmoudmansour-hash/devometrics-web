@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
 import { getMyOrganizationId } from "@/lib/organizations/membership";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
-import type { KnowledgeHubContent, KnowledgeHubCompletion } from "@/lib/supabase/types";
+import type { KnowledgeHubContent, KnowledgeHubCompletion, KnowledgeHubCourse } from "@/lib/supabase/types";
 
 export default async function KnowledgeHubPage() {
   const t = await getTranslations("knowledgeHubPage");
@@ -62,6 +62,90 @@ export default async function KnowledgeHubPage() {
   // concept.
   const STATUS_COLOR = { overdue: "248,113,113", pending: "240,184,64", done: "0,201,167" } as const;
 
+  // Group by course_id (migration 0151) — a course renders as one card with
+  // its ordered modules and a rollup progress bar; everything else renders
+  // exactly as before (a flat card per assignment).
+  const standaloneAssignments = (assignments ?? []).filter((a) => !a.knowledge_hub_content.course_id);
+  const courseAssignments = (assignments ?? []).filter((a) => a.knowledge_hub_content.course_id);
+  const courseIds = Array.from(new Set(courseAssignments.map((a) => a.knowledge_hub_content.course_id!)));
+  const { data: coursesData } = courseIds.length
+    ? await supabase.from("knowledge_hub_courses").select("*").in("id", courseIds).returns<KnowledgeHubCourse[]>()
+    : { data: [] };
+  const courseById = new Map((coursesData ?? []).map((c) => [c.id, c]));
+
+  const assignmentsByCourse = new Map<string, typeof courseAssignments>();
+  for (const a of courseAssignments) {
+    const courseId = a.knowledge_hub_content.course_id!;
+    const list = assignmentsByCourse.get(courseId) ?? [];
+    list.push(a);
+    assignmentsByCourse.set(courseId, list);
+  }
+  for (const list of assignmentsByCourse.values()) {
+    list.sort((a, b) => a.knowledge_hub_content.course_position - b.knowledge_hub_content.course_position);
+  }
+
+  function moduleCard(a: { id: string; content_id: string; knowledge_hub_content: KnowledgeHubContent }) {
+    const content = a.knowledge_hub_content;
+    const completion = latestCompletionByContent.get(a.content_id);
+    const isOverdue = !completion && !!content.due_date && content.due_date < today;
+    const statusColor = completion ? STATUS_COLOR.done : isOverdue ? STATUS_COLOR.overdue : STATUS_COLOR.pending;
+    return (
+      <Link
+        key={a.id}
+        href={`/dashboard/knowledge-hub/${a.content_id}`}
+        style={{
+          display: "block",
+          background: "var(--navy-mid)",
+          border: "1px solid var(--border)",
+          borderRadius: 14,
+          padding: 20,
+          textDecoration: "none",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+              {content.title}
+            </h3>
+            {content.description && (
+              <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{content.description}</p>
+            )}
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              {content.completion_type === "exam"
+                ? t("examRequired")
+                : content.completion_type === "scorm"
+                  ? t("scormCourse")
+                  : t("readConfirmation")}
+              {content.due_date && !completion ? t("dueSuffix", { date: content.due_date }) : ""}
+            </p>
+          </div>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              padding: "4px 10px",
+              borderRadius: 8,
+              background: `rgba(${statusColor},0.12)`,
+              border: `1px solid rgba(${statusColor},0.35)`,
+              color: `rgb(${statusColor})`,
+            }}
+          >
+            {completion
+              ? completion.score_percent !== null && (content.completion_type === "exam" || content.completion_type === "scorm")
+                ? completion.passed
+                  ? t("passedScore", { percent: completion.score_percent })
+                  : t("completedScore", { percent: completion.score_percent })
+                : t("completed")
+              : isOverdue
+                ? t("overdue")
+                : t("notStarted")}
+          </span>
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -84,68 +168,36 @@ export default async function KnowledgeHubPage() {
             </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {(assignments ?? []).map((a) => {
-              const content = a.knowledge_hub_content;
-              const completion = latestCompletionByContent.get(a.content_id);
-              const isOverdue = !completion && !!content.due_date && content.due_date < today;
-              const statusColor = completion ? STATUS_COLOR.done : isOverdue ? STATUS_COLOR.overdue : STATUS_COLOR.pending;
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {Array.from(assignmentsByCourse.entries()).map(([courseId, courseModuleAssignments]) => {
+              const course = courseById.get(courseId);
+              const completedCount = courseModuleAssignments.filter((a) => latestCompletionByContent.has(a.content_id)).length;
+              const totalCount = courseModuleAssignments.length;
+              const pct = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
               return (
-                <Link
-                  key={a.id}
-                  href={`/dashboard/knowledge-hub/${a.content_id}`}
-                  style={{
-                    display: "block",
-                    background: "var(--navy-mid)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 14,
-                    padding: 20,
-                    textDecoration: "none",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                    <div>
-                      <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                        {content.title}
-                      </h3>
-                      {content.description && (
-                        <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{content.description}</p>
-                      )}
-                      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        {content.completion_type === "exam"
-                          ? t("examRequired")
-                          : content.completion_type === "scorm"
-                            ? t("scormCourse")
-                            : t("readConfirmation")}
-                        {content.due_date && !completion ? t("dueSuffix", { date: content.due_date }) : ""}
-                      </p>
+                <div key={courseId} style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{course?.title ?? t("scormCourse")}</p>
+                  {course?.description && <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>{course.description}</p>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                    <div style={{ flex: 1, height: 6, borderRadius: 100, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: "var(--teal)" }} />
                     </div>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        whiteSpace: "nowrap",
-                        padding: "4px 10px",
-                        borderRadius: 8,
-                        background: `rgba(${statusColor},0.12)`,
-                        border: `1px solid rgba(${statusColor},0.35)`,
-                        color: `rgb(${statusColor})`,
-                      }}
-                    >
-                      {completion
-                        ? completion.score_percent !== null && (content.completion_type === "exam" || content.completion_type === "scorm")
-                          ? completion.passed
-                            ? t("passedScore", { percent: completion.score_percent })
-                            : t("completedScore", { percent: completion.score_percent })
-                          : t("completed")
-                        : isOverdue
-                          ? t("overdue")
-                          : t("notStarted")}
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", whiteSpace: "nowrap" }}>
+                      {t("courseProgress", { completed: completedCount, total: totalCount })}
                     </span>
                   </div>
-                </Link>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {courseModuleAssignments.map((a) => moduleCard(a))}
+                  </div>
+                </div>
               );
             })}
+
+            {standaloneAssignments.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {standaloneAssignments.map((a) => moduleCard(a))}
+              </div>
+            )}
           </div>
         )}
       </div>
