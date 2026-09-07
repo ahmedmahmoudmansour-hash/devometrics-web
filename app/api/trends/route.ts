@@ -10,10 +10,19 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // alone can involve several rounds of Claude Sonnet 5's code-execution-based
 // search orchestration. Observed live as a request that just hangs on
 // "Searching…" forever: the platform silently terminates the function
-// mid-stream, no error ever reaches the client to display. 60s is
-// plan-agnostic — Vercel clamps down to whatever the account's actual
-// ceiling is if this exceeds it, so this is safe to set regardless of tier.
-export const maxDuration = 60;
+// mid-stream, no error ever reaches the client to display.
+//
+// Raised from 60 to 300 (2026-09-04): 60 was based on an earlier live
+// observation that turned out to be an easy case — re-measured directly
+// against the real Anthropic API outside the request/response cycle, a
+// single real run took 116s for phase 1 alone and 121.7s end to end, comfortably
+// exceeding 60s and reproducing the exact silent-kill failure this
+// maxDuration was originally added to fix. 300s matches Vercel Pro's real
+// ceiling and is still plan-agnostic — Vercel clamps down to whatever the
+// account's actual ceiling is if this exceeds it (e.g. a Hobby-tier
+// project stays capped at 60s regardless of this value, in which case the
+// Vercel plan itself — not this number — is what needs raising).
+export const maxDuration = 300;
 
 const MAX_JOB_TITLE_LENGTH = 120;
 

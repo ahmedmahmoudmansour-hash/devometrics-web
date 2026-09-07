@@ -11,9 +11,16 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // the function at its platform default (well under a minute), which is too
 // short for two sequential model calls where phase 1 alone can involve
 // several rounds of Claude Sonnet 5's code-execution-based search
-// orchestration. 60s is plan-agnostic — Vercel clamps down to the
-// account's actual ceiling if this exceeds it.
-export const maxDuration = 60;
+// orchestration.
+//
+// Raised from 60 to 300 (2026-09-04): a direct, real measurement against
+// the identical two-phase pattern in /api/trends showed phase 1 alone
+// taking 116s on a real run — comfortably over the old 60s ceiling. Same
+// architecture here, so the same real-world risk applies. 300s is still
+// plan-agnostic — Vercel clamps to the account's actual ceiling if this
+// exceeds it (a Hobby-tier project stays at 60s regardless, in which case
+// the Vercel plan itself needs raising, not this number).
+export const maxDuration = 300;
 
 const MAX_TOPIC_LENGTH = 200;
 

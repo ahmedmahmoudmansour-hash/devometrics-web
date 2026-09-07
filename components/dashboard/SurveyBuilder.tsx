@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { createSurvey, previewSurveyQuestions } from "@/lib/surveys/actions";
+import { createSurvey, previewSurveyQuestions, updateSurvey } from "@/lib/surveys/actions";
 import { SURVEY_THEMES, surveyThemeLabel, type SurveyQuestion, type SurveyQuestionType } from "@/lib/surveys/types";
 
 const inputStyle: React.CSSProperties = {
@@ -93,13 +93,32 @@ function QuestionEditor({
   );
 }
 
-export default function SurveyBuilder({ employees }: { employees: { userId: string; name: string }[] }) {
+// existingSurvey turns this into an editor for a published (but
+// not-yet-answered) survey instead of a fresh-creation form: no AI
+// generation step (questions are already loaded), no assignee picker
+// (editing doesn't change who it's assigned to — see updateSurvey's own
+// comment for why), submit calls updateSurvey instead of createSurvey.
+// updateSurvey itself is the real guard against editing an already-answered
+// survey (atomic check-and-write, see lib/surveys/actions.ts) — this prop
+// only controls which form is shown, not whether the edit is allowed.
+type ExistingSurvey = { id: string; title: string; theme: string; questions: SurveyQuestion[] };
+
+export default function SurveyBuilder({
+  employees,
+  existingSurvey,
+  onSaved,
+}: {
+  employees: { userId: string; name: string }[];
+  existingSurvey?: ExistingSurvey;
+  onSaved?: () => void;
+}) {
+  const isEditing = !!existingSurvey;
   const t = useTranslations("surveyBuilder");
   const tThemes = useTranslations("surveyThemes");
-  const [title, setTitle] = useState("");
-  const [theme, setTheme] = useState<string>(SURVEY_THEMES[0]);
+  const [title, setTitle] = useState(existingSurvey?.title ?? "");
+  const [theme, setTheme] = useState<string>(existingSurvey?.theme ?? SURVEY_THEMES[0]);
   const [focus, setFocus] = useState("");
-  const [questions, setQuestions] = useState<SurveyQuestion[] | null>(null);
+  const [questions, setQuestions] = useState<SurveyQuestion[] | null>(existingSurvey?.questions ?? null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isGenerating, startGenerate] = useTransition();
   const [isPublishing, startPublish] = useTransition();
@@ -153,6 +172,18 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
     if (!questions) return;
     setError(null);
     startPublish(async () => {
+      if (isEditing) {
+        const result = await updateSurvey(existingSurvey.id, { title, theme, questions });
+        if ("error" in result) {
+          setError(result.error);
+          return;
+        }
+        setSuccess({ questionCount: questions.length });
+        onSaved?.();
+        router.refresh();
+        return;
+      }
+
       const result = await createSurvey({
         title,
         theme,
@@ -174,9 +205,9 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
 
   return (
     <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("createASurvey")}</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{isEditing ? t("editSurvey") : t("createASurvey")}</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.6 }}>
-        {t("description")}
+        {isEditing ? t("editDescription") : t("description")}
       </p>
 
       {success && (
@@ -191,12 +222,12 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
             color: "var(--teal)",
           }}
         >
-          {t("successMessage", { count: success.questionCount })}
+          {isEditing ? t("savedMessage") : t("successMessage", { count: success.questionCount })}
         </div>
       )}
       {error && <p style={{ color: "var(--danger)", fontSize: 12, marginBottom: 12 }}>{error}</p>}
 
-      <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: questions ? 20 : 0 }}>
+      <form onSubmit={isEditing ? (e) => e.preventDefault() : handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: questions ? 20 : 0 }}>
         <div>
           <label htmlFor="survey-title" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
             {t("titleLabel")}
@@ -224,38 +255,42 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
           </select>
         </div>
 
-        <div>
-          <label htmlFor="survey-focus" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-            {t("focusLabel")}
-          </label>
-          <textarea
-            id="survey-focus"
-            value={focus}
-            onChange={(e) => setFocus(e.target.value)}
-            placeholder={t("focusPlaceholder")}
-            rows={2}
-            style={{ ...inputStyle, resize: "vertical" }}
-          />
-        </div>
+        {!isEditing && (
+          <>
+            <div>
+              <label htmlFor="survey-focus" style={{ fontSize: 13, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+                {t("focusLabel")}
+              </label>
+              <textarea
+                id="survey-focus"
+                value={focus}
+                onChange={(e) => setFocus(e.target.value)}
+                placeholder={t("focusPlaceholder")}
+                rows={2}
+                style={{ ...inputStyle, resize: "vertical" }}
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={isGenerating}
-          style={{
-            alignSelf: "flex-start",
-            background: questions ? "transparent" : "var(--teal)",
-            border: questions ? "1px solid var(--border)" : "none",
-            color: questions ? "var(--text-muted)" : "#0A0F1E",
-            borderRadius: 8,
-            padding: "10px 18px",
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: "pointer",
-            opacity: isGenerating ? 0.6 : 1,
-          }}
-        >
-          {isGenerating ? t("generatingQuestions") : questions ? t("regenerateQuestions") : t("generateQuestions")}
-        </button>
+            <button
+              type="submit"
+              disabled={isGenerating}
+              style={{
+                alignSelf: "flex-start",
+                background: questions ? "transparent" : "var(--teal)",
+                border: questions ? "1px solid var(--border)" : "none",
+                color: questions ? "var(--text-muted)" : "#0A0F1E",
+                borderRadius: 8,
+                padding: "10px 18px",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                opacity: isGenerating ? 0.6 : 1,
+              }}
+            >
+              {isGenerating ? t("generatingQuestions") : questions ? t("regenerateQuestions") : t("generateQuestions")}
+            </button>
+          </>
+        )}
       </form>
 
       {questions && (
@@ -279,41 +314,43 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
             </button>
           </div>
 
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <label style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                {t("assignToCount", { count: selected.size })}
-              </label>
-              <button type="button" onClick={selectAll} style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer" }}>
-                {t("selectAll")}
-              </button>
+          {!isEditing && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <label style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  {t("assignToCount", { count: selected.size })}
+                </label>
+                <button type="button" onClick={selectAll} style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer" }}>
+                  {t("selectAll")}
+                </button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 160, overflowY: "auto" }}>
+                {employees.map((emp) => {
+                  const checked = selected.has(emp.userId);
+                  return (
+                    <button
+                      key={emp.userId}
+                      type="button"
+                      onClick={() => toggleEmployee(emp.userId)}
+                      aria-pressed={checked}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 100,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        border: checked ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
+                        background: checked ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
+                        color: checked ? "var(--teal)" : "var(--text-muted)",
+                      }}
+                    >
+                      {emp.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 160, overflowY: "auto" }}>
-              {employees.map((emp) => {
-                const checked = selected.has(emp.userId);
-                return (
-                  <button
-                    key={emp.userId}
-                    type="button"
-                    onClick={() => toggleEmployee(emp.userId)}
-                    aria-pressed={checked}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: 100,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: checked ? "1px solid rgba(var(--teal-rgb),0.4)" : "1px solid var(--border)",
-                      background: checked ? "rgba(var(--teal-rgb),0.12)" : "rgba(255,255,255,0.05)",
-                      color: checked ? "var(--teal)" : "var(--text-muted)",
-                    }}
-                  >
-                    {emp.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          )}
 
           <button
             type="button"
@@ -332,7 +369,7 @@ export default function SurveyBuilder({ employees }: { employees: { userId: stri
               opacity: isPublishing ? 0.6 : 1,
             }}
           >
-            {isPublishing ? t("publishing") : t("publishAndAssign")}
+            {isPublishing ? (isEditing ? t("saving") : t("publishing")) : isEditing ? t("saveChanges") : t("publishAndAssign")}
           </button>
         </div>
       )}

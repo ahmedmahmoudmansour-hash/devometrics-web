@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { getSurveyResults, type OrgSurveySummary, type SurveyResults } from "@/lib/surveys/actions";
+import { getSurveyResults, getSurveyForEditing, type OrgSurveySummary, type SurveyResults } from "@/lib/surveys/actions";
 import { surveyThemeLabel } from "@/lib/surveys/types";
+import type { SurveyQuestion } from "@/lib/surveys/types";
+import SurveyBuilder from "./SurveyBuilder";
+
+type EditableSurvey = { id: string; title: string; theme: string; questions: SurveyQuestion[] };
 
 export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary }) {
   const t = useTranslations("surveyResultsCard");
@@ -11,6 +16,14 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
   const [expanded, setExpanded] = useState(false);
   const [results, setResults] = useState<SurveyResults | { error: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [editingSurvey, setEditingSurvey] = useState<EditableSurvey | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Editing is only ever offered before anyone has responded — matches
+  // updateSurvey's own atomic guard, this is just the UI-level reflection
+  // of the same rule (not the actual enforcement point).
+  const canEdit = (survey.responseCount ?? 0) === 0;
 
   function toggle() {
     if (!expanded && !results) {
@@ -19,6 +32,32 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
       });
     }
     setExpanded((prev) => !prev);
+  }
+
+  function startEditing() {
+    setEditError(null);
+    startTransition(async () => {
+      const result = await getSurveyForEditing(survey.id);
+      if ("error" in result) {
+        setEditError(result.error);
+        return;
+      }
+      setEditingSurvey(result);
+    });
+  }
+
+  if (editingSurvey) {
+    return (
+      <SurveyBuilder
+        employees={[]}
+        existingSurvey={editingSurvey}
+        onSaved={() => {
+          setEditingSurvey(null);
+          setResults(null);
+          router.refresh();
+        }}
+      />
+    );
   }
 
   return (
@@ -31,6 +70,16 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={startEditing}
+              disabled={isPending}
+              style={{ background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px", fontSize: 12, color: "var(--text)", cursor: "pointer", whiteSpace: "nowrap" }}
+            >
+              {t("editSurvey")}
+            </button>
+          )}
           {results && "status" in results && results.status === "ready" && (
             <a
               href={`/api/company/export/surveys/${survey.id}/xlsx`}
@@ -57,6 +106,8 @@ export default function SurveyResultsCard({ survey }: { survey: OrgSurveySummary
           </button>
         </div>
       </div>
+
+      {editError && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 10 }}>{editError}</p>}
 
       {expanded && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>

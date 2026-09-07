@@ -180,24 +180,21 @@ export async function moveWorkflowStep(templateId: string, stepId: string, direc
 
 // Feeds CustomStepAssigneePicker's manual-mode org-member search — a
 // manager or admin picking specific peers, an executive, or a country lead
-// for a custom step.
+// for a custom step. Goes through list_org_members_for_assignment (migration
+// 0152) rather than querying `profiles` directly: profiles' own SELECT RLS
+// only allows own-profile / org-admin-sees-all / manager-sees-direct-
+// reports-only, which silently emptied this exact picker for any non-admin
+// manager trying to assign someone outside their own direct reports —
+// exactly the peer/executive population it exists to serve. The RPC
+// deliberately returns only name+email (already visible org-wide via
+// several other pickers in this app) to any real member of the org.
 export async function listOrganizationMembersForAssignment(organizationId: string): Promise<{ userId: string; name: string; email: string }[]> {
   const supabase = await createClient();
-  const { data: members } = await supabase
-    .from("organization_members")
-    .select("user_id")
-    .eq("organization_id", organizationId)
-    .returns<{ user_id: string }[]>();
-  if (!members || members.length === 0) return [];
+  const { data, error } = await supabase.rpc("list_org_members_for_assignment", { p_organization_id: organizationId });
+  if (error || !data) return [];
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .in("id", members.map((m) => m.user_id))
-    .returns<{ id: string; full_name: string | null; email: string }[]>();
-
-  return (profiles ?? [])
-    .map((p) => ({ userId: p.id, name: p.full_name || p.email, email: p.email }))
+  return (data as { user_id: string; full_name: string | null; email: string }[])
+    .map((p) => ({ userId: p.user_id, name: p.full_name || p.email, email: p.email }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

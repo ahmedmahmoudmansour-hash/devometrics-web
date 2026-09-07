@@ -15,9 +15,14 @@ export const metadata = { title: "My Team — Devometrics" };
 // (migration 0078) — the admin-only Impact Cycles page manages cycles
 // org-wide; this is the narrower "conduct my own direct reports' reviews"
 // surface a plain manager actually needs.
+function formatScoreValue(rawValue: number, scale: "0_100" | "1_5"): string {
+  return scale === "1_5" ? `${rawValue.toFixed(1)}/5` : `${Math.round(rawValue)}`;
+}
+
 export default async function MyTeamPage() {
   const t = await getTranslations("myTeamPage");
   const tDim = await getTranslations("competencyDimensions");
+  const tScoreSource = await getTranslations("scoreEventSources");
   const supabase = await createClient();
   const {
     data: { user },
@@ -66,6 +71,26 @@ export default async function MyTeamPage() {
                         </p>
                       )}
                     </>
+                  )}
+                  {m.otherScores.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+                      {m.otherScores.map((s, i) => (
+                        <span
+                          key={`${s.source}-${i}`}
+                          title={new Date(s.recordedAt).toLocaleDateString()}
+                          style={{
+                            fontSize: 11,
+                            color: "var(--text)",
+                            background: "rgba(255,255,255,0.05)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 999,
+                            padding: "3px 9px",
+                          }}
+                        >
+                          {tScoreSource(s.source)}: <span style={{ fontWeight: 700 }}>{formatScoreValue(s.rawValue, s.scale)}</span>
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               ))}

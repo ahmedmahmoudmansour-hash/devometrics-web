@@ -83,6 +83,72 @@ export async function createSurvey(fields: {
   return { success: true, surveyId: survey.id, questionCount: fields.questions.length };
 }
 
+// Editing is only ever allowed while a survey has zero responses — changing
+// questions on an already-answered survey would make aggregateSurveyResponses
+// incoherent (old answers keyed to questions that no longer exist), the same
+// posture as deleteKnowledgeHubContent protecting real completion history.
+// The check-and-write is atomic in one RPC call (update_survey_if_unanswered,
+// migration 0152) rather than "check count, then update" as two round trips —
+// that would leave a race where a response landing in the gap could let an
+// edit through right after real data exists. Employee assignments are a
+// separate table, untouched by an edit — no reason to re-notify anyone for a
+// pre-response question change.
+// Lazy-loaded only when an admin actually clicks Edit (SurveyResultsCard's
+// existing pattern for getSurveyResults) — OrgSurveySummary deliberately
+// doesn't carry the full `questions` array for every survey in the list,
+// just to support an edit path used occasionally.
+export async function getSurveyForEditing(surveyId: string): Promise<{ error: string } | { id: string; title: string; theme: string; questions: SurveyQuestion[] }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("surveys")
+    .select("id, title, theme, questions")
+    .eq("id", surveyId)
+    .maybeSingle<{ id: string; title: string; theme: string; questions: SurveyQuestion[] }>();
+  if (error || !data) return { error: "Could not load this survey." };
+  return data;
+}
+
+export async function updateSurvey(
+  surveyId: string,
+  fields: { title: string; theme: string; questions: SurveyQuestion[] }
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (!fields.title.trim()) return { error: "Give the survey a title" };
+  if (fields.questions.length === 0) return { error: "Add at least one question" };
+  if (fields.questions.some((q) => !q.text.trim())) return { error: "Every question needs text" };
+  if (fields.questions.some((q) => q.type === "multiple_choice" && (q.options ?? []).filter((o) => o.trim()).length < 2)) {
+    return { error: "Multiple-choice questions need at least 2 options" };
+  }
+
+  const { data: updated, error } = await supabase.rpc("update_survey_if_unanswered", {
+    p_survey_id: surveyId,
+    p_title: fields.title.trim(),
+    p_theme: fields.theme,
+    p_questions: fields.questions,
+  });
+  if (error) return { error: "Could not save changes — the database may need migration 0152 run first." };
+  if (!updated) {
+    // Distinguish "someone already responded" from "not found/not your org"
+    // purely to pick the right message — this read is never the gate itself,
+    // the RPC's atomic check-and-write already was.
+    const { data: responseCount } = await supabase.rpc("get_survey_response_count", { p_survey_id: surveyId });
+    return {
+      error:
+        (responseCount as number | null) && (responseCount as number) > 0
+          ? "Someone has already responded, so this survey's questions can no longer be edited."
+          : "Could not save changes — try again.",
+    };
+  }
+
+  revalidatePath("/dashboard/company/surveys");
+  return { success: true };
+}
+
 export type OrgSurveySummary = {
   id: string;
   title: string;
