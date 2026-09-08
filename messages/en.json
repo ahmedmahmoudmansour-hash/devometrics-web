@@ -594,7 +594,10 @@
     "ariaLabel": "Job title to search trends for",
     "searching": "Searching…",
     "getTrends": "Get trends",
-    "searchingNote": "Running a few real web searches — first time for this role can take up to ~15s, instant after that.",
+    "searchStep1": "Running real web searches for this role…",
+    "searchStep2": "Reading through what turned up…",
+    "searchStep3": "First time for this role can take a minute or two — instant after that.",
+    "searchStep4": "Still working — pulling together the most relevant trends…",
     "cachedNote": "⚡ Served from cache — refreshed weekly, not re-searched on every visit.",
     "errorFallback": "Could not fetch trends"
   },
@@ -603,6 +606,9 @@
     "subtitle": "Real, currently-available courses on \"{topic}\" — grounded in a live web search, not invented course names.",
     "findCourses": "Find courses",
     "searching": "Searching…",
+    "searchStep1": "Searching for real, currently-available courses…",
+    "searchStep2": "Checking sources and pricing…",
+    "searchStep3": "Can take a minute or two for a thorough list…",
     "errorFallback": "Could not fetch course recommendations"
   },
   "planSummaryCard": {

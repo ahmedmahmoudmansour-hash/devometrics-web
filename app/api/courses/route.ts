@@ -19,7 +19,10 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // architecture here, so the same real-world risk applies. 300s is still
 // plan-agnostic — Vercel clamps to the account's actual ceiling if this
 // exceeds it (a Hobby-tier project stays at 60s regardless, in which case
-// the Vercel plan itself needs raising, not this number).
+// the Vercel plan itself needs raising, not this number). Confirmed against
+// Vercel's own current docs: Hobby's real ceiling is actually 300s too
+// (with fluid compute, on by default), so no plan upgrade is needed for
+// this specific number.
 export const maxDuration = 300;
 
 const MAX_TOPIC_LENGTH = 200;
@@ -37,6 +40,15 @@ const SEARCH_ERROR_MESSAGES: Record<Anthropic.WebSearchToolResultErrorCode, stri
 // "AI skills workshop" is a topic, not a course catalog we maintain
 // ourselves, so this searches the web for real, named courses with real
 // institutions rather than letting the model invent plausible-sounding ones.
+//
+// Streamed (2026-09-04, matching /api/trends' existing pattern) — this used
+// to be a plain JSON response, meaning the UI showed nothing but a static
+// "Searching…" label for the full 1-2 minutes phase 1 can take, with no way
+// to tell a slow-but-working request apart from a stuck one. Streaming
+// phase 2's output at least turns the back half of the wait into visible
+// progress; phase 1's own latency is inherent to how the search tool works
+// (see the maxDuration comment) and isn't shortened by this change — the
+// client fills that portion with a rotating status message instead.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -69,93 +81,114 @@ export async function POST(request: Request) {
   const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 6 };
   const userPrompt = `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Format as a short bulleted list, one course per bullet, ending with the source in parentheses.${locale === "ar" ? " Write the entire list in Modern Standard Arabic (Fusha) — the course descriptions and prose, not just a translated label — regardless of what language your search results come back in." : ""}`;
 
-  try {
-    // Two-phase request — same fix and same reasoning as /api/trends.
-    // Phase 1 lets Claude search freely and narrate as much as it wants;
-    // that text is thrown away, only the tool results matter. Phase 2 is a
-    // fresh turn with tool_choice "none" so Claude can't call the search
-    // tool again, meaning its response can only be plain text — no risk of
-    // a mid-answer verification search silently discarding earlier bullets
-    // (the failure mode the old "only the last text block is real"
-    // heuristic couldn't reliably detect).
-    const researchResponse = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      // Claude Sonnet 5's web search runs through an internal code-execution
-      // sandbox — it writes and runs small Python snippets to call searches
-      // and parse results, sometimes retrying when it misparses its own
-      // output. A real research phase can burn 30+ content blocks (thinking
-      // + code cells + search results) before it ever gets to the answer —
-      // same fix as /api/trends, same root cause confirmed by reproducing
-      // the failure directly against the API.
-      max_tokens: 4096,
-      tools: [searchTool],
-      messages: [{ role: "user", content: userPrompt }],
-    });
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        // Two-phase request — same fix and same reasoning as /api/trends.
+        // Phase 1 lets Claude search freely and narrate as much as it wants;
+        // that text is thrown away, only the tool results matter. Phase 2 is
+        // a fresh turn with tool_choice "none" so Claude can't call the
+        // search tool again, meaning its response can only be plain text —
+        // no risk of a mid-answer verification search silently discarding
+        // earlier bullets (the failure mode the old "only the last text
+        // block is real" heuristic couldn't reliably detect).
+        const researchResponse = await anthropic.messages.create({
+          model: "claude-sonnet-5",
+          // Claude Sonnet 5's web search runs through an internal code-execution
+          // sandbox — it writes and runs small Python snippets to call searches
+          // and parse results, sometimes retrying when it misparses its own
+          // output. A real research phase can burn 30+ content blocks (thinking
+          // + code cells + search results) before it ever gets to the answer —
+          // same fix as /api/trends, same root cause confirmed by reproducing
+          // the failure directly against the API.
+          max_tokens: 4096,
+          tools: [searchTool],
+          messages: [{ role: "user", content: userPrompt }],
+        });
 
-    const errorBlock = researchResponse.content.find(
-      (block): block is Anthropic.WebSearchToolResultBlock =>
-        block.type === "web_search_tool_result" && !Array.isArray(block.content)
-    );
-    if (errorBlock) {
-      const errorCode = (errorBlock.content as Anthropic.WebSearchToolResultError).error_code;
-      console.error("Course search tool error:", errorCode);
-      return NextResponse.json(
-        { error: SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for courses right now" },
-        { status: 502 }
-      );
-    }
+        const errorBlock = researchResponse.content.find(
+          (block): block is Anthropic.WebSearchToolResultBlock =>
+            block.type === "web_search_tool_result" && !Array.isArray(block.content)
+        );
+        if (errorBlock) {
+          const errorCode = (errorBlock.content as Anthropic.WebSearchToolResultError).error_code;
+          console.error("Course search tool error:", errorCode);
+          controller.enqueue(encoder.encode(SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for courses right now"));
+          controller.close();
+          return;
+        }
 
-    // A research phase cut off mid-tool-call by max_tokens can leave
-    // malformed content blocks that aren't safe to replay as history in
-    // phase 2 — bail out rather than risk a broken follow-up call.
-    if (researchResponse.stop_reason === "max_tokens") {
-      console.error("Course research phase hit max_tokens, discarding");
-      return NextResponse.json({ error: "Could not find course recommendations right now" }, { status: 502 });
-    }
+        // A research phase cut off mid-tool-call by max_tokens can leave
+        // malformed content blocks that aren't safe to replay as history in
+        // phase 2 — bail out rather than risk a broken follow-up call.
+        if (researchResponse.stop_reason === "max_tokens") {
+          console.error("Course research phase hit max_tokens, discarding");
+          controller.enqueue(encoder.encode("Could not find course recommendations right now"));
+          controller.close();
+          return;
+        }
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1536,
-      tools: [searchTool],
-      tool_choice: { type: "none" },
-      messages: [
-        { role: "user", content: userPrompt },
-        { role: "assistant", content: researchResponse.content as Anthropic.MessageParam["content"] },
-        {
-          role: "user",
-          content:
-            "Now write only the final course list, exactly as instructed — a short bulleted list, one course per bullet, ending with the source in parentheses. Nothing else: no search narration, no caveats, nothing before or after the list.",
-        },
-      ],
-    });
-    await recordAiUsage(supabase, {
-      organizationId,
-      userId: user.id,
-      feature: "course_recommendations",
-      model: response.model,
-      inputTokens: researchResponse.usage.input_tokens + response.usage.input_tokens,
-      outputTokens: researchResponse.usage.output_tokens + response.usage.output_tokens,
-    });
+        const stream = anthropic.messages.stream({
+          model: "claude-sonnet-5",
+          max_tokens: 1536,
+          tools: [searchTool],
+          tool_choice: { type: "none" },
+          messages: [
+            { role: "user", content: userPrompt },
+            { role: "assistant", content: researchResponse.content as Anthropic.MessageParam["content"] },
+            {
+              role: "user",
+              content:
+                "Now write only the final course list, exactly as instructed — a short bulleted list, one course per bullet, ending with the source in parentheses. Nothing else: no search narration, no caveats, nothing before or after the list.",
+            },
+          ],
+        });
 
-    const summary = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("")
-      .trim();
+        let summary = "";
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            summary += event.delta.text;
+          }
+        }
+        const finalMessage = await stream.finalMessage();
 
-    // A suspiciously short answer (e.g. cut off by hitting max_tokens
-    // mid-sentence) is worse than no answer. A real 3-5-course list is
-    // always well over 100 characters, so anything under a generous floor
-    // is treated as failed.
-    const MIN_VALID_LENGTH = 80;
-    if (!summary || summary.length < MIN_VALID_LENGTH) {
-      console.error("Course recommendations suspiciously short, discarding:", JSON.stringify(summary));
-      return NextResponse.json({ error: "Could not find course recommendations right now" }, { status: 502 });
-    }
+        await recordAiUsage(supabase, {
+          organizationId,
+          userId: user.id,
+          feature: "course_recommendations",
+          model: finalMessage.model,
+          inputTokens: researchResponse.usage.input_tokens + finalMessage.usage.input_tokens,
+          outputTokens: researchResponse.usage.output_tokens + finalMessage.usage.output_tokens,
+        });
 
-    return NextResponse.json({ summary });
-  } catch (err) {
-    console.error("Course recommendation generation failed:", err);
-    return NextResponse.json({ error: "Could not fetch course recommendations right now" }, { status: 502 });
-  }
+        // A suspiciously short answer (e.g. cut off by hitting max_tokens
+        // mid-sentence) is worse than no answer. A real 3-5-course list is
+        // always well over 100 characters, so anything under a generous floor
+        // is treated as failed.
+        const MIN_VALID_LENGTH = 80;
+        if (!summary.trim() || summary.trim().length < MIN_VALID_LENGTH) {
+          console.error("Course recommendations suspiciously short, discarding:", JSON.stringify(summary));
+          controller.enqueue(encoder.encode("Could not find course recommendations right now"));
+          controller.close();
+          return;
+        }
+
+        controller.enqueue(encoder.encode(summary));
+        controller.close();
+      } catch (err) {
+        console.error("Course recommendation generation failed:", err);
+        controller.enqueue(encoder.encode("Could not fetch course recommendations right now"));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

@@ -1,8 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { TrendingUp, GraduationCap } from "lucide-react";
+
+// A real, uncached search can take anywhere from ~20s to ~2 minutes (phase 1
+// alone has run 116s on a real, live-measured request — see the maxDuration
+// comment on app/api/trends/route.ts) — long enough that a single static
+// "Searching…" label reads as stuck well before it's actually done. Cycles
+// through a small set of translated reassurance messages while active,
+// purely cosmetic (no relation to actual request progress, since phase 1 is
+// one blocking call with no partial state to report) — just enough to keep
+// the wait from feeling dead.
+function useRotatingStatus(active: boolean, keys: readonly string[], t: (key: string) => string, intervalMs = 5000): string {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setIndex((i) => (i + 1) % keys.length), intervalMs);
+    return () => clearInterval(id);
+  }, [active, keys.length, intervalMs]);
+  // Index isn't reset to 0 when a new search starts (would mean calling
+  // setState synchronously from inside the effect above, which triggers
+  // React's cascading-render lint rule) — harmless: these are generic
+  // reassurance messages, not a numbered sequence with meaning, so picking
+  // up mid-rotation on a second search in the same session reads fine.
+  return t(keys[active ? index % keys.length : 0]);
+}
+
+const TRENDS_SEARCH_STEPS = ["searchStep1", "searchStep2", "searchStep3", "searchStep4"] as const;
+const COURSES_SEARCH_STEPS = ["searchStep1", "searchStep2", "searchStep3"] as const;
 
 // Industry Trends and Recommended Learning share the same "topic" state
 // deliberately — the 2026-08-03 strategic memo's own flow diagram is
@@ -22,7 +48,11 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
 
   const [courses, setCourses] = useState<string | null>(null);
   const [coursesLoading, setCoursesLoading] = useState(false);
+  const [coursesSearching, setCoursesSearching] = useState(false);
   const [coursesError, setCoursesError] = useState<string | null>(null);
+
+  const trendsStatus = useRotatingStatus(searching, TRENDS_SEARCH_STEPS, t);
+  const coursesStatus = useRotatingStatus(coursesSearching, COURSES_SEARCH_STEPS, tLearning);
 
   async function fetchTrends() {
     if (!title.trim() || loading) return;
@@ -74,6 +104,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
   async function fetchCourses() {
     if (!title.trim() || coursesLoading) return;
     setCoursesLoading(true);
+    setCoursesSearching(true);
     setCoursesError(null);
     setCourses(null);
     try {
@@ -82,13 +113,30 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: title.trim() }),
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || tLearning("errorFallback"));
-      setCourses(body.summary as string);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || tLearning("errorFallback"));
+      }
+      if (!res.body) throw new Error(tLearning("errorFallback"));
+
+      // Streamed (matching /api/trends) — same reasoning: turns the back
+      // half of a potentially 1-2 minute wait into visible progress instead
+      // of a single opaque JSON response landing all at once.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (text === "") setCoursesSearching(false);
+        text += decoder.decode(value, { stream: true });
+        setCourses(text);
+      }
     } catch (err) {
       setCoursesError(err instanceof Error ? err.message : tLearning("errorFallback"));
     } finally {
       setCoursesLoading(false);
+      setCoursesSearching(false);
     }
   }
 
@@ -143,9 +191,7 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
         </div>
 
         {searching && !summary && (
-          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            {t("searchingNote")}
-          </p>
+          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{trendsStatus}</p>
         )}
 
         {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
@@ -204,6 +250,10 @@ export default function KeyTrendsCard({ jobTitle }: { jobTitle: string | null })
             >
               {coursesLoading ? tLearning("searching") : tLearning("findCourses")}
             </button>
+          )}
+
+          {coursesSearching && !courses && (
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 10 }}>{coursesStatus}</p>
           )}
 
           {coursesError && <p style={{ fontSize: 13, color: "var(--danger)" }}>{coursesError}</p>}
