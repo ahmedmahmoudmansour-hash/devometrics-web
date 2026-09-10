@@ -5,32 +5,23 @@ import { resolveCallerLocale } from "@/lib/i18n/request";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Without this, Vercel kills the function at its platform default (well
-// under a minute) — too short for two sequential model calls where phase 1
-// alone can involve several rounds of Claude Sonnet 5's code-execution-based
-// search orchestration. Observed live as a request that just hangs on
-// "Searching…" forever: the platform silently terminates the function
-// mid-stream, no error ever reaches the client to display.
-//
-// Raised from 60 to 300 (2026-09-04): 60 was based on an earlier live
-// observation that turned out to be an easy case — re-measured directly
-// against the real Anthropic API outside the request/response cycle, a
-// single real run took 116s for phase 1 alone and 121.7s end to end, comfortably
-// exceeding 60s and reproducing the exact silent-kill failure this
-// maxDuration was originally added to fix. 300s matches Vercel Pro's real
-// ceiling and is still plan-agnostic — Vercel clamps down to whatever the
-// account's actual ceiling is if this exceeds it (e.g. a Hobby-tier
-// project stays capped at 60s regardless of this value, in which case the
-// Vercel plan itself — not this number — is what needs raising).
-export const maxDuration = 300;
+// 60s is plenty of headroom now. This route used to be a two-phase call
+// with the web_search_20260209 tool, whose search runs through a code-
+// execution sandbox — measured directly at 116-200s+ per call, which
+// Vercel silently killed mid-stream ("stuck on Searching… forever"). The
+// rewrite below is a single call with the BASIC web_search_20250305 tool
+// (classic direct search, no code execution): measured at 11-15s end to
+// end for the same job. If web_search_20250305 is ever retired, the
+// fallback is web_search_20260209 with the two-phase narration-stripping
+// workaround — preserved in git history before this commit.
+export const maxDuration = 60;
 
 const MAX_JOB_TITLE_LENGTH = 120;
 
 // Trends don't meaningfully change hour to hour — a cache hit is
-// near-instant vs. the multi-search agent loop below, which is what
-// actually made this feel slow (not the LLM call itself). Shared across ALL
-// users, not per-account: job-market trends for "Product Manager" are the
-// same regardless of who asked.
+// near-instant vs. the live search below. Shared across ALL users, not
+// per-account: job-market trends for "Product Manager" are the same
+// regardless of who asked.
 const CACHE_TTL_HOURS = 24 * 7;
 
 function normalizeJobTitle(title: string): string {
@@ -46,20 +37,14 @@ const SEARCH_ERROR_MESSAGES: Record<Anthropic.WebSearchToolResultErrorCode, stri
   unavailable: "Web search is temporarily unavailable — please try again shortly.",
 };
 
-// Grounds "key trends" in a real web search rather than the model's training
-// knowledge alone — matches the Data Ethics stance already shipped elsewhere
-// in the app (no fabricated specifics; only claims we can back with real
-// evidence). Sources are asked for inline in the prose rather than parsed
-// out of the response's citation metadata, so this doesn't depend on the
-// exact shape of that (less-documented) field.
+// Grounds "key trends" in a real web search rather than the model's
+// training knowledge alone — matches the Data Ethics stance already
+// shipped elsewhere in the app (no fabricated specifics; only claims we
+// can back with real evidence). Sources are asked for inline in the prose.
 //
-// Streamed (same architecture as Coach/Roleplay): a fresh, uncached search
-// still has to run 2-4 real web searches before Claude can write anything,
-// so there's an unavoidable stretch of silence no matter what — but once
-// Claude starts writing the summary, streaming means the user sees it
-// appear sentence by sentence instead of staring at "Searching…" for the
-// entire remaining duration. Cache hits skip all of this and write the full
-// cached summary in one shot.
+// Streamed progressively (the search itself takes ~5-9s before any text,
+// then the summary appears sentence by sentence). Cache hits skip the
+// search entirely and return the stored summary in one shot.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -76,16 +61,14 @@ export async function POST(request: Request) {
   }
 
   const locale = await resolveCallerLocale(supabase, user.id);
-  // Locale-suffixed — the cache is shared across ALL users (see migration
-  // 0053's header), so without this an Arabic-UI user could be served a
-  // cached English summary (or vice versa) generated for someone else's
-  // locale. Old pre-locale keys simply become unreachable, harmless orphans.
+  // Locale-suffixed — the cache is shared across ALL users, so without this
+  // an Arabic-UI user could be served a cached English summary generated
+  // for someone else's locale. Old pre-locale keys become harmless orphans.
   const jobTitleKey = `${normalizeJobTitle(jobTitle)}::${locale}`;
   const encoder = new TextEncoder();
 
   // Cache check — a query error here (e.g. migration 0053 not run yet)
-  // falls straight through to the live search path below, same graceful
-  // degrade used everywhere else in this app for newer tables.
+  // falls straight through to the live search path below.
   const { data: cached } = await supabase
     .from("key_trends_cache")
     .select("summary, generated_at")
@@ -93,132 +76,75 @@ export async function POST(request: Request) {
     .maybeSingle<{ summary: string; generated_at: string }>();
   if (cached) {
     const ageHours = (Date.now() - new Date(cached.generated_at).getTime()) / 3_600_000;
-    // Anything generated before this fix shipped may be a broken fragment
-    // from either the narration-leak bug or the block-position-guessing
-    // bug the two-phase request replaced — never serve it, regardless of
-    // the normal 7-day TTL. No SQL cleanup needed: every affected row is
-    // simply too old to pass this check, and a fresh (correct) generation
-    // overwrites it on the next request. Safe to delete this cutoff once
-    // enough time has passed that no pre-fix rows remain.
-    const FIX_DEPLOYED_AT = new Date("2026-08-13T00:00:00Z").getTime();
-    const isPreFix = new Date(cached.generated_at).getTime() < FIX_DEPLOYED_AT;
-    if (ageHours < CACHE_TTL_HOURS && !isPreFix) {
+    // Rows written before the two-phase→single-call rewrite may carry a
+    // leading "Based on current sources, here are…" preamble the old
+    // prompt didn't suppress — the TTL alone will age them out within a
+    // week, so no SQL cleanup needed; just don't serve anything older
+    // than the rewrite.
+    const REWRITE_DEPLOYED_AT = new Date("2026-09-10T00:00:00Z").getTime();
+    const isPreRewrite = new Date(cached.generated_at).getTime() < REWRITE_DEPLOYED_AT;
+    if (ageHours < CACHE_TTL_HOURS && !isPreRewrite) {
       return new Response(encoder.encode(cached.summary), {
         headers: { "Content-Type": "text/plain; charset=utf-8", "X-Trends-Cached": "true" },
       });
     }
   }
 
-  // Was 4 — the prompt already asks for "2-4 searches," and each one can now
-  // involve multiple internal code-execution rounds (see maxDuration
-  // comment above), so this bounds worst-case latency more tightly without
-  // meaningfully hurting thoroughness (observed live: a real run only used
-  // 3 even with 4 available).
-  const searchTool = { type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 3 };
-  const userPrompt = `Search the web for real, current information and summarize 3-5 trends relevant to someone working as "${jobTitle}" right now — things like in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Be efficient: 2-4 well-chosen searches covering the field broadly is usually enough — you don't need a separate search per trend. Only include things you can back with a real source you found. Format as a short bulleted list (one bullet per trend, 1-2 sentences each), and end each bullet with the source in parentheses, e.g. "(source: example.com)". Do not fabricate specifics or present a guess as fact.${locale === "ar" ? " Write the entire summary in Modern Standard Arabic (Fusha) — the trend content and prose, not just a translated label — regardless of what language your search results come back in." : ""}`;
+  const searchTool = { type: "web_search_20250305" as const, name: "web_search" as const, max_uses: 4 };
+  const userPrompt = `Search the web and give 3-5 current trends for someone working as "${jobTitle}" right now — in-demand skills, tools or technologies gaining adoption, hiring/market shifts, or emerging responsibilities in that field. Only include things you can back with a real source you found. Output ONLY a bulleted list: one bullet per trend, 1-2 sentences each, each ending with the source in parentheses, e.g. "(source: example.com)". No preamble, no heading, no closing note. Do not fabricate specifics or present a guess as fact.${locale === "ar" ? " Write the entire summary in Modern Standard Arabic (Fusha) — the trend content and prose, not just a translated label — regardless of what language your search results come back in." : ""}`;
 
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
-      // Two-phase request instead of one long tool-use conversation.
-      // Phase 1 (below) lets Claude search freely — its interleaved text
-      // here is throwaway narration ("Let me search for X") that we never
-      // show. Phase 2 is a fresh turn with tool_choice "none": Claude
-      // can't invoke the search tool again, so its response can only be
-      // plain text — nothing to filter, buffer, or guess about.
-      //
-      // The previous single-phase approach tried to detect "the real
-      // answer" by discarding buffered text every time a new text block
-      // started, on the assumption only the LAST block was final. That
-      // broke whenever Claude did a legitimate verification search partway
-      // through writing the answer (observed live: a 5-bullet answer where
-      // the last bullet triggered one more search, and the reset-on-new-
-      // block logic threw away bullets 1-4, leaving only a stray sentence
-      // fragment and a trailing "Note:" caveat). There's no reliable way
-      // to tell "narration before a search" from "the real answer,
-      // interrupted by a search" from block position alone — so this
-      // removes the need to guess entirely.
       try {
-        const researchResponse = await anthropic.messages.create({
-          model: "claude-sonnet-5",
-          // Claude Sonnet 5's web search runs through an internal
-          // code-execution sandbox — it writes and runs small Python
-          // snippets to call searches and parse results, sometimes
-          // retrying when it misparses its own output. A real research
-          // phase can burn 30+ content blocks (thinking + code cells +
-          // search results) before it ever gets to the answer, far more
-          // than the narrate-then-search pattern 2048 was originally
-          // sized for. Observed live: this ceiling hit mid-research on a
-          // real query, discarding a perfectly good search in progress.
-          max_tokens: 4096,
-          tools: [searchTool],
-          messages: [{ role: "user", content: userPrompt }],
-        });
-
-        const errorBlock = researchResponse.content.find(
-          (b): b is Anthropic.WebSearchToolResultBlock => b.type === "web_search_tool_result" && !Array.isArray(b.content)
-        );
-        if (errorBlock) {
-          const errorCode = (errorBlock.content as Anthropic.WebSearchToolResultError).error_code;
-          console.error("Web search tool error:", errorCode);
-          controller.enqueue(encoder.encode(SEARCH_ERROR_MESSAGES[errorCode] ?? "Could not search for trends right now."));
-          controller.close();
-          return;
-        }
-
-        // A research phase cut off mid-tool-call by max_tokens can leave
-        // malformed content blocks that aren't safe to replay as history
-        // in phase 2 — bail out rather than risk a broken follow-up call.
-        if (researchResponse.stop_reason === "max_tokens") {
-          console.error("Trends research phase hit max_tokens, discarding");
-          controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
-          controller.close();
-          return;
-        }
-
         const stream = anthropic.messages.stream({
           model: "claude-sonnet-5",
           max_tokens: 1536,
           tools: [searchTool],
-          tool_choice: { type: "none" },
-          messages: [
-            { role: "user", content: userPrompt },
-            { role: "assistant", content: researchResponse.content as Anthropic.MessageParam["content"] },
-            {
-              role: "user",
-              content:
-                "Now write only the final trends summary, exactly as instructed — a short bulleted list (3-5 bullets, 1-2 sentences each), each ending with the source in parentheses. Nothing else: no search narration, no caveats or notes about source quality, nothing before or after the list.",
-            },
-          ],
+          messages: [{ role: "user", content: userPrompt }],
         });
 
         let finalText = "";
+        let searchErrorCode: Anthropic.WebSearchToolResultErrorCode | null = null;
         for await (const event of stream) {
+          if (event.type === "content_block_start" && event.content_block.type === "web_search_tool_result") {
+            const c = event.content_block.content;
+            // Success content is a list; an error is a single object.
+            if (!Array.isArray(c) && c && typeof c === "object" && "error_code" in c) {
+              searchErrorCode = (c as Anthropic.WebSearchToolResultError).error_code;
+            }
+          }
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             finalText += event.delta.text;
+            controller.enqueue(encoder.encode(event.delta.text));
           }
         }
 
-        // A suspiciously short answer (e.g. cut off by hitting max_tokens
-        // mid-sentence) is worse than no answer — it reads as broken
-        // output, not "try again." A real 3-5-bullet trends summary is
-        // always well over 100 characters, so anything under a generous
-        // floor is treated the same as empty: shown as a retry message,
-        // and — critically — never cached, so one bad generation can't
-        // keep serving the same broken fragment to everyone else searching
-        // that job title for the next 7 days.
-        const MIN_VALID_LENGTH = 80;
-        if (!finalText.trim() || finalText.trim().length < MIN_VALID_LENGTH) {
-          console.error("Trends response suspiciously short, discarding:", JSON.stringify(finalText));
-          controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
+        // The search runs before any text, so an error block always
+        // arrives before the first text_delta — nothing has been streamed
+        // to the client yet at this point.
+        if (searchErrorCode && !finalText) {
+          console.error("Web search tool error:", searchErrorCode);
+          controller.enqueue(encoder.encode(SEARCH_ERROR_MESSAGES[searchErrorCode] ?? "Could not search for trends right now."));
           controller.close();
           return;
         }
 
-        controller.enqueue(encoder.encode(finalText));
+        // A real 3-5-bullet trends summary is always well over 100 chars —
+        // anything under a generous floor is treated as failed (and never
+        // cached, so one bad generation can't keep serving a broken
+        // fragment to everyone else searching that job title).
+        const MIN_VALID_LENGTH = 80;
+        if (!finalText.trim() || finalText.trim().length < MIN_VALID_LENGTH) {
+          console.error("Trends response suspiciously short, discarding:", JSON.stringify(finalText));
+          if (!finalText) controller.enqueue(encoder.encode("Could not generate trends right now — please try again."));
+          controller.close();
+          return;
+        }
+
         controller.close();
 
-        // Best-effort — a cache write failure shouldn't fail the response
-        // the user is already looking at.
+        // Best-effort cache write — a failure here shouldn't affect the
+        // response the user is already looking at.
         await supabase
           .from("key_trends_cache")
           .upsert({ job_title_key: jobTitleKey, job_title: jobTitle.trim(), summary: finalText, generated_at: new Date().toISOString() })

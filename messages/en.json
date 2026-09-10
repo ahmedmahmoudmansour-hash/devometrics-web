@@ -596,8 +596,8 @@
     "getTrends": "Get trends",
     "searchStep1": "Running real web searches for this role…",
     "searchStep2": "Reading through what turned up…",
-    "searchStep3": "First time for this role can take a minute or two — instant after that.",
-    "searchStep4": "Still working — pulling together the most relevant trends…",
+    "searchStep3": "Pulling together the most relevant trends…",
+    "searchStep4": "Almost there…",
     "cachedNote": "⚡ Served from cache — refreshed weekly, not re-searched on every visit.",
     "errorFallback": "Could not fetch trends"
   },
@@ -608,7 +608,7 @@
     "searching": "Searching…",
     "searchStep1": "Searching for real, currently-available courses…",
     "searchStep2": "Checking sources and pricing…",
-    "searchStep3": "Can take a minute or two for a thorough list…",
+    "searchStep3": "Putting the list together…",
     "errorFallback": "Could not fetch course recommendations"
   },
   "planSummaryCard": {
