@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import MyLeaveManager from "@/components/dashboard/MyLeaveManager";
 import HrLetterRequestSection from "@/components/dashboard/HrLetterRequestSection";
+import MyAttendanceSection from "@/components/dashboard/MyAttendanceSection";
+import type { AttendanceRecord } from "@/lib/attendance/actions";
 import type { LeaveType, LeaveBalance, LeaveRequest } from "@/lib/leave/actions";
 import type { HrLetterRequest } from "@/lib/hrLetters/actions";
 
@@ -19,15 +21,17 @@ export default function MyServices({
   balances,
   initialLeaveRequests,
   initialHrLetterRequests,
+  initialAttendance,
 }: {
   organizationId: string;
   leaveTypes: LeaveType[];
   balances: LeaveBalance[];
   initialLeaveRequests: LeaveRequest[];
   initialHrLetterRequests: HrLetterRequest[];
+  initialAttendance: AttendanceRecord[];
 }) {
   const t = useTranslations("myServicesPage");
-  const [activeTab, setActiveTab] = useState<"timeOff" | "hrLetters">("timeOff");
+  const [activeTab, setActiveTab] = useState<"timeOff" | "attendance" | "hrLetters">("timeOff");
 
   const pendingLetters = initialHrLetterRequests.filter((r) => r.status === "pending").length;
 
@@ -59,6 +63,9 @@ export default function MyServices({
         <button type="button" onClick={() => setActiveTab("timeOff")} style={tabButtonStyle("timeOff")}>
           {t("tabTimeOff")}
         </button>
+        <button type="button" onClick={() => setActiveTab("attendance")} style={tabButtonStyle("attendance")}>
+          {t("tabAttendance")}
+        </button>
         <button type="button" onClick={() => setActiveTab("hrLetters")} style={tabButtonStyle("hrLetters")}>
           {t("tabHrLetters")}
           {pendingLetters > 0 && <span style={countPillStyle}>{pendingLetters}</span>}
@@ -68,6 +75,7 @@ export default function MyServices({
       {activeTab === "timeOff" && (
         <MyLeaveManager organizationId={organizationId} leaveTypes={leaveTypes} balances={balances} initialRequests={initialLeaveRequests} />
       )}
+      {activeTab === "attendance" && <MyAttendanceSection initialRecords={initialAttendance} />}
       {activeTab === "hrLetters" && <HrLetterRequestSection organizationId={organizationId} initialRequests={initialHrLetterRequests} />}
     </div>
   );

@@ -6,6 +6,7 @@ import { getMyOrganizationId, amIActiveOrgMember } from "@/lib/organizations/mem
 import { listMyEligibleLeaveTypes, getMyLeaveBalances, listMyLeaveRequests } from "@/lib/leave/actions";
 import { listMyHrLetterRequests } from "@/lib/hrLetters/actions";
 import MyServices from "@/components/dashboard/MyServices";
+import { listMyAttendance } from "@/lib/attendance/actions";
 
 export const metadata = { title: "Services — Devometrics" };
 
@@ -47,11 +48,14 @@ export default async function MyServicesPage() {
   }
 
   const currentYear = new Date().getFullYear();
-  const [leaveTypes, balances, requests, hrLetterRequests] = await Promise.all([
+  const now = new Date();
+  const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const [leaveTypes, balances, requests, hrLetterRequests, attendance] = await Promise.all([
     listMyEligibleLeaveTypes(organizationId),
     getMyLeaveBalances(currentYear),
     listMyLeaveRequests(),
     listMyHrLetterRequests(),
+    listMyAttendance(month),
   ]);
 
   return (
@@ -71,6 +75,7 @@ export default async function MyServicesPage() {
           balances={balances}
           initialLeaveRequests={requests}
           initialHrLetterRequests={hrLetterRequests}
+          initialAttendance={attendance}
         />
       </div>
     </div>

@@ -1455,7 +1455,8 @@
     "permissions": "Permissions",
     "compensation": "Compensation",
     "leave": "Leave",
-    "settings": "Settings"
+    "settings": "Settings",
+    "attendance": "Attendance"
   },
   "chooseWorkspacePage": {
     "title": "Which workspace do you want?",
@@ -5788,7 +5789,8 @@
     "tabTimeOff": "Time Off",
     "tabHrLetters": "HR Letters",
     "noAccessTitle": "No longer have access to this workspace",
-    "noAccessDescription": "Your access to this company's workspace has ended. Your own Devometrics account and profile are unaffected — if you believe this is a mistake, contact your company's HR admin."
+    "noAccessDescription": "Your access to this company's workspace has ended. Your own Devometrics account and profile are unaffected — if you believe this is a mistake, contact your company's HR admin.",
+    "tabAttendance": "Attendance"
   },
   "directorySettingsForm": {
     "title": "Employee directory",
@@ -5970,5 +5972,70 @@
     "doc_visa": "Visa",
     "doc_certificate": "Certificate",
     "doc_other": "Other"
+  },
+  "attendanceImport": {
+    "openButton": "Import attendance from Excel",
+    "title": "Import attendance from Excel",
+    "close": "Close",
+    "description": "Upload a spreadsheet of attendance days (.xlsx or .csv) — from your own Excel sheet or an export from a fingerprint or HR system. You'll see a preview and can fix problems before anything is saved. Days that already have a record are skipped, so importing the same file twice is safe.",
+    "columnsHint": "Columns: Employee email, Date (required); Status (present, late, remote, absent or holiday — blank means present), Check in, Check out (times like 09:05), Notes (optional).",
+    "downloadTemplate": "Download template",
+    "chooseFile": "Choose a spreadsheet file",
+    "checking": "Checking the file…",
+    "summary": "{ok} ready to import, {duplicates} already recorded, {errors} with problems",
+    "col_employeeEmail": "Employee email",
+    "col_date": "Date",
+    "col_status": "Status",
+    "times": "Check in → out",
+    "result": "Result",
+    "statusOk": "Ready",
+    "importButton": "{count, plural, one {Import # record} other {Import # records}}",
+    "importing": "Importing…",
+    "startOver": "Start over",
+    "skipNote": "Rows with problems or already recorded are skipped.",
+    "importedSuccess": "Imported {imported, plural, one {# record} other {# records}}; skipped {skipped}.",
+    "fileTooLarge": "That file is over 4 MB — split it into smaller files.",
+    "noRows": "The file has a header row but no data rows.",
+    "missingColumns": "Missing column(s): {columns}. Download the template to see the expected headers.",
+    "unreadable": "Couldn't read that file. Use an .xlsx or .csv file."
+  },
+  "attendanceAdmin": {
+    "backToCompany": "← Back to company",
+    "title": "Attendance",
+    "description": "Who was in, late, remote or absent. Import days from a spreadsheet; employees can also clock themselves in and out from Services.",
+    "empty": "No attendance recorded for this month yet. Import a spreadsheet above, or employees can check in from Services.",
+    "summaryTitle": "Month summary",
+    "colEmployee": "Employee",
+    "colDays": "Days",
+    "status_present": "Present",
+    "status_late": "Late",
+    "status_remote": "Remote",
+    "status_absent": "Absent",
+    "status_holiday": "Holiday",
+    "colHours": "Hours",
+    "recordsTitle": "{count, plural, one {# record} other {# records}}",
+    "colDate": "Date",
+    "colStatus": "Status",
+    "colIn": "In",
+    "colOut": "Out",
+    "colSource": "Source",
+    "source_import": "Imported",
+    "source_self": "Clocked in",
+    "remove": "Remove"
+  },
+  "myAttendance": {
+    "todayTitle": "Today",
+    "todayHint": "Clock in when you start and out when you finish. The time comes from your device.",
+    "checkIn": "Check in",
+    "checkOut": "Check out",
+    "checkedInAt": "Checked in at {time}",
+    "doneToday": "Done for today: {from} → {to}",
+    "monthTitle": "This month",
+    "noRecords": "No attendance recorded this month yet.",
+    "status_present": "Present",
+    "status_late": "Late",
+    "status_remote": "Remote",
+    "status_absent": "Absent",
+    "status_holiday": "Holiday"
   }
 }
