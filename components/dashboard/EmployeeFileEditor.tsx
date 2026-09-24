@@ -157,7 +157,7 @@ export default function EmployeeFileEditor({
       setDocFile(null);
       router.refresh();
       setDocuments((prev) => [
-        { id: `pending-${storagePath}`, docType, title: docTitle.trim(), fileName: docFile.name, expiresOn: docExpires, uploadedByHr: mode === "hr", createdAt: new Date().toISOString() },
+        { id: result.id, docType, title: docTitle.trim(), fileName: docFile.name, expiresOn: docExpires, uploadedByHr: mode === "hr", createdAt: new Date().toISOString() },
         ...prev,
       ]);
     } finally {
@@ -343,12 +343,10 @@ export default function EmployeeFileEditor({
                       )}
                     </span>
                     <span style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-                      {!d.id.startsWith("pending-") && (
-                        <button type="button" disabled={isPending} onClick={() => handleViewDocument(d.id)} style={btnGhost}>
-                          {t("view")}
-                        </button>
-                      )}
-                      {canRemove && !d.id.startsWith("pending-") && (
+                      <button type="button" disabled={isPending} onClick={() => handleViewDocument(d.id)} style={btnGhost}>
+                        {t("view")}
+                      </button>
+                      {canRemove && (
                         <button type="button" disabled={isPending} onClick={() => handleRemoveDocument(d.id)} style={btnGhost}>
                           {t("remove")}
                         </button>

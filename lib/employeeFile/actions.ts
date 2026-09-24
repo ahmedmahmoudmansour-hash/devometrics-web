@@ -88,8 +88,22 @@ export async function getEmployeeFile(organizationId: string, userId?: string): 
   ]);
 
   if (targetId !== user.id) {
-    // Only reaches here with data if RLS let an admin through; best-effort log.
-    await supabase.from("employee_file_access_log").insert({ organization_id: organizationId, actor_user_id: user.id, subject_user_id: targetId, action: "view_file" });
+    // Only reaches here with data if RLS let an admin through. One entry per
+    // admin per person per 10 minutes: this function also runs on every
+    // refresh after a save or upload, and logging each of those would bury
+    // the real accesses.
+    const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("employee_file_access_log")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .eq("actor_user_id", user.id)
+      .eq("subject_user_id", targetId)
+      .eq("action", "view_file")
+      .gte("created_at", since);
+    if (!count) {
+      await supabase.from("employee_file_access_log").insert({ organization_id: organizationId, actor_user_id: user.id, subject_user_id: targetId, action: "view_file" });
+    }
   }
 
   return {
@@ -203,7 +217,7 @@ export async function attachEmployeeDocument(
   organizationId: string,
   userId: string,
   meta: { docType: string; title: string; storagePath: string; fileName: string; expiresOn: string }
-): Promise<{ error: string } | { success: true }> {
+): Promise<{ error: string } | { success: true; id: string }> {
   if (!(ALL_DOC_TYPES as readonly string[]).includes(meta.docType)) return { error: "Invalid document type" };
   if (!meta.title.trim()) return { error: "Give the document a title" };
   const supabase = await createClient();
@@ -211,11 +225,11 @@ export async function attachEmployeeDocument(
   if (!user) return { error: "Not authenticated" };
   if (!meta.storagePath.startsWith(`${organizationId}/${userId}/`)) return { error: "Invalid file location" };
 
-  const { error } = await supabase.from("employee_documents").insert({
+  const { data, error } = await supabase.from("employee_documents").insert({
     organization_id: organizationId, user_id: userId, doc_type: meta.docType, title: meta.title.trim().slice(0, 200),
     storage_path: meta.storagePath, file_name: meta.fileName.slice(0, 255), expires_on: meta.expiresOn || null, uploaded_by: user.id,
-  });
-  if (error) {
+  }).select("id").single<{ id: string }>();
+  if (error || !data) {
     console.error("attachEmployeeDocument failed:", error);
     // Best-effort: don't leave an orphaned upload behind.
     await supabase.storage.from(EMPLOYEE_DOCUMENTS_BUCKET).remove([meta.storagePath]);
@@ -223,7 +237,7 @@ export async function attachEmployeeDocument(
   }
   revalidatePath("/dashboard/my-file");
   revalidatePath(`/dashboard/company/${userId}/file`);
-  return { success: true };
+  return { success: true, id: data.id };
 }
 
 // Short-lived signed URL. The table read is the gate (self or admin only);

@@ -55,7 +55,10 @@ export default async function CompanyAttendancePage({ searchParams }: { searchPa
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <AttendanceImportSection organizationId={data.organizationId} />
-          <AttendanceAdminView key={month} records={records} employees={employees} />
+          {/* Keyed on the data itself, not just the month: the view keeps its
+              own copy of the records (for instant removals), so after an
+              import refreshes the page it must remount to show the new rows. */}
+          <AttendanceAdminView key={`${month}:${records.length}:${records[0]?.id ?? ""}`} records={records} employees={employees} />
         </div>
       </div>
     </div>
