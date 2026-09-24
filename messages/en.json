@@ -482,7 +482,7 @@
     "searchTooltip": "Search (Ctrl+K)",
     "continueSetup": "Continue setup",
     "progress": "Progress",
-    "understandSection": "Understand",
+    "tile_growth": "My Growth",
     "discovery": "Discovery",
     "gapAnalysis": "Gap Analysis",
     "assessments": "Assessments",
@@ -490,13 +490,14 @@
     "scorecard": "Scorecard",
     "impactCycle": "Impact Cycle",
     "myTeam": "My Team",
-    "growSection": "Grow",
+    "tile_coaching": "Coaching & Development",
     "aiCoach": "AI Coach",
     "practiceScenarios": "Practice Scenarios",
     "careerPaths": "Career Paths",
     "myDevelopment": "My Development",
     "myJourney": "My Journey",
-    "organizeSection": "Organize",
+    "tile_work": "My Work",
+    "tile_company": "My Company",
     "tasksCalendar": "Tasks & Calendar",
     "workspace": "Workspace",
     "certifications": "Certifications",
@@ -515,6 +516,7 @@
   "dashboardHome": {
     "heading": "Your progress",
     "sectionToday": "Today",
+    "sectionGoTo": "Go to",
     "sectionExplore": "Explore",
     "sectionCareerHealth": "Your career health",
     "sectionDevelopment": "Development",
@@ -5858,5 +5860,11 @@
     "backToCompany": "← Back to company",
     "featuresTitle": "Tiles & features",
     "featuresDescription": "Choose which areas of the company workspace you use. Turn off a whole tile or a single feature and it disappears from your company home and navigation. Features marked below are also hidden from your employees when off. Settings and permissions always stay on."
+  },
+  "employeeHome": {
+    "tile_growth": "Understand where you stand",
+    "tile_coaching": "Get better at what matters",
+    "tile_work": "Your day to day",
+    "tile_company": "Services, directory and company learning"
   }
 }

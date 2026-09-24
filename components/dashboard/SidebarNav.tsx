@@ -5,130 +5,19 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
-  ListChecks,
-  Compass,
-  Target,
-  ClipboardList,
-  FileText,
-  LineChart,
-  History,
-  Drama,
-  Sparkles,
   UserCircle,
   Building2,
   ShieldCheck,
   LogOut,
   Lock,
-  NotebookPen,
-  Route,
   Search,
-  Milestone as MilestoneIcon,
-  Users,
-  ClipboardCheck,
-  Library,
   ArrowLeftRight,
-  CalendarDays,
-  Contact,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LocaleToggle from "@/components/LocaleToggle";
 import { signOut } from "@/app/dashboard/actions";
 import { OPEN_PALETTE_EVENT } from "@/components/dashboard/CommandPalette";
-
-type NavItem = {
-  href: string;
-  labelKey: string;
-  icon: React.ComponentType<{ size?: number }>;
-  accent?: "teal" | "amber";
-  premium?: boolean;
-  // Matches a RestrictableFeature key (lib/organizations/featureAccess.ts)
-  // — items without one are never hidden by a feature restriction.
-  featureKey?: string;
-};
-
-// Grouped by what the user is trying to DO, not by when features shipped —
-// a 13-item flat list made even the flagship AI Coach hard to find. Section
-// labels hide with the rest of the text when the sidebar collapses to
-// icons-only on narrow screens.
-function buildSections(
-  hasDirectReports: boolean,
-  canSeeImpactCycle: boolean,
-  hasOrgMembership: boolean,
-  hasDirectoryEnabled: boolean
-): { labelKey: string | null; items: NavItem[] }[] {
-  return [
-    {
-      labelKey: null,
-      items: [{ href: "/dashboard", labelKey: "progress", icon: LayoutDashboard }],
-    },
-    {
-      labelKey: "understandSection",
-      items: [
-        // Order matches app/dashboard/page.tsx's OnboardingChecklist
-        // (Discovery -> Assessments -> Gap Analysis) — these two were
-        // previously out of sync (nav had Gap Analysis before Assessments),
-        // so the sidebar and the dashboard's own "what to do next" list
-        // disagreed on sequence. Gap Analysis is deliberately last: it's
-        // the CV/target-role-driven step that produces the score other
-        // features consume, a natural culmination of the lighter
-        // Discovery/Assessments self-report steps before it.
-        { href: "/dashboard/discovery", labelKey: "discovery", icon: Compass },
-        { href: "/dashboard/assessments", labelKey: "assessments", icon: ClipboardList },
-        { href: "/dashboard/gap-analysis", labelKey: "gapAnalysis", icon: Target },
-        { href: "/dashboard/resume", labelKey: "resume", icon: FileText, premium: true, featureKey: "resume_intelligence" },
-        { href: "/dashboard/scorecard", labelKey: "scorecard", icon: LineChart },
-        // Shown when there's a real manager to give a Manager's Perspective,
-        // OR a review already exists regardless (an admin can assign one
-        // via the employee-scope picker even when the person's manager is
-        // a vacant/structural position, not a real employee) — a review
-        // that's actually been assigned must always be reachable, not
-        // hidden just because manager_user_id happens to be null.
-        ...(canSeeImpactCycle ? [{ href: "/dashboard/impact-cycle", labelKey: "impactCycle", icon: ClipboardCheck, featureKey: "performance_review" }] : []),
-        // Only shown to a real reporting-line manager (migration 0078) —
-        // an individual contributor with no reports has nothing to do here.
-        ...(hasDirectReports ? [{ href: "/dashboard/my-team", labelKey: "myTeam", icon: Users }] : []),
-      ],
-    },
-    {
-      labelKey: "growSection",
-      items: [
-        { href: "/dashboard/coach", labelKey: "aiCoach", icon: Sparkles, featureKey: "ai_coaching" },
-        { href: "/dashboard/roleplay", labelKey: "practiceScenarios", icon: Drama, premium: true, featureKey: "roleplay" },
-        { href: "/dashboard/career-paths", labelKey: "careerPaths", icon: Route, featureKey: "career_development" },
-        { href: "/dashboard/plans", labelKey: "myDevelopment", icon: MilestoneIcon },
-        { href: "/dashboard/journey", labelKey: "myJourney", icon: History },
-      ],
-    },
-    {
-      labelKey: "organizeSection",
-      items: [
-        { href: "/dashboard/tasks", labelKey: "tasksCalendar", icon: ListChecks },
-        { href: "/dashboard/notes", labelKey: "workspace", icon: NotebookPen },
-        // Certifications is deliberately hidden from nav (2026-08-02) — a
-        // manual credential/expiry tracker, low perceived value per user
-        // feedback. Route/data left intact, not removed: an AI-driven
-        // Career Roadmap replacement is a separate future project, not a
-        // rebuild of this page.
-        { href: "/dashboard/accountability", labelKey: "accountabilityGroups", icon: Users },
-        // Only relevant to someone actually part of a company workspace —
-        // an individual account will never have anything assigned here.
-        ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library, featureKey: "knowledge_hub" }] : []),
-        // Leave & Vacation Management (0166) + HR Letters (0169) — same
-        // "company workspace only" gate as Knowledge Hub, an individual
-        // account has no leave types/balances to see. Labeled "Services"
-        // rather than "Leave" since this destination bundles unrelated
-        // employee self-service items (time off AND HR letter requests),
-        // not leave/vacation alone — renamed 2026-09-23 at Ahmed's request.
-        ...(hasOrgMembership ? [{ href: "/dashboard/leave", labelKey: "services", icon: CalendarDays }] : []),
-        // Off by default per org (organizations.directory_enabled, 0175) —
-        // an admin opts in from Settings, so this only ever appears for
-        // companies that actually want it, per Ahmed's "not all HR would
-        // need this to appear for everyone."
-        ...(hasOrgMembership && hasDirectoryEnabled ? [{ href: "/dashboard/directory", labelKey: "directory", icon: Contact }] : []),
-      ],
-    },
-  ];
-}
+import { buildEmployeeTiles } from "@/components/dashboard/employeeNav";
 
 export default function SidebarNav({
   savedTheme,
@@ -159,11 +48,15 @@ export default function SidebarNav({
   const t = useTranslations("sidebarNav");
   const tHome = useTranslations("dashboardHome");
   const pathname = usePathname();
-  const restrictedSet = new Set(restrictedFeatures);
-  const sections = buildSections(hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled).map((section) => ({
-    ...section,
-    items: section.items.filter((item) => !item.featureKey || !restrictedSet.has(item.featureKey)),
-  }));
+  // Progress on its own, then the same tiles the home page shows — one
+  // shared config (employeeNav.ts), so sidebar and home never drift apart.
+  const sections: { labelKey: string | null; items: ReturnType<typeof buildEmployeeTiles>[number]["items"] }[] = [
+    { labelKey: null, items: [{ href: "/dashboard", labelKey: "progress", icon: LayoutDashboard }] },
+    ...buildEmployeeTiles({ hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled, restrictedFeatures }).map((tile) => ({
+      labelKey: `tile_${tile.key}`,
+      items: tile.items,
+    })),
+  ];
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";

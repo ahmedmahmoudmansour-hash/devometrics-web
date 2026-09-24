@@ -482,7 +482,7 @@
     "searchTooltip": "بحث (Ctrl+K)",
     "continueSetup": "أكمل الإعداد",
     "progress": "التقدم",
-    "understandSection": "الفهم",
+    "tile_growth": "نموّي",
     "discovery": "الاكتشاف",
     "gapAnalysis": "تحليل الفجوة",
     "assessments": "التقييمات",
@@ -490,13 +490,14 @@
     "scorecard": "بطاقة الأداء",
     "impactCycle": "دورة الأثر",
     "myTeam": "فريقي",
-    "growSection": "النمو",
+    "tile_coaching": "التوجيه والتطوير",
     "aiCoach": "مدرّب الذكاء الاصطناعي",
     "practiceScenarios": "مواقف تدريبية",
     "careerPaths": "المسارات المهنية",
     "myDevelopment": "تطويري",
     "myJourney": "رحلتي",
-    "organizeSection": "التنظيم",
+    "tile_work": "عملي",
+    "tile_company": "شركتي",
     "tasksCalendar": "المهام والتقويم",
     "workspace": "مساحة العمل",
     "certifications": "الشهادات",
@@ -515,6 +516,7 @@
   "dashboardHome": {
     "heading": "تقدّمك",
     "sectionToday": "اليوم",
+    "sectionGoTo": "انتقل إلى",
     "sectionExplore": "استكشاف",
     "sectionCareerHealth": "صحتك المهنية",
     "sectionDevelopment": "التطوير",
@@ -5858,5 +5860,11 @@
     "backToCompany": "← العودة إلى الشركة",
     "featuresTitle": "البلاطات والميزات",
     "featuresDescription": "اختر مجالات مساحة عمل الشركة التي تستخدمها. أوقف بلاطة كاملة أو ميزة واحدة لتختفي من صفحة شركتك والتنقل. الميزات المشار إليها أدناه تُخفى أيضًا عن موظفيك عند إيقافها. الإعدادات والصلاحيات تبقى مفعّلة دائمًا."
+  },
+  "employeeHome": {
+    "tile_growth": "افهم موقعك الحالي",
+    "tile_coaching": "تطوّر فيما يهمّ",
+    "tile_work": "عملك اليومي",
+    "tile_company": "الخدمات والدليل وتعلّم الشركة"
   }
 }

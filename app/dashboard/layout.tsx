@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/dashboard/SidebarNav";
+import { DashboardNavProvider } from "@/components/dashboard/DashboardNavContext";
 import CommandPalette from "@/components/dashboard/CommandPalette";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
@@ -123,7 +124,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             nextOnboardingStep={nextOnboardingStep}
           />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <DashboardNavProvider
+            value={{ hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled, restrictedFeatures, isFreeTier }}
+          >
+            {children}
+          </DashboardNavProvider>
+        </div>
       </div>
       <CommandPalette
         isCompanyAdmin={membership?.role === "admin"}

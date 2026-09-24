@@ -26,6 +26,7 @@ import { recordAndComputeMomentum } from "@/lib/momentum/momentum";
 import { listMySurveys } from "@/lib/surveys/actions";
 import { listTodayTasks } from "@/lib/tasks/actions";
 import DashboardSection from "@/components/dashboard/DashboardSection";
+import EmployeeTileHub from "@/components/dashboard/EmployeeTileHub";
 import DismissibleUpgradePrompt from "@/components/dashboard/DismissibleUpgradePrompt";
 import StatRail from "@/components/dashboard/StatRail";
 import CareerGpsCard from "@/components/dashboard/CareerGpsCard";
@@ -232,6 +233,14 @@ export default async function DashboardPage() {
             <PendingSurveysCard surveys={mySurveys} />
           </DashboardSection>
 
+          {/* Where to go — the same four groups as the sidebar, one shared
+              config. Sits right under Today so "what do I do now" comes
+              first and "where is everything" second; the longer sections
+              below start collapsed. */}
+          <DashboardSection label={t("sectionGoTo")}>
+            <EmployeeTileHub />
+          </DashboardSection>
+
           {/* Always open, not tucked inside "Career Health" — Trends and
               Recommended Learning are a research tool available to
               everyone from day one (no Gap Analysis required), not a
@@ -240,7 +249,7 @@ export default async function DashboardPage() {
               a new employee had to know to expand a section full of empty
               placeholders just to find a tool that had nothing to do with
               "how am I doing." */}
-          <DashboardSection label={t("sectionExplore")}>
+          <DashboardSection label={t("sectionExplore")} collapsible defaultOpen={false}>
             <KeyTrendsCard jobTitle={profile?.job_history?.[0]?.title ?? null} />
           </DashboardSection>
 
@@ -268,7 +277,7 @@ export default async function DashboardPage() {
               otherwise. */}
           {latestAnalysis && <WhatIfSimulator />}
 
-          <DashboardSection label={t("sectionDevelopment")}>
+          <DashboardSection label={t("sectionDevelopment")} collapsible defaultOpen={(plans ?? []).length > 0}>
             {(plans ?? []).map((plan) => (
               <PlanSummaryCard
                 key={plan.id}
