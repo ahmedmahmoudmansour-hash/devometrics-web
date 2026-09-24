@@ -2,8 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import PlanSummaryCard from "@/components/dashboard/PlanSummaryCard";
-import NewPlanForm from "@/components/dashboard/NewPlanForm";
 import DataPrivacy from "@/components/dashboard/DataPrivacy";
 import CareerHealthOverview from "@/components/dashboard/CareerHealthOverview";
 import CompanyMembershipCard from "@/components/dashboard/CompanyMembershipCard";
@@ -276,27 +274,6 @@ export default async function DashboardPage() {
               having a Gap Analysis, since it has nothing to project from
               otherwise. */}
           {latestAnalysis && <WhatIfSimulator />}
-
-          <DashboardSection label={t("sectionDevelopment")} collapsible defaultOpen={(plans ?? []).length > 0}>
-            {(plans ?? []).map((plan) => (
-              <PlanSummaryCard
-                key={plan.id}
-                plan={plan}
-                milestones={(milestones ?? []).filter((m) => m.plan_id === plan.id)}
-              />
-            ))}
-            <NewPlanForm
-              subscriptionTier={effectiveSubscriptionTier(profile ?? null, !!membership)}
-              existingPlanCount={(plans ?? []).length}
-              personalization={{
-                location: profile?.location ?? "",
-                learningPreferences: profile?.learning_preferences ?? [],
-                careerStage: profile?.career_stage ?? "",
-                accommodation: profile?.accommodation ?? "",
-                resourceTier: profile?.resource_tier ?? "",
-              }}
-            />
-          </DashboardSection>
 
           {effectiveSubscriptionTier(profile ?? null, !!membership) === "free" && !profile?.upgrade_prompt_dismissed && (
             <DismissibleUpgradePrompt>

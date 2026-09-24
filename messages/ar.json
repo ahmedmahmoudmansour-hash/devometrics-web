@@ -520,7 +520,6 @@
     "sectionGoTo": "انتقل إلى",
     "sectionExplore": "استكشاف",
     "sectionCareerHealth": "صحتك المهنية",
-    "sectionDevelopment": "التطوير",
     "sectionCompany": "الشركة",
     "sectionAccount": "الحساب",
     "step1Label": "أخبرنا عن نفسك",
@@ -1000,13 +999,12 @@
     "backToProgress": "← العودة إلى التقدم",
     "title": "تطويري",
     "subtitle": "كل خطة تطوير ومحطة لديك، في مكان واحد — ضع على كل منها لم تبدأ أو قيد التنفيذ أو مكتملة أو مؤجلة كلما تغيّرت أولوياتك فعليًا.",
-    "emptyStatePrefix": "ليس لديك خطة تطوير بعد.",
-    "emptyStateLinkText": "أنشئ واحدة من لوحة التحكم",
-    "emptyStateSuffix": "— تُبنى استنادًا إلى تحليل الفجوة، وملفك المهني، والتقييمات المكتملة.",
     "statusNotStarted": "لم تبدأ",
     "statusInProgress": "قيد التنفيذ",
     "statusCompleted": "مكتملة",
-    "statusDeferred": "مؤجلة"
+    "statusDeferred": "مؤجلة",
+    "emptyState": "ليس لديك خطة تطوير بعد. أنشئ أول خطة لك أدناه — فهي تعتمد على تحليل الفجوات وملفك المهني وتقييماتك المكتملة.",
+    "newPlanTitle": "إنشاء خطة جديدة"
   },
   "planDetailPage": {
     "backToProgress": "← العودة إلى التقدم",

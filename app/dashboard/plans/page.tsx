@@ -3,17 +3,20 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import PlanCard from "@/components/dashboard/PlanCard";
-import type { DevelopmentPlan, Milestone } from "@/lib/supabase/types";
+import NewPlanForm from "@/components/dashboard/NewPlanForm";
+import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import type { DevelopmentPlan, Milestone, Profile } from "@/lib/supabase/types";
 
 export const metadata = { title: "My Development — Devometrics" };
 
-// The consolidated tracking view "My Development" links to from the
-// dashboard home — every plan and every milestone across all of them, in
-// one place, with the same editable status control (In progress /
-// Completed / Deferred) as the individual plan page. The per-plan pages
-// still exist for export/printing a single plan; this is where you come to
-// see and update everything at once instead of paging through plans one at
-// a time.
+// The single home for development plans: create one, and see and update
+// every plan and milestone in one place, with the same editable status
+// control (In progress / Completed / Deferred) as the individual plan page.
+// The dashboard home used to carry its own copy of the plan list and the
+// create form; that duplicate is gone, so there is exactly one place to go.
+// (Gap Analysis and Assessments can still generate a plan from their own
+// results, but they land here.)
 export default async function MyDevelopmentPage() {
   const t = await getTranslations("plansPage");
   const supabase = await createClient();
@@ -21,6 +24,11 @@ export default async function MyDevelopmentPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const [{ data: profile }, organizationId] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle<Profile>(),
+    getMyOrganizationId(supabase, user.id),
+  ]);
 
   const { data: plans } = await supabase
     .from("development_plans")
@@ -64,15 +72,7 @@ export default async function MyDevelopmentPage() {
         </div>
 
         {(plans ?? []).length === 0 ? (
-          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, textAlign: "center" }}>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              {t("emptyStatePrefix")}{" "}
-              <Link href="/dashboard" style={{ color: "var(--teal)" }}>
-                {t("emptyStateLinkText")}
-              </Link>{" "}
-              {t("emptyStateSuffix")}
-            </p>
-          </div>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 20 }}>{t("emptyState")}</p>
         ) : (
           <>
             <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 28, background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
@@ -105,6 +105,21 @@ export default async function MyDevelopmentPage() {
             </div>
           </>
         )}
+
+        <div style={{ marginTop: 32 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>{t("newPlanTitle")}</p>
+          <NewPlanForm
+            subscriptionTier={effectiveSubscriptionTier(profile ?? null, !!organizationId)}
+            existingPlanCount={(plans ?? []).length}
+            personalization={{
+              location: profile?.location ?? "",
+              learningPreferences: profile?.learning_preferences ?? [],
+              careerStage: profile?.career_stage ?? "",
+              accommodation: profile?.accommodation ?? "",
+              resourceTier: profile?.resource_tier ?? "",
+            }}
+          />
+        </div>
       </div>
     </div>
   );

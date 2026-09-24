@@ -520,7 +520,6 @@
     "sectionGoTo": "Go to",
     "sectionExplore": "Explore",
     "sectionCareerHealth": "Your career health",
-    "sectionDevelopment": "Development",
     "sectionCompany": "Company",
     "sectionAccount": "Account",
     "step1Label": "Tell us about yourself",
@@ -1000,13 +999,12 @@
     "backToProgress": "← Back to progress",
     "title": "My Development",
     "subtitle": "Every development plan and milestone you have, in one place — mark each one Not started, In progress, Completed, or Deferred as your priorities actually change.",
-    "emptyStatePrefix": "You don't have a development plan yet.",
-    "emptyStateLinkText": "Generate one from the dashboard",
-    "emptyStateSuffix": "— it draws on your Gap Analysis, career profile, and completed assessments.",
     "statusNotStarted": "Not started",
     "statusInProgress": "In progress",
     "statusCompleted": "Completed",
-    "statusDeferred": "Deferred"
+    "statusDeferred": "Deferred",
+    "emptyState": "You don't have a development plan yet. Create your first one below — it draws on your Gap Analysis, career profile, and completed assessments.",
+    "newPlanTitle": "Create a new plan"
   },
   "planDetailPage": {
     "backToProgress": "← Back to progress",
