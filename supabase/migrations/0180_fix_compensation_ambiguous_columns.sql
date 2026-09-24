@@ -1,16 +1,22 @@
--- ============================================================
--- DEVOMETRICS -- PENDING MIGRATION: 0180
+-- Two compensation read functions (latest definitions in 0165) have
+-- unqualified column names inside a plpgsql function whose RETURNS TABLE
+-- columns share those names. plpgsql treats the output columns as variables,
+-- so a bare `effective_to`, `organization_id`, `employee_user_id` or `id` is
+-- ambiguous and raises "column reference ... is ambiguous".
 --
--- Everything through 0179 is applied and verified live (2026-09-24).
+--  * get_my_compensation: the audit-log sub-select used bare column names and
+--    the function's catch-all `exception when others then return` swallowed
+--    the error, so it returned ZERO rows for everyone, always -- an employee
+--    could never see their own compensation record (My Compensation on the
+--    profile page was permanently empty). Found 2026-09-24 by comparing the
+--    admin roster (shows the record) with the employee's own call ([]).
+--  * get_compensation_record: `where id = p_record_id` hit the same ambiguity
+--    and raised instead of returning the record.
 --
--- 0180 -- Compensation bug: get_my_compensation returned NOTHING for every
---        employee (bare column names inside a function whose output columns
---        share them are ambiguous; the catch-all exception handler hid the
---        error), so an employee never saw their own compensation. Also fixes
---        get_compensation_record's same ambiguity. Bodies are 0165's exactly
---        (deduction columns and visibility rules kept); only the columns are
---        qualified with a table alias.
--- ============================================================
+-- Bodies are exactly 0165's (including the deduction columns and the
+-- exact/band visibility rules); the ONLY change is aliasing the table so the
+-- columns are qualified. drop-then-create because 0165 did the same (the
+-- return type includes the deduction columns).
 
 drop function if exists public.get_my_compensation();
 create or replace function public.get_my_compensation()
