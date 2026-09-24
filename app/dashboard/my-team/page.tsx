@@ -5,8 +5,17 @@ import { createClient } from "@/lib/supabase/server";
 import { listMyDirectReportReviews, getPendingProbationAcceptances } from "@/lib/performanceReviews/actions";
 import { listMyTeamPulse } from "@/lib/organizations/teamPulse";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
+import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { listTeamCompensation, listSalaryBands, listCompensationProposals } from "@/lib/compensation/actions";
+import { listTeamLeaveRequests, listLeaveTypes, listTeamLeaveOverview } from "@/lib/leave/actions";
 import MyTeamReviews from "@/components/dashboard/MyTeamReviews";
 import ProbationAcceptanceCard from "@/components/dashboard/ProbationAcceptanceCard";
+import TeamCompensationSection from "@/components/dashboard/TeamCompensationSection";
+import MyCompensationProposals from "@/components/dashboard/MyCompensationProposals";
+import TeamLeaveSection from "@/components/dashboard/TeamLeaveSection";
+import TeamLeaveOverview from "@/components/dashboard/TeamLeaveOverview";
+import TeamEmploymentHistory from "@/components/dashboard/TeamEmploymentHistory";
+import { getEmployeeHistory, type EmploymentHistoryEvent } from "@/lib/employmentHistory/actions";
 import { ScoreBar } from "@/components/dashboard/charts";
 
 export const metadata = { title: "My Team — Devometrics" };
@@ -32,6 +41,32 @@ export default async function MyTeamPage() {
   const { items, error } = await listMyDirectReportReviews();
   const { members: pulseMembers } = await listMyTeamPulse();
   const pendingProbationAcceptances = await getPendingProbationAcceptances();
+
+  const organizationId = await getMyOrganizationId(supabase, user.id);
+  const [teamCompensation, salaryBands, myProposals, teamLeaveRequestsRaw, leaveTypes, teamLeaveOverviewRaw] = organizationId
+    ? await Promise.all([
+        listTeamCompensation(organizationId),
+        listSalaryBands(organizationId),
+        listCompensationProposals(organizationId),
+        listTeamLeaveRequests(organizationId),
+        listLeaveTypes(organizationId),
+        listTeamLeaveOverview(organizationId),
+      ])
+    : [[], [], [], [], [], []];
+  const employeeNames = Object.fromEntries(pulseMembers.map((m) => [m.userId, { name: m.name, email: m.email }]));
+  // listTeamLeaveRequests relies on RLS (self OR org-admin OR manager-of),
+  // which is broader than "my direct reports" for a manager who's also an
+  // org admin — filter down to pulseMembers (the same direct-report set
+  // everything else on this page already uses) so "team" stays accurate.
+  const directReportIds = new Set(pulseMembers.map((m) => m.userId));
+  const teamLeaveRequests = teamLeaveRequestsRaw.filter((r) => directReportIds.has(r.employeeUserId));
+
+  // One RPC call per direct report — list_employee_history() (0170)
+  // itself enforces per-employee authorization (self/admin/manager-with-
+  // visibility), so this naturally returns [] for anyone the org's
+  // employment_history_manager_visibility setting hides.
+  const historyEntries = await Promise.all(pulseMembers.map((m) => getEmployeeHistory(m.userId).then((events) => [m.userId, events] as const)));
+  const employmentHistoryByEmployee: Record<string, EmploymentHistoryEvent[]> = Object.fromEntries(historyEntries);
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -99,6 +134,21 @@ export default async function MyTeamPage() {
         )}
 
         <ProbationAcceptanceCard initial={pendingProbationAcceptances} />
+
+        {organizationId && (
+          <>
+            <TeamLeaveSection initialRequests={teamLeaveRequests} leaveTypes={leaveTypes} employeeNames={employeeNames} />
+            <TeamLeaveOverview balances={teamLeaveOverviewRaw} leaveTypes={leaveTypes} employeeNames={employeeNames} />
+            <TeamEmploymentHistory eventsByEmployee={employmentHistoryByEmployee} employeeNames={employeeNames} />
+            <MyCompensationProposals initialProposals={myProposals} employeeNames={employeeNames} />
+            <TeamCompensationSection
+              organizationId={organizationId}
+              initialRows={teamCompensation}
+              salaryBands={salaryBands}
+              employeeNames={employeeNames}
+            />
+          </>
+        )}
 
         {error ? (
           <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>

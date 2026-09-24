@@ -7,6 +7,7 @@ import {
   updateMemberDetails,
   setMemberArchived,
   setMemberRole,
+  setEmploymentStatus,
   adminScheduleEmployeeDataDeletion,
   adminCancelEmployeeDataDeletion,
   updateMemberPerformance,
@@ -39,6 +40,7 @@ export default function EditEmployeeButton({
   performanceRatingNote = "",
   role,
   isSelf = false,
+  employmentStatus = "active",
 }: {
   memberId: string | null;
   // Needed for the data-deletion actions specifically — those key off the
@@ -65,6 +67,10 @@ export default function EditEmployeeButton({
   // between the two roles organization_members actually has.
   role: "admin" | "member";
   isSelf?: boolean;
+  // 0172 — defaults 'active' since that's every existing row's value.
+  // Changing this gates the person's org access, not just a label; see
+  // setEmploymentStatus's own comment for the guard shape.
+  employmentStatus?: "active" | "resigned" | "terminated";
 }) {
   const t = useTranslations("editEmployeeButton");
   const locale = useLocale();
@@ -89,6 +95,9 @@ export default function EditEmployeeButton({
   const [currentRole, setCurrentRole] = useState(role);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [roleSaving, setRoleSaving] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(employmentStatus);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusSaving, setStatusSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -148,6 +157,22 @@ export default function EditEmployeeButton({
         router.refresh();
       }
       setRoleSaving(false);
+    });
+  }
+
+  function changeStatus(nextStatus: "active" | "resigned" | "terminated") {
+    if (nextStatus === currentStatus) return;
+    setStatusError(null);
+    setStatusSaving(true);
+    startTransition(async () => {
+      const result = await setEmploymentStatus(memberId!, nextStatus);
+      if (result?.error) {
+        setStatusError(result.error);
+      } else {
+        setCurrentStatus(nextStatus);
+        router.refresh();
+      }
+      setStatusSaving(false);
     });
   }
 
@@ -336,6 +361,29 @@ export default function EditEmployeeButton({
                 </p>
               )}
               {roleError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{roleError}</p>}
+            </div>
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>
+                {t("employmentStatusLabel")}
+              </p>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
+                {t("employmentStatusDesc")}
+              </p>
+              <select
+                value={currentStatus}
+                onChange={(e) => changeStatus(e.target.value as "active" | "resigned" | "terminated")}
+                disabled={statusSaving}
+                style={{ ...fieldStyle, maxWidth: 220, cursor: statusSaving ? "wait" : "pointer", opacity: statusSaving ? 0.6 : 1 }}
+              >
+                <option value="active">{t("statusActive")}</option>
+                <option value="resigned">{t("statusResigned")}</option>
+                <option value="terminated">{t("statusTerminated")}</option>
+              </select>
+              {currentStatus !== "active" && (
+                <p style={{ fontSize: 11, color: "var(--amber)", marginTop: 6, lineHeight: 1.5 }}>{t("employmentStatusInactiveNote")}</p>
+              )}
+              {statusError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{statusError}</p>}
             </div>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>

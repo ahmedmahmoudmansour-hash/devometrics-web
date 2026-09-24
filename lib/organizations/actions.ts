@@ -1193,10 +1193,20 @@ export async function setMemberArchived(memberId: string, archived: boolean) {
 // A company can have any number of admins — organization_members.role is
 // just 'admin'/'member' with no uniqueness constraint, and the existing
 // "Org admins can update member records" policy (0049) already covers role
-// changes since it doesn't restrict which columns an admin can touch. The
-// one thing worth guarding in code (not just relying on RLS for) is
-// demoting the org's last remaining admin, which would lock everyone out
-// of the Company dashboard with no way back in short of direct DB access.
+// changes since it doesn't restrict which columns an admin can touch. Two
+// things worth guarding in code (not just relying on RLS for):
+// 1. Demoting the org's last remaining admin, which would lock everyone
+//    out of the Company dashboard with no way back in short of direct DB
+//    access.
+// 2. Demoting the org's OWNER (organizations.owner_user_id, migration
+//    0162 — the one person who controls granting Compensation Admin)
+//    below admin. leaveOrganization() already blocks any admin from
+//    leaving the org outright, but it only checks role, not ownership —
+//    demote the owner to 'member' first and they COULD then leave,
+//    stranding owner_user_id on someone no longer even in the org, with
+//    no one left who passes is_org_owner() and no self-service recovery.
+//    The owner must transfer ownership (lib/organizations/ownership.ts)
+//    before giving up their own admin access.
 export async function setMemberRole(memberId: string, role: "admin" | "member") {
   const supabase = await createClient();
   const {
@@ -1207,9 +1217,9 @@ export async function setMemberRole(memberId: string, role: "admin" | "member") 
   if (role === "member") {
     const { data: target } = await supabase
       .from("organization_members")
-      .select("organization_id, role")
+      .select("organization_id, role, user_id")
       .eq("id", memberId)
-      .maybeSingle<{ organization_id: string; role: string }>();
+      .maybeSingle<{ organization_id: string; role: string; user_id: string }>();
     if (target?.role === "admin") {
       const { count: adminCount } = await supabase
         .from("organization_members")
@@ -1218,6 +1228,15 @@ export async function setMemberRole(memberId: string, role: "admin" | "member") 
         .eq("role", "admin");
       if ((adminCount ?? 0) <= 1) {
         return { error: "This is the only admin — promote someone else first before removing admin access." };
+      }
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("owner_user_id, created_by")
+        .eq("id", target.organization_id)
+        .maybeSingle<{ owner_user_id: string | null; created_by: string }>();
+      if (org && (org.owner_user_id ?? org.created_by) === target.user_id) {
+        return { error: "This person owns the workspace — transfer ownership to someone else first before removing their admin access." };
       }
     }
   }
@@ -1233,6 +1252,69 @@ export async function setMemberRole(memberId: string, role: "admin" | "member") 
   }
   if (!data || data.length === 0) {
     return { error: "Not authorized to change this employee's role." };
+  }
+
+  revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}
+
+// Same two guards as setMemberRole above, checked here for the same
+// reason (a friendlier early error — the real enforcement is DB-side:
+// the RLS UPDATE policy restricts this to org admins at all, and 0172's
+// extended trg_protect_org_owner_membership blocks the owner's own row
+// regardless of what this check does). "Deactivating" someone here means
+// setting employment_status away from 'active', which is exactly as
+// permanent-feeling as demoting the last admin would be — same class of
+// mistake, same guard shape.
+export async function setEmploymentStatus(memberId: string, status: "active" | "resigned" | "terminated") {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (status !== "active") {
+    const { data: target } = await supabase
+      .from("organization_members")
+      .select("organization_id, role, user_id")
+      .eq("id", memberId)
+      .maybeSingle<{ organization_id: string; role: string; user_id: string }>();
+
+    if (target?.role === "admin") {
+      const { count: adminCount } = await supabase
+        .from("organization_members")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", target.organization_id)
+        .eq("role", "admin")
+        .eq("employment_status", "active");
+      if ((adminCount ?? 0) <= 1) {
+        return { error: "This is the only active admin — promote someone else first before changing their status." };
+      }
+    }
+
+    if (target) {
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("owner_user_id, created_by")
+        .eq("id", target.organization_id)
+        .maybeSingle<{ owner_user_id: string | null; created_by: string }>();
+      if (org && (org.owner_user_id ?? org.created_by) === target.user_id) {
+        return { error: "This person owns the workspace — transfer ownership to someone else first before changing their status." };
+      }
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .update({ employment_status: status, employment_status_changed_at: new Date().toISOString(), employment_status_changed_by: user.id })
+    .eq("id", memberId)
+    .select("id");
+  if (error) {
+    console.error("setEmploymentStatus failed:", error);
+    return { error: "Could not update this person's employment status — the database may need migration 0172 run first." };
+  }
+  if (!data || data.length === 0) {
+    return { error: "Not authorized to change this employee's status." };
   }
 
   revalidatePath("/dashboard/company/employees");
@@ -1258,18 +1340,36 @@ export async function updateMemberPerformance(memberId: string, rating: number |
 
   if (rating !== null && (rating < 1 || rating > 5)) return { error: "Rating must be between 1 and 5" };
 
-  const { data, error } = await supabase
+  // Resolves org/user for this member first, purely so the write below can
+  // populate organization_member_performance's own required columns — the
+  // real authorization check is is_org_admin inside that table's RLS
+  // (0176), same as it always was via organization_members' admin-only
+  // UPDATE policy (0049).
+  const { data: targetMember } = await supabase
     .from("organization_members")
-    .update({
-      performance_rating: rating,
-      performance_rating_note: note.trim().slice(0, 1000),
-      performance_rating_updated_at: new Date().toISOString(),
-    })
+    .select("id, organization_id, user_id")
     .eq("id", memberId)
-    .select("id, organization_id, user_id");
+    .maybeSingle<{ id: string; organization_id: string; user_id: string }>();
+  if (!targetMember) return { error: "Not authorized to edit this employee." };
+
+  const { data, error } = await supabase
+    .from("organization_member_performance")
+    .upsert(
+      {
+        organization_id: targetMember.organization_id,
+        member_id: targetMember.id,
+        employee_user_id: targetMember.user_id,
+        rating,
+        note: note.trim().slice(0, 1000),
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+      },
+      { onConflict: "member_id" }
+    )
+    .select("id");
   if (error) {
     console.error("updateMemberPerformance failed:", error);
-    return { error: "Could not update — the database may need migration 0068 run first." };
+    return { error: "Could not update — the database may need migration 0176 run first." };
   }
   if (!data || data.length === 0) return { error: "Not authorized to edit this employee." };
 
@@ -1279,10 +1379,9 @@ export async function updateMemberPerformance(memberId: string, rating: number |
   // what it changed FROM. Only logged when actually set (not cleared to
   // null) — clearing a rating isn't a meaningful data point.
   if (rating !== null) {
-    const row = data[0];
     await supabase.from("employee_performance_rating_history").insert({
-      organization_id: row.organization_id,
-      employee_user_id: row.user_id,
+      organization_id: targetMember.organization_id,
+      employee_user_id: targetMember.user_id,
       rating,
       note: note.trim().slice(0, 1000),
       recorded_by: user.id,

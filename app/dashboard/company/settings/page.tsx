@@ -8,7 +8,11 @@ import OrganizationBrandingForm from "@/components/dashboard/OrganizationBrandin
 import EmailMessagesForm from "@/components/dashboard/EmailMessagesForm";
 import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
+import EmploymentHistoryVisibilityForm from "@/components/dashboard/EmploymentHistoryVisibilityForm";
+import DirectorySettingsForm from "@/components/dashboard/DirectorySettingsForm";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
+import { getEmploymentHistoryManagerVisibility } from "@/lib/employmentHistory/actions";
+import { getDirectoryEnabled } from "@/lib/directory/actions";
 
 // Split out of app/dashboard/company/page.tsx (the 2026-08 UX audit's
 // clearest finding: that page was doing four unrelated jobs — overview,
@@ -22,6 +26,8 @@ export default async function CompanySettingsPage() {
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
   const emailMessages = data.organizationId ? await getOrganizationEmailMessages(data.organizationId) : null;
+  const employmentHistoryVisibility = data.organizationId ? await getEmploymentHistoryManagerVisibility(data.organizationId) : "visible";
+  const directoryEnabled = data.organizationId ? await getDirectoryEnabled(data.organizationId) : false;
 
   if (!data.organizationId) redirect("/dashboard/company");
 
@@ -65,6 +71,8 @@ export default async function CompanySettingsPage() {
             initial={{ logoUrl: data.organizationLogoUrl, brandColor: data.organizationBrandColor }}
           />
           {emailMessages && <EmailMessagesForm organizationId={data.organizationId} initial={emailMessages} />}
+          <EmploymentHistoryVisibilityForm organizationId={data.organizationId} initial={employmentHistoryVisibility} />
+          <DirectorySettingsForm organizationId={data.organizationId} initialEnabled={directoryEnabled} />
         </div>
 
         <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--border)" }}>

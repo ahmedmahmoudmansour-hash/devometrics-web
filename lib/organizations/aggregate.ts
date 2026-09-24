@@ -18,7 +18,7 @@ import type {
 import { resolveAssessmentName } from "@/lib/assessments/catalog";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import type { CompetencyScore } from "@/lib/gap-analysis/dimensions";
-import { getLatestScoreEventsBySource, getScoreHistoryForEmployee, type ScoreEvent } from "@/lib/scoring/scoreEvents";
+import { getScoreHistoryForEmployee, type ScoreEvent } from "@/lib/scoring/scoreEvents";
 
 export { resolveAssessmentName };
 import type { BigFiveTrait } from "@/lib/personality/bigFive";
@@ -64,14 +64,10 @@ export type WorkforceRow = {
   // this schema). Consumers must label it honestly ("time in this org"),
   // never "hire date"/"tenure" without that qualification.
   memberSince: string | null;
-  // Unified score-tracking layer (migration 0147) — one whole-score event
-  // per source this person has any history for (Gap Analysis, performance
-  // review ratings, Knowledge Hub exams, ...), each the most recent value
-  // for that source. Empty until the migration is run — degrades the same
-  // way every other newer-table field on this row does. Not yet consumed
-  // anywhere as of this pass; exists so a future cross-source view doesn't
-  // need a new query to add it.
-  latestScores: ScoreEvent[];
+  // 0172 — defaults to 'active' for everyone until an admin explicitly
+  // changes it. Gates org-wide access via is_org_member/is_org_admin/etc.,
+  // not just a display label.
+  employmentStatus: "active" | "resigned" | "terminated";
 };
 
 export type CompanyData = {
@@ -162,7 +158,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
   // one round trip to this table instead of five. organizations/invites/
   // competencies stay as their own separate selects since they're
   // different tables, not different column-slices of the same one.
-  const [{ data: contactFields }, { data: members }, { data: invites }, { data: competencies }, { data: inviteLocations }] = await Promise.all([
+  const [{ data: contactFields }, { data: members }, { data: invites }, { data: competencies }, { data: inviteLocations }, { data: performanceRows }] = await Promise.all([
     supabase
       .from("organizations")
       .select(
@@ -181,7 +177,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     supabase
       .from("organization_members")
       .select(
-        "id, user_id, title, role, created_at, department, country, manager_name, manager_email, business_unit, location, employee_id, archived, performance_rating, performance_rating_note, performance_rating_updated_at, manager_user_id"
+        "id, user_id, title, role, created_at, department, country, manager_name, manager_email, business_unit, location, employee_id, archived, manager_user_id, employment_status"
       )
       .eq("organization_id", membership.organization_id)
       .returns<
@@ -199,10 +195,8 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
           location: string | null;
           employee_id: string | null;
           archived: boolean;
-          performance_rating: number | null;
-          performance_rating_note: string;
-          performance_rating_updated_at: string | null;
           manager_user_id: string | null;
+          employment_status: string | null;
         }[]
       >(),
     supabase
@@ -227,6 +221,19 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       .eq("organization_id", membership.organization_id)
       .is("accepted_at", null)
       .returns<{ id: string; department: string | null; country: string | null }[]>(),
+    // Performance rating/note (0176) — moved out of organization_members
+    // into its own admin-only-readable table; the old columns were exposed
+    // to every org peer via organization_members' own broad "fellow
+    // members" SELECT policy (0016/0145), which has no per-column
+    // narrowing in Postgres RLS. This query only ever returns rows here
+    // because buildCompanyData is only ever rendered on admin-gated pages
+    // — organization_member_performance's own RLS (is_org_admin) is the
+    // real boundary, this isn't relying on the page gate alone.
+    supabase
+      .from("organization_member_performance")
+      .select("member_id, rating, note, updated_at")
+      .eq("organization_id", membership.organization_id)
+      .returns<{ member_id: string; rating: number | null; note: string; updated_at: string }[]>(),
   ]);
   const locationByInviteId = new Map((inviteLocations ?? []).map((i) => [i.id, i]));
   const memberByUser = new Map((members ?? []).map((m) => [m.user_id, m]));
@@ -270,7 +277,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     };
   }
 
-  const [{ data: profiles }, { data: analyses }, { data: results }, { data: plans }, latestScoresByUser] = await Promise.all([
+  const [{ data: profiles }, { data: analyses }, { data: results }, { data: plans }] = await Promise.all([
     supabase.from("profiles").select("*").in("id", memberIds).returns<Profile[]>(),
     supabase
       .from("gap_analyses")
@@ -280,7 +287,6 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       .returns<GapAnalysis[]>(),
     supabase.from("assessment_results").select("*").in("user_id", memberIds).returns<AssessmentResult[]>(),
     supabase.from("development_plans").select("*").in("user_id", memberIds).returns<DevelopmentPlan[]>(),
-    getLatestScoreEventsBySource(supabase, memberIds),
   ]);
 
   const planIds = (plans ?? []).map((p) => p.id);
@@ -306,6 +312,8 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     planCountByUser.set(p.user_id, (planCountByUser.get(p.user_id) ?? 0) + 1);
     planUserById.set(p.id, p.user_id);
   }
+
+  const performanceByMember = new Map((performanceRows ?? []).map((r) => [r.member_id, r]));
 
   const milestoneStatsByUser = new Map<string, { done: number; total: number }>();
   for (const m of milestones ?? []) {
@@ -345,13 +353,16 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       milestonesDone: stats.done,
       milestonesTotal: stats.total,
       pendingDataDeletionAt: p.pending_data_deletion_at ?? null,
-      performanceRating: memberByUser.get(p.id)?.performance_rating ?? null,
-      performanceRatingNote: memberByUser.get(p.id)?.performance_rating_note ?? "",
-      performanceRatingUpdatedAt: memberByUser.get(p.id)?.performance_rating_updated_at ?? null,
+      performanceRating: performanceByMember.get(memberIdByUser.get(p.id) ?? "")?.rating ?? null,
+      performanceRatingNote: performanceByMember.get(memberIdByUser.get(p.id) ?? "")?.note ?? "",
+      performanceRatingUpdatedAt: performanceByMember.get(memberIdByUser.get(p.id) ?? "")?.updated_at ?? null,
       managerUserId: memberByUser.get(p.id)?.manager_user_id ?? null,
       role: roleByUser.get(p.id) === "admin" ? "admin" : "member",
       memberSince: memberSinceByUser.get(p.id) ?? null,
-      latestScores: latestScoresByUser.get(p.id) ?? [],
+      employmentStatus:
+        memberByUser.get(p.id)?.employment_status === "resigned" || memberByUser.get(p.id)?.employment_status === "terminated"
+          ? (memberByUser.get(p.id)!.employment_status as "resigned" | "terminated")
+          : "active",
     };
   });
 
@@ -511,13 +522,14 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     .maybeSingle<{ current_role_id: string | null }>();
   const currentRoleId = roleRow?.current_role_id ?? null;
 
-  // Performance rating (migration 0068) — same defensive-fallback shape as
-  // current_role_id above.
+  // Performance rating (migration 0068, moved to its own table in 0176 —
+  // see that migration's header for why) — same defensive-fallback shape
+  // as current_role_id above.
   const { data: performanceRow } = await supabase
-    .from("organization_members")
-    .select("performance_rating, performance_rating_note, performance_rating_updated_at")
-    .eq("id", targetMembership.id)
-    .maybeSingle<{ performance_rating: number | null; performance_rating_note: string; performance_rating_updated_at: string | null }>();
+    .from("organization_member_performance")
+    .select("rating, note, updated_at")
+    .eq("member_id", targetMembership.id)
+    .maybeSingle<{ rating: number | null; note: string; updated_at: string }>();
 
   // Reuses the same org-wide aggregation buildCompanyData already computes
   // (rather than re-deriving dimension averages here) so the two never
@@ -735,9 +747,9 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     currentRoleId,
     allRoles: allRoles ?? [],
     mobility,
-    performanceRating: performanceRow?.performance_rating ?? null,
-    performanceRatingNote: performanceRow?.performance_rating_note ?? "",
-    performanceRatingUpdatedAt: performanceRow?.performance_rating_updated_at ?? null,
+    performanceRating: performanceRow?.rating ?? null,
+    performanceRatingNote: performanceRow?.note ?? "",
+    performanceRatingUpdatedAt: performanceRow?.updated_at ?? null,
     managerNotes,
     scoreHistory,
   };

@@ -27,9 +27,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [{ data: membership }, { data: profile }, { count: directReportCount }, { count: reviewCount }, nextOnboardingStep] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("role, manager_user_id, organization_id, organizations(brand_color, is_disabled)")
+      .select("role, manager_user_id, organization_id, organizations(brand_color, is_disabled, directory_enabled)")
       .eq("user_id", user.id)
-      .maybeSingle<{ role: string; manager_user_id: string | null; organization_id: string; organizations: { brand_color: string | null; is_disabled: boolean | null } | null }>(),
+      .maybeSingle<{ role: string; manager_user_id: string | null; organization_id: string; organizations: { brand_color: string | null; is_disabled: boolean | null; directory_enabled: boolean | null } | null }>(),
     supabase
       .from("profiles")
       .select("is_admin, theme, subscription_tier, premium_trial_expires_at, is_disabled")
@@ -76,6 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // reviewCount query above for why this can't be manager_user_id alone.
   const canSeeImpactCycle = !!membership?.manager_user_id || (reviewCount ?? 0) > 0;
   const hasOrgMembership = !!membership;
+  const hasDirectoryEnabled = !!membership?.organizations?.directory_enabled;
   // Array, not the Set listMyRestrictedFeatures() returns — Set instances
   // aren't part of the RSC serialization boundary, and SidebarNav/
   // CommandPalette are both Client Components.
@@ -117,6 +118,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             hasDirectReports={hasDirectReports}
             canSeeImpactCycle={canSeeImpactCycle}
             hasOrgMembership={hasOrgMembership}
+            hasDirectoryEnabled={hasDirectoryEnabled}
             restrictedFeatures={restrictedFeatures}
             nextOnboardingStep={nextOnboardingStep}
           />
@@ -129,6 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         hasDirectReports={hasDirectReports}
         canSeeImpactCycle={canSeeImpactCycle}
         hasOrgMembership={hasOrgMembership}
+        hasDirectoryEnabled={hasDirectoryEnabled}
       />
     </div>
   );

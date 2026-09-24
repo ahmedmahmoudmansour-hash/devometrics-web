@@ -23,7 +23,8 @@ function buildEntries(
   isPlatformAdmin: boolean,
   hasDirectReports: boolean,
   canSeeImpactCycle: boolean,
-  hasOrgMembership: boolean
+  hasOrgMembership: boolean,
+  hasDirectoryEnabled: boolean
 ): Entry[] {
   const entries: Entry[] = [
     { labelKey: "progress", href: "/dashboard", keywords: "home overview dashboard start" },
@@ -52,6 +53,9 @@ function buildEntries(
   if (hasDirectReports) {
     entries.push({ labelKey: "myTeam", href: "/dashboard/my-team", hintKey: "myTeamHint", keywords: "team manager reports review appraisal perspective" });
   }
+  if (hasOrgMembership && hasDirectoryEnabled) {
+    entries.push({ labelKey: "directory", href: "/dashboard/directory", hintKey: "directoryHint", keywords: "directory contact phone mobile extension department search colleague find" });
+  }
   if (isCompanyAdmin) {
     entries.push(
       { labelKey: "company", href: "/dashboard/company", keywords: "organization workspace admin hr" },
@@ -75,12 +79,14 @@ export default function CommandPalette({
   hasDirectReports,
   canSeeImpactCycle,
   hasOrgMembership,
+  hasDirectoryEnabled,
 }: {
   isCompanyAdmin: boolean;
   isPlatformAdmin: boolean;
   hasDirectReports: boolean;
   canSeeImpactCycle: boolean;
   hasOrgMembership: boolean;
+  hasDirectoryEnabled: boolean;
 }) {
   const t = useTranslations("commandPalette");
   const [open, setOpen] = useState(false);
@@ -90,8 +96,8 @@ export default function CommandPalette({
   const router = useRouter();
 
   const entries = useMemo(
-    () => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports, canSeeImpactCycle, hasOrgMembership),
-    [isCompanyAdmin, isPlatformAdmin, hasDirectReports, canSeeImpactCycle, hasOrgMembership]
+    () => buildEntries(isCompanyAdmin, isPlatformAdmin, hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled),
+    [isCompanyAdmin, isPlatformAdmin, hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled]
   );
 
   const results = useMemo(() => {

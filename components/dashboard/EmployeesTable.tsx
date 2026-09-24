@@ -44,8 +44,14 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  // Default to active-only (0172) — resigned/terminated people shouldn't
+  // clutter the day-to-day roster, but stay one click away for anyone who
+  // needs their record (references, compliance, re-hire history).
+  const [showAll, setShowAll] = useState(false);
+  const inactiveCount = rows.filter((r) => r.employmentStatus !== "active").length;
+  const visibleRows = showAll ? rows : rows.filter((r) => r.employmentStatus === "active");
 
-  const allSelected = rows.length > 0 && selected.size === rows.length;
+  const allSelected = visibleRows.length > 0 && selected.size === visibleRows.length;
 
   function toggleRow(userId: string) {
     setSelected((prev) => {
@@ -57,7 +63,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
   }
 
   function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.userId)));
+    setSelected(allSelected ? new Set() : new Set(visibleRows.map((r) => r.userId)));
   }
 
   function handleBulkAssign() {
@@ -241,6 +247,16 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
       {error && <p style={{ color: "var(--danger)", fontSize: 12.5, marginBottom: 10 }}>{error}</p>}
       {confirmation && <p style={{ color: "var(--teal)", fontSize: 12.5, marginBottom: 10 }}>{confirmation}</p>}
 
+      {inactiveCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer", marginBottom: 10, display: "block" }}
+        >
+          {showAll ? t("hideInactiveEmployees") : t("showInactiveEmployees", { count: inactiveCount })}
+        </button>
+      )}
+
       <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -263,7 +279,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {visibleRows.map((r) => (
                 <tr key={r.userId}>
                   <td style={{ ...cellStyle, textAlign: "center" }}>
                     <input
@@ -280,6 +296,23 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
                     >
                       <Avatar name={r.name} avatarUrl={r.avatarUrl} />
                       <span style={{ textDecoration: "underline", textDecorationColor: "var(--border)" }}>{r.name}</span>
+                      {r.employmentStatus !== "active" && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: "var(--text-muted)",
+                            background: "rgba(255,255,255,0.06)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 999,
+                            padding: "2px 7px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.03em",
+                          }}
+                        >
+                          {t(r.employmentStatus === "resigned" ? "statusResigned" : "statusTerminated")}
+                        </span>
+                      )}
                     </Link>
                   </td>
                   <td style={{ ...cellStyle, color: r.title ? "var(--text)" : "var(--text-muted)" }}>{r.title ?? "—"}</td>
@@ -315,6 +348,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
                       name={r.name}
                       role={r.role}
                       isSelf={r.userId === currentUserId}
+                      employmentStatus={r.employmentStatus}
                       pendingDataDeletionAt={r.pendingDataDeletionAt}
                       performanceRating={r.performanceRating}
                       performanceRatingNote={r.performanceRatingNote}

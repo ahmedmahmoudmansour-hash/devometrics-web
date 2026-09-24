@@ -9,8 +9,12 @@ import BigFiveSharingToggle from "@/components/dashboard/BigFiveSharingToggle";
 import ProfileSettings from "@/components/dashboard/ProfileSettings";
 import ProfileHeader from "@/components/dashboard/ProfileHeader";
 import CareerProfileForm from "@/components/dashboard/CareerProfileForm";
+import MyCompensationCard from "@/components/dashboard/MyCompensationCard";
+import EmploymentHistoryTimeline from "@/components/dashboard/EmploymentHistoryTimeline";
 import type { BigFiveProfile, GapAnalysis, Profile } from "@/lib/supabase/types";
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import { getMyCompensation } from "@/lib/compensation/actions";
+import { getEmployeeHistory } from "@/lib/employmentHistory/actions";
 
 export default async function ProfilePage() {
   const t = await getTranslations("profilePage");
@@ -43,6 +47,8 @@ export default async function ProfilePage() {
     .maybeSingle<BigFiveProfile>();
 
   const membership = await getMyOrganizationMembership();
+  const compensationRecords = await getMyCompensation();
+  const employmentHistory = membership ? await getEmployeeHistory(user.id) : [];
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -85,6 +91,10 @@ export default async function ProfilePage() {
             initialQualifications={profile?.qualifications ?? []}
             initialCareerAspirations={profile?.career_aspirations ?? ""}
           />
+
+          <MyCompensationCard records={compensationRecords} />
+
+          {membership && <EmploymentHistoryTimeline events={employmentHistory} />}
 
           <div>
             <BigFiveAssessment latest={latestBigFive} />

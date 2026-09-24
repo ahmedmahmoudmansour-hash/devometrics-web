@@ -85,11 +85,10 @@ export type OrganizationMember = {
   business_unit?: string | null;
   location?: string | null;
   archived?: boolean;
-  // Added in migration 0068 — direct management input, never AI-inferred;
-  // may be absent until the migration is run.
-  performance_rating?: number | null;
-  performance_rating_note?: string;
-  performance_rating_updated_at?: string | null;
+  // performance_rating/performance_rating_note/performance_rating_updated_at
+  // (added in 0068) moved to their own table in migration 0176 — see that
+  // migration's header. Read via organization_member_performance now, not
+  // this type.
   // Added in migration 0072 — the real, structured reporting relationship
   // the Org Chart Builder renders and edits. Independent of the free-text
   // manager_name/manager_email above (those are pre-signup hints; this is

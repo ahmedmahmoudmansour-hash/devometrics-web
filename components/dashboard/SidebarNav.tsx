@@ -27,6 +27,8 @@ import {
   ClipboardCheck,
   Library,
   ArrowLeftRight,
+  CalendarDays,
+  Contact,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LocaleToggle from "@/components/LocaleToggle";
@@ -51,7 +53,8 @@ type NavItem = {
 function buildSections(
   hasDirectReports: boolean,
   canSeeImpactCycle: boolean,
-  hasOrgMembership: boolean
+  hasOrgMembership: boolean,
+  hasDirectoryEnabled: boolean
 ): { labelKey: string | null; items: NavItem[] }[] {
   return [
     {
@@ -110,6 +113,18 @@ function buildSections(
         // Only relevant to someone actually part of a company workspace —
         // an individual account will never have anything assigned here.
         ...(hasOrgMembership ? [{ href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library, featureKey: "knowledge_hub" }] : []),
+        // Leave & Vacation Management (0166) + HR Letters (0169) — same
+        // "company workspace only" gate as Knowledge Hub, an individual
+        // account has no leave types/balances to see. Labeled "Services"
+        // rather than "Leave" since this destination bundles unrelated
+        // employee self-service items (time off AND HR letter requests),
+        // not leave/vacation alone — renamed 2026-09-23 at Ahmed's request.
+        ...(hasOrgMembership ? [{ href: "/dashboard/leave", labelKey: "services", icon: CalendarDays }] : []),
+        // Off by default per org (organizations.directory_enabled, 0175) —
+        // an admin opts in from Settings, so this only ever appears for
+        // companies that actually want it, per Ahmed's "not all HR would
+        // need this to appear for everyone."
+        ...(hasOrgMembership && hasDirectoryEnabled ? [{ href: "/dashboard/directory", labelKey: "directory", icon: Contact }] : []),
       ],
     },
   ];
@@ -123,6 +138,7 @@ export default function SidebarNav({
   hasDirectReports,
   canSeeImpactCycle,
   hasOrgMembership,
+  hasDirectoryEnabled,
   restrictedFeatures = [],
   nextOnboardingStep = null,
 }: {
@@ -133,6 +149,7 @@ export default function SidebarNav({
   hasDirectReports: boolean;
   canSeeImpactCycle: boolean;
   hasOrgMembership: boolean;
+  hasDirectoryEnabled: boolean;
   restrictedFeatures?: string[];
   // Only rendered away from the home page — that page already shows the
   // full checklist this summarizes, so repeating it there would just be
@@ -143,7 +160,7 @@ export default function SidebarNav({
   const tHome = useTranslations("dashboardHome");
   const pathname = usePathname();
   const restrictedSet = new Set(restrictedFeatures);
-  const sections = buildSections(hasDirectReports, canSeeImpactCycle, hasOrgMembership).map((section) => ({
+  const sections = buildSections(hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled).map((section) => ({
     ...section,
     items: section.items.filter((item) => !item.featureKey || !restrictedSet.has(item.featureKey)),
   }));
