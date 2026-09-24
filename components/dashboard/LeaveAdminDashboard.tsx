@@ -19,6 +19,7 @@ import {
   type LeaveManagerVisibility,
 } from "@/lib/leave/actions";
 import { decideHrLetterRequest, type HrLetterRequest } from "@/lib/hrLetters/actions";
+import LeaveImportSection from "@/components/dashboard/LeaveImportSection";
 
 const cardStyle: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 };
 const fieldStyle: React.CSSProperties = {
@@ -644,6 +645,8 @@ export default function LeaveAdminDashboard({
               </>
             )}
           </div>
+
+          <LeaveImportSection organizationId={organizationId} leaveTypeNames={leaveTypes.map((lt) => lt.name)} />
         </>
       )}
 
