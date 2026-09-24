@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { checkIn, checkOut, type AttendanceRecord } from "@/lib/attendance/actions";
 
 const cardStyle: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 };
-const btnPrimary: React.CSSProperties = { background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "12px 24px", fontSize: 15, fontWeight: 700, cursor: "pointer" };
+const btnPrimary: React.CSSProperties = { background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "14px 24px", fontSize: 16, fontWeight: 700, cursor: "pointer" };
 
 const pad = (n: number) => String(n).padStart(2, "0");
 function localNow() {
@@ -24,6 +24,13 @@ export default function MyAttendanceSection({ initialRecords }: { initialRecords
   const [records, setRecords] = useState(initialRecords);
   const [error, setError] = useState<string | null>(null);
   const [today] = useState(() => localNow().date);
+  // Ticks every 20s so the clock never looks stale; only the display, the
+  // recorded time is always read fresh at the moment of the click.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 20000);
+    return () => clearInterval(id);
+  }, []);
 
   const todayRecord = records.find((r) => r.workDate === today);
 
@@ -45,16 +52,24 @@ export default function MyAttendanceSection({ initialRecords }: { initialRecords
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={cardStyle}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" }}>{t("todayTitle")}</h2>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.6 }}>{t("todayHint")}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
+          <div>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" }}>{t("todayTitle")}</h2>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>{now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p>
+          </div>
+          <span style={{ fontSize: 34, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+          </span>
+        </div>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 14px", lineHeight: 1.6 }}>{t("todayHint")}</p>
         {!todayRecord?.checkIn ? (
-          <button type="button" disabled={isPending} onClick={() => apply("in")} style={{ ...btnPrimary, opacity: isPending ? 0.6 : 1 }}>
+          <button type="button" disabled={isPending} onClick={() => apply("in")} style={{ ...btnPrimary, width: "100%", maxWidth: 320, opacity: isPending ? 0.6 : 1 }}>
             {t("checkIn")}
           </button>
         ) : !todayRecord.checkOut ? (
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <span style={{ fontSize: 14, color: "var(--text)" }}>{t("checkedInAt", { time: todayRecord.checkIn })}</span>
-            <button type="button" disabled={isPending} onClick={() => apply("out")} style={{ ...btnPrimary, opacity: isPending ? 0.6 : 1 }}>
+            <button type="button" disabled={isPending} onClick={() => apply("out")} style={{ ...btnPrimary, width: "100%", maxWidth: 320, opacity: isPending ? 0.6 : 1 }}>
               {t("checkOut")}
             </button>
           </div>

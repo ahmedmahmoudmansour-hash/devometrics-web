@@ -189,9 +189,73 @@ export default function EmployeeFileEditor({
   });
   const docTypes = mode === "hr" ? ALL_DOC_TYPES : EMPLOYEE_DOC_TYPES;
 
+  // Tabs instead of one long scroll (same pattern as Services and the admin
+  // dashboards). Every section stays mounted and just hides, so a half-typed
+  // field on one tab is still there when you come back to it and one Save
+  // covers everything on Details + Contact.
+  type TabKey = "details" | "contact" | "family" | "documents";
+  const tabs: TabKey[] = [
+    "details",
+    ...(!off.has("contact") || !off.has("emergency") ? (["contact"] as TabKey[]) : []),
+    ...(!off.has("family") ? (["family"] as TabKey[]) : []),
+    ...(!off.has("documents") ? (["documents"] as TabKey[]) : []),
+  ];
+  const [activeTab, setActiveTab] = useState<TabKey>("details");
+  const cardFor = (tab: TabKey): React.CSSProperties => ({ ...cardStyle, display: activeTab === tab ? "block" : "none" });
+
+  // Only what the employee themselves can fill in, and only for sections the
+  // company actually collects — HR-only fields never count against them.
+  const tracked: (keyof EmployeeFileData)[] = [
+    "legalName", "dateOfBirth", "nationality", "nationalId", "maritalStatus",
+    ...(off.has("contact") ? [] : (["personalPhone", "personalEmail", "addressLine1", "city", "country"] as (keyof EmployeeFileData)[])),
+    ...(off.has("emergency") ? [] : (["emergencyContactName", "emergencyContactRelation", "emergencyContactPhone"] as (keyof EmployeeFileData)[])),
+  ];
+  const filled = tracked.filter((k) => data[k].trim() !== "").length;
+  const percent = Math.round((filled / tracked.length) * 100);
+  const attentionDocs = documents.filter((d) => d.expiresOn && d.expiresOn <= soon).length;
+
+  const tabButton = (tab: TabKey): React.CSSProperties => ({
+    padding: "10px 18px",
+    fontSize: 13,
+    fontWeight: 700,
+    background: "none",
+    border: "none",
+    borderBottom: activeTab === tab ? "2px solid var(--teal)" : "2px solid transparent",
+    color: activeTab === tab ? "var(--teal)" : "var(--text-muted)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    whiteSpace: "nowrap",
+  });
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={cardStyle}>
+      <div style={{ ...cardStyle, padding: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("completenessTitle")}</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("completenessLine", { done: filled, total: tracked.length })}</span>
+        </div>
+        <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+          <div style={{ width: `${percent}%`, height: "100%", background: percent === 100 ? "var(--teal)" : "var(--phase2, var(--teal))", transition: "width 0.3s ease" }} />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--border)", overflowX: "auto", scrollbarWidth: "none" }}>
+        {tabs.map((tab) => (
+          <button key={tab} type="button" onClick={() => setActiveTab(tab)} style={tabButton(tab)}>
+            {t(`tab_${tab}`)}
+            {tab === "documents" && attentionDocs > 0 && (
+              <span style={{ background: "var(--amber)", color: "#0A0F1E", borderRadius: 999, padding: "1px 7px", fontSize: 11, fontWeight: 800 }}>{attentionDocs}</span>
+            )}
+            {tab === "family" && dependents.length > 0 && (
+              <span style={{ background: "rgba(255,255,255,0.12)", color: "var(--text)", borderRadius: 999, padding: "1px 7px", fontSize: 11, fontWeight: 800 }}>{dependents.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div style={cardFor("details")}>
         <h2 style={titleStyle}>{t("personalTitle")}</h2>
         <p style={hintStyle}>{mode === "hr" ? t("personalHintHr") : t("personalHintSelf")}</p>
         <div style={gridStyle}>
@@ -214,7 +278,7 @@ export default function EmployeeFileEditor({
         </div>
       </div>
 
-      <div style={cardStyle}>
+      <div style={cardFor("details")}>
         <h2 style={titleStyle}>{t("employmentTitle")}</h2>
         <p style={hintStyle}>{mode === "hr" ? t("employmentHintHr") : t("employmentHintSelf")}</p>
         <div style={gridStyle}>
@@ -235,7 +299,7 @@ export default function EmployeeFileEditor({
       </div>
 
       {!off.has("contact") && (
-        <div style={cardStyle}>
+        <div style={cardFor("contact")}>
           <h2 style={titleStyle}>{t("contactTitle")}</h2>
           <p style={hintStyle}>{t("contactHint")}</p>
           <div style={gridStyle}>
@@ -252,7 +316,7 @@ export default function EmployeeFileEditor({
       )}
 
       {!off.has("emergency") && (
-        <div style={cardStyle}>
+        <div style={cardFor("contact")}>
           <h2 style={titleStyle}>{t("emergencyTitle")}</h2>
           <p style={hintStyle}>{t("emergencyHint")}</p>
           <div style={gridStyle}>
@@ -263,7 +327,7 @@ export default function EmployeeFileEditor({
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: activeTab === "details" || activeTab === "contact" ? "flex" : "none", alignItems: "center", gap: 12 }}>
         <button type="button" onClick={handleSave} disabled={isPending} style={{ ...btnPrimary, opacity: isPending ? 0.6 : 1 }}>
           {isPending ? t("saving") : t("saveButton")}
         </button>
@@ -272,7 +336,7 @@ export default function EmployeeFileEditor({
       </div>
 
       {!off.has("family") && (
-        <div style={cardStyle}>
+        <div style={cardFor("family")}>
           <h2 style={titleStyle}>{t("familyTitle")}</h2>
           <p style={hintStyle}>{t("familyHint")}</p>
           {dependents.length === 0 ? (
@@ -321,7 +385,7 @@ export default function EmployeeFileEditor({
       )}
 
       {!off.has("documents") && (
-        <div style={cardStyle}>
+        <div style={cardFor("documents")}>
           <h2 style={titleStyle}>{t("documentsTitle")}</h2>
           <p style={hintStyle}>{mode === "hr" ? t("documentsHintHr") : t("documentsHintSelf")}</p>
           {documents.length === 0 ? (

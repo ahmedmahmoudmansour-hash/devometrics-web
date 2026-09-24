@@ -5783,7 +5783,7 @@
   "myServicesPage": {
     "backToProgress": "← Back to progress",
     "title": "Services",
-    "description": "Time off, HR letters, and other employee self-service requests.",
+    "description": "Time off, attendance, HR letters, and other employee self-service requests.",
     "tabTimeOff": "Time Off",
     "tabHrLetters": "HR Letters",
     "noAccessTitle": "No longer have access to this workspace",
@@ -5969,7 +5969,13 @@
     "doc_passport": "Passport",
     "doc_visa": "Visa",
     "doc_certificate": "Certificate",
-    "doc_other": "Other"
+    "doc_other": "Other",
+    "completenessTitle": "File completeness",
+    "completenessLine": "{done} of {total} details filled in",
+    "tab_details": "Details",
+    "tab_contact": "Contact & emergency",
+    "tab_family": "Family",
+    "tab_documents": "Documents"
   },
   "attendanceImport": {
     "openButton": "Import attendance from Excel",

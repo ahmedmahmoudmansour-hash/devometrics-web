@@ -5783,7 +5783,7 @@
   "myServicesPage": {
     "backToProgress": "← العودة إلى التقدم",
     "title": "الخدمات",
-    "description": "الإجازات وخطابات الموارد البشرية وطلبات الخدمة الذاتية الأخرى للموظف.",
+    "description": "الإجازات والحضور وخطابات الموارد البشرية وطلبات الخدمة الذاتية الأخرى للموظف.",
     "tabTimeOff": "الإجازات",
     "tabHrLetters": "خطابات الموارد البشرية",
     "noAccessTitle": "لم يعد لديك وصول إلى مساحة العمل هذه",
@@ -5969,7 +5969,13 @@
     "doc_passport": "جواز سفر",
     "doc_visa": "تأشيرة",
     "doc_certificate": "شهادة",
-    "doc_other": "أخرى"
+    "doc_other": "أخرى",
+    "completenessTitle": "اكتمال الملف",
+    "completenessLine": "تمت تعبئة {done} من {total} بيانات",
+    "tab_details": "البيانات",
+    "tab_contact": "الاتصال والطوارئ",
+    "tab_family": "العائلة",
+    "tab_documents": "المستندات"
   },
   "attendanceImport": {
     "openButton": "استيراد الحضور من إكسل",
