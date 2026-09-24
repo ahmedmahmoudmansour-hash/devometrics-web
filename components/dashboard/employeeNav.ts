@@ -16,6 +16,7 @@ import {
   Library,
   CalendarDays,
   Contact,
+  IdCard,
 } from "lucide-react";
 
 // One source for the employee-facing tiles, shared by the sidebar sections
@@ -95,6 +96,9 @@ export function buildEmployeeTiles(flags: EmployeeNavFlags): EmployeeTile[] {
         // Employee self-service (time off + HR letters), labelled Services
         // since it bundles unrelated requests, not leave alone.
         { href: "/dashboard/leave", labelKey: "services", icon: CalendarDays },
+        // The private HR record (personal details, family, documents) —
+        // employee-editable, visible only to them and company admins.
+        { href: "/dashboard/my-file", labelKey: "myFile", icon: IdCard },
         // Off by default per org (organizations.directory_enabled, 0175).
         ...(hasDirectoryEnabled ? [{ href: "/dashboard/directory", labelKey: "directory", icon: Contact }] : []),
         { href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library, featureKey: "knowledge_hub" },

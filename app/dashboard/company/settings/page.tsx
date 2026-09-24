@@ -10,9 +10,11 @@ import DeleteCompanyButton from "@/components/dashboard/DeleteCompanyButton";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import EmploymentHistoryVisibilityForm from "@/components/dashboard/EmploymentHistoryVisibilityForm";
 import DirectorySettingsForm from "@/components/dashboard/DirectorySettingsForm";
+import EmployeeFileSettingsForm from "@/components/dashboard/EmployeeFileSettingsForm";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 import { getEmploymentHistoryManagerVisibility } from "@/lib/employmentHistory/actions";
 import { getDirectoryEnabled } from "@/lib/directory/actions";
+import { getDisabledFileSections } from "@/lib/employeeFile/actions";
 
 // Split out of app/dashboard/company/page.tsx (the 2026-08 UX audit's
 // clearest finding: that page was doing four unrelated jobs — overview,
@@ -28,6 +30,7 @@ export default async function CompanySettingsPage() {
   const emailMessages = data.organizationId ? await getOrganizationEmailMessages(data.organizationId) : null;
   const employmentHistoryVisibility = data.organizationId ? await getEmploymentHistoryManagerVisibility(data.organizationId) : "visible";
   const directoryEnabled = data.organizationId ? await getDirectoryEnabled(data.organizationId) : false;
+  const disabledFileSections = data.organizationId ? await getDisabledFileSections(data.organizationId) : [];
 
   if (!data.organizationId) redirect("/dashboard/company");
 
@@ -73,6 +76,7 @@ export default async function CompanySettingsPage() {
           {emailMessages && <EmailMessagesForm organizationId={data.organizationId} initial={emailMessages} />}
           <EmploymentHistoryVisibilityForm organizationId={data.organizationId} initial={employmentHistoryVisibility} />
           <DirectorySettingsForm organizationId={data.organizationId} initialEnabled={directoryEnabled} />
+          <EmployeeFileSettingsForm organizationId={data.organizationId} initialDisabled={disabledFileSections} />
         </div>
 
         <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid var(--border)" }}>

@@ -121,6 +121,9 @@ export default async function EmployeeDetailPage({
           <Link href="/dashboard/company/employees" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
             {t("backToEmployees")}
           </Link>
+          <Link href={`/dashboard/company/${userId}/file`} style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none", marginInlineStart: 20 }}>
+            {t("employeeFileLink")}
+          </Link>
         </div>
 
         <div style={{ marginTop: 12, marginBottom: 20 }}>

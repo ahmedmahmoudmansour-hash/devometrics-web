@@ -342,6 +342,12 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
                     >
                       {t("assignTaskLink")}
                     </Link>
+                    <Link
+                      href={`/dashboard/company/${r.userId}/file`}
+                      style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", textDecoration: "none", marginInlineEnd: 14 }}
+                    >
+                      {t("fileLink")}
+                    </Link>
                     <EditEmployeeButton
                       memberId={r.memberId}
                       userId={r.userId}
