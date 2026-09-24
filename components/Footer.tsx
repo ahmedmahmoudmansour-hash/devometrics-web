@@ -7,18 +7,19 @@ export default function Footer() {
   const t = useTranslations("footer");
   const tCommon = useTranslations("common");
 
-  // Prefixed with "/" so these resolve from any page, not just the
-  // homepage — plain "#pricing" etc. only works when already on "/".
+  // Points at the real /enterprise/* routes, not the old "/#pricing" etc.
+  // anchors into the individual-track homepage — those went dead
+  // 2026-09-23 when "/" started redirecting straight to "/enterprise"
+  // (enterprise-only strategy decision), same fix as Navbar.tsx.
   // Built inside the component (not a module-level const) since the
   // labels now come from useTranslations, which only works in render.
   const linkGroups = [
     {
       heading: t("productHeading"),
       items: [
-        { label: tCommon("howItWorks"), href: "/#how-it-works" },
-        { label: tCommon("features"), href: "/#features" },
-        { label: tCommon("methodology"), href: "/#methodology" },
-        { label: tCommon("pricing"), href: "/#pricing" },
+        { label: tCommon("howItWorks"), href: "/enterprise/how-it-works" },
+        { label: tCommon("methodology"), href: "/enterprise/methodology" },
+        { label: tCommon("decisions"), href: "/enterprise/decisions" },
         { label: tCommon("forEnterprise"), href: "/enterprise" },
       ],
     },

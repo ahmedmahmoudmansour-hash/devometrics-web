@@ -7,20 +7,20 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import LocaleToggle from "./LocaleToggle";
 
-// Hash links are prefixed with "/" so they resolve correctly from any page,
-// not just the homepage — plain "#how-it-works" only works when already on
-// "/", since that's the only page with a matching element id to scroll to.
-// From /enterprise, /contact, etc. it silently did nothing.
-// Labels come from the "common" i18n namespace (shared with Footer.tsx,
-// which lists the same four product links) rather than being hardcoded
-// here, so the two never drift out of translation sync.
+// These used to be "/#how-it-works" etc., anchors into the individual-
+// track homepage — dead links since 2026-09-23, when "/" started
+// redirecting straight to "/enterprise" (enterprise-only strategy
+// decision) and that homepage content stopped rendering at all. Pointed
+// at the real /enterprise/* routes instead (EnterpriseSectionNav.tsx has
+// the full six-page set; these four are the ones with a direct
+// individual-track equivalent — Features and Pricing don't, so they're
+// dropped rather than mapped to something misleading).
 function useNavLinks() {
   const t = useTranslations("common");
   return [
-    { label: t("howItWorks"), href: "/#how-it-works" },
-    { label: t("features"), href: "/#features" },
-    { label: t("methodology"), href: "/#methodology" },
-    { label: t("pricing"), href: "/#pricing" },
+    { label: t("howItWorks"), href: "/enterprise/how-it-works" },
+    { label: t("methodology"), href: "/enterprise/methodology" },
+    { label: t("decisions"), href: "/enterprise/decisions" },
     { label: t("forEnterprise"), href: "/enterprise" },
   ];
 }
