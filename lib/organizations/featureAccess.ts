@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isRestrictableFeature, type RestrictableFeature, type FeatureRestrictionRow } from "@/lib/organizations/featureAccessConstants";
+import { restrictedEmployeeFeatures } from "@/lib/organizations/companyTiles";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -14,9 +15,17 @@ export async function listMyRestrictedFeatures(
   organizationId: string | null
 ): Promise<Set<RestrictableFeature>> {
   if (!organizationId) return new Set();
-  const { data, error } = await supabase.rpc("list_my_restricted_features", { check_org_id: organizationId });
-  if (error || !data) return new Set();
-  return new Set((data as string[]).filter(isRestrictableFeature));
+  const [{ data, error }, { data: org }] = await Promise.all([
+    supabase.rpc("list_my_restricted_features", { check_org_id: organizationId }),
+    supabase.from("organizations").select("disabled_company_features").eq("id", organizationId).maybeSingle<{ disabled_company_features: string[] | null }>(),
+  ]);
+  const restricted = new Set<RestrictableFeature>();
+  if (!error && data) for (const k of data as string[]) if (isRestrictableFeature(k)) restricted.add(k);
+  // Company-wide "Tiles & features" switches (0179): a switched-off feature
+  // that has an employee-facing module restricts it for everyone, through
+  // this same set every existing gate already reads.
+  for (const k of restrictedEmployeeFeatures(org?.disabled_company_features ?? [])) restricted.add(k);
+  return restricted;
 }
 
 async function requireOrgAdmin(organizationId: string) {

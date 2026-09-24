@@ -6,9 +6,10 @@ import { buildCompanyOverview } from "@/lib/organizations/companyOverview";
 import { attentionFlagText } from "@/lib/organizations/attentionText";
 import { createClient } from "@/lib/supabase/server";
 import { computeNineBoxPoint, zoneForPoint } from "@/lib/organizations/nineBox";
-import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
+import CompanyTileHub from "@/components/dashboard/CompanyTileHub";
+import { getMyDisabledCompanyFeatures } from "@/lib/organizations/companyFeatures";
+import type { CompanyFeatureKey } from "@/lib/organizations/companyTiles";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
-import CompanyWidgetGrid, { COMPANY_WIDGET_ICONS, type CompanyWidget } from "@/components/dashboard/CompanyWidgetGrid";
 import CompanySetupGuide, { type SetupGuideStep } from "@/components/dashboard/CompanySetupGuide";
 import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
 import { getAutomationSettings } from "@/lib/automations/actions";
@@ -30,18 +31,19 @@ async function countOrNull(
 
 export default async function CompanyProfilePage() {
   const t = await getTranslations("companyProfilePage");
+  const tHub = await getTranslations("companyHub");
   const tDim = await getTranslations("competencyDimensions");
-  const tNav = await getTranslations("companyNavTabs");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
   const overview = await buildCompanyOverview(data);
   const automationSettings = data.organizationId ? await getAutomationSettings(data.organizationId) : null;
 
-  let widgets: CompanyWidget[] = [];
+  let stats: Partial<Record<CompanyFeatureKey, string>> = {};
+  const disabledFeatures = await getMyDisabledCompanyFeatures();
   let setupSteps: SetupGuideStep[] = [];
   if (data.organizationId) {
     const supabase = await createClient();
-    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount, jobPostingCount, exitInterviewCount] = await Promise.all([
+    const [jobRoleCount, successionRoleCount, scorecardKpiCount, surveyCount, reviewCycleCount, knowledgeHubContentCount, jobPostingCount, exitInterviewCount, pendingLeaveCount] = await Promise.all([
       countOrNull(supabase, "job_roles", data.organizationId),
       countOrNull(supabase, "succession_roles", data.organizationId),
       countOrNull(supabase, "scorecard_kpis", data.organizationId),
@@ -50,6 +52,12 @@ export default async function CompanyProfilePage() {
       countOrNull(supabase, "knowledge_hub_content", data.organizationId),
       countOrNull(supabase, "job_postings", data.organizationId),
       countOrNull(supabase, "exit_interviews", data.organizationId),
+      supabase
+        .from("leave_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", data.organizationId)
+        .eq("status", "pending")
+        .then((r) => r.count ?? null),
     ]);
 
     const hipoCount = data.rows.filter((r) => {
@@ -72,126 +80,25 @@ export default async function CompanyProfilePage() {
       { key: "jobDescriptions", href: "/dashboard/company/job-architecture", done: !!jobRoleCount && jobRoleCount > 0 },
     ];
 
-    // Same order as CompanyNavTabs' 5 groups (Overview, Structure, Talent,
-    // Hiring & Growth, Performance & Feedback) — this grid used to be in an
-    // unrelated ad-hoc order, which read as inconsistent with the nav
-    // directly above it. Profile and Permissions are deliberately not
-    // tiles here (Profile IS this page; Permissions is a config screen,
-    // not a feature with its own stat to show), same reasoning as before.
-    widgets = [
-      // Overview
-      {
-        key: "employees",
-        label: t("employeesLabel"),
-        href: "/dashboard/company/employees",
-        icon: COMPANY_WIDGET_ICONS.Users,
-        stat: t("employeesStat", { count: data.rows.length }),
-        group: tNav("groupOverview"),
-      },
-      {
-        key: "analytics",
-        label: t("analyticsLabel"),
-        href: "/dashboard/company/analytics",
-        icon: COMPANY_WIDGET_ICONS.BarChart3,
-        stat: t("analyticsStat"),
-        group: tNav("groupOverview"),
-      },
-      // Structure
-      {
-        key: "orgChart",
-        label: t("orgChartLabel"),
-        href: "/dashboard/company/org-chart",
-        icon: COMPANY_WIDGET_ICONS.ListTree,
-        stat: t("orgChartStat", { withManager, total: data.rows.length }),
-        group: tNav("groupStructure"),
-      },
-      {
-        key: "jobArchitecture",
-        label: t("jobArchitectureLabel"),
-        href: "/dashboard/company/job-architecture",
-        icon: COMPANY_WIDGET_ICONS.Network,
-        stat: jobRoleCount !== null ? t("jobArchitectureStat", { count: jobRoleCount }) : t("jobArchitectureStatEmpty"),
-        group: tNav("groupStructure"),
-      },
-      {
-        key: "competencies",
-        label: t("competenciesLabel"),
-        href: "/dashboard/company/competencies",
-        icon: COMPANY_WIDGET_ICONS.SlidersHorizontal,
-        stat: t("competenciesStat", { count: data.organizationCompetencies.length }),
-        group: tNav("groupStructure"),
-      },
-      // Talent
-      {
-        key: "highPotential",
-        label: t("highPotentialLabel"),
-        href: "/dashboard/company/high-potential",
-        icon: COMPANY_WIDGET_ICONS.Star,
-        stat: t("highPotentialStat", { count: hipoCount }),
-        group: tNav("groupTalent"),
-      },
-      {
-        key: "succession",
-        label: t("successionLabel"),
-        href: "/dashboard/company/succession",
-        icon: COMPANY_WIDGET_ICONS.TrendingUp,
-        stat: successionRoleCount !== null ? t("successionStat", { count: successionRoleCount }) : t("successionStatEmpty"),
-        group: tNav("groupTalent"),
-      },
-      {
-        key: "scorecard",
-        label: t("scorecardLabel"),
-        href: "/dashboard/company/scorecard",
-        icon: COMPANY_WIDGET_ICONS.Gauge,
-        stat: scorecardKpiCount !== null ? t("scorecardStat", { count: scorecardKpiCount }) : t("scorecardStatEmpty"),
-        group: tNav("groupTalent"),
-      },
-      // Hiring & Growth
-      {
-        key: "hiring",
-        label: t("hiringLabel"),
-        href: "/dashboard/company/hiring",
-        icon: COMPANY_WIDGET_ICONS.Briefcase,
-        stat: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
-        group: tNav("groupHiringGrowth"),
-      },
-      {
-        key: "knowledgeHub",
-        label: t("knowledgeHubLabel"),
-        href: "/dashboard/company/knowledge-hub",
-        icon: COMPANY_WIDGET_ICONS.Library,
-        stat:
-          knowledgeHubContentCount !== null
-            ? t("knowledgeHubStat", { count: knowledgeHubContentCount })
-            : t("knowledgeHubStatEmpty"),
-        group: tNav("groupHiringGrowth"),
-      },
-      // Performance & Feedback
-      {
-        key: "performanceReviews",
-        label: t("performanceReviewsLabel"),
-        href: "/dashboard/company/impact-cycles",
-        icon: COMPANY_WIDGET_ICONS.ClipboardCheck,
-        stat: reviewCycleCount !== null ? t("performanceReviewsStat", { count: reviewCycleCount }) : t("performanceReviewsStatEmpty"),
-        group: tNav("groupPerformanceFeedback"),
-      },
-      {
-        key: "surveys",
-        label: t("surveysLabel"),
-        href: "/dashboard/company/surveys",
-        icon: COMPANY_WIDGET_ICONS.MessageSquare,
-        stat: surveyCount !== null ? t("surveysStat", { count: surveyCount }) : t("surveysStatEmpty"),
-        group: tNav("groupPerformanceFeedback"),
-      },
-      {
-        key: "exitInterviews",
-        label: t("exitInterviewsLabel"),
-        href: "/dashboard/company/exit-interviews",
-        icon: COMPANY_WIDGET_ICONS.UserMinus,
-        stat: exitInterviewCount !== null ? t("exitInterviewsStat", { count: exitInterviewCount }) : t("exitInterviewsStatEmpty"),
-        group: tNav("groupPerformanceFeedback"),
-      },
-    ];
+    // One-line live stat per feature for the hub tiles (companyHub tiles show
+    // these under each feature name). Profile isn't listed — the hub is this
+    // page. Features with no useful number simply get no stat line.
+    stats = {
+      employees: t("employeesStat", { count: data.rows.length }),
+      orgChart: t("orgChartStat", { withManager, total: data.rows.length }),
+      jobArchitecture: jobRoleCount !== null ? t("jobArchitectureStat", { count: jobRoleCount }) : t("jobArchitectureStatEmpty"),
+      competencies: t("competenciesStat", { count: data.organizationCompetencies.length }),
+      leave: pendingLeaveCount ? tHub("leavePending", { count: pendingLeaveCount }) : undefined,
+      highPotential: t("highPotentialStat", { count: hipoCount }),
+      succession: successionRoleCount !== null ? t("successionStat", { count: successionRoleCount }) : t("successionStatEmpty"),
+      scorecard: scorecardKpiCount !== null ? t("scorecardStat", { count: scorecardKpiCount }) : t("scorecardStatEmpty"),
+      analytics: t("analyticsStat"),
+      hiring: jobPostingCount !== null ? t("hiringStat", { count: jobPostingCount }) : t("hiringStatEmpty"),
+      knowledgeHub: knowledgeHubContentCount !== null ? t("knowledgeHubStat", { count: knowledgeHubContentCount }) : t("knowledgeHubStatEmpty"),
+      performanceReviews: reviewCycleCount !== null ? t("performanceReviewsStat", { count: reviewCycleCount }) : t("performanceReviewsStatEmpty"),
+      surveys: surveyCount !== null ? t("surveysStat", { count: surveyCount }) : t("surveysStatEmpty"),
+      exitInterviews: exitInterviewCount !== null ? t("exitInterviewsStat", { count: exitInterviewCount }) : t("exitInterviewsStatEmpty"),
+    };
   }
 
   return (
@@ -224,7 +131,11 @@ export default async function CompanyProfilePage() {
           {data.organizationSlug && <InviteCodeDisplay slug={data.organizationSlug} />}
         </div>
 
-        <CompanyNavTabs active="profile" />
+        {data.organizationId && (
+          <>
+            <CompanyTileHub stats={stats} disabled={disabledFeatures} />
+          </>
+        )}
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
           {t("scopeNote")}
@@ -338,7 +249,6 @@ export default async function CompanyProfilePage() {
           </div>
         )}
 
-        {widgets.length > 0 && <CompanyWidgetGrid widgets={widgets} />}
 
         {data.organizationId && automationSettings && (
           <AutomationSettingsPanel organizationId={data.organizationId} initialSettings={automationSettings} />

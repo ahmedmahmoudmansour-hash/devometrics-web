@@ -1442,11 +1442,13 @@
     "surveys": "Surveys",
     "exitInterviews": "Exit Interviews",
     "analytics": "Analytics",
-    "groupOverview": "Overview",
-    "groupStructure": "Structure",
-    "groupTalent": "Talent",
-    "groupHiringGrowth": "Hiring & Growth",
-    "groupPerformanceFeedback": "Performance & Feedback",
+    "group_people": "People",
+    "group_timePay": "Time & Pay",
+    "group_talent": "Talent",
+    "group_hiringGrowth": "Hiring & Growth",
+    "group_performance": "Performance",
+    "group_settings": "Settings",
+    "features": "Tiles & features",
     "permissions": "Permissions",
     "compensation": "Compensation",
     "leave": "Leave",
@@ -5842,5 +5844,19 @@
     "noRows": "The file has a header row but no data rows.",
     "missingColumns": "Missing column(s): {columns}. Download the template to see the expected headers.",
     "unreadable": "Couldn't read that file. Use an .xlsx or .csv file."
+  },
+  "companyHub": {
+    "tile_people": "Employees, structure and roles",
+    "tile_timePay": "Leave and compensation",
+    "tile_talent": "Potential, succession and insight",
+    "tile_hiringGrowth": "Bring people in and grow them",
+    "tile_performance": "Reviews, surveys and feedback",
+    "tile_settings": "Company setup and access",
+    "leavePending": "{count, plural, one {# request waiting} other {# requests waiting}}",
+    "alwaysOn": "Always on",
+    "alsoHidesFromEmployees": "Also hidden from employees when off",
+    "backToCompany": "← Back to company",
+    "featuresTitle": "Tiles & features",
+    "featuresDescription": "Choose which areas of the company workspace you use. Turn off a whole tile or a single feature and it disappears from your company home and navigation. Features marked below are also hidden from your employees when off. Settings and permissions always stay on."
   }
 }

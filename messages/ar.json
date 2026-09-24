@@ -1442,11 +1442,13 @@
     "surveys": "الاستبيانات",
     "exitInterviews": "مقابلات الخروج",
     "analytics": "التحليلات",
-    "groupOverview": "نظرة عامة",
-    "groupStructure": "الهيكل",
-    "groupTalent": "المواهب",
-    "groupHiringGrowth": "التوظيف والتطوير",
-    "groupPerformanceFeedback": "الأداء والتغذية الراجعة",
+    "group_people": "الأفراد",
+    "group_timePay": "الوقت والأجور",
+    "group_talent": "المواهب",
+    "group_hiringGrowth": "التوظيف والتطوير",
+    "group_performance": "الأداء",
+    "group_settings": "الإعدادات",
+    "features": "البلاطات والميزات",
     "permissions": "الصلاحيات",
     "compensation": "التعويضات",
     "leave": "الإجازات",
@@ -5842,5 +5844,19 @@
     "noRows": "الملف يحتوي على صف العناوين فقط دون بيانات.",
     "missingColumns": "أعمدة ناقصة: {columns}. نزّل القالب لمعرفة العناوين المتوقعة.",
     "unreadable": "تعذّرت قراءة هذا الملف. استخدم ملف .xlsx أو .csv."
+  },
+  "companyHub": {
+    "tile_people": "الموظفون والهيكل والأدوار",
+    "tile_timePay": "الإجازات والتعويضات",
+    "tile_talent": "الإمكانات والتعاقب والرؤى",
+    "tile_hiringGrowth": "استقطاب الأفراد وتطويرهم",
+    "tile_performance": "التقييمات والاستبيانات والملاحظات",
+    "tile_settings": "إعداد الشركة والوصول",
+    "leavePending": "{count, plural, one {طلب واحد بانتظار القرار} other {# طلبات بانتظار القرار}}",
+    "alwaysOn": "مفعّل دائمًا",
+    "alsoHidesFromEmployees": "يُخفى أيضًا عن الموظفين عند إيقافه",
+    "backToCompany": "← العودة إلى الشركة",
+    "featuresTitle": "البلاطات والميزات",
+    "featuresDescription": "اختر مجالات مساحة عمل الشركة التي تستخدمها. أوقف بلاطة كاملة أو ميزة واحدة لتختفي من صفحة شركتك والتنقل. الميزات المشار إليها أدناه تُخفى أيضًا عن موظفيك عند إيقافها. الإعدادات والصلاحيات تبقى مفعّلة دائمًا."
   }
 }
