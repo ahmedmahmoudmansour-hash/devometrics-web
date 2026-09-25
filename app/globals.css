@@ -124,6 +124,40 @@ body {
 select { color-scheme: light; }
 html[data-theme="dark"] select { color-scheme: dark; }
 
+/* Form field surfaces. Over a hundred components style their inputs inline
+   with a translucent WHITE fill and border (rgba(255,255,255,0.05) / 0.1) —
+   right on the dark theme, but on the default LIGHT theme that is white on
+   white, so fields have no visible box at all (only their label shows).
+   Rather than touch every component, these tokens plus one rule below give
+   those fields a real surface in light mode. Dark keeps the exact original
+   values, so nothing changes there. The attribute selectors match the
+   inline style however the browser serializes it (with or without spaces).
+   The same fill is used for the secondary (ghost) buttons that share that
+   translucent-white look. */
+:root {
+  --field-bg: #f6f5f2;
+  --field-border: rgba(22, 22, 26, 0.22);
+  --ghost-btn-bg: rgba(22, 22, 26, 0.06);
+}
+html[data-theme="dark"] {
+  --field-bg: rgba(255, 255, 255, 0.05);
+  --field-border: rgba(255, 255, 255, 0.1);
+  --ghost-btn-bg: rgba(255, 255, 255, 0.08);
+}
+input[style*="rgba(255,255,255,0.05)"],
+input[style*="rgba(255, 255, 255, 0.05)"],
+select[style*="rgba(255,255,255,0.05)"],
+select[style*="rgba(255, 255, 255, 0.05)"],
+textarea[style*="rgba(255,255,255,0.05)"],
+textarea[style*="rgba(255, 255, 255, 0.05)"] {
+  background-color: var(--field-bg) !important;
+  border-color: var(--field-border) !important;
+}
+button[style*="rgba(255,255,255,0.08)"],
+button[style*="rgba(255, 255, 255, 0.08)"] {
+  background-color: var(--ghost-btn-bg) !important;
+}
+
 /* Several form inputs set outline:none inline (higher specificity than any
    normal CSS rule) with no replacement focus indicator — this restores one
    app-wide via !important, needed for WCAG 2.4.7 Focus Visible (AA). */
