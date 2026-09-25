@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildXlsxResponse } from "@/lib/export/xlsx";
 import { buildPilotRows } from "@/lib/admin/aggregate";
 
 export async function GET() {
@@ -18,19 +18,8 @@ export async function GET() {
     Joined: new Date(r.joined).toLocaleDateString(),
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(sheetRows);
-  worksheet["!cols"] = [
-    { wch: 22 }, { wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 8 }, { wch: 16 }, { wch: 16 }, { wch: 12 },
-  ];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Pilot Cohort");
-
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="devometrics-pilot-cohort-${new Date().toISOString().slice(0, 10)}.xlsx"`,
-    },
-  });
+  return buildXlsxResponse(
+    [{ name: "Pilot Cohort", rows: sheetRows, colWidths: [22, 28, 18, 18, 16, 8, 16, 16, 12] }],
+    "devometrics-pilot-cohort"
+  );
 }

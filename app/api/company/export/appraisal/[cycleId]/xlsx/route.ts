@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildXlsxResponse } from "@/lib/export/xlsx";
 import { listReviewCycles, listReviewsForCycle } from "@/lib/performanceReviews/actions";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -41,18 +41,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cyc
     Escalated: r.escalation_requested_at ? (r.escalation_resolved_at ? "Resolved" : "Open") : "",
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(sheetRows);
-  worksheet["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 26 }, { wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 10 }];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Appraisal Roster");
-
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-  const safeName = cycle.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${safeName}-appraisal-${new Date().toISOString().slice(0, 10)}.xlsx"`,
-    },
-  });
+  return buildXlsxResponse(
+    [{ name: "Appraisal Roster", rows: sheetRows, colWidths: [24, 28, 26, 12, 14, 22, 10] }],
+    `${cycle.name}-appraisal`
+  );
 }

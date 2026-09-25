@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildXlsxResponse } from "@/lib/export/xlsx";
 import { getKnowledgeHubContentReport } from "@/lib/knowledgeHub/actions";
 
 // Per-content completion roster — the export button on a single Knowledge
@@ -30,18 +30,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ con
     "Exam Attempts": r.examAttempts || "",
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(sheetRows);
-  worksheet["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 14 }, { wch: 22 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Completions");
-
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-  const safeTitle = report.content.title.replace(/[^a-zA-Z0-9._-]/g, "_");
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${safeTitle}-completions-${new Date().toISOString().slice(0, 10)}.xlsx"`,
-    },
-  });
+  return buildXlsxResponse(
+    [{ name: "Completions", rows: sheetRows, colWidths: [24, 28, 14, 22, 8, 8, 12] }],
+    `${report.content.title}-completions`
+  );
 }

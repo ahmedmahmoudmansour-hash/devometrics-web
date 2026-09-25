@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildXlsxResponse, type XlsxSheet } from "@/lib/export/xlsx";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { getSurveyResults } from "@/lib/surveys/actions";
 
@@ -53,24 +53,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sur
     .filter((a) => a.type === "qualitative")
     .flatMap((a) => a.responses.map((response) => ({ Question: a.text, Response: response })));
 
-  const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
-  summarySheet["!cols"] = [{ wch: 44 }, { wch: 16 }, { wch: 11 }, { wch: 50 }];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
-
+  const sheets: XlsxSheet[] = [{ name: "Summary", rows: summaryRows, colWidths: [44, 16, 11, 50] }];
   if (openEndedRows.length > 0) {
-    const openEndedSheet = XLSX.utils.json_to_sheet(openEndedRows);
-    openEndedSheet["!cols"] = [{ wch: 44 }, { wch: 60 }];
-    XLSX.utils.book_append_sheet(workbook, openEndedSheet, "Open-Ended Responses");
+    sheets.push({ name: "Open-Ended Responses", rows: openEndedRows, colWidths: [44, 60] });
   }
 
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-  const safeTitle = results.title.replace(/[^a-zA-Z0-9._-]/g, "_");
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${safeTitle}-results-${new Date().toISOString().slice(0, 10)}.xlsx"`,
-    },
-  });
+  return buildXlsxResponse(sheets, `${results.title}-results`);
 }

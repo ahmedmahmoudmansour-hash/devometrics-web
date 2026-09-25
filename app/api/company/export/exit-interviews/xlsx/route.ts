@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildXlsxResponse } from "@/lib/export/xlsx";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { listExitInterviews } from "@/lib/exitInterviews/actions";
 import { EXIT_INTERVIEW_QUESTIONS } from "@/lib/exitInterviews/questions";
@@ -48,21 +48,14 @@ export async function GET() {
     return row;
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(sheetRows);
-  worksheet["!cols"] = [
-    { wch: 22 }, { wch: 16 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 14 },
-    ...EXIT_INTERVIEW_QUESTIONS.map(() => ({ wch: 40 })),
-    { wch: 40 }, { wch: 22 },
-  ];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Exit Interviews");
-
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="exit-interviews-${new Date().toISOString().slice(0, 10)}.xlsx"`,
-    },
-  });
+  return buildXlsxResponse(
+    [
+      {
+        name: "Exit Interviews",
+        rows: sheetRows,
+        colWidths: [22, 16, 20, 20, 12, 14, ...EXIT_INTERVIEW_QUESTIONS.map(() => 40), 40, 22],
+      },
+    ],
+    "exit-interviews"
+  );
 }

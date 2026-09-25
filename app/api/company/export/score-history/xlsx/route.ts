@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildXlsxResponse } from "@/lib/export/xlsx";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { createClient } from "@/lib/supabase/server";
 
@@ -74,17 +74,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-  const worksheet = XLSX.utils.json_to_sheet(sheetRows);
-  worksheet["!cols"] = [{ wch: 22 }, { wch: 18 }, { wch: 20 }, { wch: 26 }, { wch: 20 }, { wch: 10 }, { wch: 8 }, { wch: 22 }];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Score History");
-
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${data.organizationName ?? "devometrics"}-score-history-${new Date().toISOString().slice(0, 10)}.xlsx"`,
-    },
-  });
+  return buildXlsxResponse(
+    [{ name: "Score History", rows: sheetRows, colWidths: [22, 18, 20, 26, 20, 10, 8, 22] }],
+    `${data.organizationName ?? "devometrics"}-score-history`
+  );
 }
