@@ -26,8 +26,20 @@ export default function CourseRecommendations({ topic }: { topic: string }) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || t("fetchError"));
         }
-        const { summary: text } = await res.json();
-        setSummary(text);
+        if (!res.body) throw new Error(t("fetchError"));
+
+        // /api/courses streams plain text (see app/api/courses/route.ts) —
+        // this used to read a JSON { summary } body, which broke silently
+        // once the route was rewritten to stream.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let text = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          text += decoder.decode(value, { stream: true });
+          setSummary(text);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : t("fetchError"));
       } finally {
