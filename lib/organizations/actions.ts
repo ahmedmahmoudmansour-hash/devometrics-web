@@ -17,6 +17,8 @@ import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
+import type { EmployeeFileData } from "@/lib/employeeFile/constants";
+import { sanitizeInviteFileData } from "@/lib/employeeFile/inviteData";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -287,7 +289,11 @@ export async function inviteEmployee(
   // Defaults false — an admin must explicitly opt in per person. This is
   // what gates the hire_to_probation automation (checkAndConsumeInvite);
   // hire_to_onboarding's welcome content still fires regardless.
-  isNewHire?: boolean
+  isNewHire?: boolean,
+  // Optional full employee record HR already has (personal, contact,
+  // employment). Stored privately on the invite and moved into the person's
+  // employee file when they join (0183).
+  fileData?: Partial<EmployeeFileData>
 ) {
   const supabase = await createClient();
   const {
@@ -297,6 +303,9 @@ export async function inviteEmployee(
 
   const trimmed = email.trim().toLowerCase();
   if (!trimmed || !trimmed.includes("@")) return { error: "A valid email is required" };
+
+  const cleaned = sanitizeInviteFileData(fileData);
+  if ("error" in cleaned) return { error: cleaned.error };
 
   // Friendly, early error — the real enforcement is the RLS insert policy
   // on organization_members (org_seat_limit_ok, migration 0079), which
@@ -330,6 +339,9 @@ export async function inviteEmployee(
     business_unit: businessUnit?.trim() || null,
     location: location?.trim() || null,
     is_new_hire: isNewHire ?? false,
+    // Only sent when HR actually entered something, so an invite without
+    // employee details keeps working even before migration 0183 is applied.
+    ...(cleaned.data ? { file_data: cleaned.data } : {}),
   });
   if (error) return { error: "Could not send invite — they may already be invited" };
 
@@ -351,6 +363,9 @@ export type BulkInviteRow = {
   // Defaults false (see inviteEmployee's isNewHire) — set per-row from the
   // import file's "New Hire" column, if present.
   isNewHire?: boolean;
+  // Full employee record columns from the import file (same fields as the
+  // single-invite form's more-details section).
+  fileData?: Partial<EmployeeFileData>;
 };
 
 export type BulkInviteResult = { email: string; status: "invited" | "duplicate" | "invalid" };
@@ -378,18 +393,24 @@ export async function bulkInviteEmployees(
   }
 
   const results: BulkInviteResult[] = [];
-  const validRows: { row: BulkInviteRow; email: string }[] = [];
+  const validRows: { row: BulkInviteRow; email: string; fileData: Record<string, string> | null }[] = [];
   for (const row of rows) {
     const email = row.email?.trim().toLowerCase() ?? "";
     if (!email || !email.includes("@")) {
       results.push({ email: row.email?.trim() || "(blank)", status: "invalid" });
       continue;
     }
-    validRows.push({ row, email });
+    // A bad value in the employee-file columns marks just this row invalid.
+    const cleaned = sanitizeInviteFileData(row.fileData);
+    if ("error" in cleaned) {
+      results.push({ email, status: "invalid" });
+      continue;
+    }
+    validRows.push({ row, email, fileData: cleaned.data });
   }
   if (validRows.length === 0) return { results };
 
-  const toInsert = (row: BulkInviteRow, email: string) => ({
+  const toInsert = (row: BulkInviteRow, email: string, fileData: Record<string, string> | null) => ({
     organization_id: organizationId,
     email,
     invited_by: user.id,
@@ -401,11 +422,12 @@ export async function bulkInviteEmployees(
     business_unit: row.businessUnit?.trim() || null,
     location: row.location?.trim() || null,
     is_new_hire: row.isNewHire ?? false,
+    ...(fileData ? { file_data: fileData } : {}),
   });
 
   const { error: batchError } = await supabase
     .from("organization_invites")
-    .insert(validRows.map(({ row, email }) => toInsert(row, email)));
+    .insert(validRows.map(({ row, email, fileData }) => toInsert(row, email, fileData)));
 
   if (batchError) {
     // A single bulk insert either fully succeeds or fully fails (e.g. one
@@ -413,8 +435,8 @@ export async function bulkInviteEmployees(
     // constraint and aborts the whole batch) — fall back to inserting one
     // row at a time so a handful of duplicates don't block everyone else
     // in the file.
-    for (const { row, email } of validRows) {
-      const { error } = await supabase.from("organization_invites").insert(toInsert(row, email));
+    for (const { row, email, fileData } of validRows) {
+      const { error } = await supabase.from("organization_invites").insert(toInsert(row, email, fileData));
       results.push({ email, status: error ? "duplicate" : "invited" });
     }
   } else {
@@ -527,6 +549,11 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
       }
     }
   }
+
+  // Move whatever full employee data HR entered at invite time into the new
+  // member's private file (0183). Best-effort and never blocks joining; the
+  // function also clears it from the invite afterwards.
+  await supabase.rpc("apply_invite_file_data", { p_invite_id: invite.id });
 
   await supabase.from("organization_invites").update({ accepted_at: new Date().toISOString() }).eq("id", invite.id);
 

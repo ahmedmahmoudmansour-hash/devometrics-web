@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { UserPlus, Upload } from "lucide-react";
 import { inviteEmployee, revokeInvite, bulkInviteEmployees, type BulkInviteRow, type BulkInviteResult } from "@/lib/organizations/actions";
 import { useConfirmClick } from "@/lib/ui/useConfirmClick";
+import { EMPTY_EMPLOYEE_FILE, MARITAL_STATUSES, EMPLOYMENT_TYPES, type EmployeeFileData } from "@/lib/employeeFile/constants";
 
 const fieldStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -83,6 +84,54 @@ const HEADER_MAP: Record<string, Exclude<keyof BulkInviteRow, "isNewHire">> = {
   location: "location",
 };
 
+// Employee-file columns an import file can carry (same fields as the
+// single-invite form's "Full employee details"). Headers are matched the same
+// forgiving way as above; dates may be real Excel dates or YYYY-MM-DD text.
+const FILE_HEADER_MAP: Record<string, keyof EmployeeFileData> = {
+  fullname: "legalName",
+  legalname: "legalName",
+  dateofbirth: "dateOfBirth",
+  dob: "dateOfBirth",
+  birthdate: "dateOfBirth",
+  gender: "gender",
+  nationality: "nationality",
+  nationalid: "nationalId",
+  iqama: "nationalId",
+  idnumber: "nationalId",
+  maritalstatus: "maritalStatus",
+  phone: "personalPhone",
+  personalphone: "personalPhone",
+  mobile: "personalPhone",
+  personalemail: "personalEmail",
+  address: "addressLine1",
+  addressline1: "addressLine1",
+  addressline2: "addressLine2",
+  city: "city",
+  region: "region",
+  state: "region",
+  postalcode: "postalCode",
+  zip: "postalCode",
+  postcode: "postalCode",
+  emergencycontactname: "emergencyContactName",
+  emergencycontact: "emergencyContactName",
+  emergencycontactrelation: "emergencyContactRelation",
+  emergencycontactphone: "emergencyContactPhone",
+  hiredate: "hireDate",
+  startdate: "hireDate",
+  joindate: "hireDate",
+  joiningdate: "hireDate",
+  employmenttype: "employmentType",
+  probationend: "probationEndDate",
+  probationenddate: "probationEndDate",
+};
+const FILE_DATE_FIELDS = new Set<keyof EmployeeFileData>(["dateOfBirth", "hireDate", "probationEndDate"]);
+
+// Excel stores a date as a day count; converted in UTC so it never shifts a
+// day with the viewer's timezone.
+function excelSerialToIso(n: number): string {
+  return new Date(Math.round((n - 25569) * 86400 * 1000)).toISOString().slice(0, 10);
+}
+
 // Handled separately from HEADER_MAP since it's boolean, not text — a
 // column an admin bulk-adding EXISTING staff can simply leave out (every
 // row then defaults to false, no probation review auto-starts for anyone —
@@ -110,6 +159,12 @@ async function parseWorkbook(data: ArrayBuffer): Promise<BulkInviteRow[]> {
         if (text) row.isNewHire = TRUTHY_VALUES.has(text.toLowerCase());
         continue;
       }
+      const fileField = FILE_HEADER_MAP[normalized];
+      if (fileField) {
+        const cell = FILE_DATE_FIELDS.has(fileField) && typeof value === "number" ? excelSerialToIso(value) : text;
+        if (cell) row.fileData = { ...row.fileData, [fileField]: cell };
+        continue;
+      }
       const field = HEADER_MAP[normalized];
       if (!field) continue;
       if (text) row[field] = text;
@@ -131,6 +186,22 @@ async function downloadTemplate() {
       "Business Unit": "Growth",
       Location: "Cairo",
       "New Hire": "Yes",
+      "Full Name": "Jane Doe",
+      "Date of Birth": "1992-04-18",
+      Nationality: "Egyptian",
+      "National ID": "29204180100000",
+      "Marital Status": "married",
+      "Personal Phone": "+20 100 000 0000",
+      "Personal Email": "jane.personal@example.com",
+      "Address Line 1": "1 Example Street",
+      City: "Cairo",
+      "Postal Code": "11511",
+      "Emergency Contact Name": "John Doe",
+      "Emergency Contact Relation": "Spouse",
+      "Emergency Contact Phone": "+20 100 111 1111",
+      "Hire Date": "2026-10-01",
+      "Employment Type": "full_time",
+      "Probation End Date": "2027-01-01",
     },
   ]);
   const workbook = XLSX.utils.book_new();
@@ -161,6 +232,10 @@ export default function InviteEmployeeForm({
   // have to remember to leave anything off; probation only auto-starts
   // when this is deliberately checked (migration 0129).
   const [isNewHire, setIsNewHire] = useState(false);
+  const [fileData, setFileData] = useState<EmployeeFileData>(EMPTY_EMPLOYEE_FILE);
+  const setFd = (key: keyof EmployeeFileData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setFileData((prev) => ({ ...prev, [key]: e.target.value }));
+  const tf = useTranslations("employeeFile");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -186,7 +261,8 @@ export default function InviteEmployeeForm({
         managerEmail,
         businessUnit,
         location,
-        isNewHire
+        isNewHire,
+        fileData
       );
       if (result?.error) {
         setError(result.error);
@@ -200,6 +276,7 @@ export default function InviteEmployeeForm({
         setBusinessUnit("");
         setLocation("");
         setIsNewHire(false);
+        setFileData(EMPTY_EMPLOYEE_FILE);
       }
     });
   }
@@ -297,6 +374,120 @@ export default function InviteEmployeeForm({
               <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} style={fieldStyle} />
             </div>
           </div>
+          <details style={{ marginBottom: 14, border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px" }}>
+            <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("fullDetailsTitle")}</summary>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "10px 0 14px", lineHeight: 1.6 }}>{t("fullDetailsHint")}</p>
+
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", margin: "0 0 8px" }}>{tf("personalTitle")}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+                <div>
+                  <label style={labelStyle}>{tf("legalName")}</label>
+                  <input type="text" value={fileData.legalName} onChange={setFd("legalName")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("dateOfBirth")}</label>
+                  <input type="date" value={fileData.dateOfBirth} onChange={setFd("dateOfBirth")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("gender")}</label>
+                  <input type="text" value={fileData.gender} onChange={setFd("gender")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("nationality")}</label>
+                  <input type="text" value={fileData.nationality} onChange={setFd("nationality")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("nationalId")}</label>
+                  <input type="text" value={fileData.nationalId} onChange={setFd("nationalId")} style={fieldStyle} />
+                </div>
+              <div>
+                <label style={labelStyle}>{tf("maritalStatus")}</label>
+                <select value={fileData.maritalStatus} onChange={setFd("maritalStatus")} style={fieldStyle}>
+                  <option value="">{tf("notSpecified")}</option>
+                  {MARITAL_STATUSES.map((m) => (
+                    <option key={m} value={m}>
+                      {tf(`marital_${m}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", margin: "0 0 8px" }}>{tf("employmentTitle")}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+                <div>
+                  <label style={labelStyle}>{tf("hireDate")}</label>
+                  <input type="date" value={fileData.hireDate} onChange={setFd("hireDate")} style={fieldStyle} />
+                </div>
+              <div>
+                <label style={labelStyle}>{tf("employmentType")}</label>
+                <select value={fileData.employmentType} onChange={setFd("employmentType")} style={fieldStyle}>
+                  <option value="">{tf("notSpecified")}</option>
+                  {EMPLOYMENT_TYPES.map((m) => (
+                    <option key={m} value={m}>
+                      {tf(`type_${m}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+                <div>
+                  <label style={labelStyle}>{tf("probationEnd")}</label>
+                  <input type="date" value={fileData.probationEndDate} onChange={setFd("probationEndDate")} style={fieldStyle} />
+                </div>
+            </div>
+
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", margin: "0 0 8px" }}>{tf("contactTitle")}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+                <div>
+                  <label style={labelStyle}>{tf("personalPhone")}</label>
+                  <input type="tel" value={fileData.personalPhone} onChange={setFd("personalPhone")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("personalEmail")}</label>
+                  <input type="email" value={fileData.personalEmail} onChange={setFd("personalEmail")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("addressLine1")}</label>
+                  <input type="text" value={fileData.addressLine1} onChange={setFd("addressLine1")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("addressLine2")}</label>
+                  <input type="text" value={fileData.addressLine2} onChange={setFd("addressLine2")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("city")}</label>
+                  <input type="text" value={fileData.city} onChange={setFd("city")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("region")}</label>
+                  <input type="text" value={fileData.region} onChange={setFd("region")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("postalCode")}</label>
+                  <input type="text" value={fileData.postalCode} onChange={setFd("postalCode")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("country")}</label>
+                  <input type="text" value={fileData.country} onChange={setFd("country")} style={fieldStyle} />
+                </div>
+            </div>
+
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", margin: "0 0 8px" }}>{tf("emergencyTitle")}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+                <div>
+                  <label style={labelStyle}>{tf("emergencyName")}</label>
+                  <input type="text" value={fileData.emergencyContactName} onChange={setFd("emergencyContactName")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("emergencyRelation")}</label>
+                  <input type="text" value={fileData.emergencyContactRelation} onChange={setFd("emergencyContactRelation")} style={fieldStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{tf("emergencyPhone")}</label>
+                  <input type="tel" value={fileData.emergencyContactPhone} onChange={setFd("emergencyContactPhone")} style={fieldStyle} />
+                </div>
+            </div>
+          </details>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--text)", marginBottom: 14, cursor: "pointer" }}>
             <input type="checkbox" checked={isNewHire} onChange={(e) => setIsNewHire(e.target.checked)} />
             {t("isNewHireLabel")}
@@ -349,7 +540,8 @@ export default function InviteEmployeeForm({
               {t("downloadTemplate")}
             </button>
           </div>
-          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>{t("newHireColumnHint")}</p>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 6, lineHeight: 1.5 }}>{t("newHireColumnHint")}</p>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>{t("fileColumnsHint")}</p>
           {importFileName && <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{importFileName}</p>}
           {importError && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 10 }}>{importError}</p>}
 

@@ -1582,7 +1582,10 @@
     "revoke": "Revoke",
     "noValidRowsError": "No rows with an Email column value were found in that file.",
     "readFileError": "Could not read that file — make sure it's a .csv or .xlsx export.",
-    "emailPlaceholder": "employee@company.com"
+    "emailPlaceholder": "employee@company.com",
+    "fullDetailsTitle": "Full employee details (optional)",
+    "fullDetailsHint": "If you already have the employee's record, enter it now. It is kept private on the invite and moves into their own employee file the moment they join — only they and company admins can see it. You can also fill it in later from Employees → File.",
+    "fileColumnsHint": "The file can also carry the full employee record: Full Name, Date of Birth, Nationality, National ID, Marital Status, Personal Phone, Personal Email, Address Line 1/2, City, Region, Postal Code, Country, Emergency Contact Name/Relation/Phone, Hire Date, Employment Type (full_time, part_time, contract, intern), Probation End Date. The template shows them all."
   },
   "organizationProfileForm": {
     "title": "Company profile",
