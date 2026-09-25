@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CompetencyDimension } from "@/lib/gap-analysis/dimensions";
-import type { AssessmentResult, GapAnalysis, Milestone, ResumeAnalysis } from "@/lib/supabase/types";
+import type { Milestone } from "@/lib/supabase/types";
+import { getScoreHistoryForEmployee, groupScoreHistoryIntoMoments } from "@/lib/scoring/scoreEvents";
 
 export type TrendPoint = { date: string; score: number };
 
@@ -32,12 +33,29 @@ export type ScorecardData = {
   milestonesTotal: number;
 };
 
+function trailingDelta(points: TrendPoint[]): number | null {
+  return points.length >= 2 ? points[points.length - 1].score - points[points.length - 2].score : null;
+}
+
 // Self-benchmarking only — comparing a user against their own history, using
 // data already collected. Deliberately does NOT compare against other users
 // or a market average: with a pilot cohort this small, a percentile claim
 // would be statistically meaningless, the same reasoning that killed the
 // Salary Benchmark feature. Revisit peer comparison once the cohort is large
 // enough for a percentile to mean something real.
+//
+// Backed by the shared score_events layer (lib/scoring/scoreEvents.ts)
+// rather than re-querying gap_analyses/assessment_results/resume_analyses
+// directly and deduping in TypeScript — this used to be one of three
+// independent implementations of that same pattern; see that file's header
+// comment. Milestones are the one field here that isn't a "score" at all,
+// so they're the one piece still queried directly.
+//
+// One real behavior change from the pre-migration version: careerHealthHistory
+// can now include standalone career_health_snapshot events in addition to
+// Gap Analysis runs (score_events tracks both as separate sources), so this
+// history may be denser than it used to be — a strictly more complete trend,
+// not a regression.
 export async function buildScorecard(): Promise<ScorecardData | null> {
   const supabase = await createClient();
   const {
@@ -45,75 +63,66 @@ export async function buildScorecard(): Promise<ScorecardData | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: analyses }, { data: assessmentResults }, { data: resumeAnalyses }, { data: plans }] =
-    await Promise.all([
-      supabase
-        .from("gap_analyses")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .returns<GapAnalysis[]>(),
-      supabase
-        .from("assessment_results")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("completed_at", { ascending: true })
-        .returns<AssessmentResult[]>(),
-      supabase
-        .from("resume_analyses")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .returns<ResumeAnalysis[]>(),
-      supabase.from("development_plans").select("*").eq("user_id", user.id).returns<{ id: string }[]>(),
-    ]);
+  const [history, { data: plans }] = await Promise.all([
+    getScoreHistoryForEmployee(supabase, user.id),
+    supabase.from("development_plans").select("*").eq("user_id", user.id).returns<{ id: string }[]>(),
+  ]);
 
   const planIds = (plans ?? []).map((p) => p.id);
   const { data: milestones } = planIds.length
     ? await supabase.from("milestones").select("*").in("plan_id", planIds).returns<Milestone[]>()
     : { data: [] as Milestone[] };
 
-  const careerHealthHistory: TrendPoint[] = (analyses ?? []).map((a) => ({
-    date: a.created_at,
-    score: a.career_health_score,
-  }));
-  const careerHealthDelta =
-    careerHealthHistory.length >= 2
-      ? careerHealthHistory[careerHealthHistory.length - 1].score - careerHealthHistory[careerHealthHistory.length - 2].score
-      : null;
+  // Whole-score events only (dimension === "") — either a Gap Analysis run
+  // or a standalone snapshot; see the header comment above.
+  const careerHealthHistory: TrendPoint[] = history
+    .filter((e) => (e.source === "gap_analysis" || e.source === "career_health_snapshot") && e.dimension === "")
+    .map((e) => ({ date: e.recordedAt, score: e.rawValue }));
+  const careerHealthDelta = trailingDelta(careerHealthHistory);
 
+  // Each Gap Analysis run lands as one score_events "moment": a whole-score
+  // row plus one per-dimension row per competency, sharing one
+  // (sourceTable, sourceId) — groupScoreHistoryIntoMoments (also used by the
+  // Employee Intelligence Timeline) collapses those back into one entry per
+  // run so "latest vs. prior run" is a moments comparison, not a raw-row one.
+  const gapAnalysisMoments = groupScoreHistoryIntoMoments(history.filter((e) => e.source === "gap_analysis"));
   const dimensionMovement: DimensionMovement[] = [];
-  if ((analyses ?? []).length > 0) {
-    const latest = analyses![analyses!.length - 1];
-    const prior = analyses!.length >= 2 ? analyses![analyses!.length - 2] : null;
-    for (const c of latest.competencies) {
-      const priorScore = prior?.competencies.find((p) => p.dimension === c.dimension);
+  if (gapAnalysisMoments.length > 0) {
+    const latest = gapAnalysisMoments[gapAnalysisMoments.length - 1];
+    const prior = gapAnalysisMoments.length >= 2 ? gapAnalysisMoments[gapAnalysisMoments.length - 2] : null;
+    for (const detail of latest.details) {
+      if (detail.dimension === "") continue; // the whole-score row, not a per-dimension one
+      const priorDetail = prior?.details.find((d) => d.dimension === detail.dimension);
       dimensionMovement.push({
-        dimension: c.dimension,
-        current: c.currentLevel,
-        previous: priorScore?.currentLevel ?? null,
-        delta: priorScore ? c.currentLevel - priorScore.currentLevel : null,
+        dimension: detail.dimension as CompetencyDimension,
+        current: detail.rawValue,
+        previous: priorDetail?.rawValue ?? null,
+        delta: priorDetail ? detail.rawValue - priorDetail.rawValue : null,
       });
     }
   }
 
-  const resumeHistory: TrendPoint[] = (resumeAnalyses ?? []).map((r) => ({
-    date: r.created_at,
-    score: r.overall_score,
-  }));
-  const resumeDelta =
-    resumeHistory.length >= 2 ? resumeHistory[resumeHistory.length - 1].score - resumeHistory[resumeHistory.length - 2].score : null;
+  const resumeHistory: TrendPoint[] = history
+    .filter((e) => e.source === "resume_analysis")
+    .map((e) => ({ date: e.recordedAt, score: e.rawValue }));
+  const resumeDelta = trailingDelta(resumeHistory);
 
+  // Assessment slug lives in metadata, not dimension — assessment_result
+  // events are recorded with dimension = "" and the slug stashed as
+  // metadata.assessment_slug (migration 0147/0148).
   const bySlug = new Map<string, TrendPoint[]>();
-  for (const r of assessmentResults ?? []) {
-    const list = bySlug.get(r.assessment_slug) ?? [];
-    list.push({ date: r.completed_at, score: r.score });
-    bySlug.set(r.assessment_slug, list);
+  for (const e of history) {
+    if (e.source !== "assessment_result") continue;
+    const slug = e.metadata.assessment_slug;
+    if (typeof slug !== "string") continue;
+    const list = bySlug.get(slug) ?? [];
+    list.push({ date: e.recordedAt, score: e.rawValue });
+    bySlug.set(slug, list);
   }
-  const assessmentTrends: AssessmentTrend[] = Array.from(bySlug.entries()).map(([slug, history]) => ({
+  const assessmentTrends: AssessmentTrend[] = Array.from(bySlug.entries()).map(([slug, trendHistory]) => ({
     slug,
-    history,
-    delta: history.length >= 2 ? history[history.length - 1].score - history[history.length - 2].score : null,
+    history: trendHistory,
+    delta: trailingDelta(trendHistory),
   }));
 
   const milestonesTotal = (milestones ?? []).length;
