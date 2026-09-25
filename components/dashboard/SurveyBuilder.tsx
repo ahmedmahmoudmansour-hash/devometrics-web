@@ -28,8 +28,6 @@ const smallButton: React.CSSProperties = {
   cursor: "pointer",
 };
 
-let nextManualId = 1;
-
 function QuestionEditor({
   question,
   onChange,
@@ -164,7 +162,7 @@ export default function SurveyBuilder({
   function addBlankQuestion() {
     setQuestions((prev) => [
       ...(prev ?? []),
-      { id: `manual-${nextManualId++}`, text: "", type: "rating" },
+      { id: `manual-${crypto.randomUUID()}`, text: "", type: "rating" },
     ]);
   }
 
