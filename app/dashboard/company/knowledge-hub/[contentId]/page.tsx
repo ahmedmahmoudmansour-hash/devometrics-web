@@ -138,10 +138,10 @@ export default async function KnowledgeHubContentDetailPage({
                     <th style={{ ...headStyle, textAlign: "left" }}>{t("colStatus")}</th>
                     <th style={{ ...headStyle, textAlign: "left" }}>{t("colCompleted")}</th>
                     {(content.completion_type === "exam" || content.completion_type === "scorm") && (
-                      <th style={{ ...headStyle, textAlign: "right" }}>{t("colScore")}</th>
+                      <th style={{ ...headStyle, textAlign: "end" }}>{t("colScore")}</th>
                     )}
                     {content.completion_type === "exam" && (
-                      <th style={{ ...headStyle, textAlign: "right" }}>{t("colAttempts")}</th>
+                      <th style={{ ...headStyle, textAlign: "end" }}>{t("colAttempts")}</th>
                     )}
                     <th style={{ ...headStyle, textAlign: "right" }} aria-label={t("actionsAriaLabel")} />
                   </tr>
@@ -177,7 +177,7 @@ export default async function KnowledgeHubContentDetailPage({
                         <td
                           style={{
                             ...cellStyle,
-                            textAlign: "right",
+                            textAlign: "end",
                             fontWeight: 700,
                             color: r.passed === false ? "var(--danger)" : r.passed ? "var(--teal)" : "var(--text)",
                           }}

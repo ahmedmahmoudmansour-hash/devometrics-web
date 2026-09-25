@@ -37,6 +37,42 @@ function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+// Was duplicated inline for the content-kind picker and the completion-type
+// picker — same pill markup, only the option list/value/handler differed.
+function PillToggleGroup<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (next: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          style={{
+            padding: "8px 16px",
+            borderRadius: 100,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            border: value === option.value ? "1px solid var(--teal)" : "1px solid var(--border)",
+            background: value === option.value ? "rgba(var(--teal-rgb),0.1)" : "transparent",
+            color: value === option.value ? "var(--teal)" : "var(--text-muted)",
+          }}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function KnowledgeHubUploadForm({ organizationId, courses }: { organizationId: string; courses: { id: string; title: string }[] }) {
   const t = useTranslations("knowledgeHubUploadForm");
   const [expanded, setExpanded] = useState(false);
@@ -157,7 +193,6 @@ export default function KnowledgeHubUploadForm({ organizationId, courses }: { or
             title,
             description,
             rawZipStoragePath: storagePath,
-            maxAttempts: null,
             dueDate: dueDate || null,
             isNewHireContent,
             courseId: courseId || null,
@@ -186,7 +221,7 @@ export default function KnowledgeHubUploadForm({ organizationId, courses }: { or
             questions: completionType === "exam" ? questions.map((q) => ({ ...q, options: q.options.map((o) => o.trim()) })) : undefined,
             courseId: courseId || null,
           });
-          if (result?.error) {
+          if ("error" in result) {
             setError(result.error);
             return;
           }
@@ -241,31 +276,18 @@ export default function KnowledgeHubUploadForm({ organizationId, courses }: { or
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
             {t("contentKindLabel")}
           </label>
-          <div style={{ display: "flex", gap: 8 }}>
-            {(["document", "scorm"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => {
-                  setKind(option);
-                  setFile(null);
-                  setError(null);
-                }}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 100,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  border: kind === option ? "1px solid var(--teal)" : "1px solid var(--border)",
-                  background: kind === option ? "rgba(var(--teal-rgb),0.1)" : "transparent",
-                  color: kind === option ? "var(--teal)" : "var(--text-muted)",
-                }}
-              >
-                {option === "document" ? t("documentKindOption") : t("scormKindOption")}
-              </button>
-            ))}
-          </div>
+          <PillToggleGroup
+            value={kind}
+            onChange={(option) => {
+              setKind(option);
+              setFile(null);
+              setError(null);
+            }}
+            options={[
+              { value: "document", label: t("documentKindOption") },
+              { value: "scorm", label: t("scormKindOption") },
+            ]}
+          />
         </div>
 
         <input
@@ -345,27 +367,14 @@ export default function KnowledgeHubUploadForm({ organizationId, courses }: { or
           <label style={{ fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
             {t("howCompletedLabel")}
           </label>
-          <div style={{ display: "flex", gap: 8 }}>
-            {(["attestation", "exam"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setCompletionType(option)}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 100,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  border: completionType === option ? "1px solid var(--teal)" : "1px solid var(--border)",
-                  background: completionType === option ? "rgba(var(--teal-rgb),0.1)" : "transparent",
-                  color: completionType === option ? "var(--teal)" : "var(--text-muted)",
-                }}
-              >
-                {option === "attestation" ? t("confirmReadOption") : t("examOption")}
-              </button>
-            ))}
-          </div>
+          <PillToggleGroup
+            value={completionType}
+            onChange={setCompletionType}
+            options={[
+              { value: "attestation", label: t("confirmReadOption") },
+              { value: "exam", label: t("examOption") },
+            ]}
+          />
         </div>
 
         {completionType === "exam" && (

@@ -84,6 +84,16 @@ export default async function KnowledgeHubPage() {
     list.sort((a, b) => a.knowledge_hub_content.course_position - b.knowledge_hub_content.course_position);
   }
 
+  // Was a single 4-decision nested ternary inline in the badge — early
+  // returns read top-to-bottom instead of requiring the reader to parse
+  // nested `? :` precedence.
+  function moduleStatusLabel(content: KnowledgeHubContent, completion: KnowledgeHubCompletion | undefined, isOverdue: boolean): string {
+    if (!completion) return isOverdue ? t("overdue") : t("notStarted");
+    const scorePercent = completion.score_percent;
+    if (scorePercent === null || (content.completion_type !== "exam" && content.completion_type !== "scorm")) return t("completed");
+    return completion.passed ? t("passedScore", { percent: scorePercent }) : t("completedScore", { percent: scorePercent });
+  }
+
   function moduleCard(a: { id: string; content_id: string; knowledge_hub_content: KnowledgeHubContent }) {
     const content = a.knowledge_hub_content;
     const completion = latestCompletionByContent.get(a.content_id);
@@ -131,15 +141,7 @@ export default async function KnowledgeHubPage() {
               color: `rgb(${statusColor})`,
             }}
           >
-            {completion
-              ? completion.score_percent !== null && (content.completion_type === "exam" || content.completion_type === "scorm")
-                ? completion.passed
-                  ? t("passedScore", { percent: completion.score_percent })
-                  : t("completedScore", { percent: completion.score_percent })
-                : t("completed")
-              : isOverdue
-                ? t("overdue")
-                : t("notStarted")}
+            {moduleStatusLabel(content, completion, isOverdue)}
           </span>
         </div>
       </Link>

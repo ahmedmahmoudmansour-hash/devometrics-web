@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { KNOWLEDGE_HUB_BUCKET } from "@/lib/knowledgeHub/constants";
+import { guessScormMimeType } from "@/lib/knowledgeHub/scorm/constants";
 
 // Serves an unpacked SCORM package's files SAME-ORIGIN with the app. This
 // is not a cosmetic choice: SCORM 1.2's API-discovery algorithm has the
@@ -20,27 +21,15 @@ import { KNOWLEDGE_HUB_BUCKET } from "@/lib/knowledgeHub/constants";
 // Auth mirrors getSignedKnowledgeHubUrl in lib/knowledgeHub/actions.ts:
 // specifically assigned to this employee, OR an org admin previewing it.
 
-const MIME_BY_EXTENSION: Record<string, string> = {
-  html: "text/html; charset=utf-8",
-  htm: "text/html; charset=utf-8",
-  js: "application/javascript; charset=utf-8",
-  css: "text/css; charset=utf-8",
-  json: "application/json; charset=utf-8",
-  xml: "application/xml; charset=utf-8",
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  woff: "font/woff",
-  woff2: "font/woff2",
-  mp3: "audio/mpeg",
-  mp4: "audio/mp4",
-};
+// Text-ish asset types get an explicit charset for this route's response
+// headers (the shared table in lib/knowledgeHub/scorm/constants.ts doesn't
+// carry one — it's also used for Storage upload contentType, where a
+// charset suffix isn't meaningful).
+const TEXT_MIME_TYPES = new Set(["text/html", "application/javascript", "text/css", "application/json", "application/xml"]);
 
 function guessMimeType(fileName: string): string {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return MIME_BY_EXTENSION[ext] ?? "application/octet-stream";
+  const mime = guessScormMimeType(fileName);
+  return TEXT_MIME_TYPES.has(mime) ? `${mime}; charset=utf-8` : mime;
 }
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ contentId: string; path: string[] }> }) {
@@ -60,21 +49,26 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { data: content } = await supabase
-    .from("knowledge_hub_content")
-    .select("organization_id, storage_path, content_type")
-    .eq("id", contentId)
-    .maybeSingle<{ organization_id: string; storage_path: string; content_type: string }>();
+  // Neither query depends on the other's result (both only need contentId /
+  // user.id, already known) — run them together instead of paying two
+  // sequential round trips on every single asset request this SCORM
+  // package's iframe makes.
+  const [{ data: content }, { data: assignment }] = await Promise.all([
+    supabase
+      .from("knowledge_hub_content")
+      .select("organization_id, storage_path, content_type")
+      .eq("id", contentId)
+      .maybeSingle<{ organization_id: string; storage_path: string; content_type: string }>(),
+    supabase
+      .from("knowledge_hub_assignments")
+      .select("id")
+      .eq("content_id", contentId)
+      .eq("employee_user_id", user.id)
+      .maybeSingle<{ id: string }>(),
+  ]);
   if (!content || content.content_type !== "scorm") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-
-  const { data: assignment } = await supabase
-    .from("knowledge_hub_assignments")
-    .select("id")
-    .eq("content_id", contentId)
-    .eq("employee_user_id", user.id)
-    .maybeSingle<{ id: string }>();
 
   let authorized = !!assignment;
   if (!authorized) {
@@ -86,8 +80,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { data: fileBlob, error } = await supabase.storage.from(KNOWLEDGE_HUB_BUCKET).download(`${content.storage_path}/${relativePath}`);
   if (error || !fileBlob) return NextResponse.json({ error: "File not found" }, { status: 404 });
 
-  const buffer = Buffer.from(await fileBlob.arrayBuffer());
-  return new NextResponse(new Uint8Array(buffer), {
+  // Stream the blob straight through instead of buffering the whole file
+  // into memory first — matters for embedded audio/video assets, which this
+  // route's own MIME table (mp3/mp4) confirms can show up in a package.
+  return new NextResponse(fileBlob.stream(), {
     headers: {
       "Content-Type": guessMimeType(relativePath),
       // Private, short cache — this is gated by an auth check on every

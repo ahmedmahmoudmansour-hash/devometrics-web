@@ -14,30 +14,8 @@ import {
   SCORM_MAX_FILE_BYTES,
   SCORM_MAX_COMPRESSION_RATIO,
   SCORM_PROCESSING_BUDGET_MS,
+  guessScormMimeType,
 } from "./constants";
-
-const MIME_BY_EXTENSION: Record<string, string> = {
-  html: "text/html",
-  htm: "text/html",
-  js: "application/javascript",
-  css: "text/css",
-  json: "application/json",
-  xml: "application/xml",
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  woff: "font/woff",
-  woff2: "font/woff2",
-  mp3: "audio/mpeg",
-  mp4: "audio/mp4",
-};
-
-function guessMimeType(fileName: string): string {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return MIME_BY_EXTENSION[ext] ?? "application/octet-stream";
-}
 
 // Reads every real (non-directory) entry in the zip, enforcing every hard
 // limit against the archive's own declared central-directory metadata
@@ -165,7 +143,7 @@ async function extractUploadAndValidateScormPackage(
 
       const { error: uploadError } = await supabase.storage
         .from(KNOWLEDGE_HUB_BUCKET)
-        .upload(`${scormPrefix}/${entry.fileName}`, data, { contentType: guessMimeType(entry.fileName), upsert: true });
+        .upload(`${scormPrefix}/${entry.fileName}`, data, { contentType: guessScormMimeType(entry.fileName), upsert: true });
       if (uploadError) {
         return await fail(`Could not upload "${entry.fileName}" — try uploading the package again.`);
       }
@@ -208,7 +186,6 @@ export async function validateAndRegisterScormPackage(input: {
   title: string;
   description: string;
   rawZipStoragePath: string;
-  maxAttempts?: number | null;
   dueDate?: string | null;
   isNewHireContent?: boolean;
   courseId?: string | null;

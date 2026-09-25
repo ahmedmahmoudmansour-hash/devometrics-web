@@ -32,6 +32,38 @@ export type CourseRow = {
 
 type Employee = { userId: string; name: string; email: string };
 
+// Was duplicated for "up" and "down" — same markup, only the arrow glyph,
+// the boundary check, and the direction argument differed. `disabled`
+// (the HTML attribute, also true while a reorder is pending) and
+// `atBoundary` (the greyed-out styling) are kept separate to preserve the
+// original behavior: mid-reorder, a button is unclickable but doesn't
+// visually dim unless it's also at the list boundary.
+function ReorderButton({
+  direction,
+  disabled,
+  atBoundary,
+  onClick,
+  label,
+}: {
+  direction: "up" | "down";
+  disabled: boolean;
+  atBoundary: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      style={{ background: "none", border: "none", color: atBoundary ? "var(--border)" : "var(--text-muted)", cursor: atBoundary ? "default" : "pointer", fontSize: 11, lineHeight: 1, padding: 0 }}
+    >
+      {direction === "up" ? "▲" : "▼"}
+    </button>
+  );
+}
+
 function CourseCard({ course, modules, employees }: { course: CourseRow; modules: CourseModuleRow[]; employees: Employee[] }) {
   const t = useTranslations("knowledgeHubCourses");
   const [isPending, startTransition] = useTransition();
@@ -117,24 +149,20 @@ function CourseCard({ course, modules, employees }: { course: CourseRow; modules
               }}
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <button
-                  type="button"
-                  onClick={() => reorder(m.id, "up")}
+                <ReorderButton
+                  direction="up"
                   disabled={isPending || i === 0}
-                  aria-label={t("moveUp")}
-                  style={{ background: "none", border: "none", color: i === 0 ? "var(--border)" : "var(--text-muted)", cursor: i === 0 ? "default" : "pointer", fontSize: 11, lineHeight: 1, padding: 0 }}
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  onClick={() => reorder(m.id, "down")}
+                  atBoundary={i === 0}
+                  onClick={() => reorder(m.id, "up")}
+                  label={t("moveUp")}
+                />
+                <ReorderButton
+                  direction="down"
                   disabled={isPending || i === modules.length - 1}
-                  aria-label={t("moveDown")}
-                  style={{ background: "none", border: "none", color: i === modules.length - 1 ? "var(--border)" : "var(--text-muted)", cursor: i === modules.length - 1 ? "default" : "pointer", fontSize: 11, lineHeight: 1, padding: 0 }}
-                >
-                  ▼
-                </button>
+                  atBoundary={i === modules.length - 1}
+                  onClick={() => reorder(m.id, "down")}
+                  label={t("moveDown")}
+                />
               </div>
               <span style={{ fontSize: 11, color: "var(--text-muted)", width: 18 }}>{i + 1}.</span>
               <Link href={`/dashboard/company/knowledge-hub/${m.id}`} style={{ flex: 1, fontSize: 13, color: "var(--text)", textDecoration: "underline", textDecorationColor: "var(--border)" }}>
@@ -142,7 +170,7 @@ function CourseCard({ course, modules, employees }: { course: CourseRow; modules
               </Link>
               <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{m.formatLabel}</span>
               <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{m.completionLabel}</span>
-              <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700, width: 90, textAlign: "right" }}>
+              <span style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700, width: 90, textAlign: "end" }}>
                 {t("assignedCompleted", { assigned: m.assignedCount, completed: m.completedCount })}
               </span>
             </div>

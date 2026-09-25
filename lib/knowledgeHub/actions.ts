@@ -114,7 +114,7 @@ export async function createKnowledgeHubContent(input: {
   isNewHireContent?: boolean;
   questions?: NewExamQuestion[];
   courseId?: string | null;
-}) {
+}): Promise<{ error: string } | { success: true; contentId: string }> {
   const company = await buildCompanyData();
   if (!company.isOrgAdmin || !company.organizationId) return { error: "Not authorized" };
 
@@ -364,26 +364,66 @@ export async function createKnowledgeHubCourse(title: string, description: strin
   return { success: true, courseId: data.id };
 }
 
-// Assigns every module currently in the course to each employee, reusing
-// assignKnowledgeHubContent per-module — one course-level click fans out
-// into the same, already-correct per-module upsert/diff/notify calls an
-// admin would otherwise have to trigger individually per module.
+// Assigns every module currently in the course to each employee. Batched
+// across all modules at once (one existing-assignment SELECT, one upsert,
+// one notification pass) rather than fanning out into one full
+// assignKnowledgeHubContent call per module — a course with M modules
+// used to mean roughly 3×M Supabase round trips (auth check, "already
+// assigned" SELECT, upsert, each repeated per module) for what's really
+// one bulk operation. Notification semantics are unchanged: one email per
+// employee per newly-assigned module, same as before.
 export async function assignKnowledgeHubCourse(courseId: string, employeeUserIds: string[]): Promise<{ error: string } | { success: true }> {
   if (employeeUserIds.length === 0) return { error: "Select at least one employee" };
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
   const { data: modules } = await supabase
     .from("knowledge_hub_content")
-    .select("id")
+    .select("id, title, due_date")
     .eq("course_id", courseId)
-    .returns<{ id: string }[]>();
+    .returns<{ id: string; title: string; due_date: string | null }[]>();
   if (!modules || modules.length === 0) return { error: "This course has no modules yet." };
+  const moduleIds = modules.map((m) => m.id);
 
-  const results = await Promise.all(modules.map((m) => assignKnowledgeHubContent(m.id, employeeUserIds)));
-  const firstError = results.find((r): r is { error: string } => "error" in r);
-  if (firstError) return firstError;
+  const { data: existing } = await supabase
+    .from("knowledge_hub_assignments")
+    .select("content_id, employee_user_id")
+    .in("content_id", moduleIds)
+    .in("employee_user_id", employeeUserIds)
+    .returns<{ content_id: string; employee_user_id: string }[]>();
+  const alreadyAssignedKey = new Set((existing ?? []).map((r) => `${r.content_id}:${r.employee_user_id}`));
+
+  const { error } = await supabase.from("knowledge_hub_assignments").upsert(
+    moduleIds.flatMap((contentId) =>
+      employeeUserIds.map((employeeUserId) => ({ content_id: contentId, employee_user_id: employeeUserId, assigned_by: user.id }))
+    ),
+    { onConflict: "employee_user_id,content_id", ignoreDuplicates: true }
+  );
+  if (error) {
+    return { error: "Could not assign — the database may need migration 0084 run first." };
+  }
+
+  const company = await buildCompanyData();
+  if (company.organizationName && company.organizationId) {
+    const emailByUserId = new Map(company.rows.map((r) => [r.userId, r.email]));
+    const notifications: Promise<void>[] = [];
+    for (const m of modules) {
+      for (const employeeUserId of employeeUserIds) {
+        if (alreadyAssignedKey.has(`${m.id}:${employeeUserId}`)) continue;
+        const email = emailByUserId.get(employeeUserId);
+        if (!email) continue;
+        notifications.push(sendKnowledgeHubAssignmentEmail(email, m.title, m.due_date, company.organizationName!, company.organizationId!));
+      }
+    }
+    await Promise.allSettled(notifications);
+  }
 
   revalidatePath("/dashboard/company/knowledge-hub");
+  for (const contentId of moduleIds) revalidatePath(`/dashboard/company/knowledge-hub/${contentId}`);
   return { success: true };
 }
 

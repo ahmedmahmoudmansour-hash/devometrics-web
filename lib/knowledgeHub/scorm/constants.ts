@@ -36,3 +36,29 @@ export const SCORM_MAX_COMPRESSION_RATIO = 100;
 // above are temporarily held down — extra headroom is harmless at any scale,
 // and it's one less thing to remember to re-raise later.
 export const SCORM_PROCESSING_BUDGET_MS = 45_000;
+
+// Single source for SCORM asset MIME guessing — was duplicated (and had
+// drifted, mp4 mapped to audio/mp4 in both copies) between ingest.ts
+// (storage upload) and the [contentId]/[...path] serving route.
+export const SCORM_MIME_BY_EXTENSION: Record<string, string> = {
+  html: "text/html",
+  htm: "text/html",
+  js: "application/javascript",
+  css: "text/css",
+  json: "application/json",
+  xml: "application/xml",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  woff: "font/woff",
+  woff2: "font/woff2",
+  mp3: "audio/mpeg",
+  mp4: "video/mp4",
+};
+
+export function guessScormMimeType(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  return SCORM_MIME_BY_EXTENSION[ext] ?? "application/octet-stream";
+}
