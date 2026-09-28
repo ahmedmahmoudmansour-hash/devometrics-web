@@ -14,6 +14,10 @@
 -- older "Audit test proposal" / $72,000 record from an earlier session)
 -- untouched, since that org gets reused for future testing.
 --
+-- Updated 2026-09-28 after live-verifying migration 0186's three fixes --
+-- that verification pass left one more approved test record/change plus
+-- one never-approved (harmless but noisy) proposal behind, added below.
+--
 -- Safe to run once; re-running is a no-op (nothing left to match).
 
 -- compensation_approvals cascades automatically when its proposal is
@@ -22,11 +26,11 @@
 
 delete from public.compensation_changes
 where organization_id = '6a52c135-20ec-4ff3-b6f5-5981acbb5fad'
-  and new_amount in (250000, 300000);
+  and new_amount in (250000, 300000, 330000);
 
 delete from public.compensation_records
 where organization_id = '6a52c135-20ec-4ff3-b6f5-5981acbb5fad'
-  and amount in (250000, 300000);
+  and amount in (250000, 300000, 330000);
 
 delete from public.compensation_proposals
 where organization_id = '6a52c135-20ec-4ff3-b6f5-5981acbb5fad'
@@ -34,7 +38,9 @@ where organization_id = '6a52c135-20ec-4ff3-b6f5-5981acbb5fad'
     'SELF-APPROVAL TEST',
     'SELF-APPROVAL RETEST (2 comp admins)',
     'STALE-GRANT LOCKOUT TEST',
-    'STALE-GRANT LOCKOUT TEST 2 (terminated path)'
+    'STALE-GRANT LOCKOUT TEST 2 (terminated path)',
+    'POST-FIX LOCKOUT RETEST',
+    'REGRESSION: should still be blocked'
   );
 
 -- The one audit-log row I inserted directly (as VOLATILE, bypassing the
