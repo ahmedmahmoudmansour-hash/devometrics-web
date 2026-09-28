@@ -3,21 +3,26 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
-// Homepage "see it in action" section — the real-product-footage video
-// (built for social/ad use, see the video gallery this shipped alongside)
-// embedded directly on the site rather than left as a download-only asset.
-// One file per language: the Arabic cut shows the actual Arabic/RTL
-// interface, not the English screens with dubbed captions, so this needs a
-// real source swap per locale, not just a captions track.
-export default function ProductVideoSection() {
+// Real-product-footage video, embedded directly on the site rather than
+// left as a download-only asset. One file per language: the Arabic cut
+// shows the actual Arabic/RTL interface, not the English screens with
+// dubbed captions, so this needs a real source swap per locale, not just a
+// captions track.
+//
+// Two cuts share this component: "teaser" (~18s, 3 scenes — for an
+// embedded hero-adjacent placement where a visitor hasn't committed to
+// watching yet) and "tour" (~60s, the full 10-scene walkthrough — for a
+// dedicated video/product-tour destination). Same player chrome either way.
+export default function ProductVideoSection({ variant = "tour" }: { variant?: "tour" | "teaser" }) {
   const t = useTranslations("productVideo");
   const locale = useLocale();
   const isAr = locale === "ar";
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
-  const src = isAr ? "/videos/product-tour-ar.mp4" : "/videos/product-tour-en.mp4";
-  const poster = isAr ? "/videos/product-tour-ar-poster.jpg" : "/videos/product-tour-en-poster.jpg";
+  const base = variant === "teaser" ? "product-teaser" : "product-tour";
+  const src = `/videos/${base}-${isAr ? "ar" : "en"}.mp4`;
+  const poster = `/videos/${base}-${isAr ? "ar" : "en"}-poster.jpg`;
 
   function handlePlayClick() {
     videoRef.current?.play();

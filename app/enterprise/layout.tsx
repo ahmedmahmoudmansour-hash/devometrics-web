@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import PlatformChatWidget from "@/components/PlatformChatWidget";
 import Reveal from "@/components/Reveal";
 import EnterpriseSectionNav from "@/components/EnterpriseSectionNav";
+import ProductVideoSection from "@/components/ProductVideoSection";
 
 export const metadata: Metadata = {
   title: "Devometrics for Enterprise — Workforce Intelligence",
@@ -134,6 +135,8 @@ export default async function EnterpriseLayout({ children }: { children: React.R
             </p>
           </div>
         </section>
+
+        <ProductVideoSection variant="teaser" />
 
         <EnterpriseSectionNav />
 
