@@ -59,8 +59,8 @@ export async function updateGrowMemory(
     model: "claude-haiku-4-5",
     max_tokens: 512,
     system:
-      `LANGUAGE: Write every field in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"} — this memory is shown directly to the user in their own interface, regardless of what language the prior memory or latest exchange below happen to be written in.\n\n` +
-      "You maintain a running GROW-model (Goal, Reality, Options, Will) summary of an ongoing career-coaching relationship. Given the prior summary and the latest exchange, call update_grow_memory with the new current state. Carry forward anything still true; do not discard established context just because it wasn't repeated this turn. Only change a field if this exchange actually moved it forward.",
+      `LANGUAGE: Write every field in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"} — this memory is shown directly to the user in their own interface, regardless of what language the prior memory or latest exchange below happen to be written in. This applies even to a field whose SUBSTANCE you are carrying forward unchanged: re-write it in the target language rather than repeating the prior memory's exact string — a user who has switched languages should never see a stale field still sitting in the old one.\n\n` +
+      "You maintain a running GROW-model (Goal, Reality, Options, Will) summary of an ongoing career-coaching relationship. Given the prior summary and the latest exchange, call update_grow_memory with the new current state. Carry forward anything still true; do not discard established context just because it wasn't repeated this turn. Only change the SUBSTANCE of a field if this exchange actually moved it forward — but every field you return must be in the target language regardless.",
     tool_choice: { type: "tool", name: "update_grow_memory" },
     tools: [UPDATE_TOOL],
     messages: [

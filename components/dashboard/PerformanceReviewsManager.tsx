@@ -232,6 +232,28 @@ export default function PerformanceReviewsManager({ initialCycles, organizationI
     setLoadingReviews(false);
   }
 
+  // The cycle picker below renders selectedCycleId's own cycle as already
+  // "selected" from the initial state alone, but selectCycle() — the only
+  // thing that ever calls loadReviews — only runs from a click. Without
+  // this, the very first cycle a page load lands on shows "No employees in
+  // this cycle yet" until the admin clicks the already-highlighted button
+  // again. Runs once for whatever cycle was selected at mount; every
+  // subsequent switch already goes through selectCycle's own call. Calls
+  // listReviewsForCycle directly rather than the loadReviews helper (which
+  // sets state before its first await) — same "no synchronous setState in
+  // the effect body" shape as the listWorkflowTemplates/listOrganization-
+  // MembersForAssignment effect above, so the initial load just doesn't
+  // flip the loading indicator on (data typically arrives before anyone
+  // notices) rather than fighting the lint rule that shape exists for.
+  useEffect(() => {
+    if (!selectedCycleId) return;
+    listReviewsForCycle(selectedCycleId).then((items) => {
+      setReviews(items);
+      setStatusFilter(null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function selectCycle(cycleId: string) {
     setSelectedCycleId(cycleId);
     loadReviews(cycleId);
