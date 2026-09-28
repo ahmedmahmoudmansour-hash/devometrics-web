@@ -1,13 +1,30 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0185
+-- DEVOMETRICS -- MIGRATION 0185
 --
--- Everything through 0184 is applied and verified live (2026-09-28).
+-- Self-approval guard for performance reviews, closing the same
+-- conflict-of-interest gap 0168 already fixed for decide_leave_request and
+-- decide_compensation_proposal. Found during an audit pass over
+-- previously-unreviewed workflows.
 --
--- 0185 -- Self-approval guard for performance reviews (submit_manager_
---        assessment, close_review, set_competency_rating), closing the
---        same conflict-of-interest gap 0168 already fixed for leave and
---        compensation. Blocks an org admin from deciding their own review
---        ONLY when another org admin exists to do it instead.
+-- submit_manager_assessment, close_review and set_competency_rating
+-- (0103) all authorize on "is_org_admin(org) OR is_manager_of_user
+-- (employee)". is_manager_of_user can never be true for a self-review
+-- (organization_members_manager_not_self, 0072, already prevents anyone
+-- from being their own manager), so the only real self-approval path was
+-- an org admin submitting/rating/closing their OWN review -- exactly the
+-- same shape 0168 found and fixed for leave and compensation, just never
+-- extended here.
+--
+-- Same fix shape as 0168: NOT a blanket block (a solo-admin company would
+-- otherwise have no way to ever run its owner's own review) -- self-
+-- decision is blocked ONLY when another org admin actually exists to do
+-- it instead.
+--
+-- Deliberately NOT touched here: resolve_custom_step_role_assignments,
+-- assign_custom_step_responder, unassign_custom_step_responder. Those
+-- manage WHO is assigned to a custom step, not a judgment recorded about
+-- the employee -- a materially different (and separately debatable)
+-- question left for a future pass if wanted.
 -- ============================================================
 
 create or replace function public.submit_manager_assessment(
