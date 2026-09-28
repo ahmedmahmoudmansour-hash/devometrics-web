@@ -1,30 +1,40 @@
 -- ============================================================
 -- DEVOMETRICS -- MIGRATION 0185
 --
--- Self-approval guard for performance reviews, closing the same
--- conflict-of-interest gap 0168 already fixed for decide_leave_request and
--- decide_compensation_proposal. Found during an audit pass over
--- previously-unreviewed workflows.
+-- Two fixes to performance-review RPCs, found in the same audit pass:
 --
--- submit_manager_assessment, close_review and set_competency_rating
--- (0103) all authorize on "is_org_admin(org) OR is_manager_of_user
--- (employee)". is_manager_of_user can never be true for a self-review
--- (organization_members_manager_not_self, 0072, already prevents anyone
--- from being their own manager), so the only real self-approval path was
--- an org admin submitting/rating/closing their OWN review -- exactly the
--- same shape 0168 found and fixed for leave and compensation, just never
--- extended here.
+-- 1. SELF-APPROVAL GUARD. submit_manager_assessment, close_review and
+--    set_competency_rating (0103) all authorize on "is_org_admin(org) OR
+--    is_manager_of_user(employee)". is_manager_of_user can never be true
+--    for a self-review (organization_members_manager_not_self, 0072,
+--    already prevents anyone from being their own manager), so the only
+--    real self-approval path was an org admin submitting/rating/closing
+--    their OWN review -- exactly the same shape 0168 found and fixed for
+--    leave and compensation, just never extended here.
 --
--- Same fix shape as 0168: NOT a blanket block (a solo-admin company would
--- otherwise have no way to ever run its owner's own review) -- self-
--- decision is blocked ONLY when another org admin actually exists to do
--- it instead.
+--    Same fix shape as 0168: NOT a blanket block (a solo-admin company
+--    would otherwise have no way to ever run its owner's own review) --
+--    self-decision is blocked ONLY when another org admin actually
+--    exists to do it instead.
 --
--- Deliberately NOT touched here: resolve_custom_step_role_assignments,
--- assign_custom_step_responder, unassign_custom_step_responder. Those
--- manage WHO is assigned to a custom step, not a judgment recorded about
--- the employee -- a materially different (and separately debatable)
--- question left for a future pass if wanted.
+--    Deliberately NOT touched here: resolve_custom_step_role_assignments,
+--    assign_custom_step_responder, unassign_custom_step_responder. Those
+--    manage WHO is assigned to a custom step, not a judgment recorded
+--    about the employee -- a materially different (and separately
+--    debatable) question left for a future pass if wanted.
+--
+-- 2. CONFIRMED LIVE BUG, unrelated to (1) but caught while touching this
+--    function: submit_manager_assessment still writes to
+--    organization_members.performance_rating/_note/_updated_at, which
+--    migration 0176 dropped (moved to organization_member_performance,
+--    one row per member, unique on member_id). Since 0176 never updated
+--    this function, every manager-assessment submission on every review,
+--    for every org, has been failing with "column ... does not exist"
+--    ever since 0176 was applied -- confirmed by a real call against the
+--    live database while preparing an unrelated demo. Fixed here by
+--    writing to organization_member_performance instead, same upsert
+--    shape (0176's own migration) keyed on member_id, looked up by
+--    (organization_id, user_id) which is unique per 0049.
 -- ============================================================
 
 create or replace function public.submit_manager_assessment(
@@ -41,6 +51,7 @@ as $$
 declare
   v_org_id uuid;
   v_employee uuid;
+  v_member_id uuid;
 begin
   select organization_id, employee_user_id into v_org_id, v_employee
   from public.performance_reviews where id = target_review_id;
@@ -63,11 +74,17 @@ begin
 
   update public.performance_reviews set status = 'manager_submitted' where id = target_review_id;
 
-  update public.organization_members
-    set performance_rating = p_rating,
-        performance_rating_note = p_feedback,
-        performance_rating_updated_at = now()
-    where organization_id = v_org_id and user_id = v_employee;
+  -- organization_members.performance_rating no longer exists (0176) --
+  -- write to its replacement instead. (organization_id, user_id) is
+  -- unique per 0049, so this lookup is safe without a multi-row guard.
+  select id into v_member_id from public.organization_members
+  where organization_id = v_org_id and user_id = v_employee limit 1;
+  if v_member_id is not null then
+    insert into public.organization_member_performance (organization_id, member_id, employee_user_id, rating, note, updated_at, updated_by)
+    values (v_org_id, v_member_id, v_employee, p_rating, coalesce(p_feedback, ''), now(), auth.uid())
+    on conflict (member_id) do update
+      set rating = excluded.rating, note = excluded.note, updated_at = now(), updated_by = excluded.updated_by;
+  end if;
 
   update public.performance_review_instance_steps
     set submitted_at = now()

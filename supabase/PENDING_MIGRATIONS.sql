@@ -3,11 +3,18 @@
 --
 -- Everything through 0184 is applied and verified live (2026-09-28).
 --
--- 0185 -- Self-approval guard for performance reviews (submit_manager_
---        assessment, close_review, set_competency_rating), closing the
---        same conflict-of-interest gap 0168 already fixed for leave and
---        compensation. Blocks an org admin from deciding their own review
---        ONLY when another org admin exists to do it instead.
+-- 0185 -- Two fixes to performance-review RPCs:
+--   1. Self-approval guard (submit_manager_assessment, close_review,
+--      set_competency_rating), closing the same conflict-of-interest gap
+--      0168 already fixed for leave and compensation. Blocks an org
+--      admin from deciding their own review ONLY when another org admin
+--      exists to do it instead.
+--   2. CONFIRMED LIVE BUG: submit_manager_assessment still wrote to
+--      organization_members.performance_rating, dropped by migration
+--      0176. Every manager-assessment submission on every review, for
+--      every org, has been failing since 0176 was applied -- confirmed
+--      against the live database. This is the priority half of 0185;
+--      please run it as soon as you can.
 -- ============================================================
 
 create or replace function public.submit_manager_assessment(
@@ -24,6 +31,7 @@ as $$
 declare
   v_org_id uuid;
   v_employee uuid;
+  v_member_id uuid;
 begin
   select organization_id, employee_user_id into v_org_id, v_employee
   from public.performance_reviews where id = target_review_id;
@@ -46,11 +54,17 @@ begin
 
   update public.performance_reviews set status = 'manager_submitted' where id = target_review_id;
 
-  update public.organization_members
-    set performance_rating = p_rating,
-        performance_rating_note = p_feedback,
-        performance_rating_updated_at = now()
-    where organization_id = v_org_id and user_id = v_employee;
+  -- organization_members.performance_rating no longer exists (0176) --
+  -- write to its replacement instead. (organization_id, user_id) is
+  -- unique per 0049, so this lookup is safe without a multi-row guard.
+  select id into v_member_id from public.organization_members
+  where organization_id = v_org_id and user_id = v_employee limit 1;
+  if v_member_id is not null then
+    insert into public.organization_member_performance (organization_id, member_id, employee_user_id, rating, note, updated_at, updated_by)
+    values (v_org_id, v_member_id, v_employee, p_rating, coalesce(p_feedback, ''), now(), auth.uid())
+    on conflict (member_id) do update
+      set rating = excluded.rating, note = excluded.note, updated_at = now(), updated_by = excluded.updated_by;
+  end if;
 
   update public.performance_review_instance_steps
     set submitted_at = now()
