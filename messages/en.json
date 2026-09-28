@@ -1709,6 +1709,10 @@
     "unknownEmployee": "Unknown employee",
     "andNMore": "and {count, plural, one {# more} other {# more}}"
   },
+  "missingDocumentsWidget": {
+    "title": "{count, plural, one {# employee missing a required document} other {# employees missing required documents}}",
+    "andNMore": "and {count, plural, one {# more} other {# more}}"
+  },
   "escalatedReviewsWidget": {
     "title": "{count, plural, one {# escalated review} other {# escalated reviews}}",
     "unknownEmployee": "Unknown employee",
@@ -5880,6 +5884,10 @@
     "section_emergency": "Emergency contact",
     "section_family": "Family and dependents",
     "section_documents": "Documents (contract, ID, certificates)"
+  },
+  "requiredDocumentsSettings": {
+    "title": "Required documents",
+    "description": "Which documents every employee must have on file. Employees missing one show up on the employees page so HR can follow up — nothing is enforced automatically."
   },
   "employeeFile": {
     "backToProgress": "← Back to progress",

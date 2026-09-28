@@ -23,6 +23,12 @@ export const HR_ONLY_DOC_TYPES = ["contract", "offer_letter"] as const;
 export const EMPLOYEE_DOC_TYPES = ["national_id", "passport", "visa", "certificate", "other"] as const;
 export const ALL_DOC_TYPES = [...HR_ONLY_DOC_TYPES, ...EMPLOYEE_DOC_TYPES] as const;
 
+// The set of types a company can mark "required" (organizations.
+// required_employee_doc_types, 0187) -- everything except "other", since
+// requiring the catch-all type is meaningless. Matches this migration's
+// own DB check constraint; keep the two in sync if this list ever changes.
+export const REQUIRABLE_DOC_TYPES = ALL_DOC_TYPES.filter((t) => t !== "other");
+
 export type EmployeeFileData = {
   legalName: string;
   dateOfBirth: string;

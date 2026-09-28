@@ -1709,6 +1709,10 @@
     "unknownEmployee": "موظف غير معروف",
     "andNMore": "و{count, plural, one {# آخر} two {# آخران} few {# آخرين} many {# آخرين} other {# آخرين}}"
   },
+  "missingDocumentsWidget": {
+    "title": "{count, plural, one {موظف واحد ينقصه مستند مطلوب} two {موظفان ينقصهما مستند مطلوب} few {# موظفين ينقصهم مستندات مطلوبة} many {# موظفًا ينقصهم مستندات مطلوبة} other {# موظف ينقصهم مستندات مطلوبة}}",
+    "andNMore": "و{count, plural, one {# آخر} two {# آخران} few {# آخرين} many {# آخرين} other {# آخرين}}"
+  },
   "escalatedReviewsWidget": {
     "title": "{count, plural, one {مراجعة واحدة مصعّدة} two {مراجعتان مصعّدتان} few {# مراجعات مصعّدة} many {# مراجعة مصعّدة} other {# مراجعة مصعّدة}}",
     "unknownEmployee": "موظف غير معروف",
@@ -5880,6 +5884,10 @@
     "section_emergency": "جهة الطوارئ",
     "section_family": "العائلة والمعالون",
     "section_documents": "المستندات (العقد، الهوية، الشهادات)"
+  },
+  "requiredDocumentsSettings": {
+    "title": "المستندات المطلوبة",
+    "description": "المستندات التي يجب أن تكون متوفرة لكل موظف. يظهر أي موظف ينقصه مستند في صفحة الموظفين ليتابعه فريق الموارد البشرية — لا يوجد أي إلزام تلقائي."
   },
   "employeeFile": {
     "backToProgress": "← العودة إلى التقدم",

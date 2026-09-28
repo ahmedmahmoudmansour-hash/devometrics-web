@@ -12,8 +12,11 @@ import TabbedSections from "@/components/dashboard/TabbedSections";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import InviteEmployeeForm from "@/components/dashboard/InviteEmployeeForm";
 import OverdueAssignmentsWidget from "@/components/dashboard/OverdueAssignmentsWidget";
+import MissingDocumentsWidget from "@/components/dashboard/MissingDocumentsWidget";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 import { getOverdueAssignments } from "@/lib/organizations/overdueAssignments";
+import { getMissingDocuments } from "@/lib/organizations/missingDocuments";
+import { getDisabledFileSections } from "@/lib/employeeFile/actions";
 import { levelBg } from "@/lib/ui/levelColor";
 
 export default async function CompanyEmployeesPage() {
@@ -27,6 +30,8 @@ export default async function CompanyEmployeesPage() {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
   const overdueItems = data.organizationId ? await getOverdueAssignments(data.organizationId) : [];
+  const disabledFileSections = data.organizationId ? await getDisabledFileSections(data.organizationId) : [];
+  const missingDocItems = data.organizationId && !disabledFileSections.includes("documents") ? await getMissingDocuments(data.organizationId) : [];
 
   const cellStyle: React.CSSProperties = {
     padding: "10px 14px",
@@ -96,6 +101,7 @@ export default async function CompanyEmployeesPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <OverdueAssignmentsWidget items={overdueItems} />
+          <MissingDocumentsWidget items={missingDocItems} />
 
           {/* The one place an admin actually looks to add someone —
               previously lived on the company overview page, then briefly

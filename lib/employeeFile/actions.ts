@@ -6,6 +6,7 @@ import {
   EMPLOYEE_DOCUMENTS_BUCKET,
   EMPLOYEE_DOC_TYPES,
   ALL_DOC_TYPES,
+  REQUIRABLE_DOC_TYPES,
   MARITAL_STATUSES,
   EMPLOYMENT_TYPES,
   DEPENDENT_RELATIONS,
@@ -302,5 +303,32 @@ export async function setDisabledFileSections(organizationId: string, sections: 
   if (!data || data.length === 0) return { error: "Only a company admin can change this." };
   revalidatePath("/dashboard/my-file");
   revalidatePath("/dashboard/company/settings");
+  return { success: true };
+}
+
+// required_employee_doc_types (0187) -- same shape and RLS story as
+// disabled_file_sections just above: direct is_org_admin UPDATE policy on
+// organizations, no new table or RPC needed.
+export async function getRequiredDocTypes(organizationId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organizations")
+    .select("required_employee_doc_types")
+    .eq("id", organizationId)
+    .maybeSingle<{ required_employee_doc_types: string[] | null }>();
+  return data?.required_employee_doc_types ?? [];
+}
+
+export async function setRequiredDocTypes(organizationId: string, docTypes: string[]): Promise<{ error: string } | { success: true }> {
+  const clean = [...new Set(docTypes)].filter((d) => (REQUIRABLE_DOC_TYPES as readonly string[]).includes(d));
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("organizations").update({ required_employee_doc_types: clean }).eq("id", organizationId).select("id");
+  if (error) {
+    console.error("setRequiredDocTypes failed:", error);
+    return { error: "Could not save — the database may need migration 0187 run first." };
+  }
+  if (!data || data.length === 0) return { error: "Only a company admin can change this." };
+  revalidatePath("/dashboard/company/settings");
+  revalidatePath("/dashboard/company/employees");
   return { success: true };
 }
