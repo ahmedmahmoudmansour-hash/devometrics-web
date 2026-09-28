@@ -9,18 +9,20 @@ import { useRef, useState } from "react";
 // dubbed captions, so this needs a real source swap per locale, not just a
 // captions track.
 //
-// Two cuts share this component: "teaser" (~18s, 3 scenes — for an
-// embedded hero-adjacent placement where a visitor hasn't committed to
-// watching yet) and "tour" (~60s, the full 10-scene walkthrough — for a
-// dedicated video/product-tour destination). Same player chrome either way.
-export default function ProductVideoSection({ variant = "tour" }: { variant?: "tour" | "teaser" }) {
+// Three cuts share this component: "teaser" (~18s, 3 scenes — Hub / AI
+// Coach / Succession only), "mid" (~35s, 6 scenes — adds the everyday-HR
+// breadth: leave/attendance, training, appraisal — alongside the two AI
+// capstones; this is the one embedded on the enterprise pages) and "tour"
+// (~60s, the full 10-scene walkthrough — for a dedicated video/product-tour
+// destination). Same player chrome either way.
+export default function ProductVideoSection({ variant = "tour" }: { variant?: "tour" | "mid" | "teaser" }) {
   const t = useTranslations("productVideo");
   const locale = useLocale();
   const isAr = locale === "ar";
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
-  const base = variant === "teaser" ? "product-teaser" : "product-tour";
+  const base = variant === "teaser" ? "product-teaser" : variant === "mid" ? "product-mid" : "product-tour";
   const src = `/videos/${base}-${isAr ? "ar" : "en"}.mp4`;
   const poster = `/videos/${base}-${isAr ? "ar" : "en"}-poster.jpg`;
 

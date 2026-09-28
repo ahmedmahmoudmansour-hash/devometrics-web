@@ -136,7 +136,7 @@ export default async function EnterpriseLayout({ children }: { children: React.R
           </div>
         </section>
 
-        <ProductVideoSection variant="teaser" />
+        <ProductVideoSection variant="mid" />
 
         <EnterpriseSectionNav />
 
