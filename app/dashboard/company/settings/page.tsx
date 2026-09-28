@@ -12,10 +12,11 @@ import EmploymentHistoryVisibilityForm from "@/components/dashboard/EmploymentHi
 import DirectorySettingsForm from "@/components/dashboard/DirectorySettingsForm";
 import EmployeeFileSettingsForm from "@/components/dashboard/EmployeeFileSettingsForm";
 import RequiredDocumentsSettingsForm from "@/components/dashboard/RequiredDocumentsSettingsForm";
+import CustomDocumentTypesManager from "@/components/dashboard/CustomDocumentTypesManager";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 import { getEmploymentHistoryManagerVisibility } from "@/lib/employmentHistory/actions";
 import { getDirectoryEnabled } from "@/lib/directory/actions";
-import { getDisabledFileSections, getRequiredDocTypes } from "@/lib/employeeFile/actions";
+import { getDisabledFileSections, getRequiredDocTypes, listCustomDocumentTypes } from "@/lib/employeeFile/actions";
 
 // Split out of app/dashboard/company/page.tsx (the 2026-08 UX audit's
 // clearest finding: that page was doing four unrelated jobs — overview,
@@ -33,6 +34,7 @@ export default async function CompanySettingsPage() {
   const directoryEnabled = data.organizationId ? await getDirectoryEnabled(data.organizationId) : false;
   const disabledFileSections = data.organizationId ? await getDisabledFileSections(data.organizationId) : [];
   const requiredDocTypes = data.organizationId ? await getRequiredDocTypes(data.organizationId) : [];
+  const customDocTypes = data.organizationId ? await listCustomDocumentTypes(data.organizationId) : [];
 
   if (!data.organizationId) redirect("/dashboard/company");
 
@@ -82,7 +84,10 @@ export default async function CompanySettingsPage() {
           {/* Meaningless (and unfixable for HR) if the documents section
               itself is off -- nobody would have anywhere to upload one. */}
           {!disabledFileSections.includes("documents") && (
-            <RequiredDocumentsSettingsForm organizationId={data.organizationId} initialRequired={requiredDocTypes} />
+            <>
+              <CustomDocumentTypesManager organizationId={data.organizationId} initialTypes={customDocTypes} />
+              <RequiredDocumentsSettingsForm organizationId={data.organizationId} initialRequired={requiredDocTypes} customTypes={customDocTypes} />
+            </>
           )}
         </div>
 

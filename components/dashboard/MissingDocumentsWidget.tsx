@@ -13,7 +13,6 @@ export default async function MissingDocumentsWidget({ items }: { items: Missing
   if (items.length === 0) return null;
 
   const t = await getTranslations("missingDocumentsWidget");
-  const tFile = await getTranslations("employeeFile");
   const visible = items.slice(0, VISIBLE_ROWS);
   const remaining = items.length - visible.length;
 
@@ -31,9 +30,7 @@ export default async function MissingDocumentsWidget({ items }: { items: Missing
             <span style={{ color: "var(--text)" }}>
               <strong>{item.employeeName}</strong>
             </span>
-            <span style={{ color: "var(--text-muted)", textAlign: "end" }}>
-              {item.missingDocTypes.map((d) => tFile(`doc_${d}`)).join(", ")}
-            </span>
+            <span style={{ color: "var(--text-muted)", textAlign: "end" }}>{item.missingDocLabels.join(", ")}</span>
           </Link>
         ))}
       </div>

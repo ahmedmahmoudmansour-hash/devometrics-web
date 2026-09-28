@@ -14,6 +14,7 @@ import {
   type EmployeeFileData,
   type EmployeeDependent,
   type EmployeeDocument,
+  type OrgDocumentType,
 } from "@/lib/employeeFile/constants";
 
 // Everything here rides on RLS (0181): the employee reads/edits their own
@@ -22,6 +23,20 @@ import {
 // someone else) an access-log entry; they never widen access.
 
 type Client = Awaited<ReturnType<typeof createClient>>;
+
+// A doc_type value is valid if it's one of the 6 fixed system types, or a
+// real organization_document_types row belonging to THIS org (0188) --
+// never trust a client-supplied id without checking it's actually theirs.
+async function isValidDocType(supabase: Client, organizationId: string, docType: string): Promise<boolean> {
+  if ((ALL_DOC_TYPES as readonly string[]).includes(docType)) return true;
+  const { data } = await supabase
+    .from("organization_document_types")
+    .select("id")
+    .eq("id", docType)
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ id: string }>();
+  return !!data;
+}
 
 async function currentUser(supabase: Client) {
   const {
@@ -219,12 +234,12 @@ export async function attachEmployeeDocument(
   userId: string,
   meta: { docType: string; title: string; storagePath: string; fileName: string; expiresOn: string }
 ): Promise<{ error: string } | { success: true; id: string }> {
-  if (!(ALL_DOC_TYPES as readonly string[]).includes(meta.docType)) return { error: "Invalid document type" };
   if (!meta.title.trim()) return { error: "Give the document a title" };
   const supabase = await createClient();
   const user = await currentUser(supabase);
   if (!user) return { error: "Not authenticated" };
   if (!meta.storagePath.startsWith(`${organizationId}/${userId}/`)) return { error: "Invalid file location" };
+  if (!(await isValidDocType(supabase, organizationId, meta.docType))) return { error: "Invalid document type" };
 
   const { data, error } = await supabase.from("employee_documents").insert({
     organization_id: organizationId, user_id: userId, doc_type: meta.docType, title: meta.title.trim().slice(0, 200),
@@ -320,15 +335,75 @@ export async function getRequiredDocTypes(organizationId: string): Promise<strin
 }
 
 export async function setRequiredDocTypes(organizationId: string, docTypes: string[]): Promise<{ error: string } | { success: true }> {
-  const clean = [...new Set(docTypes)].filter((d) => (REQUIRABLE_DOC_TYPES as readonly string[]).includes(d));
   const supabase = await createClient();
+  const deduped = [...new Set(docTypes)];
+  const fixed = deduped.filter((d) => (REQUIRABLE_DOC_TYPES as readonly string[]).includes(d));
+  const customCandidates = deduped.filter((d) => !(ALL_DOC_TYPES as readonly string[]).includes(d));
+  // Only keep custom ids that are real rows in THIS org -- never trust the
+  // client list as-is (same reasoning as isValidDocType above).
+  const { data: customRows } = customCandidates.length
+    ? await supabase.from("organization_document_types").select("id").eq("organization_id", organizationId).in("id", customCandidates).returns<{ id: string }[]>()
+    : { data: [] as { id: string }[] };
+  const clean = [...fixed, ...(customRows ?? []).map((r) => r.id)];
+
   const { data, error } = await supabase.from("organizations").update({ required_employee_doc_types: clean }).eq("id", organizationId).select("id");
   if (error) {
     console.error("setRequiredDocTypes failed:", error);
-    return { error: "Could not save — the database may need migration 0187 run first." };
+    return { error: "Could not save — the database may need migration 0187/0188 run first." };
   }
   if (!data || data.length === 0) return { error: "Only a company admin can change this." };
   revalidatePath("/dashboard/company/settings");
   revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}
+
+// organization_document_types (0188) -- HR-defined document types beyond
+// the 6 fixed ones. Direct RLS: org admins manage, org members view (same
+// admin-vs-member split as organization_competencies, 0035).
+export async function listCustomDocumentTypes(organizationId: string): Promise<OrgDocumentType[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organization_document_types")
+    .select("id, display_label")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: true })
+    .returns<{ id: string; display_label: string }[]>();
+  return (data ?? []).map((r) => ({ id: r.id, label: r.display_label }));
+}
+
+export async function createCustomDocumentType(organizationId: string, label: string): Promise<{ error: string } | { success: true; id: string }> {
+  const trimmed = label.trim();
+  if (!trimmed) return { error: "Give the document type a name" };
+  if (trimmed.length > 100) return { error: "Keep the name under 100 characters" };
+  const supabase = await createClient();
+  const user = await currentUser(supabase);
+  if (!user) return { error: "Not authenticated" };
+  const { data, error } = await supabase
+    .from("organization_document_types")
+    .insert({ organization_id: organizationId, display_label: trimmed, created_by: user.id })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !data) {
+    console.error("createCustomDocumentType failed:", error);
+    return { error: "Could not save — the database may need migration 0188 run first." };
+  }
+  revalidatePath("/dashboard/company/settings");
+  return { success: true, id: data.id };
+}
+
+// Deleting a custom type doesn't touch documents already uploaded under it
+// (employee_documents.doc_type has no FK to this table -- see 0188's
+// comment) or scrub it from any org's required_employee_doc_types array;
+// existing documents/requirements just fall back to an "Unknown document
+// type" label wherever they're displayed, same as a removed salary band
+// leaving compensation_records.salary_band_id pointing nowhere.
+export async function deleteCustomDocumentType(id: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("organization_document_types").delete().eq("id", id);
+  if (error) {
+    console.error("deleteCustomDocumentType failed:", error);
+    return { error: "Could not delete this document type" };
+  }
+  revalidatePath("/dashboard/company/settings");
   return { success: true };
 }

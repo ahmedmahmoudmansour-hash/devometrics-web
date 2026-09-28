@@ -5885,9 +5885,18 @@
     "section_family": "Family and dependents",
     "section_documents": "Documents (contract, ID, certificates)"
   },
+  "customDocumentTypes": {
+    "title": "Custom document types",
+    "description": "Add your own document types beyond the built-in ones — e.g. \"NDA\" or \"Background check consent\". Only HR can add or require these; employees can't upload them themselves.",
+    "noneYet": "No custom types yet.",
+    "namePlaceholder": "e.g. NDA",
+    "nameError": "Give the document type a name",
+    "addButton": "Add type",
+    "remove": "Remove"
+  },
   "requiredDocumentsSettings": {
     "title": "Required documents",
-    "description": "Which documents every employee must have on file. Employees missing one show up on the employees page so HR can follow up — nothing is enforced automatically."
+    "description": "Which documents every employee must have on file — built-in and custom. Employees missing one show up on the employees page so HR can follow up — nothing is enforced automatically."
   },
   "employeeFile": {
     "backToProgress": "← Back to progress",
@@ -5981,6 +5990,7 @@
     "doc_visa": "Visa",
     "doc_certificate": "Certificate",
     "doc_other": "Other",
+    "docUnknown": "Document type",
     "completenessTitle": "File completeness",
     "completenessLine": "{done} of {total} details filled in",
     "tab_details": "Details",

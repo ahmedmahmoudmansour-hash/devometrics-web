@@ -2,15 +2,24 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { REQUIRABLE_DOC_TYPES } from "@/lib/employeeFile/constants";
+import { REQUIRABLE_DOC_TYPES, type OrgDocumentType } from "@/lib/employeeFile/constants";
 import { setRequiredDocTypes } from "@/lib/employeeFile/actions";
 
-// Which employee-document types this company requires on file. Separate
-// from EmployeeFileSettingsForm (which turns whole file SECTIONS on/off)
-// -- this is a finer-grained "what counts as complete" setting that feeds
-// MissingDocumentsWidget on the employees roster page, same
-// checkbox-list-with-optimistic-toggle shape as that form.
-export default function RequiredDocumentsSettingsForm({ organizationId, initialRequired }: { organizationId: string; initialRequired: string[] }) {
+// Which employee-document types this company requires on file -- both the
+// 6 fixed system types and any custom ones HR has defined
+// (CustomDocumentTypesManager, just above this on the settings page).
+// Separate from EmployeeFileSettingsForm (which turns whole file SECTIONS
+// on/off) -- this is a finer-grained "what counts as complete" setting
+// that feeds MissingDocumentsWidget on the employees roster page.
+export default function RequiredDocumentsSettingsForm({
+  organizationId,
+  initialRequired,
+  customTypes,
+}: {
+  organizationId: string;
+  initialRequired: string[];
+  customTypes: OrgDocumentType[];
+}) {
   const t = useTranslations("requiredDocumentsSettings");
   const tFile = useTranslations("employeeFile");
   const [isPending, startTransition] = useTransition();
@@ -42,6 +51,12 @@ export default function RequiredDocumentsSettingsForm({ organizationId, initialR
           <label key={docType} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--text)", cursor: "pointer" }}>
             <input type="checkbox" checked={required.has(docType)} disabled={isPending} onChange={(e) => toggle(docType, e.target.checked)} />
             {tFile(`doc_${docType}`)}
+          </label>
+        ))}
+        {customTypes.map((d) => (
+          <label key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--text)", cursor: "pointer" }}>
+            <input type="checkbox" checked={required.has(d.id)} disabled={isPending} onChange={(e) => toggle(d.id, e.target.checked)} />
+            {d.label}
           </label>
         ))}
       </div>

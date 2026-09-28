@@ -23,6 +23,7 @@ import {
   EMPLOYEE_DOC_TYPES,
   ALL_DOC_TYPES,
   type EmployeeFileData,
+  type OrgDocumentType,
 } from "@/lib/employeeFile/constants";
 
 const cardStyle: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 };
@@ -57,12 +58,14 @@ export default function EmployeeFileEditor({
   userId,
   initial,
   disabledSections,
+  customDocTypes,
 }: {
   mode: "self" | "hr";
   organizationId: string;
   userId: string;
   initial: EmployeeFileBundle;
   disabledSections: string[];
+  customDocTypes: OrgDocumentType[];
 }) {
   const t = useTranslations("employeeFile");
   const router = useRouter();
@@ -187,7 +190,18 @@ export default function EmployeeFileEditor({
     const now = Date.now();
     return { today: new Date(now).toISOString().slice(0, 10), soon: new Date(now + 60 * 86400000).toISOString().slice(0, 10) };
   });
-  const docTypes = mode === "hr" ? ALL_DOC_TYPES : EMPLOYEE_DOC_TYPES;
+  // Fixed types (i18n label) plus, in HR mode only, this org's own custom
+  // types (raw label, no i18n) -- an employee can never self-upload a
+  // custom type, matching contract/offer_letter today, so self mode only
+  // ever offers the 5 employee-facing fixed types.
+  const customLabelById = new Map(customDocTypes.map((c) => [c.id, c.label]));
+  function docTypeLabel(value: string): string {
+    return (ALL_DOC_TYPES as readonly string[]).includes(value) ? t(`doc_${value}`) : (customLabelById.get(value) ?? t("docUnknown"));
+  }
+  const docTypeOptions: { value: string; label: string }[] =
+    mode === "hr"
+      ? [...ALL_DOC_TYPES.map((d) => ({ value: d as string, label: t(`doc_${d}`) })), ...customDocTypes.map((d) => ({ value: d.id, label: d.label }))]
+      : EMPLOYEE_DOC_TYPES.map((d) => ({ value: d as string, label: t(`doc_${d}`) }));
 
   // Tabs instead of one long scroll (same pattern as Services and the admin
   // dashboards). Every section stays mounted and just hides, so a half-typed
@@ -399,7 +413,7 @@ export default function EmployeeFileEditor({
                 return (
                   <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 0", borderTop: "1px solid var(--border)", fontSize: 13 }}>
                     <span style={{ color: "var(--text)", minWidth: 0 }}>
-                      <strong>{d.title}</strong> <span style={{ color: "var(--text-muted)" }}>— {t(`doc_${d.docType}`)}</span>
+                      <strong>{d.title}</strong> <span style={{ color: "var(--text-muted)" }}>— {docTypeLabel(d.docType)}</span>
                       {d.expiresOn && (
                         <span style={{ marginInlineStart: 8, color: expired ? "var(--danger)" : expiring ? "var(--amber)" : "var(--text-muted)" }}>
                           {expired ? t("expired", { date: d.expiresOn }) : t("expires", { date: d.expiresOn })}
@@ -426,9 +440,9 @@ export default function EmployeeFileEditor({
               <div>
                 <label style={labelStyle}>{t("docType")}</label>
                 <select value={docType} onChange={(e) => setDocType(e.target.value)} style={fieldStyle}>
-                  {docTypes.map((d) => (
-                    <option key={d} value={d}>
-                      {t(`doc_${d}`)}
+                  {docTypeOptions.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
                     </option>
                   ))}
                 </select>

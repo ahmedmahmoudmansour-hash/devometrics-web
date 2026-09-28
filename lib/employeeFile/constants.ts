@@ -82,6 +82,13 @@ export type EmployeeDependent = { id: string; fullName: string; relation: string
 export type InviteDependentDraft = { fullName: string; relation: string; dateOfBirth: string };
 export const EMPTY_INVITE_DEPENDENT: InviteDependentDraft = { fullName: "", relation: "", dateOfBirth: "" };
 
+// An HR-defined document type (organization_document_types, 0188) beyond
+// the 6 fixed ones -- e.g. "NDA". Its id IS the value stored in
+// employee_documents.doc_type / organizations.required_employee_doc_types
+// for a document of this type; the label is rendered verbatim, no i18n,
+// same as organization_competencies.name.
+export type OrgDocumentType = { id: string; label: string };
+
 export type EmployeeDocument = {
   id: string;
   docType: string;
