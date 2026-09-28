@@ -392,18 +392,43 @@ export async function createCustomDocumentType(organizationId: string, label: st
 }
 
 // Deleting a custom type doesn't touch documents already uploaded under it
-// (employee_documents.doc_type has no FK to this table -- see 0188's
-// comment) or scrub it from any org's required_employee_doc_types array;
-// existing documents/requirements just fall back to an "Unknown document
-// type" label wherever they're displayed, same as a removed salary band
-// leaving compensation_records.salary_band_id pointing nowhere.
+// Existing documents already uploaded under this type keep their doc_type
+// value unchanged (employee_documents.doc_type has no FK to this table --
+// see 0188's comment) and just fall back to an "Unknown document type"
+// label wherever they're displayed, same as a removed salary band leaving
+// compensation_records.salary_band_id pointing nowhere -- that's fine,
+// it's real historical data. But leaving a deleted type's id sitting in
+// required_employee_doc_types is NOT fine: with no checkbox left to
+// un-tick it (the type is gone), it would permanently flag every employee
+// as missing an unlabeled "Document type" forever, with no way for HR to
+// clear it. So this scrubs the id from the org's required list too, found
+// by live-testing this exact scenario rather than assumed.
 export async function deleteCustomDocumentType(id: string): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient();
+  const { data: row } = await supabase.from("organization_document_types").select("organization_id").eq("id", id).maybeSingle<{ organization_id: string }>();
+
   const { error } = await supabase.from("organization_document_types").delete().eq("id", id);
   if (error) {
     console.error("deleteCustomDocumentType failed:", error);
     return { error: "Could not delete this document type" };
   }
+
+  if (row) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("required_employee_doc_types")
+      .eq("id", row.organization_id)
+      .maybeSingle<{ required_employee_doc_types: string[] | null }>();
+    const required = org?.required_employee_doc_types ?? [];
+    if (required.includes(id)) {
+      await supabase
+        .from("organizations")
+        .update({ required_employee_doc_types: required.filter((d) => d !== id) })
+        .eq("id", row.organization_id);
+    }
+  }
+
   revalidatePath("/dashboard/company/settings");
+  revalidatePath("/dashboard/company/employees");
   return { success: true };
 }
