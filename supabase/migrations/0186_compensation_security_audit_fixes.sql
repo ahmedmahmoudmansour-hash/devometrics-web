@@ -1,33 +1,78 @@
--- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0186
+-- Three findings from a full behavioral security audit of Compensation
+-- Management (2026-09-28), each confirmed LIVE against the real database
+-- with a throwaway test org/accounts, not just found by code review:
 --
--- Everything through 0185 is applied and verified live (2026-09-28).
+-- 1. [CRITICAL] Cross-org proposal injection. propose_compensation_change's
+--    authorization check was `is_manager_of_user(p_employee_user_id) OR
+--    has_compensation_access(p_organization_id)` -- but is_manager_of_user
+--    is NOT org-scoped (it matches the manager relationship in ANY org the
+--    two share), and nothing verified p_employee_user_id is even a member
+--    of p_organization_id. CONFIRMED: a manager in Org A, with zero
+--    relationship to Org B (not even a member), successfully created a
+--    compensation_proposals row tagged organization_id = Org B for their
+--    Org-A report. Once a genuine Org-B Compensation Admin approved it
+--    (exactly the intended, unmodified approval flow), that report showed
+--    up as an actively-employed person earning a fabricated salary in Org
+--    B's official compensation roster (list_org_compensation) -- despite
+--    never having been a member of Org B. Fixed by adding
+--    is_manager_of_user_in_org(), an org-scoped sibling of the existing
+--    is_manager_of_user(), and using it here instead. Also adds a
+--    defense-in-depth check in decide_compensation_proposal itself (the
+--    employee must actually be a member of the proposal's organization_id)
+--    so no other future proposal-creation path can reintroduce this by
+--    skipping propose_compensation_change.
 --
--- 0186 -- Three CONFIRMED-LIVE fixes from a full behavioral security audit
--- of Compensation Management (not code review -- each was reproduced
--- against the real database with a throwaway test org):
---   1. [CRITICAL] Cross-org proposal injection -- a manager could tag a
---      compensation proposal with ANY organization id, including orgs
---      they (and the employee) have zero relationship to; once approved
---      by that org's own Comp Admin, the employee showed up as an
---      actively-employed person with a fabricated salary in a company
---      they never belonged to.
---   2. [CRITICAL] Read-side audit logging has NEVER written a single row,
---      for any org, since this feature shipped -- confirmed by querying
---      compensation_audit_log for every view/view_batch/export row that
---      has ever existed. Root cause: all six read RPCs are marked STABLE,
---      so PostgREST runs them in a read-only transaction, silently
---      failing the nested audit-log insert.
---   3. [MEDIUM] The self-approval guard (0168) can permanently lock out
---      the sole remaining active Compensation Admin because of a stale
---      grant left behind when another Comp Admin is terminated --
---      organization_compensation_admins is never cleaned up on employment
---      status change (unlike compensation_records, via 0161).
--- Full write-up with reproduction steps is in the chat where this was
--- found. See supabase/CLEANUP_compensation_audit_test_data.sql for the
--- (separate, non-schema) cleanup of the test data this audit left behind
--- -- run that ANYTIME, independent of this migration.
--- ============================================================
+-- 2. [CRITICAL] Read-side audit logging has never actually written a row.
+--    All six read RPCs (get_my_compensation, get_compensation_record,
+--    list_team_compensation, list_org_compensation,
+--    export_compensation_report, list_compensation_proposals) are marked
+--    STABLE. PostgREST executes STABLE/IMMUTABLE-marked RPCs in a
+--    read-only transaction; the nested INSERT inside
+--    record_compensation_audit_event then fails, and that failure is
+--    silently swallowed by record_compensation_audit_event's own
+--    `exception when others then null` (added so a logging failure could
+--    never block a real read -- which also made this specific failure
+--    completely invisible). CONFIRMED: queried compensation_audit_log for
+--    every 'view'/'view_batch'/'export' row that has EVER existed --  zero,
+--    other than one inserted by calling the logging helper directly
+--    (VOLATILE, not wrapped in a read-only transaction) to isolate the
+--    bug. This defeats the entire reason these four tables have zero
+--    client-facing RLS policies in the first place ("every read is
+--    audited"). Fixed by dropping STABLE from all six -- they perform a
+--    real write as a side effect, so they were never actually stable.
+--
+-- 3. [MEDIUM] Self-approval-guard lockout via a stale Compensation Admin
+--    grant. decide_compensation_proposal's self-approval guard (0168)
+--    correctly blocks self-decision ONLY when another eligible decider
+--    exists -- but its existence check
+--    (`organization_compensation_admins where ... user_id <> auth.uid()`)
+--    never verifies that other admin is still a CURRENT ACTIVE org member,
+--    unlike has_compensation_access (which correctly ANDs with
+--    is_org_member). organization_compensation_admins is never cleaned up
+--    when someone's employment_status changes (only compensation_records
+--    is, via 0161's trigger). CONFIRMED: granted a second Compensation
+--    Admin, set their employment_status to 'terminated' (the real
+--    offboarding path -- their organization_compensation_admins row is
+--    never touched by that), and the sole remaining ACTIVE Compensation
+--    Admin was permanently blocked from deciding their own proposal,
+--    citing "another Compensation Admin is available" for someone who no
+--    longer has any real access at all. Fixed by requiring the other
+--    admin's grant to be paired with a current active organization_members
+--    row.
+--
+-- Also drops a stale overloaded propose_compensation_change(7 params) left
+-- behind by 0165: adding two new parameters via `create or replace
+-- function` doesn't replace a function whose parameter list changed --
+-- Postgres creates an additional overload instead. Both versions have
+-- coexisted since 0165. The app itself always calls with all 9 named
+-- params (lib/compensation/actions.ts) so it was never affected, but any
+-- other caller supplying exactly the original 7 gets a PGRST203 "ambiguous
+-- overload" error instead of a clean call.
+--
+-- Depends on 0157 (is_manager_of_user, the pattern this mirrors), 0165/
+-- 0180 (the latest bodies of every function touched here -- every
+-- redefinition below is that latest body with only the audited fix
+-- applied, nothing else changed).
 
 -- ============================================================
 -- Fix 1a: org-scoped manager-relationship helper.
