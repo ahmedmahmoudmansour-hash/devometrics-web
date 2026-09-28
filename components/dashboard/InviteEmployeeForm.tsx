@@ -5,7 +5,15 @@ import { useTranslations } from "next-intl";
 import { UserPlus, Upload } from "lucide-react";
 import { inviteEmployee, revokeInvite, bulkInviteEmployees, type BulkInviteRow, type BulkInviteResult } from "@/lib/organizations/actions";
 import { useConfirmClick } from "@/lib/ui/useConfirmClick";
-import { EMPTY_EMPLOYEE_FILE, MARITAL_STATUSES, EMPLOYMENT_TYPES, type EmployeeFileData } from "@/lib/employeeFile/constants";
+import {
+  EMPTY_EMPLOYEE_FILE,
+  MARITAL_STATUSES,
+  EMPLOYMENT_TYPES,
+  DEPENDENT_RELATIONS,
+  EMPTY_INVITE_DEPENDENT,
+  type EmployeeFileData,
+  type InviteDependentDraft,
+} from "@/lib/employeeFile/constants";
 
 const fieldStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -235,6 +243,18 @@ export default function InviteEmployeeForm({
   const [fileData, setFileData] = useState<EmployeeFileData>(EMPTY_EMPLOYEE_FILE);
   const setFd = (key: keyof EmployeeFileData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setFileData((prev) => ({ ...prev, [key]: e.target.value }));
+  // Always keep one trailing blank row to fill in — same "just start typing
+  // the next one" pattern as the employee file's own dependents editor.
+  const [dependents, setDependents] = useState<InviteDependentDraft[]>([{ ...EMPTY_INVITE_DEPENDENT }]);
+  function setDependentField(index: number, key: keyof InviteDependentDraft, value: string) {
+    setDependents((prev) => prev.map((d, i) => (i === index ? { ...d, [key]: value } : d)));
+  }
+  function addDependentRow() {
+    setDependents((prev) => [...prev, { ...EMPTY_INVITE_DEPENDENT }]);
+  }
+  function removeDependentRow(index: number) {
+    setDependents((prev) => (prev.length === 1 ? [{ ...EMPTY_INVITE_DEPENDENT }] : prev.filter((_, i) => i !== index)));
+  }
   const tf = useTranslations("employeeFile");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -262,7 +282,8 @@ export default function InviteEmployeeForm({
         businessUnit,
         location,
         isNewHire,
-        fileData
+        fileData,
+        dependents
       );
       if (result?.error) {
         setError(result.error);
@@ -277,6 +298,7 @@ export default function InviteEmployeeForm({
         setLocation("");
         setIsNewHire(false);
         setFileData(EMPTY_EMPLOYEE_FILE);
+        setDependents([{ ...EMPTY_INVITE_DEPENDENT }]);
       }
     });
   }
@@ -487,6 +509,48 @@ export default function InviteEmployeeForm({
                   <input type="tel" value={fileData.emergencyContactPhone} onChange={setFd("emergencyContactPhone")} style={fieldStyle} />
                 </div>
             </div>
+
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", margin: "0 0 8px" }}>{tf("familyTitle")}</p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 10px", lineHeight: 1.6 }}>{tf("familyHint")}</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+              {dependents.map((dep, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr)) auto", gap: 10, alignItems: "end" }}>
+                  <div>
+                    <label style={labelStyle}>{tf("depName")}</label>
+                    <input type="text" value={dep.fullName} onChange={(e) => setDependentField(i, "fullName", e.target.value)} style={fieldStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{tf("depRelation")}</label>
+                    <select value={dep.relation} onChange={(e) => setDependentField(i, "relation", e.target.value)} style={fieldStyle}>
+                      <option value="">{tf("notSpecified")}</option>
+                      {DEPENDENT_RELATIONS.map((r) => (
+                        <option key={r} value={r}>
+                          {tf(`relation_${r}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{tf("depDob")}</label>
+                    <input type="date" value={dep.dateOfBirth} onChange={(e) => setDependentField(i, "dateOfBirth", e.target.value)} style={fieldStyle} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeDependentRow(i)}
+                    style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", padding: "10px 4px" }}
+                  >
+                    {tf("remove")}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addDependentRow}
+              style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+            >
+              {tf("addFamily")}
+            </button>
           </details>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--text)", marginBottom: 14, cursor: "pointer" }}>
             <input type="checkbox" checked={isNewHire} onChange={(e) => setIsNewHire(e.target.checked)} />

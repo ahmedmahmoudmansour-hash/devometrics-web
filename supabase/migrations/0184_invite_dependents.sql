@@ -1,15 +1,25 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0184
+-- DEVOMETRICS -- MIGRATION 0184
 --
--- Everything through 0183 is applied and verified live (2026-09-25).
+-- Family/dependents at invite time. 0183 let HR capture personal,
+-- employment, contact and emergency details at invite time, but not
+-- dependents (employee_dependents, 0181) -- a repeatable list rather than
+-- flat fields, so it needed its own handling in apply_invite_file_data()
+-- rather than fitting the existing column-per-field upsert.
 --
--- 0184 -- Family/dependents at invite time. Extends apply_invite_file_data()
---        (0183) to also insert employee_dependents rows from an optional
---        `dependents` array in an invite's file_data. Safe to run even
---        though no invite has this field populated yet.
+-- file_data gains an optional `dependents` array:
+--   [{ "full_name": "...", "relation": "spouse|child|parent|sibling|other",
+--      "date_of_birth": "YYYY-MM-DD"? }]
+-- apply_invite_file_data() inserts one employee_dependents row per valid
+-- entry when the invitee joins. A dependent with a missing/blank full_name
+-- or an invalid relation is skipped entirely (both columns are NOT NULL on
+-- employee_dependents, so there is no safe partial row the way a single
+-- bad field on employee_profiles can just be left null) -- this can never
+-- throw, same discipline as the rest of the function. Re-applying an
+-- invite is already a no-op (file_data is cleared after one successful
+-- apply), so this cannot double-insert dependents on a retry.
 -- ============================================================
 
--- 0184: family/dependents at invite time
 create or replace function public.apply_invite_file_data(p_invite_id uuid)
 returns boolean
 language plpgsql

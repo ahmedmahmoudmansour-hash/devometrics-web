@@ -1,4 +1,4 @@
-import { MARITAL_STATUSES, EMPLOYMENT_TYPES, type EmployeeFileData } from "@/lib/employeeFile/constants";
+import { MARITAL_STATUSES, EMPLOYMENT_TYPES, DEPENDENT_RELATIONS, type EmployeeFileData, type InviteDependentDraft } from "@/lib/employeeFile/constants";
 
 // Employee-file fields HR can fill in at invite time. Keys are the
 // employee_profiles column names, which is what apply_invite_file_data (0183)
@@ -35,23 +35,49 @@ function isRealIsoDate(v: string): boolean {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }
 
+// A blank trailing row is expected — the UI always keeps one empty row to
+// add another dependent to, so an all-empty entry is silently dropped
+// rather than treated as "HR meant to enter a dependent and left it blank."
+function isBlankDependentDraft(d: Partial<InviteDependentDraft>): boolean {
+  return !d.fullName?.trim() && !d.relation?.trim() && !d.dateOfBirth?.trim();
+}
+
 // Returns the cleaned jsonb to store, null when HR entered nothing, or an
 // error message for the first invalid value (so a typo is caught at invite
 // time instead of silently dropped when the person joins).
-export function sanitizeInviteFileData(input: Partial<EmployeeFileData> | undefined): { data: Record<string, string> | null } | { error: string } {
-  if (!input) return { data: null };
-  const out: Record<string, string> = {};
-  for (const [field, column] of Object.entries(COLUMN_FOR_FIELD) as [keyof EmployeeFileData, string][]) {
-    const raw = input[field];
-    if (raw === undefined || raw === null) continue;
-    const value = String(raw).trim();
-    if (!value) continue;
-    if (value.length > 300) return { error: "One of the employee details is too long." };
-    if (DATE_FIELDS.includes(field) && !isRealIsoDate(value)) return { error: "Dates must be real dates in YYYY-MM-DD form." };
-    if (field === "maritalStatus" && !(MARITAL_STATUSES as readonly string[]).includes(value)) return { error: "Invalid marital status." };
-    if (field === "employmentType" && !(EMPLOYMENT_TYPES as readonly string[]).includes(value)) return { error: "Invalid employment type." };
-    if (field === "personalEmail" && !/^\S+@\S+\.\S+$/.test(value)) return { error: "Enter a valid personal email." };
-    out[column] = value;
+export function sanitizeInviteFileData(
+  input: Partial<EmployeeFileData> | undefined,
+  dependents?: Partial<InviteDependentDraft>[]
+): { data: Record<string, unknown> | null } | { error: string } {
+  const out: Record<string, unknown> = {};
+  if (input) {
+    for (const [field, column] of Object.entries(COLUMN_FOR_FIELD) as [keyof EmployeeFileData, string][]) {
+      const raw = input[field];
+      if (raw === undefined || raw === null) continue;
+      const value = String(raw).trim();
+      if (!value) continue;
+      if (value.length > 300) return { error: "One of the employee details is too long." };
+      if (DATE_FIELDS.includes(field) && !isRealIsoDate(value)) return { error: "Dates must be real dates in YYYY-MM-DD form." };
+      if (field === "maritalStatus" && !(MARITAL_STATUSES as readonly string[]).includes(value)) return { error: "Invalid marital status." };
+      if (field === "employmentType" && !(EMPLOYMENT_TYPES as readonly string[]).includes(value)) return { error: "Invalid employment type." };
+      if (field === "personalEmail" && !/^\S+@\S+\.\S+$/.test(value)) return { error: "Enter a valid personal email." };
+      out[column] = value;
+    }
   }
+
+  const cleanDependents: { full_name: string; relation: string; date_of_birth?: string }[] = [];
+  for (const dep of dependents ?? []) {
+    if (isBlankDependentDraft(dep)) continue;
+    const fullName = dep.fullName?.trim() ?? "";
+    const relation = dep.relation?.trim() ?? "";
+    const dateOfBirth = dep.dateOfBirth?.trim() ?? "";
+    if (!fullName) return { error: "Enter a name for each dependent, or remove the empty row." };
+    if (fullName.length > 300) return { error: "One of the employee details is too long." };
+    if (!(DEPENDENT_RELATIONS as readonly string[]).includes(relation)) return { error: "Choose a relationship for each dependent." };
+    if (dateOfBirth && !isRealIsoDate(dateOfBirth)) return { error: "Dates must be real dates in YYYY-MM-DD form." };
+    cleanDependents.push(dateOfBirth ? { full_name: fullName, relation, date_of_birth: dateOfBirth } : { full_name: fullName, relation });
+  }
+  if (cleanDependents.length) out.dependents = cleanDependents;
+
   return { data: Object.keys(out).length ? out : null };
 }

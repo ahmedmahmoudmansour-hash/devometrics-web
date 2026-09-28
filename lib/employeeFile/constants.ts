@@ -71,6 +71,11 @@ export const EMPTY_EMPLOYEE_FILE: EmployeeFileData = {
 
 export type EmployeeDependent = { id: string; fullName: string; relation: string; dateOfBirth: string; notes: string };
 
+// A dependent captured at invite time (0184) — no id/notes yet, since the
+// row doesn't exist until apply_invite_file_data() creates it.
+export type InviteDependentDraft = { fullName: string; relation: string; dateOfBirth: string };
+export const EMPTY_INVITE_DEPENDENT: InviteDependentDraft = { fullName: "", relation: "", dateOfBirth: "" };
+
 export type EmployeeDocument = {
   id: string;
   docType: string;

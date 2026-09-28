@@ -17,7 +17,7 @@ import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveAssignableName } from "@/lib/assessments/assignableCatalog";
 import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
-import type { EmployeeFileData } from "@/lib/employeeFile/constants";
+import type { EmployeeFileData, InviteDependentDraft } from "@/lib/employeeFile/constants";
 import { sanitizeInviteFileData } from "@/lib/employeeFile/inviteData";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -293,7 +293,9 @@ export async function inviteEmployee(
   // Optional full employee record HR already has (personal, contact,
   // employment). Stored privately on the invite and moved into the person's
   // employee file when they join (0183).
-  fileData?: Partial<EmployeeFileData>
+  fileData?: Partial<EmployeeFileData>,
+  // Family HR already knows about, same storage/apply path as fileData (0184).
+  dependents?: Partial<InviteDependentDraft>[]
 ) {
   const supabase = await createClient();
   const {
@@ -304,7 +306,7 @@ export async function inviteEmployee(
   const trimmed = email.trim().toLowerCase();
   if (!trimmed || !trimmed.includes("@")) return { error: "A valid email is required" };
 
-  const cleaned = sanitizeInviteFileData(fileData);
+  const cleaned = sanitizeInviteFileData(fileData, dependents);
   if ("error" in cleaned) return { error: cleaned.error };
 
   // Friendly, early error — the real enforcement is the RLS insert policy
@@ -393,7 +395,7 @@ export async function bulkInviteEmployees(
   }
 
   const results: BulkInviteResult[] = [];
-  const validRows: { row: BulkInviteRow; email: string; fileData: Record<string, string> | null }[] = [];
+  const validRows: { row: BulkInviteRow; email: string; fileData: Record<string, unknown> | null }[] = [];
   for (const row of rows) {
     const email = row.email?.trim().toLowerCase() ?? "";
     if (!email || !email.includes("@")) {
@@ -410,7 +412,7 @@ export async function bulkInviteEmployees(
   }
   if (validRows.length === 0) return { results };
 
-  const toInsert = (row: BulkInviteRow, email: string, fileData: Record<string, string> | null) => ({
+  const toInsert = (row: BulkInviteRow, email: string, fileData: Record<string, unknown> | null) => ({
     organization_id: organizationId,
     email,
     invited_by: user.id,
