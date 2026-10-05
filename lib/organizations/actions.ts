@@ -1295,7 +1295,15 @@ export async function setMemberRole(memberId: string, role: "admin" | "member") 
 // setting employment_status away from 'active', which is exactly as
 // permanent-feeling as demoting the last admin would be — same class of
 // mistake, same guard shape.
-export async function setEmploymentStatus(memberId: string, status: "active" | "resigned" | "terminated") {
+export async function setEmploymentStatus(memberId: string, status: "active" | "resigned" | "terminated", effectiveDate: string | null = null) {
+  // Optional date the change actually took effect (0189) -- recorded on the
+  // employment history timeline instead of "now". Today or earlier only:
+  // the status gates access immediately, so a future date would be a lie.
+  if (effectiveDate) {
+    const parsed = Date.parse(effectiveDate);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveDate) || Number.isNaN(parsed)) return { error: "Enter a valid effective date" };
+    if (effectiveDate > new Date().toISOString().slice(0, 10)) return { error: "The effective date can't be in the future" };
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -1335,12 +1343,17 @@ export async function setEmploymentStatus(memberId: string, status: "active" | "
 
   const { data, error } = await supabase
     .from("organization_members")
-    .update({ employment_status: status, employment_status_changed_at: new Date().toISOString(), employment_status_changed_by: user.id })
+    .update({
+      employment_status: status,
+      employment_status_changed_at: new Date().toISOString(),
+      employment_status_changed_by: user.id,
+      employment_status_effective_date: effectiveDate,
+    })
     .eq("id", memberId)
     .select("id");
   if (error) {
     console.error("setEmploymentStatus failed:", error);
-    return { error: "Could not update this person's employment status — the database may need migration 0172 run first." };
+    return { error: "Could not update this person's employment status — the database may need migration 0172/0189 run first." };
   }
   if (!data || data.length === 0) {
     return { error: "Not authorized to change this employee's status." };

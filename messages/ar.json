@@ -1879,6 +1879,7 @@
     "scheduleDeletion": "جدولة الحذف",
     "deleteEmployeeData": "حذف بيانات الموظف",
     "employmentStatusLabel": "حالة التوظيف",
+    "statusEffectiveDate": "تاريخ السريان (اختياري — اتركه فارغًا لاعتماد اليوم)",
     "employmentStatusDesc": "تغيير هذا من \"نشط\" يزيل وصوله إلى مساحة عمل الشركة — يتم الاحتفاظ بسجله (الإجازات، التعويضات، السجلات).",
     "statusActive": "نشط",
     "statusResigned": "استقال",
@@ -5771,6 +5772,8 @@
     "hideButton": "إخفاء",
     "showButton": "عرض السجل",
     "showHistoryButton": "عرض السجل",
+    "eventManagerChange": "تغيّر خط التقارير من {from} إلى {to}",
+    "eventDepartmentChange": "تغيّر القسم من {from} إلى {to}",
     "eventStatusChange": "تغيّرت حالة التوظيف من {from} إلى {to}",
     "status_active": "نشط",
     "status_resigned": "استقال",
@@ -5778,7 +5781,7 @@
   },
   "teamEmploymentHistory": {
     "title": "السجل الوظيفي للفريق",
-    "description": "تغييرات المسمى الوظيفي والدور والفئة الوظيفية لمرؤوسيك المباشرين عبر الزمن.",
+    "description": "تغييرات المسمى الوظيفي والدور والقسم وخط التقارير والحالة والفئة الوظيفية لمرؤوسيك المباشرين عبر الزمن.",
     "unknownEmployee": "(موظف غير معروف)"
   },
   "employmentHistoryVisibilityForm": {
@@ -5884,6 +5887,17 @@
     "section_emergency": "جهة الطوارئ",
     "section_family": "العائلة والمعالون",
     "section_documents": "المستندات (العقد، الهوية، الشهادات)"
+  },
+  "customEmployeeFields": {
+    "title": "حقول موظف مخصصة",
+    "description": "أضف حقولًا خاصة بشركتك إلى ملف كل موظف — مثل \"رقم التأمين\" أو \"الرقم الضريبي\" أو \"الحساب البنكي\". لا يرى القيم إلا الموظف ومسؤولو الشركة. اختر هل يملأ الموظف الحقل بنفسه أم تملؤه الموارد البشرية فقط.",
+    "noneYet": "لا توجد حقول مخصصة بعد.",
+    "namePlaceholder": "مثال: رقم التأمين",
+    "nameError": "أدخل اسمًا للحقل",
+    "employeeCanEdit": "يمكن للموظف التعديل",
+    "addButton": "إضافة حقل",
+    "remove": "إزالة",
+    "confirmRemove": "إزالة \"{label}\"؟ سيؤدي ذلك أيضًا إلى حذف ما أدخله كل موظف فيه."
   },
   "customDocumentTypes": {
     "title": "أنواع مستندات مخصصة",
@@ -5991,6 +6005,10 @@
     "doc_certificate": "شهادة",
     "doc_other": "أخرى",
     "docUnknown": "نوع مستند",
+    "customFieldsTitle": "تفاصيل إضافية",
+    "customFieldsHintHr": "حقول أضافتها شركتك إلى ملف كل موظف. الحقول الرمادية للموارد البشرية فقط.",
+    "customFieldsHintSelf": "تفاصيل إضافية تجمعها شركتك. الحقول الرمادية تملؤها الموارد البشرية.",
+    "hrOnlyTag": "للموارد البشرية فقط",
     "completenessTitle": "اكتمال الملف",
     "completenessLine": "تمت تعبئة {done} من {total} بيانات",
     "tab_details": "البيانات",

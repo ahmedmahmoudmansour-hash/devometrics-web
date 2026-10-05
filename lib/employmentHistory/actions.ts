@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 // second gate on the band-change slice specifically. See 0170's header.
 
 export type EmploymentHistoryEvent = {
-  eventType: "joined" | "title_change" | "role_change" | "band_change" | "status_change";
+  eventType: "joined" | "title_change" | "role_change" | "band_change" | "status_change" | "manager_change" | "department_change";
   oldValue: string | null;
   newValue: string | null;
   effectiveAt: string;

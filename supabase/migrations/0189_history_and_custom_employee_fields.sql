@@ -1,19 +1,34 @@
--- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0189
+-- 0189 -- Two things Ahmed asked for after checking the employee file:
 --
--- Everything through 0188 is applied and verified live (2026-10-05).
+-- A) Reporting-line and department history, and a real effective date on
+--    status changes. The employment history timeline (0170/0172) already
+--    logged title, role and status changes; the manager (manager_user_id /
+--    manager_position_id) and department were current-value-only, so a
+--    change silently overwrote the old one. This extends the SAME trigger
+--    and the SAME event table -- no new read path: list_employee_history()
+--    (0170) already returns every row of employment_history_events, so the
+--    existing visibility rules (self, org admin, direct manager unless the
+--    org hides it) apply to the new event types unchanged.
 --
--- 0189 -- (A) the employment history timeline now also logs manager
--- (reporting line) and department changes, and a status change can carry
--- the date it actually took effect (organization_members.
--- employment_status_effective_date). Logging starts from when this is
--- applied -- earlier changes can't be reconstructed.
--- (B) company-defined employee fields (insurance number, tax ID, bank
--- details...): organization_employee_fields (definitions, per org) +
--- employee_field_values (per-employee values, readable only by the
--- employee and org admins). A field is employee-editable or HR-only,
--- enforced in RLS.
--- ============================================================
+--    Status changes already carried a timestamp, but it was always "now".
+--    HR can now record the date it actually took effect (e.g. a resignation
+--    that was processed late): organization_members gains
+--    employment_status_effective_date, which the app writes on every status
+--    change (a date, or null for "today"), and the trigger uses it as the
+--    event's effective_at. Same limitation as 0170: logging starts from
+--    when this is applied; earlier manager/department changes can't be
+--    reconstructed.
+--
+-- B) Company-defined employee fields (insurance number, tax ID, bank
+--    details, anything a company in any country needs) -- a per-org
+--    definition table plus a per-employee value table, mirroring
+--    organization_competencies (0035) for the definitions and the
+--    employee-file privacy model (0181) for the values: only the employee
+--    and org admins can read a value -- not managers, not peers. A field is
+--    either employee-editable or HR-only (enforced in RLS, not just the UI).
+--
+-- Depends on 0170/0172 (employment_history_events, trigger), 0106
+-- (org_positions), 0181 (employee file privacy model).
 
 -- ============================================================
 -- A) History: manager, department, dated status

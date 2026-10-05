@@ -1880,6 +1880,7 @@
     "deleteEmployeeData": "Delete employee data",
     "employmentStatusLabel": "Employment status",
     "employmentStatusDesc": "Changing this from Active removes their access to this company workspace — their history (leave, compensation, records) is kept.",
+    "statusEffectiveDate": "Effective date (optional — leave blank for today)",
     "statusActive": "Active",
     "statusResigned": "Resigned",
     "statusTerminated": "Terminated",
@@ -5772,13 +5773,15 @@
     "showButton": "Show history",
     "showHistoryButton": "Show history",
     "eventStatusChange": "Employment status changed from {from} to {to}",
+    "eventManagerChange": "Reporting line changed from {from} to {to}",
+    "eventDepartmentChange": "Department changed from {from} to {to}",
     "status_active": "Active",
     "status_resigned": "Resigned",
     "status_terminated": "Terminated"
   },
   "teamEmploymentHistory": {
     "title": "Team employment history",
-    "description": "Title, role, and salary-band changes for your direct reports over time.",
+    "description": "Title, role, department, reporting-line, status and salary-band changes for your direct reports over time.",
     "unknownEmployee": "(unknown employee)"
   },
   "employmentHistoryVisibilityForm": {
@@ -5884,6 +5887,17 @@
     "section_emergency": "Emergency contact",
     "section_family": "Family and dependents",
     "section_documents": "Documents (contract, ID, certificates)"
+  },
+  "customEmployeeFields": {
+    "title": "Custom employee fields",
+    "description": "Add your own fields to every employee's private file — e.g. \"Insurance number\", \"Tax ID\" or \"Bank account\". Only the employee and company admins can see the values. Choose whether employees fill a field in themselves or only HR can.",
+    "noneYet": "No custom fields yet.",
+    "namePlaceholder": "e.g. Insurance number",
+    "nameError": "Give the field a name",
+    "employeeCanEdit": "Employee can edit",
+    "addButton": "Add field",
+    "remove": "Remove",
+    "confirmRemove": "Remove \"{label}\"? This also deletes what every employee has entered for it."
   },
   "customDocumentTypes": {
     "title": "Custom document types",
@@ -5991,6 +6005,10 @@
     "doc_certificate": "Certificate",
     "doc_other": "Other",
     "docUnknown": "Document type",
+    "customFieldsTitle": "Additional details",
+    "customFieldsHintHr": "Fields your company added to every employee file. Greyed-out ones are HR-only for the employee.",
+    "customFieldsHintSelf": "Extra details your company collects. Fields that are greyed out are filled in by HR.",
+    "hrOnlyTag": "HR only",
     "completenessTitle": "File completeness",
     "completenessLine": "{done} of {total} details filled in",
     "tab_details": "Details",

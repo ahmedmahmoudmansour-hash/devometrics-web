@@ -15,6 +15,7 @@ import {
   type EmployeeDependent,
   type EmployeeDocument,
   type OrgDocumentType,
+  type CustomEmployeeField,
 } from "@/lib/employeeFile/constants";
 
 // Everything here rides on RLS (0181): the employee reads/edits their own
@@ -430,5 +431,122 @@ export async function deleteCustomDocumentType(id: string): Promise<{ error: str
 
   revalidatePath("/dashboard/company/settings");
   revalidatePath("/dashboard/company/employees");
+  return { success: true };
+}
+
+// ============================================================
+// Company-defined employee fields (0189): insurance number, tax ID, bank
+// details -- whatever a company in any country needs on file. Definitions
+// are per-org labels (admins manage, members view); values follow the
+// employee-file privacy model (only the employee and org admins read
+// them). Whether the employee may set a value is the field's own
+// employee_editable flag, enforced by RLS, not just by the UI.
+// ============================================================
+export async function listCustomEmployeeFields(organizationId: string): Promise<CustomEmployeeField[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("organization_employee_fields")
+    .select("id, label, employee_editable")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: true })
+    .returns<{ id: string; label: string; employee_editable: boolean }[]>();
+  return (data ?? []).map((r) => ({ id: r.id, label: r.label, employeeEditable: r.employee_editable }));
+}
+
+export async function createCustomEmployeeField(
+  organizationId: string,
+  label: string,
+  employeeEditable: boolean
+): Promise<{ error: string } | { success: true; id: string }> {
+  const trimmed = label.trim();
+  if (!trimmed) return { error: "Give the field a name" };
+  if (trimmed.length > 100) return { error: "Keep the name under 100 characters" };
+  const supabase = await createClient();
+  const user = await currentUser(supabase);
+  if (!user) return { error: "Not authenticated" };
+  const { data, error } = await supabase
+    .from("organization_employee_fields")
+    .insert({ organization_id: organizationId, label: trimmed, employee_editable: employeeEditable, created_by: user.id })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !data) {
+    console.error("createCustomEmployeeField failed:", error);
+    return { error: "Could not save — the database may need migration 0189 run first." };
+  }
+  revalidatePath("/dashboard/company/settings");
+  return { success: true, id: data.id };
+}
+
+// Changing who may fill a field in never touches values already entered.
+export async function setCustomEmployeeFieldEditable(id: string, employeeEditable: boolean): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("organization_employee_fields").update({ employee_editable: employeeEditable }).eq("id", id).select("id");
+  if (error || !data || data.length === 0) return { error: "Could not update this field" };
+  revalidatePath("/dashboard/company/settings");
+  revalidatePath("/dashboard/my-file");
+  return { success: true };
+}
+
+// Deleting a field deletes every employee's value for it (the value rows
+// cascade) -- the settings UI says so before it lets HR do this.
+export async function deleteCustomEmployeeField(id: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("organization_employee_fields").delete().eq("id", id).select("id");
+  if (error || !data || data.length === 0) {
+    if (error) console.error("deleteCustomEmployeeField failed:", error);
+    return { error: "Could not delete this field" };
+  }
+  revalidatePath("/dashboard/company/settings");
+  revalidatePath("/dashboard/my-file");
+  return { success: true };
+}
+
+// Values for one person, keyed by field id. RLS decides what comes back:
+// the employee's own, or any employee's for an org admin; nobody else.
+export async function getCustomFieldValues(organizationId: string, userId: string): Promise<Record<string, string>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("employee_field_values")
+    .select("field_id, value")
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .returns<{ field_id: string; value: string }[]>();
+  return Object.fromEntries((data ?? []).map((r) => [r.field_id, r.value]));
+}
+
+// Saves the given values (a blank value removes that field's row). Only
+// fields that really belong to this org are touched; whether the caller
+// may write each one is RLS's call (admin: all; employee: own + editable).
+export async function saveCustomFieldValues(
+  organizationId: string,
+  userId: string,
+  values: Record<string, string>
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+  const user = await currentUser(supabase);
+  if (!user) return { error: "Not authenticated" };
+  const fields = await listCustomEmployeeFields(organizationId);
+  const validIds = new Set(fields.map((f) => f.id));
+
+  for (const [fieldId, raw] of Object.entries(values)) {
+    if (!validIds.has(fieldId)) continue;
+    const value = raw.trim();
+    if (value.length > 300) return { error: "One of the values is too long (300 characters max)" };
+    const result = value
+      ? await supabase
+          .from("employee_field_values")
+          .upsert(
+            { organization_id: organizationId, user_id: userId, field_id: fieldId, value, updated_at: new Date().toISOString(), updated_by: user.id },
+            { onConflict: "user_id,field_id" }
+          )
+          .select("id")
+      : await supabase.from("employee_field_values").delete().eq("user_id", userId).eq("field_id", fieldId).select("id");
+    if (result.error) {
+      console.error("saveCustomFieldValues failed:", result.error);
+      return { error: "Could not save one of the values — HR may have made that field HR-only, or the database may need migration 0189 run first." };
+    }
+  }
+  revalidatePath("/dashboard/my-file");
+  revalidatePath(`/dashboard/company/${userId}/file`);
   return { success: true };
 }

@@ -89,6 +89,11 @@ export const EMPTY_INVITE_DEPENDENT: InviteDependentDraft = { fullName: "", rela
 // same as organization_competencies.name.
 export type OrgDocumentType = { id: string; label: string };
 
+// A company-defined extra field on the employee file (organization_employee_
+// fields, 0189) -- e.g. "Insurance number". Its id keys the per-employee
+// value (employee_field_values). employeeEditable=false means HR-only.
+export type CustomEmployeeField = { id: string; label: string; employeeEditable: boolean };
+
 export type EmployeeDocument = {
   id: string;
   docType: string;

@@ -98,6 +98,10 @@ export default function EditEmployeeButton({
   const [currentStatus, setCurrentStatus] = useState(employmentStatus);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusSaving, setStatusSaving] = useState(false);
+  // Optional: the date a status change actually took effect, for a change
+  // processed late. Blank means today. Never in the future (0189).
+  const [statusDate, setStatusDate] = useState("");
+  const [todayIso] = useState(() => new Date().toISOString().slice(0, 10));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -165,11 +169,12 @@ export default function EditEmployeeButton({
     setStatusError(null);
     setStatusSaving(true);
     startTransition(async () => {
-      const result = await setEmploymentStatus(memberId!, nextStatus);
+      const result = await setEmploymentStatus(memberId!, nextStatus, statusDate || null);
       if (result?.error) {
         setStatusError(result.error);
       } else {
         setCurrentStatus(nextStatus);
+        setStatusDate("");
         router.refresh();
       }
       setStatusSaving(false);
@@ -370,6 +375,15 @@ export default function EditEmployeeButton({
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
                 {t("employmentStatusDesc")}
               </p>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>{t("statusEffectiveDate")}</label>
+              <input
+                type="date"
+                value={statusDate}
+                max={todayIso}
+                onChange={(e) => setStatusDate(e.target.value)}
+                disabled={statusSaving}
+                style={{ ...fieldStyle, maxWidth: 220, marginBottom: 10 }}
+              />
               <select
                 value={currentStatus}
                 onChange={(e) => changeStatus(e.target.value as "active" | "resigned" | "terminated")}

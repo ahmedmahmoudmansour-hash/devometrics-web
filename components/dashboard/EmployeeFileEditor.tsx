@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   saveMyEmployeeFile,
   saveEmployeeFileAsAdmin,
+  saveCustomFieldValues,
   addDependent,
   removeDependent,
   attachEmployeeDocument,
@@ -24,6 +25,7 @@ import {
   ALL_DOC_TYPES,
   type EmployeeFileData,
   type OrgDocumentType,
+  type CustomEmployeeField,
 } from "@/lib/employeeFile/constants";
 
 const cardStyle: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 };
@@ -59,6 +61,8 @@ export default function EmployeeFileEditor({
   initial,
   disabledSections,
   customDocTypes,
+  customFields,
+  customFieldValues,
 }: {
   mode: "self" | "hr";
   organizationId: string;
@@ -66,6 +70,8 @@ export default function EmployeeFileEditor({
   initial: EmployeeFileBundle;
   disabledSections: string[];
   customDocTypes: OrgDocumentType[];
+  customFields: CustomEmployeeField[];
+  customFieldValues: Record<string, string>;
 }) {
   const t = useTranslations("employeeFile");
   const router = useRouter();
@@ -75,6 +81,12 @@ export default function EmployeeFileEditor({
   const [data, setData] = useState<EmployeeFileData>(initial.profile ?? EMPTY_EMPLOYEE_FILE);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Company-defined extra fields (0189). HR can fill every one; an employee
+  // only the ones HR marked employee-editable (RLS enforces it too) --
+  // the rest show read-only so they can still see what's on file.
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(customFieldValues);
+  const canEditField = (f: CustomEmployeeField) => mode === "hr" || f.employeeEditable;
 
   const [dependents, setDependents] = useState(initial.dependents);
   const [depName, setDepName] = useState("");
@@ -109,11 +121,14 @@ export default function EmployeeFileEditor({
     setSaved(false);
     startTransition(async () => {
       const result = mode === "hr" ? await saveEmployeeFileAsAdmin(organizationId, userId, data) : await saveMyEmployeeFile(data);
-      if ("error" in result) setError(result.error);
-      else {
-        setSaved(true);
-        router.refresh();
+      if ("error" in result) return setError(result.error);
+      const editable = customFields.filter(canEditField);
+      if (editable.length > 0) {
+        const fieldResult = await saveCustomFieldValues(organizationId, userId, Object.fromEntries(editable.map((f) => [f.id, fieldValues[f.id] ?? ""])));
+        if ("error" in fieldResult) return setError(fieldResult.error);
       }
+      setSaved(true);
+      router.refresh();
     });
   }
 
@@ -337,6 +352,30 @@ export default function EmployeeFileEditor({
             {field("emergencyContactName", t("emergencyName"))}
             {field("emergencyContactRelation", t("emergencyRelation"))}
             {field("emergencyContactPhone", t("emergencyPhone"), "tel")}
+          </div>
+        </div>
+      )}
+
+      {customFields.length > 0 && (
+        <div style={cardFor("details")}>
+          <h2 style={titleStyle}>{t("customFieldsTitle")}</h2>
+          <p style={hintStyle}>{mode === "hr" ? t("customFieldsHintHr") : t("customFieldsHintSelf")}</p>
+          <div style={gridStyle}>
+            {customFields.map((f) => (
+              <div key={f.id}>
+                <label style={labelStyle}>
+                  {f.label}
+                  {!f.employeeEditable && mode === "hr" && <span style={{ fontWeight: 400 }}> · {t("hrOnlyTag")}</span>}
+                </label>
+                <input
+                  value={fieldValues[f.id] ?? ""}
+                  onChange={(e) => setFieldValues((prev) => ({ ...prev, [f.id]: e.target.value }))}
+                  readOnly={!canEditField(f)}
+                  maxLength={300}
+                  style={{ ...fieldStyle, opacity: canEditField(f) ? 1 : 0.7 }}
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}

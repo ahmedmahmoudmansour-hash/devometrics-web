@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
-import { getEmployeeFile, getDisabledFileSections, listCustomDocumentTypes } from "@/lib/employeeFile/actions";
+import { getEmployeeFile, getDisabledFileSections, listCustomDocumentTypes, listCustomEmployeeFields, getCustomFieldValues } from "@/lib/employeeFile/actions";
 import EmployeeFileEditor from "@/components/dashboard/EmployeeFileEditor";
 import Avatar from "@/components/Avatar";
 
@@ -20,10 +20,12 @@ export default async function EmployeeFilePage({ params }: { params: Promise<{ u
   const person = data.rows.find((r) => r.userId === userId);
   if (!person) redirect("/dashboard/company/employees");
 
-  const [bundle, disabledSections, customDocTypes] = await Promise.all([
+  const [bundle, disabledSections, customDocTypes, customFields, customFieldValues] = await Promise.all([
     getEmployeeFile(data.organizationId, userId),
     getDisabledFileSections(data.organizationId),
     listCustomDocumentTypes(data.organizationId),
+    listCustomEmployeeFields(data.organizationId),
+    getCustomFieldValues(data.organizationId, userId),
   ]);
   const inactive = person.employmentStatus !== "active";
 
@@ -57,7 +59,7 @@ export default async function EmployeeFilePage({ params }: { params: Promise<{ u
         </div>
         <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6, maxWidth: 640 }}>{t("hrPrivacyNote")}</p>
 
-        <EmployeeFileEditor mode="hr" organizationId={data.organizationId} userId={userId} initial={bundle} disabledSections={disabledSections} customDocTypes={customDocTypes} />
+        <EmployeeFileEditor mode="hr" organizationId={data.organizationId} userId={userId} initial={bundle} disabledSections={disabledSections} customDocTypes={customDocTypes} customFields={customFields} customFieldValues={customFieldValues} />
       </div>
     </div>
   );

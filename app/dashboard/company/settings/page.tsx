@@ -13,10 +13,11 @@ import DirectorySettingsForm from "@/components/dashboard/DirectorySettingsForm"
 import EmployeeFileSettingsForm from "@/components/dashboard/EmployeeFileSettingsForm";
 import RequiredDocumentsSettingsForm from "@/components/dashboard/RequiredDocumentsSettingsForm";
 import CustomDocumentTypesManager from "@/components/dashboard/CustomDocumentTypesManager";
+import CustomEmployeeFieldsManager from "@/components/dashboard/CustomEmployeeFieldsManager";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 import { getEmploymentHistoryManagerVisibility } from "@/lib/employmentHistory/actions";
 import { getDirectoryEnabled } from "@/lib/directory/actions";
-import { getDisabledFileSections, getRequiredDocTypes, listCustomDocumentTypes } from "@/lib/employeeFile/actions";
+import { getDisabledFileSections, getRequiredDocTypes, listCustomDocumentTypes, listCustomEmployeeFields } from "@/lib/employeeFile/actions";
 
 // Split out of app/dashboard/company/page.tsx (the 2026-08 UX audit's
 // clearest finding: that page was doing four unrelated jobs — overview,
@@ -35,6 +36,7 @@ export default async function CompanySettingsPage() {
   const disabledFileSections = data.organizationId ? await getDisabledFileSections(data.organizationId) : [];
   const requiredDocTypes = data.organizationId ? await getRequiredDocTypes(data.organizationId) : [];
   const customDocTypes = data.organizationId ? await listCustomDocumentTypes(data.organizationId) : [];
+  const customEmployeeFields = data.organizationId ? await listCustomEmployeeFields(data.organizationId) : [];
 
   if (!data.organizationId) redirect("/dashboard/company");
 
@@ -81,6 +83,7 @@ export default async function CompanySettingsPage() {
           <EmploymentHistoryVisibilityForm organizationId={data.organizationId} initial={employmentHistoryVisibility} />
           <DirectorySettingsForm organizationId={data.organizationId} initialEnabled={directoryEnabled} />
           <EmployeeFileSettingsForm organizationId={data.organizationId} initialDisabled={disabledFileSections} />
+          <CustomEmployeeFieldsManager organizationId={data.organizationId} initialFields={customEmployeeFields} />
           {/* Meaningless (and unfixable for HR) if the documents section
               itself is off -- nobody would have anywhere to upload one. */}
           {!disabledFileSections.includes("documents") && (

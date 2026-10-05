@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationId, amIActiveOrgMember } from "@/lib/organizations/membership";
-import { getEmployeeFile, getDisabledFileSections, listCustomDocumentTypes } from "@/lib/employeeFile/actions";
+import { getEmployeeFile, getDisabledFileSections, listCustomDocumentTypes, listCustomEmployeeFields, getCustomFieldValues } from "@/lib/employeeFile/actions";
 import EmployeeFileEditor from "@/components/dashboard/EmployeeFileEditor";
 
 export const metadata = { title: "My file — Devometrics" };
@@ -38,10 +38,12 @@ export default async function MyFilePage() {
     );
   }
 
-  const [bundle, disabledSections, customDocTypes] = await Promise.all([
+  const [bundle, disabledSections, customDocTypes, customFields, customFieldValues] = await Promise.all([
     getEmployeeFile(organizationId),
     getDisabledFileSections(organizationId),
     listCustomDocumentTypes(organizationId),
+    listCustomEmployeeFields(organizationId),
+    getCustomFieldValues(organizationId, user.id),
   ]);
 
   return (
@@ -55,7 +57,7 @@ export default async function MyFilePage() {
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>{t("myFileDescription")}</p>
         </div>
 
-        <EmployeeFileEditor mode="self" organizationId={organizationId} userId={user.id} initial={bundle} disabledSections={disabledSections} customDocTypes={customDocTypes} />
+        <EmployeeFileEditor mode="self" organizationId={organizationId} userId={user.id} initial={bundle} disabledSections={disabledSections} customDocTypes={customDocTypes} customFields={customFields} customFieldValues={customFieldValues} />
       </div>
     </div>
   );

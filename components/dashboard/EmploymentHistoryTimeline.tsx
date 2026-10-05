@@ -16,6 +16,10 @@ function eventLabel(e: EmploymentHistoryEvent, t: (key: string, values?: Record<
       return t("eventRoleChange", { from, to });
     case "band_change":
       return t("eventBandChange", { from, to });
+    case "manager_change":
+      return t("eventManagerChange", { from, to });
+    case "department_change":
+      return t("eventDepartmentChange", { from, to });
     case "status_change":
       return t("eventStatusChange", { from: t(`status_${e.oldValue ?? "active"}`), to: t(`status_${e.newValue ?? "active"}`) });
     default:
