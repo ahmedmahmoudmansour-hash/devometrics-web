@@ -14,6 +14,7 @@ import {
   type LeaveRequest,
 } from "@/lib/leave/actions";
 import { LEAVE_ATTACHMENTS_BUCKET } from "@/lib/leave/constants";
+import { countWorkingDays, type LeaveCalendar } from "@/lib/leave/calendar";
 
 function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -46,11 +47,13 @@ export default function MyLeaveManager({
   leaveTypes,
   balances,
   initialRequests,
+  calendar,
 }: {
   organizationId: string;
   leaveTypes: LeaveType[];
   balances: LeaveBalance[];
   initialRequests: LeaveRequest[];
+  calendar: LeaveCalendar;
 }) {
   const t = useTranslations("myLeavePage");
   const router = useRouter();
@@ -60,7 +63,7 @@ export default function MyLeaveManager({
   const [leaveTypeId, setLeaveTypeId] = useState(leaveTypes[0]?.id ?? "");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [days, setDays] = useState("");
+  const [halfDay, setHalfDay] = useState(false);
   const [reason, setReason] = useState("");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,14 +74,19 @@ export default function MyLeaveManager({
   // a second time rather than it going through silently.
   const [warning, setWarning] = useState<string | null>(null);
 
+  // Working days between the dates, excluding the company's weekend days and
+  // public holidays -- the same count the database makes (0194). A single
+  // working day can be a half day.
+  const workingDays = countWorkingDays(startDate, endDate, calendar.weekendDays, calendar.holidays.map((h) => h.date));
+  const daysRequested = halfDay && workingDays === 1 ? 0.5 : workingDays;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
     if (!leaveTypeId) return setError(t("pickTypeError"));
     if (!startDate || !endDate) return setError(t("pickDatesError"));
-    const daysRequested = Number(days);
-    if (!Number.isFinite(daysRequested) || daysRequested <= 0) return setError(t("invalidDays"));
+    if (workingDays === 0) return setError(t("noWorkingDays"));
 
     if (!warning) {
       const bal = balances.find((b) => b.leaveTypeId === leaveTypeId);
@@ -109,6 +117,8 @@ export default function MyLeaveManager({
         setError(result.error);
         return;
       }
+      // The database counts the days itself (0194); show what it stored.
+      const storedDays = result.daysRequested;
 
       // Upload after the request row exists (mirrors the candidate-CV
       // pattern: create the record, then attach the file to its id) — a
@@ -140,7 +150,7 @@ export default function MyLeaveManager({
           leaveTypeId,
           startDate,
           endDate,
-          daysRequested,
+          daysRequested: storedDays,
           status: "pending",
           reason: reason.trim() || null,
           requestedAt: new Date().toISOString(),
@@ -156,7 +166,7 @@ export default function MyLeaveManager({
       ]);
       setStartDate("");
       setEndDate("");
-      setDays("");
+      setHalfDay(false);
       setReason("");
       setAttachmentFile(null);
       setWarning(null);
@@ -266,16 +276,24 @@ export default function MyLeaveManager({
               />
             </div>
             <div>
-              <label style={labelStyle}>{t("daysLabel")}</label>
-              <input
-                value={days}
-                onChange={(e) => {
-                  setDays(e.target.value);
-                  clearWarning();
-                }}
-                type="number"
-                style={fieldStyle}
-              />
+              <label style={labelStyle}>{t("workingDaysLabel")}</label>
+              <div style={{ ...fieldStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <strong>{startDate && endDate ? t("workingDaysValue", { count: daysRequested }) : "—"}</strong>
+                {workingDays === 1 && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={halfDay}
+                      onChange={(e) => {
+                        setHalfDay(e.target.checked);
+                        clearWarning();
+                      }}
+                    />
+                    {t("halfDayLabel")}
+                  </label>
+                )}
+              </div>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>{t("calendarNote")}</p>
             </div>
           </div>
           <div style={{ marginBottom: 12 }}>

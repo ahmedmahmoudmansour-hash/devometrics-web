@@ -539,7 +539,7 @@ export async function requestLeave(input: {
   endDate: string;
   daysRequested: number;
   reason: string | null;
-}): Promise<{ error: string } | { success: true; id: string }> {
+}): Promise<{ error: string } | { success: true; id: string; daysRequested: number }> {
   if (input.daysRequested <= 0) return { error: "Days requested must be positive" };
   if (input.endDate < input.startDate) return { error: "End date cannot be before start date" };
 
@@ -561,16 +561,20 @@ export async function requestLeave(input: {
       reason: input.reason,
       status: "pending",
     })
-    .select("id")
-    .single<{ id: string }>();
+    .select("id, days_requested")
+    .single<{ id: string; days_requested: number }>();
   if (error || !data) {
+    // The database counts working days itself (0194) and refuses a request
+    // made only of weekend days / holidays, or longer than a year.
+    if (error?.message?.includes("weekends or public holidays")) return { error: "Those dates are all weekends or public holidays — pick at least one working day." };
+    if (error?.message?.includes("at most 366 days")) return { error: "A leave request can span at most 366 days." };
     console.error("requestLeave failed:", error);
     return { error: "Could not submit request — the database may need migration 0166 run first." };
   }
 
   revalidatePath("/dashboard/leave");
   revalidatePath("/dashboard/my-team");
-  return { success: true, id: data.id };
+  return { success: true, id: data.id, daysRequested: Number(data.days_requested) };
 }
 
 // Admin-only path (RLS enforces it) — records leave that's already been

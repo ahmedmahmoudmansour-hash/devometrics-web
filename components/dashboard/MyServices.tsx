@@ -6,6 +6,7 @@ import MyLeaveManager from "@/components/dashboard/MyLeaveManager";
 import HrLetterRequestSection from "@/components/dashboard/HrLetterRequestSection";
 import MyAttendanceSection from "@/components/dashboard/MyAttendanceSection";
 import type { AttendanceRecord } from "@/lib/attendance/actions";
+import type { LeaveCalendar } from "@/lib/leave/calendar";
 import type { LeaveType, LeaveBalance, LeaveRequest } from "@/lib/leave/actions";
 import type { HrLetterRequest } from "@/lib/hrLetters/actions";
 
@@ -23,6 +24,7 @@ export default function MyServices({
   initialHrLetterRequests,
   initialAttendance,
   timezone,
+  calendar,
 }: {
   organizationId: string;
   leaveTypes: LeaveType[];
@@ -31,6 +33,7 @@ export default function MyServices({
   initialHrLetterRequests: HrLetterRequest[];
   initialAttendance: AttendanceRecord[];
   timezone: string;
+  calendar: LeaveCalendar;
 }) {
   const t = useTranslations("myServicesPage");
   const [activeTab, setActiveTab] = useState<"timeOff" | "attendance" | "hrLetters">("timeOff");
@@ -75,7 +78,7 @@ export default function MyServices({
       </div>
 
       {activeTab === "timeOff" && (
-        <MyLeaveManager organizationId={organizationId} leaveTypes={leaveTypes} balances={balances} initialRequests={initialLeaveRequests} />
+        <MyLeaveManager organizationId={organizationId} leaveTypes={leaveTypes} balances={balances} initialRequests={initialLeaveRequests} calendar={calendar} />
       )}
       {activeTab === "attendance" && <MyAttendanceSection initialRecords={initialAttendance} timezone={timezone} />}
       {activeTab === "hrLetters" && <HrLetterRequestSection organizationId={organizationId} initialRequests={initialHrLetterRequests} />}

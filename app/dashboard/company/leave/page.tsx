@@ -6,6 +6,7 @@ import { listLeaveTypes, listOrgLeaveBalances, listOrgLeaveRequests, getLeaveMan
 import { listOrgHrLetterRequests } from "@/lib/hrLetters/actions";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import LeaveAdminDashboard from "@/components/dashboard/LeaveAdminDashboard";
+import { getLeaveCalendar } from "@/lib/leave/calendarSettings";
 
 export const metadata = { title: "Leave — Devometrics" };
 
@@ -19,13 +20,14 @@ export default async function CompanyLeavePage() {
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
   const currentYear = new Date().getFullYear();
-  const [leaveTypes, balances, requests, hrLetterRequests, managerVisibility, leaveTypeEligibility] = await Promise.all([
+  const [leaveTypes, balances, requests, hrLetterRequests, managerVisibility, leaveTypeEligibility, leaveCalendar] = await Promise.all([
     listLeaveTypes(data.organizationId),
     listOrgLeaveBalances(data.organizationId, currentYear),
     listOrgLeaveRequests(data.organizationId),
     listOrgHrLetterRequests(data.organizationId),
     getLeaveManagerVisibility(data.organizationId),
     listLeaveTypeEligibility(data.organizationId),
+    getLeaveCalendar(data.organizationId),
   ]);
 
   const employeeNames = Object.fromEntries(data.rows.map((r) => [r.userId, { name: r.name, email: r.email }]));
@@ -53,6 +55,7 @@ export default async function CompanyLeavePage() {
           initialHrLetterRequests={hrLetterRequests}
           initialManagerVisibility={managerVisibility}
           leaveTypeEligibility={leaveTypeEligibility}
+          leaveCalendar={leaveCalendar}
           employeeNames={employeeNames}
           employees={employees}
         />

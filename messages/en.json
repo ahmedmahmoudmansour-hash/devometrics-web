@@ -5562,6 +5562,11 @@
     "opening": "Opening…"
   },
   "myLeavePage": {
+    "workingDaysLabel": "Working days",
+    "workingDaysValue": "{count, plural, one {# working day} other {# working days}}",
+    "halfDayLabel": "Half day",
+    "calendarNote": "Counted by the system. Weekends and public holidays set by your company aren't deducted.",
+    "noWorkingDays": "Those dates are all weekends or public holidays — pick at least one working day.",
     "backToProgress": "← Back to progress",
     "title": "My Leave",
     "description": "Your leave balances, requests, and history.",
@@ -5887,6 +5892,27 @@
     "section_emergency": "Emergency contact",
     "section_family": "Family and dependents",
     "section_documents": "Documents (contract, ID, certificates)"
+  },
+  "leaveCalendarSettings": {
+    "title": "Weekends and public holidays",
+    "description": "Leave is counted in working days: the weekend days and public holidays below are not deducted from anyone's balance, and employees no longer type the number of days — the system counts them from the dates they pick.",
+    "weekendLabel": "Weekend days",
+    "needWorkingDay": "At least one day of the week must be a working day.",
+    "day_1": "Monday",
+    "day_2": "Tuesday",
+    "day_3": "Wednesday",
+    "day_4": "Thursday",
+    "day_5": "Friday",
+    "day_6": "Saturday",
+    "day_7": "Sunday",
+    "holidaysLabel": "Public holidays",
+    "noHolidays": "No public holidays added yet.",
+    "dateLabel": "Holiday date",
+    "namePlaceholder": "e.g. Revolution Day",
+    "dateError": "Choose the holiday's date",
+    "nameError": "Give the holiday a name",
+    "addButton": "Add holiday",
+    "remove": "Remove"
   },
   "timezoneSettings": {
     "title": "Company timezone",

@@ -20,6 +20,8 @@ import {
 } from "@/lib/leave/actions";
 import { decideHrLetterRequest, type HrLetterRequest } from "@/lib/hrLetters/actions";
 import LeaveImportSection from "@/components/dashboard/LeaveImportSection";
+import LeaveCalendarSettings from "@/components/dashboard/LeaveCalendarSettings";
+import type { LeaveCalendar } from "@/lib/leave/calendar";
 
 const cardStyle: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 };
 const fieldStyle: React.CSSProperties = {
@@ -55,6 +57,7 @@ export default function LeaveAdminDashboard({
   initialHrLetterRequests,
   initialManagerVisibility,
   leaveTypeEligibility,
+  leaveCalendar,
   employeeNames,
   employees,
 }: {
@@ -66,6 +69,7 @@ export default function LeaveAdminDashboard({
   initialHrLetterRequests: HrLetterRequest[];
   initialManagerVisibility: LeaveManagerVisibility;
   leaveTypeEligibility: Record<string, string[]>;
+  leaveCalendar: LeaveCalendar;
   employeeNames: Record<string, { name: string; email: string }>;
   employees: { userId: string; name: string; email: string }[];
 }) {
@@ -720,6 +724,8 @@ export default function LeaveAdminDashboard({
 
       {activeTab === "settings" && (
         <>
+          <LeaveCalendarSettings organizationId={organizationId} initialCalendar={leaveCalendar} />
+
           {/* Manager visibility */}
           <div style={cardStyle}>
             <h2 style={sectionTitleStyle}>{t("managerVisibilityTitle")}</h2>
