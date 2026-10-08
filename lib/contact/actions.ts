@@ -13,13 +13,17 @@ const INQUIRY_INBOX: Record<InquiryType, string> = {
   careers: "careers@devometrics.com",
 };
 
+const MAX_NAME_LENGTH = 200;
+const MAX_EMAIL_LENGTH = 254;
 const MAX_MESSAGE_LENGTH = 5000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Same in-memory, per-process, IP-keyed rate limit pattern as
 // lib/auth/inviteGate.ts — this is a public, unauthenticated form, so IP is
-// the only identity available. Not a hardened bound, just enough to stop
-// casual spam/abuse.
+// the only identity available. A friendly early stop only: the real limits
+// (per-email and total per hour, field lengths) are enforced in the database
+// by submit_contact_inquiry (migration 0195), which a caller who skips this
+// action cannot avoid.
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const attempts = new Map<string, number[]>();
@@ -28,11 +32,25 @@ async function isRateLimited(): Promise<boolean> {
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
   const now = Date.now();
+  // Drop addresses with no recent attempts so the map can't grow without bound.
+  for (const [key, times] of attempts) {
+    if (times.every((t) => now - t >= WINDOW_MS)) attempts.delete(key);
+  }
   const timestamps = (attempts.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
   timestamps.push(now);
   attempts.set(ip, timestamps);
   return timestamps.length > MAX_ATTEMPTS;
 }
+
+// submit_contact_inquiry raises "contact:<reason>" for a refused submission,
+// which is different from the database being unreachable.
+const CONTACT_ERRORS: Record<string, string> = {
+  rate_limited: "Too many requests — please wait a while and try again, or email us directly.",
+  invalid_email: "Please enter a valid email address.",
+  too_long: "That message is too long.",
+  missing_fields: "Please fill in your name, email, and message.",
+  invalid_type: "Invalid inquiry type.",
+};
 
 export async function submitContactInquiry(fields: {
   type: InquiryType;
@@ -63,19 +81,32 @@ export async function submitContactInquiry(fields: {
   if (!EMAIL_PATTERN.test(email)) {
     return { error: "Please enter a valid email address." };
   }
-  if (message.length > MAX_MESSAGE_LENGTH) {
+  if (
+    name.length > MAX_NAME_LENGTH ||
+    email.length > MAX_EMAIL_LENGTH ||
+    message.length > MAX_MESSAGE_LENGTH
+  ) {
     return { error: "That message is too long." };
   }
 
   const supabase = await createClient();
-  const { error: insertError } = await supabase.from("contact_inquiries").insert({
-    type: fields.type,
-    name,
-    email,
-    message,
+  const { error: insertError } = await supabase.rpc("submit_contact_inquiry", {
+    p_type: fields.type,
+    p_name: name,
+    p_email: email,
+    p_message: message,
   });
   if (insertError) {
-    console.error("contact_inquiries insert failed:", insertError);
+    // A submission the database refused (limit hit, invalid field): tell the
+    // visitor and send no notification email — otherwise the email would
+    // bypass the very limit that just refused it.
+    const reason = insertError.message.startsWith("contact:")
+      ? insertError.message.slice("contact:".length)
+      : null;
+    if (reason) {
+      return { error: CONTACT_ERRORS[reason] ?? "Could not send your message — please try again." };
+    }
+    console.error("contact inquiry save failed:", insertError);
   }
 
   try {
