@@ -35,7 +35,7 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 2. ~~Onboarding steps can be self-completed.~~ **Not an issue today:** no app code touches the configurable-onboarding tables (dormant schema). Revisit only if that feature is revived — restrict the writable columns then.
 3. ~~Leave day counts are typed; no weekend/holiday calendar.~~ **Fixed in 0194** (applied, verified live): per-company weekend days + public holidays, days counted by the database. Still by design: no balance check — HR may approve beyond a balance; the form warns the employee.
 4. **`xlsx` library has a high advisory and no fix** — only used to read spreadsheets in the admin's own browser; plan a replacement.
-5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (applied). Still open (low): the public chatbot rate limiter is per-server-instance; the contact form has no spam protection; `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
+5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (applied). **Contact form fixed in 0195** (applied, verified live: direct inserts blocked; database-enforced validation and 3/email/hour, 100/hour limits). Still open (low): the public chatbot rate limiter is per-server-instance; `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
 
 ## Not tested end-to-end in this audit
 
