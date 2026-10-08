@@ -39,8 +39,10 @@
 --    jobs (first parameter named "secret", validated against app_secrets),
 --    calendar_feed (token) and set_subscription_tier (billing webhook, not
 --    installed yet). Default privileges are changed so future functions are
---    not exposed again. The three internal-only helpers are also revoked from
---    authenticated -- they are only ever called from trigger functions that
+--    not exposed again. The internal-only helpers (record_score_event,
+--    org_id_for_user, history_manager_label, record_compensation_audit_event --
+--    the last one let any logged-in user forge entries in any company's
+--    compensation audit log) are also revoked from authenticated -- they are only ever called from trigger functions that
 --    run as their owner.
 --
 -- Depends on 0016/0143 (organizations, organization_members policies), 0079
@@ -186,3 +188,7 @@ alter default privileges for role postgres in schema public revoke execute on fu
 revoke execute on function public.record_score_event(uuid, uuid, text, text, numeric, text, timestamptz, text, uuid, boolean, boolean, jsonb) from authenticated, anon, public;
 revoke execute on function public.org_id_for_user(uuid) from authenticated, anon, public;
 revoke execute on function public.history_manager_label(uuid, uuid) from authenticated, anon, public;
+-- Same for the compensation audit-log writer: only the audited RPCs and triggers (which run
+-- as their owner) should ever write to it; left open, any logged-in user could forge audit
+-- entries in any company's log.
+revoke execute on function public.record_compensation_audit_event(uuid, text, uuid[], uuid, text) from authenticated, anon, public;

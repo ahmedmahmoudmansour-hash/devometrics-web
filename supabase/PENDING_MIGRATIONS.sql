@@ -160,3 +160,7 @@ alter default privileges for role postgres in schema public revoke execute on fu
 revoke execute on function public.record_score_event(uuid, uuid, text, text, numeric, text, timestamptz, text, uuid, boolean, boolean, jsonb) from authenticated, anon, public;
 revoke execute on function public.org_id_for_user(uuid) from authenticated, anon, public;
 revoke execute on function public.history_manager_label(uuid, uuid) from authenticated, anon, public;
+-- Same for the compensation audit-log writer: only the audited RPCs and triggers (which run
+-- as their owner) should ever write to it; left open, any logged-in user could forge audit
+-- entries in any company's log.
+revoke execute on function public.record_compensation_audit_event(uuid, text, uuid[], uuid, text) from authenticated, anon, public;
