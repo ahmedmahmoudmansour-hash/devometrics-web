@@ -5888,6 +5888,10 @@
     "section_family": "Family and dependents",
     "section_documents": "Documents (contract, ID, certificates)"
   },
+  "timezoneSettings": {
+    "title": "Company timezone",
+    "description": "The clock attendance runs on. When someone clocks in or out, the system records the time in this timezone — employees can't set the time themselves. Pick where your team works; change it if you open an office elsewhere."
+  },
   "joinByCodeSettings": {
     "title": "Join with company code",
     "description": "Lets people who have your company code join the workspace themselves. Off by default — the safest way to add people is the Invite employees form, which only admits the email addresses you list. If you turn this on, anyone who learns the code can join, so share it carefully and turn it off again when you're done.",
@@ -6074,7 +6078,7 @@
   },
   "myAttendance": {
     "todayTitle": "Today",
-    "todayHint": "Clock in when you start and out when you finish. The time comes from your device.",
+    "todayHint": "Clock in when you start and out when you finish. The time is recorded by the system on your company's clock — it can't be changed.",
     "checkIn": "Check in",
     "checkOut": "Check out",
     "checkedInAt": "Checked in at {time}",

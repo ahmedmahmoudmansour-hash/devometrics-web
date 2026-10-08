@@ -7,6 +7,7 @@ import { listMyEligibleLeaveTypes, getMyLeaveBalances, listMyLeaveRequests } fro
 import { listMyHrLetterRequests } from "@/lib/hrLetters/actions";
 import MyServices from "@/components/dashboard/MyServices";
 import { listMyAttendance } from "@/lib/attendance/actions";
+import { getOrganizationTimezone } from "@/lib/organizations/timezone";
 
 export const metadata = { title: "Services — Devometrics" };
 
@@ -50,12 +51,13 @@ export default async function MyServicesPage() {
   const currentYear = new Date().getFullYear();
   const now = new Date();
   const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  const [leaveTypes, balances, requests, hrLetterRequests, attendance] = await Promise.all([
+  const [leaveTypes, balances, requests, hrLetterRequests, attendance, timezone] = await Promise.all([
     listMyEligibleLeaveTypes(organizationId),
     getMyLeaveBalances(currentYear),
     listMyLeaveRequests(),
     listMyHrLetterRequests(),
     listMyAttendance(month),
+    getOrganizationTimezone(organizationId),
   ]);
 
   return (
@@ -76,6 +78,7 @@ export default async function MyServicesPage() {
           initialLeaveRequests={requests}
           initialHrLetterRequests={hrLetterRequests}
           initialAttendance={attendance}
+          timezone={timezone}
         />
       </div>
     </div>

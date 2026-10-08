@@ -15,6 +15,8 @@ import RequiredDocumentsSettingsForm from "@/components/dashboard/RequiredDocume
 import CustomDocumentTypesManager from "@/components/dashboard/CustomDocumentTypesManager";
 import CustomEmployeeFieldsManager from "@/components/dashboard/CustomEmployeeFieldsManager";
 import JoinByCodeSettingsForm from "@/components/dashboard/JoinByCodeSettingsForm";
+import TimezoneSettingsForm from "@/components/dashboard/TimezoneSettingsForm";
+import { getOrganizationTimezone } from "@/lib/organizations/timezone";
 import { getJoinByCodeEnabled } from "@/lib/organizations/joinByCode";
 import { getOrganizationEmailMessages } from "@/lib/organizations/emailMessages";
 import { getEmploymentHistoryManagerVisibility } from "@/lib/employmentHistory/actions";
@@ -40,6 +42,7 @@ export default async function CompanySettingsPage() {
   const customDocTypes = data.organizationId ? await listCustomDocumentTypes(data.organizationId) : [];
   const customEmployeeFields = data.organizationId ? await listCustomEmployeeFields(data.organizationId) : [];
   const joinByCodeEnabled = data.organizationId ? await getJoinByCodeEnabled(data.organizationId) : false;
+  const timezone = data.organizationId ? await getOrganizationTimezone(data.organizationId) : "Africa/Cairo";
 
   if (!data.organizationId) redirect("/dashboard/company");
 
@@ -86,6 +89,7 @@ export default async function CompanySettingsPage() {
           <EmploymentHistoryVisibilityForm organizationId={data.organizationId} initial={employmentHistoryVisibility} />
           <DirectorySettingsForm organizationId={data.organizationId} initialEnabled={directoryEnabled} />
           <JoinByCodeSettingsForm organizationId={data.organizationId} initialEnabled={joinByCodeEnabled} />
+          <TimezoneSettingsForm organizationId={data.organizationId} initialTimezone={timezone} />
           <EmployeeFileSettingsForm organizationId={data.organizationId} initialDisabled={disabledFileSections} />
           <CustomEmployeeFieldsManager organizationId={data.organizationId} initialFields={customEmployeeFields} />
           {/* Meaningless (and unfixable for HR) if the documents section

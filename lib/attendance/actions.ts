@@ -81,22 +81,23 @@ export async function listMyAttendance(month: string): Promise<AttendanceRecord[
   return (data ?? []).map(mapRecord);
 }
 
-// localDate/localTime come from the employee's device (there is no GPS or
-// hardware check) — the database refuses dates more than a day from today.
-export async function checkIn(localDate: string, localTime: string): Promise<{ error: string } | { success: true }> {
+// The time is NOT sent: attendance_check_in/out (0192) read the server's own
+// clock in the company's timezone, so an employee can't choose when they
+// "clocked in". (Until 0192 these took the device's date and time.)
+export async function checkIn(): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("attendance_check_in", { p_work_date: localDate, p_time: localTime });
+  const { error } = await supabase.rpc("attendance_check_in", {});
   if (error) {
     console.error("checkIn failed:", error);
-    return { error: "Could not check in — the database may need migration 0182 run first." };
+    return { error: "Could not check in — the database may need migration 0192 run first." };
   }
   revalidatePath("/dashboard/leave");
   return { success: true };
 }
 
-export async function checkOut(localDate: string, localTime: string): Promise<{ error: string } | { success: true }> {
+export async function checkOut(): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("attendance_check_out", { p_work_date: localDate, p_time: localTime });
+  const { error } = await supabase.rpc("attendance_check_out", {});
   if (error) {
     return { error: error.message?.includes("No check-in") ? "Check in first, then check out." : "Could not check out." };
   }

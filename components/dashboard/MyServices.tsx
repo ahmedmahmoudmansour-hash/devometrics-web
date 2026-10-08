@@ -22,6 +22,7 @@ export default function MyServices({
   initialLeaveRequests,
   initialHrLetterRequests,
   initialAttendance,
+  timezone,
 }: {
   organizationId: string;
   leaveTypes: LeaveType[];
@@ -29,6 +30,7 @@ export default function MyServices({
   initialLeaveRequests: LeaveRequest[];
   initialHrLetterRequests: HrLetterRequest[];
   initialAttendance: AttendanceRecord[];
+  timezone: string;
 }) {
   const t = useTranslations("myServicesPage");
   const [activeTab, setActiveTab] = useState<"timeOff" | "attendance" | "hrLetters">("timeOff");
@@ -75,7 +77,7 @@ export default function MyServices({
       {activeTab === "timeOff" && (
         <MyLeaveManager organizationId={organizationId} leaveTypes={leaveTypes} balances={balances} initialRequests={initialLeaveRequests} />
       )}
-      {activeTab === "attendance" && <MyAttendanceSection initialRecords={initialAttendance} />}
+      {activeTab === "attendance" && <MyAttendanceSection initialRecords={initialAttendance} timezone={timezone} />}
       {activeTab === "hrLetters" && <HrLetterRequestSection organizationId={organizationId} initialRequests={initialHrLetterRequests} />}
     </div>
   );
