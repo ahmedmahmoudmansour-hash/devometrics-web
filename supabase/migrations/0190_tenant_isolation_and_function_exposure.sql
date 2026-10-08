@@ -1,24 +1,50 @@
--- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0190
+-- 0190 -- Tenant isolation + function exposure hardening. Found by the
+-- pre-rollout audit of 2026-10-08, every item CONFIRMED against the live
+-- database with throwaway test accounts, not inferred from code.
 --
--- Everything through 0189 is applied and verified live (2026-10-08).
+-- 1. [CRITICAL] Any logged-in user could join ANY company. Two things
+--    combined:
+--      a. organizations had a SELECT policy "Authenticated users can look up
+--         organizations" (0016, written when the table held only a name and
+--         slug). Any logged-in user could read EVERY company's row -- and
+--         the slug IS the company invite code -- plus everything added since:
+--         seat limit, AI budget, owner id, internal policy settings, and any
+--         contact details a company filled in.
+--      b. organization_members' INSERT policy let anyone insert themselves
+--         as a plain 'member' of ANY organization id, gated only by the seat
+--         limit -- never by an invitation or the code at all.
+--    CONFIRMED live: an ordinary employee of company A read company B's
+--    invite code and joined B as a member in one step, after which B's full
+--    member list (emails, phones, managers) was readable to them.
+--    Fix: an organization row is readable only by its own members (any
+--    status, so a resigned user still sees the "no access" state), its
+--    creator, and platform admins. A direct self-join as 'member' now
+--    requires a PENDING INVITE for the caller's own verified email -- which
+--    is exactly what the email-invite flow (checkAndConsumeInvite) already
+--    has at that moment. Join-by-code moves into join_organization_by_code(),
+--    a function that checks the code, the seat limit and a NEW per-company
+--    switch (organizations.join_by_code_enabled, default OFF -- the code was
+--    a weak shared secret: name plus 4 random characters, no rate limit).
 --
--- 0190 -- SECURITY FIX, please run before onboarding any business.
--- Found by the pre-rollout audit and CONFIRMED against the live database:
---   1. [CRITICAL] A logged-in user from one company could read another
---      company's invite code and join it as a member with no invitation,
---      then read its full member list. Fixed: organizations are readable only
---      by their own members/creator/platform admins; a direct join as a member
---      now needs a pending email invite; joining by code moves into a checked
---      function and is OFF by default (new per-company switch in Settings).
---   2. [HIGH] Anonymous (not logged in) callers could reach database
---      functions. Fixed: revoked from anon/public everywhere except cron
---      jobs, the calendar feed and the billing webhook; future functions are
---      private by default.
--- After running it, companies that were joining by code need an admin to
--- switch on Settings > "Join with company code" -- email invites are
--- unaffected.
--- ============================================================
+-- 2. [HIGH] Unauthenticated callers could reach database functions.
+--    Supabase grants EXECUTE on new public functions to anon by default and
+--    this project never revoked it, so each function's own check was the only
+--    barrier. CONFIRMED live as an anonymous visitor: record_score_event()
+--    returned success (it has no check at all -- it writes talent scores),
+--    org_id_for_user() resolved any user id to their company,
+--    org/user_ai_spend_this_month() returned spend, and my own 0189
+--    history_manager_label() resolved any user id to a full name.
+--    Fix: revoke EXECUTE from anon and PUBLIC on every public function, then
+--    re-grant it to anon ONLY for the genuinely anonymous callers: the cron
+--    jobs (first parameter named "secret", validated against app_secrets),
+--    calendar_feed (token) and set_subscription_tier (billing webhook, not
+--    installed yet). Default privileges are changed so future functions are
+--    not exposed again. The three internal-only helpers are also revoked from
+--    authenticated -- they are only ever called from trigger functions that
+--    run as their owner.
+--
+-- Depends on 0016/0143 (organizations, organization_members policies), 0079
+-- (org_seat_limit_ok), 0059 (is_disabled/pending_deletion_at), 0013 (is_admin).
 
 -- ============================================================
 -- 1a. Organization rows: members, creator, platform admin only

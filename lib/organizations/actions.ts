@@ -259,13 +259,17 @@ export async function joinOrganization(inviteCode: string) {
   const trimmed = inviteCode.trim().toLowerCase();
   if (!trimmed) return { error: "Invite code is required" };
 
-  const { data: org } = await supabase.from("organizations").select("id").eq("slug", trimmed).maybeSingle();
-  if (!org) return { error: "No company found with that invite code" };
-
-  const { error } = await supabase
-    .from("organization_members")
-    .insert({ organization_id: org.id, user_id: user.id, role: "member" });
-  if (error) return { error: "Could not join that company — you may already be a member" };
+  // Joining by code goes through join_organization_by_code() (0190): the
+  // organizations table is no longer readable by non-members, and the
+  // function checks the code, that this company has switched joining by code
+  // on, and the seat limit. Its errors are deliberately uniform.
+  const { error } = await supabase.rpc("join_organization_by_code", { p_code: trimmed });
+  if (error) {
+    if (error.message?.includes("seat limit")) return { error: "This company has reached its seat limit — ask your admin." };
+    if (error.message?.includes("No company found")) return { error: "No company found with that invite code" };
+    console.error("joinOrganization failed:", error);
+    return { error: "Could not join that company — ask your admin to invite your email instead." };
+  }
 
   revalidatePath("/dashboard");
   redirect("/dashboard");

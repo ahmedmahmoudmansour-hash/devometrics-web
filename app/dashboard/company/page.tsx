@@ -10,6 +10,7 @@ import CompanyTileHub from "@/components/dashboard/CompanyTileHub";
 import { getMyDisabledCompanyFeatures } from "@/lib/organizations/companyFeatures";
 import type { CompanyFeatureKey } from "@/lib/organizations/companyTiles";
 import InviteCodeDisplay from "@/components/dashboard/InviteCodeDisplay";
+import { getJoinByCodeEnabled } from "@/lib/organizations/joinByCode";
 import CompanySetupGuide, { type SetupGuideStep } from "@/components/dashboard/CompanySetupGuide";
 import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
 import { getAutomationSettings } from "@/lib/automations/actions";
@@ -128,7 +129,7 @@ export default async function CompanyProfilePage() {
               {data.organizationName}
             </h1>
           </div>
-          {data.organizationSlug && <InviteCodeDisplay slug={data.organizationSlug} />}
+          {data.organizationSlug && data.organizationId && (await getJoinByCodeEnabled(data.organizationId)) && <InviteCodeDisplay slug={data.organizationSlug} />}
         </div>
 
         {data.organizationId && (

@@ -5888,6 +5888,12 @@
     "section_family": "Family and dependents",
     "section_documents": "Documents (contract, ID, certificates)"
   },
+  "joinByCodeSettings": {
+    "title": "Join with company code",
+    "description": "Lets people who have your company code join the workspace themselves. Off by default — the safest way to add people is the Invite employees form, which only admits the email addresses you list. If you turn this on, anyone who learns the code can join, so share it carefully and turn it off again when you're done.",
+    "off": "Off — people can only join by email invite",
+    "on": "On — anyone with the company code can join"
+  },
   "customEmployeeFields": {
     "title": "Custom employee fields",
     "description": "Add your own fields to every employee's private file — e.g. \"Insurance number\", \"Tax ID\" or \"Bank account\". Only the employee and company admins can see the values. Choose whether employees fill a field in themselves or only HR can.",
