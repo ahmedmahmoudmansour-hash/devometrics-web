@@ -1,5 +1,5 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0190, 0191, 0192 (run top to bottom, in one go)
+-- DEVOMETRICS -- PENDING MIGRATIONS: 0190, 0191, 0192, 0193 (run top to bottom, in one go)
 --
 -- Everything through 0189 is applied and verified live (2026-10-08).
 --
@@ -22,6 +22,9 @@
 -- 0192 -- Attendance uses the server's clock in the company's timezone (new
 -- Settings > Company timezone, default Africa/Cairo); employees can no longer
 -- choose the time they clock in or out.
+--
+-- 0193 -- Deletion cron jobs fail closed if their secret row is missing; AI-spend
+-- lookups only answer for the caller's own company/user (or a platform admin).
 --
 -- After running it, companies that were joining by code need an admin to
 -- switch on Settings > "Join with company code" -- email invites are
@@ -305,4 +308,116 @@ begin
   update public.attendance_records set check_out = date_trunc('minute', v_local)::time where id = v_id;
   return true;
 end;
+$$;
+
+-- ============================================================
+-- 0193 -- Cron fail-closed + AI-spend scoping
+-- ============================================================
+create or replace function public.purge_scheduled_organization_deletions(secret text)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  purged_count int;
+begin
+  if secret is null or coalesce(secret <> (select value from public.app_secrets where key = 'cron_secret'), true) then
+    return 0;
+  end if;
+
+  with deleted as (
+    delete from public.organizations
+    where pending_deletion_at is not null and pending_deletion_at <= now()
+    returning id
+  )
+  select count(*) into purged_count from deleted;
+
+  return purged_count;
+end;
+$$;
+
+create or replace function public.purge_scheduled_data_deletions(secret text)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  purged_count int := 0;
+  target record;
+begin
+  if secret is null or coalesce(secret <> (select value from public.app_secrets where key = 'cron_secret'), true) then
+    return 0;
+  end if;
+
+  for target in
+    select id from public.profiles
+    where pending_data_deletion_at is not null and pending_data_deletion_at <= now()
+  loop
+    delete from public.development_plans where user_id = target.id;
+    delete from public.coach_messages where user_id = target.id;
+    delete from public.assessment_results where user_id = target.id;
+    delete from public.gap_analyses where user_id = target.id;
+    delete from public.resume_analyses where user_id = target.id;
+    delete from public.discovery_profiles where user_id = target.id;
+    delete from public.big_five_profiles where user_id = target.id;
+    delete from public.coach_grow_memory where user_id = target.id;
+    delete from public.user_achievements where user_id = target.id;
+    delete from public.career_health_snapshots where user_id = target.id;
+    delete from public.personal_tasks where user_id = target.id;
+    delete from public.survey_responses where user_id = target.id;
+    delete from public.survey_assignments where employee_user_id = target.id;
+    delete from public.student_verification_codes where user_id = target.id;
+
+    update public.profiles set
+      full_name = null,
+      location = null,
+      learning_preferences = '{}'::text[],
+      career_stage = null,
+      accommodation = null,
+      job_history = '[]'::jsonb,
+      skills = '{}'::text[],
+      qualifications = '[]'::jsonb,
+      career_aspirations = null,
+      student_school_email = null,
+      student_verified_at = null,
+      resource_tier = null,
+      pending_data_deletion_at = null
+    where id = target.id;
+
+    purged_count := purged_count + 1;
+  end loop;
+
+  return purged_count;
+end;
+$$;
+
+create or replace function public.org_ai_spend_this_month(target_org_id uuid)
+returns numeric
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(sum(cost_usd), 0)
+  from public.ai_usage_events
+  where organization_id = target_org_id
+    and created_at >= date_trunc('month', now())
+    and (public.is_org_member(target_org_id) or public.is_admin());
+$$;
+
+create or replace function public.user_ai_spend_this_month(target_user_id uuid)
+returns numeric
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(sum(cost_usd), 0)
+  from public.ai_usage_events
+  where user_id = target_user_id
+    and organization_id is null
+    and created_at >= date_trunc('month', now())
+    and (target_user_id = auth.uid() or public.is_admin());
 $$;

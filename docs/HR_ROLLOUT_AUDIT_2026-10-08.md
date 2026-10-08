@@ -31,11 +31,11 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 
 ## Open — needs a decision (not fixed)
 
-1. **Attendance clock times are client-supplied (medium).** An employee can clock in at any time they type (within ±1 day). Fix needs an organization timezone setting so the server can use its own clock.
-2. **Onboarding steps can be self-completed (low–medium).** An employee can mark a "training" step done without completing it.
+1. ~~Attendance clock times are client-supplied (medium).~~ **Fixed in 0192** (pending): server clock in a per-company timezone, setting in Settings → Company timezone.
+2. ~~Onboarding steps can be self-completed.~~ **Not an issue today:** no app code touches the configurable-onboarding tables (dormant schema). Revisit only if that feature is revived — restrict the writable columns then.
 3. **Leave has no balance check and no public-holiday / weekend calendar.** HR can approve beyond a balance (possibly intended); day counts are typed, not computed.
 4. **`xlsx` library has a high advisory and no fix** — only used to read spreadsheets in the admin's own browser; plan a replacement.
-5. Low: AI-spend, seat-limit and member-spend lookups readable by any logged-in user; data-deletion cron functions fail open if their secret row is ever removed; the public chatbot rate limiter is per-server-instance; contact form has no spam protection.
+5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (pending). Still open (low): the public chatbot rate limiter is per-server-instance; the contact form has no spam protection; `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
 
 ## Not tested end-to-end in this audit
 
