@@ -1,5 +1,5 @@
 -- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0190
+-- DEVOMETRICS -- PENDING MIGRATIONS: 0190, 0191 (run top to bottom, in one go)
 --
 -- Everything through 0189 is applied and verified live (2026-10-08).
 --
@@ -15,6 +15,10 @@
 --      functions. Fixed: revoked from anon/public everywhere except cron
 --      jobs, the calendar feed and the billing webhook; future functions are
 --      private by default.
+-- 0191 -- Leave request integrity (see the section further down): employees could
+-- write decision fields on their own request and flip a rejected one back to
+-- pending; days could be set independent of the dates.
+--
 -- After running it, companies that were joining by code need an admin to
 -- switch on Settings > "Join with company code" -- email invites are
 -- unaffected.
@@ -164,3 +168,33 @@ revoke execute on function public.history_manager_label(uuid, uuid) from authent
 -- as their owner) should ever write to it; left open, any logged-in user could forge audit
 -- entries in any company's log.
 revoke execute on function public.record_compensation_audit_event(uuid, text, uuid[], uuid, text) from authenticated, anon, public;
+
+-- ============================================================
+-- 0191 -- Leave request integrity
+-- ============================================================
+revoke update on public.leave_requests from authenticated;
+grant update (leave_type_id, start_date, end_date, days_requested, status, reason) on public.leave_requests to authenticated;
+
+drop policy if exists "Employees edit or cancel their own pending/approved leave" on public.leave_requests;
+create policy "Employees edit or cancel their own pending/approved leave"
+  on public.leave_requests for update
+  using (employee_user_id = auth.uid() and status in ('pending', 'approved'))
+  with check (
+    employee_user_id = auth.uid()
+    and status in ('pending', 'cancelled')
+    and public.is_org_member(organization_id)
+    and (status = 'cancelled' or public.can_request_leave_type(leave_type_id, employee_user_id))
+  );
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.table_constraints
+    where table_schema = 'public' and table_name = 'leave_requests'
+      and constraint_name = 'leave_requests_days_within_range'
+  ) then
+    alter table public.leave_requests
+      add constraint leave_requests_days_within_range
+      check (days_requested <= (end_date - start_date) + 1) not valid;
+  end if;
+end $$;
