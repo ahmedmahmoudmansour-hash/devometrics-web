@@ -4,16 +4,16 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 
 ## Verdict
 
-**Do not onboard a business until migration `0190` is applied.** It closes a company-to-company data breach found in this audit. With `0190` and `0191` applied and the checklist below addressed, the system is ready for a **controlled pilot with one or two businesses**.
+**Update 2026-10-09: migrations 0190–0194 are applied and every fix was re-tested live (30 checks pass, 26-page regression crawl clean).** The company-to-company breach found in this audit is closed. The system is ready for a **controlled pilot with one or two businesses** once the non-code checklist below is addressed.
 
 ## Fixed in this audit
 
 | # | Severity | Finding | Status |
 |---|---|---|---|
-| 1 | **Critical** | Any logged-in user could read every company's invite code and join any company as a member with no invitation, then read its member list (emails, phones, managers). | Fix in **0190** (pending) |
-| 2 | High | Not-logged-in callers could reach database functions (`record_score_event` accepted writes; user→company and user→name lookups worked). | Fix in **0190** (pending) |
-| 3 | Medium | Any logged-in user could forge entries in any company's compensation audit log. | Fix in **0190** (pending) |
-| 4 | Medium | Employees could write decision fields on their own leave request ("Pre-approved by HR") and reopen a rejected one; days weren't tied to dates. | Fix in **0191** (pending) |
+| 1 | **Critical** | Any logged-in user could read every company's invite code and join any company as a member with no invitation, then read its member list (emails, phones, managers). | Fixed — **0190** applied, verified live |
+| 2 | High | Not-logged-in callers could reach database functions (`record_score_event` accepted writes; user→company and user→name lookups worked). | Fixed — **0190** applied, verified live |
+| 3 | Medium | Any logged-in user could forge entries in any company's compensation audit log. | Fixed — **0190** applied, verified live |
+| 4 | Medium | Employees could write decision fields on their own leave request ("Pre-approved by HR") and reopen a rejected one; days weren't tied to dates. | Fixed — **0191** applied, verified live |
 | 5 | Critical (dependency) | Next.js middleware bypass advisory + 10 other vulnerable packages. | **Fixed, pushed** (11 → 5 findings, 0 critical) |
 | 6 | Critical/High/Medium | Compensation: cross-org salary injection, audit log never wrote, self-approval lockout. | **Fixed and verified live** earlier (0186) |
 
@@ -31,11 +31,11 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 
 ## Open — needs a decision (not fixed)
 
-1. ~~Attendance clock times are client-supplied (medium).~~ **Fixed in 0192** (pending): server clock in a per-company timezone, setting in Settings → Company timezone.
+1. ~~Attendance clock times are client-supplied (medium).~~ **Fixed in 0192** (applied, verified live): server clock in a per-company timezone, setting in Settings → Company timezone.
 2. ~~Onboarding steps can be self-completed.~~ **Not an issue today:** no app code touches the configurable-onboarding tables (dormant schema). Revisit only if that feature is revived — restrict the writable columns then.
-3. ~~Leave day counts are typed; no weekend/holiday calendar.~~ **Fixed in 0194** (pending): per-company weekend days + public holidays, days counted by the database. Still by design: no balance check — HR may approve beyond a balance; the form warns the employee.
+3. ~~Leave day counts are typed; no weekend/holiday calendar.~~ **Fixed in 0194** (applied, verified live): per-company weekend days + public holidays, days counted by the database. Still by design: no balance check — HR may approve beyond a balance; the form warns the employee.
 4. **`xlsx` library has a high advisory and no fix** — only used to read spreadsheets in the admin's own browser; plan a replacement.
-5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (pending). Still open (low): the public chatbot rate limiter is per-server-instance; the contact form has no spam protection; `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
+5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (applied). Still open (low): the public chatbot rate limiter is per-server-instance; the contact form has no spam protection; `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
 
 ## Not tested end-to-end in this audit
 

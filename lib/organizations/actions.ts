@@ -263,15 +263,7 @@ export async function joinOrganization(inviteCode: string) {
   // organizations table is no longer readable by non-members, and the
   // function checks the code, that this company has switched joining by code
   // on, and the seat limit. Its errors are deliberately uniform.
-  let { error } = await supabase.rpc("join_organization_by_code", { p_code: trimmed });
-  // TEMPORARY compatibility (remove once 0190 is applied everywhere): before
-  // 0190 there is no such function (PGRST202), and joining by code is the old
-  // direct lookup + insert.
-  if (error?.code === "PGRST202") {
-    const { data: org } = await supabase.from("organizations").select("id").eq("slug", trimmed).maybeSingle();
-    if (!org) return { error: "No company found with that invite code" };
-    ({ error } = await supabase.from("organization_members").insert({ organization_id: org.id, user_id: user.id, role: "member" }));
-  }
+  const { error } = await supabase.rpc("join_organization_by_code", { p_code: trimmed });
   if (error) {
     if (error.message?.includes("seat limit")) return { error: "This company has reached its seat limit — ask your admin." };
     if (error.message?.includes("No company found")) return { error: "No company found with that invite code" };

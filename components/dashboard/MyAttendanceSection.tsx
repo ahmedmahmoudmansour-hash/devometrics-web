@@ -34,9 +34,7 @@ export default function MyAttendanceSection({ initialRecords, timezone }: { init
   function apply(kind: "in" | "out") {
     setError(null);
     startTransition(async () => {
-      // date/time are only used if the database predates 0192 (see actions.ts); otherwise ignored.
-      const wall = wallClockIn(timezone);
-      const result = kind === "in" ? await checkIn(wall.date, `${wall.time}:00`) : await checkOut(wall.date, `${wall.time}:00`);
+      const result = kind === "in" ? await checkIn() : await checkOut();
       if ("error" in result) return setError(result.error);
       router.refresh();
     });
