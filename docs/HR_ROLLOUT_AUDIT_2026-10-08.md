@@ -26,7 +26,7 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 - **Survey anonymity:** admins cannot read individual answers; results withheld below 3 responses; employees cannot answer as someone else.
 - **Exit interviews, compensation, org settings:** admin-only by policy.
 - **Translations:** English and Arabic have identical key sets (4,431 each).
-- **Screens:** 26 key pages crawled as admin and employee — no errors, no failed requests; employees are redirected away from every admin page.
+- **Screens:** all 50 dashboard pages crawled as admin and as employee, in English and Arabic (200 page loads) — no server errors, no failed requests, no missing translations; employees are redirected away from every admin page. One cosmetic console warning on the org chart (a drag-and-drop accessibility id mismatch) — no functional effect.
 - **Cron secrets:** wrong/missing secret returns nothing.
 
 ## Open — needs a decision (not fixed)
@@ -39,7 +39,7 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 
 ## Not tested end-to-end in this audit
 
-Hiring pipeline through to hire, Knowledge Hub / SCORM, org chart, job architecture, competencies, high-potential/succession, analytics, performance-review cycles (verified in earlier audits and sessions), export file contents, and the Arabic version of every page (English crawl only).
+Hiring pipeline through to hire, Knowledge Hub / SCORM, org chart, job architecture, competencies, high-potential/succession, analytics, performance-review cycles (verified in earlier audits and sessions), and export file contents. (Pages were loaded and checked for errors; features behind them were not all exercised.)
 
 ## Rollout readiness (not code)
 
