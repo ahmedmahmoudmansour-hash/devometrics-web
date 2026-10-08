@@ -84,9 +84,17 @@ export async function listMyAttendance(month: string): Promise<AttendanceRecord[
 // The time is NOT sent: attendance_check_in/out (0192) read the server's own
 // clock in the company's timezone, so an employee can't choose when they
 // "clocked in". (Until 0192 these took the device's date and time.)
-export async function checkIn(): Promise<{ error: string } | { success: true }> {
+// TEMPORARY compatibility (remove once 0192 is applied everywhere): if the
+// database still has the pre-0192 function, which REQUIRES a date and time
+// (PGRST202 = no function matches a call without them), fall back to sending
+// the company-clock date/time the screen computed. After 0192 the arguments
+// are ignored and this branch never runs.
+export async function checkIn(fallbackDate?: string, fallbackTime?: string): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("attendance_check_in", {});
+  let { error } = await supabase.rpc("attendance_check_in", {});
+  if (error?.code === "PGRST202" && fallbackDate && fallbackTime) {
+    ({ error } = await supabase.rpc("attendance_check_in", { p_work_date: fallbackDate, p_time: fallbackTime }));
+  }
   if (error) {
     console.error("checkIn failed:", error);
     return { error: "Could not check in — the database may need migration 0192 run first." };
@@ -95,9 +103,12 @@ export async function checkIn(): Promise<{ error: string } | { success: true }> 
   return { success: true };
 }
 
-export async function checkOut(): Promise<{ error: string } | { success: true }> {
+export async function checkOut(fallbackDate?: string, fallbackTime?: string): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("attendance_check_out", {});
+  let { error } = await supabase.rpc("attendance_check_out", {});
+  if (error?.code === "PGRST202" && fallbackDate && fallbackTime) {
+    ({ error } = await supabase.rpc("attendance_check_out", { p_work_date: fallbackDate, p_time: fallbackTime }));
+  }
   if (error) {
     return { error: error.message?.includes("No check-in") ? "Check in first, then check out." : "Could not check out." };
   }

@@ -9,11 +9,15 @@ import { createClient } from "@/lib/supabase/server";
 // Email invites are the recommended way to add people.
 export async function getJoinByCodeEnabled(organizationId: string): Promise<boolean> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("organizations")
     .select("join_by_code_enabled")
     .eq("id", organizationId)
     .maybeSingle<{ join_by_code_enabled: boolean | null }>();
+  // TEMPORARY compatibility (remove once 0190 is applied everywhere): before
+  // 0190 the column doesn't exist, the read fails, and joining by code simply
+  // works as it always did -- keep showing the code rather than hiding it.
+  if (error) return true;
   return !!data?.join_by_code_enabled;
 }
 
