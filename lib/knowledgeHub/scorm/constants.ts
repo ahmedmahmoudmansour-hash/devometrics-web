@@ -56,6 +56,25 @@ export const SCORM_MIME_BY_EXTENSION: Record<string, string> = {
   woff2: "font/woff2",
   mp3: "audio/mpeg",
   mp4: "video/mp4",
+  // Real SCORM 1.2 packages carry the ADL/IMS schema files (.xsd/.dtd) next to
+  // imsmanifest.xml; unmapped they became application/octet-stream and the
+  // upload was refused (see migration 0198, which also widens the bucket's
+  // allow-list for the other types below).
+  xsd: "application/xml",
+  dtd: "application/xml",
+  xsl: "application/xml",
+  xslt: "application/xml",
+  txt: "text/plain",
+  vtt: "text/vtt",
+  webp: "image/webp",
+  ico: "image/x-icon",
+  ttf: "font/ttf",
+  otf: "font/otf",
+  eot: "application/vnd.ms-fontobject",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  m4a: "audio/x-m4a",
+  webm: "video/webm",
 };
 
 export function guessScormMimeType(fileName: string): string {

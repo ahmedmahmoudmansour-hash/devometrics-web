@@ -25,7 +25,7 @@ import { guessScormMimeType } from "@/lib/knowledgeHub/scorm/constants";
 // headers (the shared table in lib/knowledgeHub/scorm/constants.ts doesn't
 // carry one — it's also used for Storage upload contentType, where a
 // charset suffix isn't meaningful).
-const TEXT_MIME_TYPES = new Set(["text/html", "application/javascript", "text/css", "application/json", "application/xml"]);
+const TEXT_MIME_TYPES = new Set(["text/html", "application/javascript", "text/css", "application/json", "application/xml", "text/plain", "text/vtt"]);
 
 function guessMimeType(fileName: string): string {
   const mime = guessScormMimeType(fileName);
