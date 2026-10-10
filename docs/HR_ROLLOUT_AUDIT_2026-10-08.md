@@ -13,7 +13,7 @@ Everything still open from this audit and the sessions around it, in one list. D
 **Code (small)**
 1. `xlsx` library (high advisory, no fix): replace with a maintained spreadsheet reader. Only parses files in an admin's own browser, so exposure is low.
 
-**Not yet exercised end-to-end** (pages load clean; features behind them not walked through): hiring pipeline through to hire, Knowledge Hub / SCORM, org chart, job architecture, competencies, high-potential/succession, analytics, export file contents.
+**Second pass (2026-10-10/11): the previously untested features were exercised live** — see "Second pass" below. Findings are fixed in code (pushed) and in migrations 0197–0199 (pending paste unless marked applied).
 
 **Needs a decision from Ahmed**
 2. Mansour Corp (and Home Center): keep, or delete with a guarded script. Neither was touched.
@@ -28,6 +28,21 @@ Everything still open from this audit and the sessions around it, in one list. D
 9. Companies that joined by code before 0190 must switch on Settings → "Join with company code" (email invites unaffected).
 
 **Closed since the report was first written:** 0190–0194 (applied, verified), 0195 contact form (applied, verified, test rows deleted); 0196 chatbot limit (applied, verified: shared limit survives a process restart; history entries bounded).
+
+## Second pass — features not covered by the first audit (2026-10-10/11)
+
+Each was exercised live with real user tokens (a company admin, an ordinary member, an outsider), not just read.
+
+| Area | Result |
+|---|---|
+| **Hiring, posting → candidate → CV score → notes → offer → hire → joining** | 38 live checks passed (tenant isolation on all 7 tables, invite-based join, own-CV-score-only visibility, storage). **3 defects fixed:** (1) the board's stage dropdown offered "Hired", which marked a candidate hired with **no invite** and hid the hire form, a dead end — option removed, server refuses Hired without an invite, and already-stranded candidates get the hire form back; (2) a person invited by two companies could join **neither** (the join lookup errored on two pending invites) — now takes the oldest; (3) the daily CV-scoring limit counted stored scores so re-scoring one candidate was never limited — now counts actual calls. **0197** (pending): hiring rows must belong to the same company as the posting/candidate they point at (a cross-company link was accepted; not reachable without another company's UUID, no data exposed). |
+| **Knowledge Hub / SCORM** | Zip safety is solid (traversal, absolute paths, symlinks, zip bombs all rejected). Completion writes are RPC-only and ownership-checked. **Defects:** (1) **real SCORM packages failed to import** — the bucket rejected `.xsd/.txt/.webp/.ttf/.ico` files that nearly every SCORM 1.2 package contains; (2) **any member could download training files not assigned to them** straight from Storage; (3) SCORM completion data was uncapped and unthrottled. Fixed: code (MIME map) + **0198** (pending). **Architectural, not fixed:** package JavaScript is served same-origin and the iframe is `allow-scripts allow-same-origin`, so an uploaded package runs with the viewer's session — treat packages from third-party vendors as trusted code, or move package serving to a separate origin (a redesign). |
+| **Org chart** | App-level cycle and membership checks are sound. **Defects:** planning data (vacant/future/frozen positions, saved chart drafts, annotations) was readable by every member — now admin-only (**0199**, pending); a reporting loop made both people vanish from the chart (fixed in code) and the database accepted loops (**0199** trigger). |
+| **Competencies** | RLS correct. The AI mapping suggestion was callable by any signed-in account with unbounded text — now admin-only and length-capped. |
+| **Job architecture, succession** | Re-run after all recent migrations: pass. Nomination requires company membership in RLS. |
+| **Analytics, high-potential** | Admin-gated; derived from already-scoped data; no separate write paths. |
+| **Exports** | All admin-gated; cells are written as typed strings (no formula execution); the survey export carries no respondent linkage. |
+| **Regression check on 0190** | None of the four functions revoked from signed-in users is called by the app. |
 
 ## Fixed in this audit
 
@@ -60,9 +75,9 @@ Everything still open from this audit and the sessions around it, in one list. D
 4. **`xlsx` library has a high advisory and no fix** — only used to read spreadsheets in the admin's own browser; plan a replacement.
 5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (applied). **Contact form fixed in 0195** (applied, verified live: direct inserts blocked; database-enforced validation and 3/email/hour, 100/hour limits). **Chatbot limit fixed in 0196** (database-backed, 8/min + 40/hour per visitor, 300/hour overall; history entries validated and capped). Still open (low): `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
 
-## Not tested end-to-end in this audit
+## Still not exercised
 
-Hiring pipeline through to hire, Knowledge Hub / SCORM, org chart, job architecture, competencies, high-potential/succession, analytics, performance-review cycles (verified in earlier audits and sessions), and export file contents. (Pages were loaded and checked for errors; features behind them were not all exercised.)
+Performance-review cycles end to end (verified in earlier audits and sessions, not re-run here), the AI-generated outputs themselves (CV scoring, interview assessment, ranking quality), real-browser playback of a real third-party SCORM package, and live email delivery.
 
 ## Rollout readiness (not code)
 
