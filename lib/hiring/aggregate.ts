@@ -180,6 +180,10 @@ export type CandidateDetail = {
   notes: (HiringCandidateInterviewNote & { authorName: string })[];
   assessment: HiringCandidateAssessment | null;
   stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[];
+  // Whether a hire invite exists for this candidate. A candidate in the Hired
+  // stage without one was moved there without being invited (older board
+  // behaviour) and still needs the invite sent.
+  inviteSent: boolean;
 };
 
 // Single-candidate drill-down. Authorization is a direct same-organization
@@ -195,6 +199,7 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
     notes: [],
     assessment: null,
     stageHistory: [],
+    inviteSent: false,
   };
 
   const company = await buildCompanyData();
@@ -209,7 +214,7 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
     .maybeSingle<HiringCandidate>();
   if (!candidate) return empty;
 
-  const [{ data: posting }, { data: cvScore }, { data: noteRows }, { data: assessment }, { data: historyRows }] = await Promise.all([
+  const [{ data: posting }, { data: cvScore }, { data: noteRows }, { data: assessment }, { data: historyRows }, { data: inviteRows }] = await Promise.all([
     supabase.from("job_postings").select("*").eq("id", candidate.posting_id).maybeSingle<JobPosting>(),
     supabase
       .from("hiring_candidate_cv_scores")
@@ -233,6 +238,7 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
       .eq("candidate_id", candidateId)
       .order("created_at", { ascending: true })
       .returns<HiringCandidateStageHistoryEntry[]>(),
+    supabase.from("organization_invites").select("id").eq("candidate_id", candidateId).limit(1),
   ]);
 
   // Author names for both notes and stage-move history resolved in one
@@ -255,5 +261,6 @@ export async function buildCandidateDetail(candidateId: string): Promise<Candida
     notes: (noteRows ?? []).map((n) => ({ ...n, authorName: nameById.get(n.author_id) ?? "Admin" })),
     assessment: assessment ?? null,
     stageHistory: (historyRows ?? []).map((h) => ({ ...h, moverName: (h.moved_by && nameById.get(h.moved_by)) ?? "Admin" })),
+    inviteSent: (inviteRows?.length ?? 0) > 0,
   };
 }

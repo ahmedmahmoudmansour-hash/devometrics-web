@@ -130,11 +130,14 @@ export async function scoreCandidateCv(candidateId: string, cvText: string): Pro
   const windowStart = new Date(
     Date.now() - HIRING_CV_SCORE_RATE_LIMIT_WINDOW_MINUTES * 60 * 1000
   ).toISOString();
+  // Count actual scoring calls (the usage log), not stored scores: re-scoring
+  // one candidate rewrites a single row, so a row count never reached the limit.
   const { count: recentScoreCount } = await supabase
-    .from("hiring_candidate_cv_scores")
+    .from("ai_usage_events")
     .select("id", { count: "exact", head: true })
     .eq("organization_id", organizationId)
-    .gte("updated_at", windowStart);
+    .eq("feature", "hiring_cv_score")
+    .gte("created_at", windowStart);
   if ((recentScoreCount ?? 0) >= dailyLimit) {
     return {
       error: `Your organization has scored ${dailyLimit} CVs in the last 24 hours — the limit resets on a rolling basis. Contact support if you need this raised for a large hiring push.`,
@@ -284,6 +287,20 @@ export async function moveCandidateStage(candidateId: string, toStage: HiringSta
     .eq("organization_id", organizationId)
     .maybeSingle<{ id: string; posting_id: string; stage: HiringStage; email: string; full_name: string }>();
   if (!candidate) return { error: "Candidate not found" };
+
+  // "Hired" means an invite went out. markCandidateHired() creates the invite
+  // first and then calls this; a bare move to Hired would leave a candidate
+  // marked hired who was never invited (and the hire form hidden).
+  if (toStage === "hired") {
+    const { data: invite } = await supabase
+      .from("organization_invites")
+      .select("id")
+      .eq("candidate_id", candidateId)
+      .limit(1);
+    if (!invite || invite.length === 0) {
+      return { error: "Use \"Mark as hired\" on the candidate's page — that sends the invite." };
+    }
+  }
 
   const { error } = await supabase
     .from("hiring_candidates")

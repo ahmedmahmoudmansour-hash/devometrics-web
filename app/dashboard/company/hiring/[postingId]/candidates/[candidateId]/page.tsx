@@ -43,6 +43,7 @@ export default async function CandidateDetailPage({
           notes={data.notes}
           assessment={data.assessment}
           stageHistory={data.stageHistory}
+          inviteSent={data.inviteSent}
         />
       </div>
     </div>

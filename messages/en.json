@@ -3172,6 +3172,7 @@
     "markAsHired": "Mark as hired",
     "hiredLabel": "✓ Hired",
     "hiredDescription": "{email} has been invited to your workspace and will be attached automatically once they sign up.",
+    "hiredNoInviteNotice": "This candidate was moved to Hired without an invite being sent, so they haven't been invited to your workspace yet. Send the invite below.",
     "inviteSentLabel": "✓ Invite sent",
     "inviteSentDescription": "{email} can now sign up with that email to join your workspace — their competency profile from this CV score will carry over automatically.",
     "sendInviteDescription": "Sends an invite to {email} — they sign up themselves and are attached to your workspace automatically, with their CV competency score carried over as their first Gap Analysis.",

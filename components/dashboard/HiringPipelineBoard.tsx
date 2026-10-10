@@ -466,7 +466,9 @@ function CandidateCard({
             setNote("");
           }}
         >
-          {HIRING_STAGES.map((s) => (
+          {/* "Hired" is only reachable through "Mark as hired" on the candidate's
+              page, which sends the invite; a plain move would hire nobody. */}
+          {HIRING_STAGES.filter((s) => s !== "hired" || candidate.stage === "hired").map((s) => (
             <option key={s} value={s}>
               {stageLabel(tStage, s)}
             </option>

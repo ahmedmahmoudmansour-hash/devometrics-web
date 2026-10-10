@@ -66,12 +66,14 @@ export default function CandidateDetailView({
   notes,
   assessment,
   stageHistory,
+  inviteSent,
 }: {
   candidate: HiringCandidate;
   cvScore: HiringCandidateCvScore | null;
   notes: (HiringCandidateInterviewNote & { authorName: string })[];
   assessment: HiringCandidateAssessment | null;
   stageHistory: (HiringCandidateStageHistoryEntry & { moverName: string })[];
+  inviteSent: boolean;
 }) {
   const t = useTranslations("candidateDetailView");
   const tDim = useTranslations("competencyDimensions");
@@ -118,7 +120,7 @@ export default function CandidateDetailView({
 
       <AssessmentSection candidateId={candidate.id} hasNotes={notes.length > 0} assessment={assessment} onChanged={refresh} />
 
-      <HireSection candidate={candidate} onChanged={refresh} />
+      <HireSection candidate={candidate} inviteSent={inviteSent} onChanged={refresh} />
 
       <StageHistorySection stageHistory={stageHistory} />
     </div>
@@ -296,7 +298,7 @@ function AssessmentSection({
   );
 }
 
-function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onChanged: () => void }) {
+function HireSection({ candidate, inviteSent, onChanged }: { candidate: HiringCandidate; inviteSent: boolean; onChanged: () => void }) {
   const t = useTranslations("candidateDetailView");
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
@@ -305,7 +307,9 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
   const [title, setTitle] = useState("");
   const [department, setDepartment] = useState("");
 
-  if (candidate.stage === "hired") {
+  // "Hired" only means something once the invite exists. A candidate that was
+  // moved to Hired without one still needs it sent, so fall through to the form.
+  if (candidate.stage === "hired" && inviteSent) {
     return (
       <div style={card}>
         <p style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>{t("hiredLabel")}</p>
@@ -330,6 +334,9 @@ function HireSection({ candidate, onChanged }: { candidate: HiringCandidate; onC
   return (
     <div style={card}>
       <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{t("hireThisCandidate")}</h2>
+      {candidate.stage === "hired" && (
+        <p style={{ fontSize: 12, color: "var(--amber)", marginBottom: 10, lineHeight: 1.5 }}>{t("hiredNoInviteNotice")}</p>
+      )}
       {!showForm ? (
         <button type="button" style={primaryBtn} onClick={() => setShowForm(true)}>
           {t("markAsHired")}

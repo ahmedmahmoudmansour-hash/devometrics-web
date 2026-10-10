@@ -497,6 +497,11 @@ export async function checkAndConsumeInvite(): Promise<boolean> {
     .select("*")
     .is("accepted_at", null)
     .ilike("email", user.email)
+    // Several companies can invite the same address; .maybeSingle() alone
+    // errors on more than one row and the person could join none of them.
+    // Take the oldest pending invite; the others stay pending.
+    .order("created_at", { ascending: true })
+    .limit(1)
     .maybeSingle<OrganizationInvite>();
   if (inviteError) {
     console.error(`checkAndConsumeInvite: lookup failed for ${user.email}:`, inviteError);
