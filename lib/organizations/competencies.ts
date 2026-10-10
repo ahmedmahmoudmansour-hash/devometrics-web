@@ -9,6 +9,10 @@ import { listMyRestrictedFeatures } from "./featureAccess";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveCallerLocale } from "@/lib/i18n/request";
 
+// Bounded: the name/description also go into an AI prompt.
+const MAX_COMPETENCY_NAME = 120;
+const MAX_COMPETENCY_DESCRIPTION = 1000;
+
 function isValidDimension(value: string): value is CompetencyDimension {
   return (COMPETENCY_DIMENSIONS as readonly string[]).includes(value);
 }
@@ -34,7 +38,7 @@ export async function createOrganizationCompetency(
     return { error: "Competency Management has been restricted for your account by your company administrator." };
   }
 
-  const name = fields.name.trim();
+  const name = fields.name.trim().slice(0, MAX_COMPETENCY_NAME);
   if (!name) return { error: "Competency name is required" };
   if (fields.mappedDimension !== null && !isValidDimension(fields.mappedDimension)) {
     return { error: "Invalid dimension" };
@@ -43,7 +47,7 @@ export async function createOrganizationCompetency(
   const { error } = await supabase.from("organization_competencies").insert({
     organization_id: organizationId,
     name,
-    description: fields.description?.trim() || null,
+    description: fields.description?.trim().slice(0, MAX_COMPETENCY_DESCRIPTION) || null,
     mapped_dimension: fields.mappedDimension,
   });
   if (error) return { error: "Could not save competency — try again" };
@@ -62,7 +66,7 @@ export async function updateOrganizationCompetency(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const name = fields.name.trim();
+  const name = fields.name.trim().slice(0, MAX_COMPETENCY_NAME);
   if (!name) return { error: "Competency name is required" };
   if (fields.mappedDimension !== null && !isValidDimension(fields.mappedDimension)) {
     return { error: "Invalid dimension" };
@@ -72,7 +76,7 @@ export async function updateOrganizationCompetency(
     .from("organization_competencies")
     .update({
       name,
-      description: fields.description?.trim() || null,
+      description: fields.description?.trim().slice(0, MAX_COMPETENCY_DESCRIPTION) || null,
       mapped_dimension: fields.mappedDimension,
     })
     .eq("id", id);
@@ -94,6 +98,9 @@ export async function suggestDimensionForCompetency(
   if (!name.trim()) return { error: "Enter a competency name first" };
 
   const membership = await getMyOrganizationMembership();
+  // Only the competency builder (an admin screen) calls this; without the
+  // check any signed-in account could spend AI budget through it.
+  if (membership?.role !== "admin") return { error: "Not authorized" };
   const organizationId = membership?.organization_id ?? null;
   const restricted = await listMyRestrictedFeatures(supabase, organizationId);
   if (restricted.has("competency_management")) {
@@ -103,7 +110,7 @@ export async function suggestDimensionForCompetency(
   if (budgetCheck.error) return { error: budgetCheck.error };
 
   try {
-    const { dimension, rationale, model, inputTokens, outputTokens } = await suggestCompetencyDimension(name, description, await resolveCallerLocale(supabase, user.id));
+    const { dimension, rationale, model, inputTokens, outputTokens } = await suggestCompetencyDimension(name.trim().slice(0, MAX_COMPETENCY_NAME), description?.trim().slice(0, MAX_COMPETENCY_DESCRIPTION), await resolveCallerLocale(supabase, user.id));
     await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "competency_dimension", model, inputTokens, outputTokens });
     return { success: true, dimension, rationale };
   } catch {

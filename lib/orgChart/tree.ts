@@ -36,8 +36,29 @@ export function buildReportingForest(rows: WorkforceRow[]): OrgChartNode[] {
   function buildNode(row: WorkforceRow, visited: Set<string>): OrgChartNode {
     if (visited.has(row.userId)) return { row, children: [] };
     const nextVisited = new Set(visited).add(row.userId);
-    const children = (childrenByManager.get(row.userId) ?? []).map((c) => buildNode(c, nextVisited));
+    const children = (childrenByManager.get(row.userId) ?? [])
+      .filter((c) => !nextVisited.has(c.userId))
+      .map((c) => buildNode(c, nextVisited));
     return { row, children };
+  }
+
+  // A closed reporting loop (A manages B, B manages A — e.g. two admins
+  // saving at the same moment, or a hand-edited row) has no member without a
+  // manager, so none of it is reachable from a root and it would silently
+  // vanish from the chart. Promote one member of each such loop to a root so
+  // everybody is still shown; buildNode stops the descent before it repeats.
+  const reachable = new Set<string>();
+  function collect(row: WorkforceRow) {
+    if (reachable.has(row.userId)) return;
+    reachable.add(row.userId);
+    for (const child of childrenByManager.get(row.userId) ?? []) collect(child);
+  }
+  roots.forEach(collect);
+  for (const row of [...rows].sort((a, b) => a.name.localeCompare(b.name))) {
+    if (!reachable.has(row.userId)) {
+      roots.push(row);
+      collect(row);
+    }
   }
 
   return roots
