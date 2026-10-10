@@ -6,6 +6,30 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 
 **Update 2026-10-09: migrations 0190–0194 are applied and every fix was re-tested live (30 checks pass, 26-page regression crawl clean).** The company-to-company breach found in this audit is closed. The system is ready for a **controlled pilot with one or two businesses** once the non-code checklist below is addressed.
 
+## Remaining work — consolidated (2026-10-10)
+
+Everything still open from this audit and the sessions around it, in one list. Detail for each is in the sections below.
+
+**Code (small)**
+1. Public chatbot: cross-instance rate limit + overall ceiling, and cap the length of each client-supplied history entry (`app/api/platform-chat/route.ts`, `lib/platformChat/rateLimiter.ts`) — in progress, migration 0196.
+2. `xlsx` library (high advisory, no fix): replace with a maintained spreadsheet reader. Only parses files in an admin's own browser, so exposure is low.
+
+**Not yet exercised end-to-end** (pages load clean; features behind them not walked through): hiring pipeline through to hire, Knowledge Hub / SCORM, org chart, job architecture, competencies, high-potential/succession, analytics, export file contents.
+
+**Needs a decision from Ahmed**
+3. Mansour Corp (and Home Center): keep, or delete with a guarded script. Neither was touched.
+4. Pilot-feedback section: on hold.
+5. Arabic brand pronunciation in the product video: verified by speech-to-text only; needs a listen by ear.
+
+**Not code — before a business depends on it**
+6. Upgrade Supabase to Pro (real backups) before real client data.
+7. Email: confirm Resend key/sender/domain and custom SMTP in Supabase Auth.
+8. Error monitoring + uptime alerts; ideally a staging database for migrations.
+9. Remove unbuilt Premium claims from business-facing pricing; DPA/privacy terms for employee data.
+10. Companies that joined by code before 0190 must switch on Settings → "Join with company code" (email invites unaffected).
+
+**Closed since the report was first written:** 0190–0194 (applied, verified), 0195 contact form (applied, verified, test rows deleted).
+
 ## Fixed in this audit
 
 | # | Severity | Finding | Status |
