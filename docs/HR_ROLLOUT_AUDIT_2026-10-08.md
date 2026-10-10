@@ -11,24 +11,23 @@ Scope: every HR feature behind `/dashboard/company/*` plus the employee-facing s
 Everything still open from this audit and the sessions around it, in one list. Detail for each is in the sections below.
 
 **Code (small)**
-1. Public chatbot: cross-instance rate limit + overall ceiling, and cap the length of each client-supplied history entry (`app/api/platform-chat/route.ts`, `lib/platformChat/rateLimiter.ts`) — in progress, migration 0196.
-2. `xlsx` library (high advisory, no fix): replace with a maintained spreadsheet reader. Only parses files in an admin's own browser, so exposure is low.
+1. `xlsx` library (high advisory, no fix): replace with a maintained spreadsheet reader. Only parses files in an admin's own browser, so exposure is low.
 
 **Not yet exercised end-to-end** (pages load clean; features behind them not walked through): hiring pipeline through to hire, Knowledge Hub / SCORM, org chart, job architecture, competencies, high-potential/succession, analytics, export file contents.
 
 **Needs a decision from Ahmed**
-3. Mansour Corp (and Home Center): keep, or delete with a guarded script. Neither was touched.
-4. Pilot-feedback section: on hold.
-5. Arabic brand pronunciation in the product video: verified by speech-to-text only; needs a listen by ear.
+2. Mansour Corp (and Home Center): keep, or delete with a guarded script. Neither was touched.
+3. Pilot-feedback section: on hold.
+4. Arabic brand pronunciation in the product video: verified by speech-to-text only; needs a listen by ear.
 
 **Not code — before a business depends on it**
-6. Upgrade Supabase to Pro (real backups) before real client data.
-7. Email: confirm Resend key/sender/domain and custom SMTP in Supabase Auth.
-8. Error monitoring + uptime alerts; ideally a staging database for migrations.
-9. Remove unbuilt Premium claims from business-facing pricing; DPA/privacy terms for employee data.
-10. Companies that joined by code before 0190 must switch on Settings → "Join with company code" (email invites unaffected).
+5. Upgrade Supabase to Pro (real backups) before real client data.
+6. Email: confirm Resend key/sender/domain and custom SMTP in Supabase Auth.
+7. Error monitoring + uptime alerts; ideally a staging database for migrations.
+8. Remove unbuilt Premium claims from business-facing pricing; DPA/privacy terms for employee data.
+9. Companies that joined by code before 0190 must switch on Settings → "Join with company code" (email invites unaffected).
 
-**Closed since the report was first written:** 0190–0194 (applied, verified), 0195 contact form (applied, verified, test rows deleted).
+**Closed since the report was first written:** 0190–0194 (applied, verified), 0195 contact form (applied, verified, test rows deleted); 0196 chatbot limit (applied, verified: shared limit survives a process restart; history entries bounded).
 
 ## Fixed in this audit
 
@@ -59,7 +58,7 @@ Everything still open from this audit and the sessions around it, in one list. D
 2. ~~Onboarding steps can be self-completed.~~ **Not an issue today:** no app code touches the configurable-onboarding tables (dormant schema). Revisit only if that feature is revived — restrict the writable columns then.
 3. ~~Leave day counts are typed; no weekend/holiday calendar.~~ **Fixed in 0194** (applied, verified live): per-company weekend days + public holidays, days counted by the database. Still by design: no balance check — HR may approve beyond a balance; the form warns the employee.
 4. **`xlsx` library has a high advisory and no fix** — only used to read spreadsheets in the admin's own browser; plan a replacement.
-5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (applied). **Contact form fixed in 0195** (applied, verified live: direct inserts blocked; database-enforced validation and 3/email/hour, 100/hour limits). Still open (low): the public chatbot rate limiter is per-server-instance; `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
+5. ~~AI-spend lookups readable by any logged-in user; deletion cron jobs failing open if their secret row is removed.~~ **Fixed in 0193** (applied). **Contact form fixed in 0195** (applied, verified live: direct inserts blocked; database-enforced validation and 3/email/hour, 100/hour limits). **Chatbot limit fixed in 0196** (database-backed, 8/min + 40/hour per visitor, 300/hour overall; history entries validated and capped). Still open (low): `org_seat_limit_ok` reveals whether a seat is free (needed by the join rule).
 
 ## Not tested end-to-end in this audit
 

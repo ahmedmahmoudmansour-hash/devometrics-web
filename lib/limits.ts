@@ -29,6 +29,9 @@ export const DISCOVERY_RATE_LIMIT_MAX_RUNS = 5;
 
 export const MAX_PLATFORM_CHAT_MESSAGE_LENGTH = 1000;
 export const MAX_PLATFORM_CHAT_HISTORY = 10;
+// History is supplied by the (unauthenticated) client, so each entry is capped
+// too — an assistant reply can legitimately run a few thousand characters.
+export const MAX_PLATFORM_CHAT_HISTORY_ENTRY_LENGTH = 4000;
 
 export const MAX_CASE_STUDY_RESPONSE_LENGTH = 2000;
 export const CASE_STUDY_RATE_LIMIT_WINDOW_MINUTES = 60;
