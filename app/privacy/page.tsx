@@ -7,7 +7,7 @@ export default async function PrivacyPage() {
   const t = await getTranslations("privacyPage");
 
   return (
-    <LegalPageShell title={t("title")} lastUpdated="2026-07-03">
+    <LegalPageShell title={t("title")} lastUpdated="2026-10-13">
       <LegalSection title={t("s1Title")}>
         <p>{t("s1BodyA")}</p>
         <p>{t("s1BodyB")}</p>
@@ -24,6 +24,7 @@ export default async function PrivacyPage() {
 
       <LegalSection title={t("s4Title")}>
         <p>{t("s4Body")}</p>
+        <p>{t("s4BodyB")}</p>
       </LegalSection>
 
       <LegalSection title={t("s5Title")}>
