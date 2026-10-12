@@ -1731,7 +1731,7 @@
     "exportExcel": "Export to Excel",
     "companyCareerHealthScoreLabel": "Company Career Health Score",
     "companyCareerHealthScoreCaption": "Averaged across everyone who's run a Gap Analysis.",
-    "noTeamMembersYet": "No team members yet — invite your first one above, or share your workspace invite code (find it on the Profile tab) so anyone who signs up with a Company account and enters it joins automatically.",
+    "noTeamMembersYet": "No team members yet — invite your first one above. (You can also turn on \"Join with company code\" in Settings and share the code, but the email invite is the safest way to add people.)",
     "workforceSkillInventory": "Workforce skill inventory",
     "tableName": "Name",
     "tableTitle": "Title",
