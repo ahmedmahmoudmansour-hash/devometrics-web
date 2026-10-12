@@ -6,7 +6,15 @@ import { scrubBreadcrumb, scrubEvent } from "./scrub";
 //
 // Deliberately minimal: no performance tracing, no session replay, no default
 // PII. Error reports go through scrubEvent/scrubBreadcrumb first.
-const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN || undefined;
+//
+// NEXT_PUBLIC_* values are normally inlined into the bundle at build time. The
+// server also looks the name up dynamically, which reads the real runtime
+// environment, so server-side reporting works even when a rebuild reused a
+// cached bundle compiled before the variable existed.
+const runtimeEnv = process.env as Record<string, string | undefined>;
+const PUBLIC_DSN_NAME = "NEXT_PUBLIC_SENTRY_DSN";
+const dsn =
+  process.env.NEXT_PUBLIC_SENTRY_DSN || runtimeEnv[PUBLIC_DSN_NAME] || runtimeEnv["SENTRY_DSN"] || undefined;
 
 export function sharedSentryOptions() {
   return {
