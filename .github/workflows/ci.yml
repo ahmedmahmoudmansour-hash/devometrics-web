@@ -1,0 +1,41 @@
+name: CI
+
+# Runs on every push and pull request. Everything here is offline: no secrets,
+# no database. The live suite (npm run test:live) is deliberately NOT part of
+# CI because it exercises the real database; run it by hand after a migration
+# or release (see tests/README.md).
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # The app reads these at build time; the values are placeholders, the
+      # build makes no network calls.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-key
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

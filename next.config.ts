@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 
@@ -60,4 +61,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// Error monitoring (see sentry.*.config.ts and instrumentation*.ts). Build-time
+// options only: source-map upload happens only when SENTRY_AUTH_TOKEN, ORG and
+// PROJECT are all set in the build environment; otherwise the build is
+// unchanged apart from the instrumentation hooks.
+export default withSentryConfig(withNextIntl(nextConfig), {
+  silent: true,
+  telemetry: false,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

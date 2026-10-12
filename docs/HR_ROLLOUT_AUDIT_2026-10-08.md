@@ -23,7 +23,7 @@ Everything still open from this audit and the sessions around it, in one list. D
 **Not code — before a business depends on it**
 5. Upgrade Supabase to Pro (real backups) before real client data.
 6. Email: confirm Resend key/sender/domain and custom SMTP in Supabase Auth.
-7. Error monitoring + uptime alerts; ideally a staging database for migrations.
+7. Error monitoring is built and tested (Sentry, scrubbed, inert until a DSN is set) and a `/api/health` uptime endpoint exists: turn it on with `docs/ERROR_MONITORING.md` (about 10 minutes). Still open: a staging database for rehearsing migrations.
 8. Remove unbuilt Premium claims from business-facing pricing; DPA/privacy terms for employee data.
 9. Companies that joined by code before 0190 must switch on Settings → "Join with company code" (email invites unaffected).
 
@@ -83,7 +83,7 @@ Performance-review cycles end to end (verified in earlier audits and sessions, n
 
 - **Backups:** Supabase Free plan has no real backup/PITR. This was a deliberate deferral "until paying customers" — real company HR data is that trigger. Upgrade to Pro before onboarding.
 - **Email:** confirm `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are set in Vercel, the sender domain is verified (SPF/DKIM), and the plan's daily limit covers a company's invites/reminders. Confirm custom SMTP in Supabase Auth (the built-in sender is heavily rate-limited — a batch of new employees will hit it).
-- **No error monitoring and no automated tests.** Add uptime + error alerts before a business depends on it.
+- **Automated tests and error monitoring: now in place (2026-10-12).** 63 offline unit tests run in CI on every push (`npm test`), and a 23-test live suite re-proves tenant isolation and the main flows against the real database on demand (`npm run test:live`; see `tests/README.md`). Error monitoring (Sentry) and `/api/health` are built; they need the DSN and an uptime check switched on (`docs/ERROR_MONITORING.md`).
 - **No staging database.** Every migration is pasted straight into production; a second Supabase project for rehearsal is cheap insurance.
 - **Billing:** manual invoicing is fine; remove the unbuilt Premium claims (Interview Simulator, salary benchmark) from any business-facing pricing.
 - **Legal:** a data-processing agreement and privacy terms covering employee data, including that platform staff can see organization/member records. Export and deletion already exist.

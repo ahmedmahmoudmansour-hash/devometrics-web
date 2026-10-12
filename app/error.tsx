@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -12,6 +13,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     // Surfaces in the browser console and (in production) Vercel's logs, so
     // a real failure leaves a trace instead of vanishing behind the UI.
     console.error("Unhandled application error:", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
