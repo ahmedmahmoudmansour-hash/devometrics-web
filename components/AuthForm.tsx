@@ -280,7 +280,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
           </p>
         </div>
       )}
-      {mode === "signup" && (
+      {mode === "signup" && !usingInvitation && (
         <div>
           <label style={labelStyle}>Account type</label>
           <div style={{ display: "flex", gap: 8 }}>
