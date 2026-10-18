@@ -315,21 +315,21 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
       )}
       {mode === "signup" && (
         <div>
-          <label style={labelStyle} htmlFor="auth-full-name">Full name</label>
+          <label style={labelStyle} htmlFor="auth-full-name">Your name in English</label>
           <input
             id="auth-full-name"
             type="text"
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Jane Doe"
+            placeholder="e.g. Jane Doe"
             style={inputStyle}
           />
         </div>
       )}
       {mode === "signup" && (
         <div>
-          <label style={labelStyle} htmlFor="auth-full-name-ar">Full name in Arabic (optional) · الاسم بالعربية</label>
+          <label style={labelStyle} htmlFor="auth-full-name-ar">Your name in Arabic (optional) · اسمك بالعربية</label>
           <input
             id="auth-full-name-ar"
             type="text"
@@ -338,9 +338,14 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
             maxLength={200}
             value={fullNameAr}
             onChange={(e) => setFullNameAr(e.target.value)}
-            placeholder="جين دو"
+            placeholder="مثال: جين دو"
             style={inputStyle}
           />
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.5 }}>
+            {usingInvitation
+              ? "This is how your colleagues will see your name. You can add your passport name later, in My file."
+              : "This is how your name will appear in Devometrics."}
+          </p>
         </div>
       )}
       <div>
