@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CARD_H, CARD_W } from "@/lib/orgChart/tree";
@@ -32,7 +33,7 @@ function formatMemberSince(t: (key: string, values?: Record<string, string | num
 
 export type DropState = "none" | "valid" | "invalid" | "self";
 
-export default function OrgChartCard({
+function OrgChartCard({
   row,
   toggles,
   density,
@@ -63,6 +64,17 @@ export default function OrgChartCard({
     data: { userId: row.userId },
   });
 
+  // One stable callback for both refs. An inline arrow here is a new function on
+  // every render, so the drag library re-registers every card on every render
+  // (a click re-rendered the whole chart and made each click slow).
+  const setRefs = useCallback(
+    (el: HTMLDivElement | null) => {
+      setDragRef(el);
+      setDropRef(el);
+    },
+    [setDragRef, setDropRef]
+  );
+
   const height = density === "compact" ? COMPACT_CARD_H : CARD_H;
   const memberSince = toggles.showTenure ? formatMemberSince(t, row.memberSince) : null;
 
@@ -71,10 +83,7 @@ export default function OrgChartCard({
 
   return (
     <div
-      ref={(el) => {
-        setDragRef(el);
-        setDropRef(el);
-      }}
+      ref={setRefs}
       {...listeners}
       {...attributes}
       onClick={() => onSelect(row.userId)}
@@ -169,3 +178,7 @@ export default function OrgChartCard({
     </div>
   );
 }
+
+// Re-renders only when this card's own props change: selecting a card now redraws
+// the two cards involved, not the whole chart.
+export default memo(OrgChartCard);

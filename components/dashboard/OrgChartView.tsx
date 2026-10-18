@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
@@ -115,6 +115,25 @@ export default function OrgChartView({
   const nominatedSet = useMemo(() => new Set(nominatedUserIds), [nominatedUserIds]);
   const memberManagerPositionsMap = useMemo(() => new Map(Object.entries(memberManagerPositions)), [memberManagerPositions]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  // Stable across renders so the memoised cards do not all re-render on a click.
+  const handleSelectMember = useCallback((userId: string) => {
+    setSelectedId(memberTag(userId));
+    setError(null);
+  }, []);
+  const handleSelectPosition = useCallback((id: string) => {
+    setSelectedId(positionTag(id));
+    setError(null);
+  }, []);
+  const handleExpandMember = useCallback((userId: string) => setExpandedBranchRootIds((prev) => new Set(prev).add(memberTag(userId))), []);
+  const handleExpandPosition = useCallback((id: string) => setExpandedBranchRootIds((prev) => new Set(prev).add(positionTag(id))), []);
+
+  // The details panel sits below the chart, often off screen. Scroll it into
+  // view when something is selected so a click visibly does something.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (selectedId) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [selectedId]);
 
   useEffect(() => {
     listSavedViews().then(setSavedViews);
@@ -702,13 +721,8 @@ export default function OrgChartView({
                       isSuccessionCandidate={nominatedSet.has(n.node.row.userId)}
                       isSelected={n.node.id === selectedId}
                       dropState={dropStateFor(n.node.id)}
-                      onSelect={(userId) => {
-                        setSelectedId(memberTag(userId));
-                        setError(null);
-                      }}
-                      onExpandBranch={(userId) =>
-                        setExpandedBranchRootIds((prev) => new Set(prev).add(memberTag(userId)))
-                      }
+                      onSelect={handleSelectMember}
+                      onExpandBranch={handleExpandMember}
                     />
                   ) : (
                     <OrgChartPositionCard
@@ -718,11 +732,8 @@ export default function OrgChartView({
                       hasHiddenChildren={n.node.hasHiddenChildren}
                       isSelected={n.node.id === selectedId}
                       dropState={dropStateFor(n.node.id)}
-                      onSelect={(id) => {
-                        setSelectedId(positionTag(id));
-                        setError(null);
-                      }}
-                      onExpandBranch={(id) => setExpandedBranchRootIds((prev) => new Set(prev).add(positionTag(id)))}
+                      onSelect={handleSelectPosition}
+                      onExpandBranch={handleExpandPosition}
                     />
                   )}
                 </div>
@@ -770,7 +781,7 @@ export default function OrgChartView({
       )}
 
       {selectedMemberRow && (
-        <div className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
+        <div ref={panelRef} className="no-print" style={{ marginTop: 16, background: "var(--navy-mid)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>{selectedMemberRow.name}</span>
             <button
@@ -826,7 +837,9 @@ export default function OrgChartView({
       )}
 
       {selectedPosition && (
-        <OrgChartPositionPanel position={selectedPosition} rows={effectiveRows} positions={positions} onClose={() => setSelectedId(null)} />
+        <div ref={panelRef}>
+          <OrgChartPositionPanel position={selectedPosition} rows={effectiveRows} positions={positions} onClose={() => setSelectedId(null)} />
+        </div>
       )}
     </div>
   );

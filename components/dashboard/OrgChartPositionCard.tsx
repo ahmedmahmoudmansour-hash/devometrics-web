@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CARD_H, CARD_W } from "@/lib/orgChart/tree";
@@ -24,7 +25,7 @@ function ellipsize(text: string, max: number): string {
   return text.length > max ? text.slice(0, max - 1) + "…" : text;
 }
 
-export default function OrgChartPositionCard({
+function OrgChartPositionCard({
   position,
   toggles,
   density,
@@ -54,6 +55,16 @@ export default function OrgChartPositionCard({
     data: { taggedId: tag },
   });
 
+  // Stable ref callback (see OrgChartCard): an inline one re-registers the card with
+  // the drag library on every render.
+  const setRefs = useCallback(
+    (el: HTMLDivElement | null) => {
+      setDragRef(el);
+      setDropRef(el);
+    },
+    [setDragRef, setDropRef]
+  );
+
   const height = density === "compact" ? COMPACT_CARD_H : CARD_H;
   const colorKey = position.kind === "structural" ? "structural" : position.status;
   const colors = KIND_STATUS_COLORS[colorKey] ?? KIND_STATUS_COLORS.open;
@@ -63,10 +74,7 @@ export default function OrgChartPositionCard({
 
   return (
     <div
-      ref={(el) => {
-        setDragRef(el);
-        setDropRef(el);
-      }}
+      ref={setRefs}
       {...listeners}
       {...attributes}
       onClick={() => onSelect(position.id)}
@@ -173,3 +181,5 @@ export default function OrgChartPositionCard({
     </div>
   );
 }
+
+export default memo(OrgChartPositionCard);
