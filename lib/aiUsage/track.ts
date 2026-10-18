@@ -45,6 +45,7 @@ export type AiUsageFeature =
   | "coach_grow_memory"
   | "coach_session_summary"
   | "job_description"
+  | "jd_questions"
   | "role_grading"
   | "interview_questions"
   | "career_paths"

@@ -13,6 +13,7 @@ import {
   removeRoleTransition,
   suggestRoleGrading,
   generateJobDescription,
+  suggestJdQuestions,
   saveJobDescription,
   type RoleGradingSuggestion,
 } from "@/lib/jobArchitecture/actions";
@@ -217,17 +218,45 @@ function JDBuilder({ role }: { role: JobRole }) {
   const [saved, setSaved] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [isPending, startTransition] = useTransition();
+  // Before drafting, the AI asks a few questions about the role (null = not asking).
+  const [questions, setQuestions] = useState<string[] | null>(null);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [preparing, setPreparing] = useState(false);
 
-  function generate() {
+  function generate(answerList?: { question: string; answer: string }[]) {
     setError(null);
     setSaved(false);
     setGenerating(true);
     startTransition(async () => {
-      const result = await generateJobDescription(role.id);
+      const result = await generateJobDescription(role.id, answerList);
       setGenerating(false);
       if ("error" in result) setError(result.error);
       else setText(result.formatted);
     });
+  }
+
+  function startQuestions() {
+    setError(null);
+    setSaved(false);
+    setPreparing(true);
+    startTransition(async () => {
+      const result = await suggestJdQuestions(role.id);
+      setPreparing(false);
+      if ("error" in result) {
+        // Never block the draft on the questions: say so, and let them generate without.
+        setError(result.error);
+        return;
+      }
+      setQuestions(result.questions);
+      setAnswers(result.questions.map(() => ""));
+    });
+  }
+
+  function generateWithAnswers() {
+    if (!questions) return;
+    const list = questions.map((question, i) => ({ question, answer: answers[i] ?? "" })).filter((a) => a.answer.trim());
+    setQuestions(null);
+    generate(list);
   }
 
   function save() {
@@ -293,11 +322,63 @@ function JDBuilder({ role }: { role: JobRole }) {
           style={{ ...input, minHeight: 220, resize: "vertical", fontFamily: "inherit", fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap" }}
         />
       )}
+      {questions && (
+        <div style={{ marginTop: 10, padding: 12, borderRadius: 10, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.06)" }}>
+          <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("jdQuestionsTitle")}</p>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>{t("jdQuestionsHint")}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {questions.map((q, i) => (
+              <div key={i}>
+                <label style={{ display: "block", fontSize: 12, color: "var(--text)", marginBottom: 4, lineHeight: 1.45 }}>{q}</label>
+                <textarea
+                  value={answers[i] ?? ""}
+                  onChange={(e) => setAnswers((prev) => prev.map((a, j) => (j === i ? e.target.value : a)))}
+                  placeholder={t("jdAnswerPlaceholder")}
+                  maxLength={1000}
+                  rows={2}
+                  style={{ ...input, resize: "vertical", fontFamily: "inherit", fontSize: 12.5, lineHeight: 1.5 }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <button type="button" onClick={generateWithAnswers} disabled={generating} style={{ ...primaryBtn, opacity: generating ? 0.6 : 1 }}>
+              {t("jdGenerateWithAnswers")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setQuestions(null);
+                generate();
+              }}
+              disabled={generating}
+              style={ghostBtn}
+            >
+              {t("jdSkipQuestions")}
+            </button>
+            <button type="button" onClick={() => setQuestions(null)} style={ghostBtn}>
+              {t("cancel")}
+            </button>
+          </div>
+        </div>
+      )}
       {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-        <button type="button" onClick={generate} disabled={generating} style={{ ...ghostBtn, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", opacity: generating ? 0.6 : 1 }}>
-          {generating ? t("generating") : text ? t("regenerate") : t("generateFromRoleData")}
-        </button>
+        {!questions && (
+          <button
+            type="button"
+            onClick={startQuestions}
+            disabled={generating || preparing}
+            style={{ ...ghostBtn, color: "#a78bfa", borderColor: "rgba(167,139,250,0.3)", opacity: generating || preparing ? 0.6 : 1 }}
+          >
+            {preparing ? t("jdPreparingQuestions") : generating ? t("generating") : text ? t("regenerate") : t("generateFromRoleData")}
+          </button>
+        )}
+        {!questions && error && !text && (
+          <button type="button" onClick={() => generate()} disabled={generating} style={ghostBtn}>
+            {t("jdGenerateWithoutQuestions")}
+          </button>
+        )}
         {text && (
           <>
             <button type="button" onClick={save} disabled={isPending} style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }}>

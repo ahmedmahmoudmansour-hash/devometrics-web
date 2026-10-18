@@ -312,6 +312,83 @@ export async function suggestRoleGrading(title: string, responsibilities: string
   }
 }
 
+// Step one of writing a job description: before drafting, the AI reads what the
+// platform already knows about the role and asks the few things it cannot know,
+// so the description reflects the real job and not just a title and a level.
+// The answers are not stored; they shape the one draft they are sent with.
+const JD_QUESTIONS_TOOL = {
+  name: "record_jd_questions",
+  description: "The questions to ask the hiring team before writing a job description.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      questions: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "5 or 6 short, specific questions, each answerable in a sentence or two. Ask only what the role data does NOT already say. Never ask yes/no questions, and never ask for salary figures.",
+      },
+    },
+    required: ["questions"],
+  },
+};
+
+export async function suggestJdQuestions(roleId: string): Promise<{ error: string } | { questions: string[] }> {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { data: role } = await supabase
+    .from("job_roles")
+    .select("title, level, grade, track, responsibilities, job_families(name)")
+    .eq("id", roleId)
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ title: string; level: string; grade: number; track: RoleTrack; responsibilities: string; job_families: { name: string } }>();
+  if (!role) return { error: "Role not found" };
+
+  const { data: requirements } = await supabase
+    .from("role_competency_requirements")
+    .select("dimension, target_level")
+    .eq("role_id", roleId)
+    .returns<{ dimension: string; target_level: number }[]>();
+  const reqLines =
+    (requirements ?? [])
+      .sort((a, b) => b.target_level - a.target_level)
+      .map((r) => `${r.dimension}: ${r.target_level}/100`)
+      .join(", ") || "(none defined)";
+
+  const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
+  if (budgetCheck.error) return { error: budgetCheck.error };
+
+  const locale = await resolveCallerLocale(supabase, user.id);
+
+  try {
+    const { data: raw, model, inputTokens, outputTokens } = await callOpenRouterJson<{ questions: string[] }>({
+      model: "openai/gpt-5.4-mini",
+      maxTokens: 700,
+      system:
+        `LANGUAGE: Write every question in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}. ` +
+        "You are an experienced HR business partner about to write a job description with the hiring manager. Ask the 5 or 6 questions whose answers would most improve it and are NOT already in the role data: for example what the person actually does day to day, the team and who they work with, the tools, systems, languages or certifications that are must-have versus nice-to-have, working conditions (location, travel, hours, shifts), what success looks like in the first year, and what makes this role distinctive. Make each question specific to THIS role, short, and open-ended. Do not repeat what the role data already states. Do not ask about salary.",
+      user: `ROLE: ${role.title}
+FAMILY: ${role.job_families.name}
+LEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})
+RESPONSIBILITIES (internal notes): ${role.responsibilities || "(none provided)"}
+COMPETENCY PROFILE: ${reqLines}`,
+      jsonSchema: { name: "record_jd_questions", schema: JD_QUESTIONS_TOOL.input_schema },
+    });
+    await recordAiUsage(supabase, { organizationId, userId: user.id, feature: "jd_questions", model, inputTokens, outputTokens });
+
+    const questions = (raw.questions ?? [])
+      .map((q) => String(q).trim().slice(0, 300))
+      .filter(Boolean)
+      .slice(0, 6);
+    if (questions.length === 0) return { error: "Couldn't prepare questions right now — you can still generate without them." };
+    return { questions };
+  } catch (err) {
+    console.error("suggestJdQuestions failed:", err);
+    return { error: "Couldn't prepare questions right now — you can still generate without them." };
+  }
+}
+
 const JD_TOOL = {
   name: "record_job_description",
   description: "Write a polished, candidate-facing job description from a role's structured internal data.",
@@ -405,7 +482,9 @@ function formatJD(title: string, jd: GeneratedJD): string {
 // numbers to a candidate. GPT-5.4 Mini via OpenRouter — measured this
 // session as the best result of any model tested on exactly this task
 // (JD generation), beating Sonnet on quality while costing a fraction.
-export async function generateJobDescription(roleId: string): Promise<{ error: string } | { jd: GeneratedJD; formatted: string }> {
+export type JdAnswer = { question: string; answer: string };
+
+export async function generateJobDescription(roleId: string, answers?: JdAnswer[]): Promise<{ error: string } | { jd: GeneratedJD; formatted: string }> {
   const { supabase, user, organizationId } = await requireAdmin();
   if (!user || !organizationId) return { error: "Not authorized" };
 
@@ -451,6 +530,15 @@ export async function generateJobDescription(roleId: string): Promise<{ error: s
     transitionLines = transitions.map((t) => `${titleById.get(t.to_role_id) ?? "Unknown role"} (${t.transition_type})`).join(", ") || "(none mapped yet)";
   }
 
+  // What the hiring team told us when asked (suggestJdQuestions). Bounded and
+  // blank answers dropped, so the model only sees real information.
+  const answerLines = (answers ?? [])
+    .slice(0, 8)
+    .map((a) => ({ question: String(a.question ?? "").trim().slice(0, 300), answer: String(a.answer ?? "").trim().slice(0, 1000) }))
+    .filter((a) => a.question && a.answer)
+    .map((a) => `Q: ${a.question}\nA: ${a.answer}`)
+    .join("\n\n");
+
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) return { error: budgetCheck.error };
 
@@ -462,8 +550,9 @@ export async function generateJobDescription(roleId: string): Promise<{ error: s
       maxTokens: 1600,
       system:
         `LANGUAGE: Write the entire job description in ${locale === "ar" ? "Modern Standard Arabic (Fusha)" : "English"}, regardless of what language the role data below happens to be stored in.\n\n` +
-        "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, requirements, reporting relationships, compensation figures, or next-role titles not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output.",
-      user: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}\n\nMAPPED GROWTH PATHS (Job Architecture's own transition data — use ONLY these, if any):\n${transitionLines}`,
+        "You write clear, professional, candidate-facing job descriptions. Ground every claim strictly in the role data given — never invent responsibilities, years of experience, culture/values language, requirements, reporting relationships, compensation figures, or next-role titles not implied by the data. Competency targets given are internal scoring data on a 0-100 scale — translate them into natural-language requirements; never show the raw numbers or mention a '0-100 scale' in the output." +
+        (answerLines ? " The hiring team's answers to your questions are given below: treat them as stated facts about the role and use them to make the description specific, but still do not invent anything beyond them." : ""),
+      user: `ROLE: ${role.title}\nFAMILY: ${role.job_families.name}\nLEVEL: ${role.level || "(unspecified)"} (grade ${role.grade}/10, ${role.track === "management" ? "management track" : "individual-contributor track"})\n\nRESPONSIBILITIES (internal notes):\n${role.responsibilities || "(none provided — infer conservatively from the title and level alone)"}\n\nREQUIRED COMPETENCY PROFILE (internal scoring):\n${reqLines}\n\nMAPPED GROWTH PATHS (Job Architecture's own transition data — use ONLY these, if any):\n${transitionLines}${answerLines ? `\n\nANSWERS FROM THE HIRING TEAM:\n${answerLines}` : ""}`,
       jsonSchema: { name: "record_job_description", schema: JD_TOOL.input_schema },
     });
     const formatted = formatJD(role.title, jd);
