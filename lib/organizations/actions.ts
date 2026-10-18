@@ -19,6 +19,7 @@ import { resolveCallerLocale } from "@/lib/i18n/request";
 import type { OrganizationInvite, OrganizationMember } from "@/lib/supabase/types";
 import type { EmployeeFileData, InviteDependentDraft } from "@/lib/employeeFile/constants";
 import { sanitizeInviteFileData } from "@/lib/employeeFile/inviteData";
+import { buildSignupLink } from "@/lib/auth/inviteLink";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -28,7 +29,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // way, per checkAndConsumeInvite below).
 // Exported so lib/hiring/hireActions.ts can reuse this exact email template
 // for hire-conversion invites rather than building a second one.
-export async function sendInviteEmail(email: string, orgName: string, organizationId: string): Promise<void> {
+export async function sendInviteEmail(email: string, orgName: string, organizationId: string, inviteId?: string): Promise<void> {
   try {
     const override = await getEmailMessageOverride(organizationId, "employee_invite");
     await sendEmail(
@@ -44,7 +45,7 @@ export async function sendInviteEmail(email: string, orgName: string, organizati
             Devometrics — track your career growth alongside the rest of your team.
           </p>
           <p style="margin:0;">
-            <a href="https://devometrics.com/signup?email=${encodeURIComponent(email)}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your account →</a>
+            <a href="${buildSignupLink(email, inviteId)}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your account →</a>
           </p>
           <p style="font-size:13px;color:#8892a4;margin:24px 0 0;">
             Sign up with this email address (${escapeHtml(email)}) and you'll be attached to
@@ -333,7 +334,7 @@ export async function inviteEmployee(
     }
   }
 
-  const { error } = await supabase.from("organization_invites").insert({
+  const { data: created, error } = await supabase.from("organization_invites").insert({
     organization_id: organizationId,
     email: trimmed,
     invited_by: user.id,
@@ -348,10 +349,10 @@ export async function inviteEmployee(
     // Only sent when HR actually entered something, so an invite without
     // employee details keeps working even before migration 0183 is applied.
     ...(cleaned.data ? { file_data: cleaned.data } : {}),
-  });
-  if (error) return { error: "Could not send invite — they may already be invited" };
+  }).select("id").single<{ id: string }>();
+  if (error || !created) return { error: "Could not send invite — they may already be invited" };
 
-  if (org?.name) await sendInviteEmail(trimmed, org.name, organizationId);
+  if (org?.name) await sendInviteEmail(trimmed, org.name, organizationId, created.id);
 
   revalidatePath("/dashboard/company");
   return { success: true };
@@ -431,9 +432,13 @@ export async function bulkInviteEmployees(
     ...(fileData ? { file_data: fileData } : {}),
   });
 
-  const { error: batchError } = await supabase
+  // The new rows' ids go into each person's sign-up link (0201).
+  const inviteIdByEmail = new Map<string, string>();
+  const { data: batchRows, error: batchError } = await supabase
     .from("organization_invites")
-    .insert(validRows.map(({ row, email, fileData }) => toInsert(row, email, fileData)));
+    .insert(validRows.map(({ row, email, fileData }) => toInsert(row, email, fileData)))
+    .select("id, email");
+  for (const r of (batchRows ?? []) as { id: string; email: string }[]) inviteIdByEmail.set(r.email.toLowerCase(), r.id);
 
   if (batchError) {
     // A single bulk insert either fully succeeds or fully fails (e.g. one
@@ -442,7 +447,8 @@ export async function bulkInviteEmployees(
     // row at a time so a handful of duplicates don't block everyone else
     // in the file.
     for (const { row, email, fileData } of validRows) {
-      const { error } = await supabase.from("organization_invites").insert(toInsert(row, email, fileData));
+      const { data: one, error } = await supabase.from("organization_invites").insert(toInsert(row, email, fileData)).select("id").single<{ id: string }>();
+      if (one?.id) inviteIdByEmail.set(email.toLowerCase(), one.id);
       results.push({ email, status: error ? "duplicate" : "invited" });
     }
   } else {
@@ -456,7 +462,7 @@ export async function bulkInviteEmployees(
     .maybeSingle<{ name: string }>();
   if (org?.name) {
     const invited = results.filter((r) => r.status === "invited");
-    await Promise.allSettled(invited.map((r) => sendInviteEmail(r.email, org.name, organizationId)));
+    await Promise.allSettled(invited.map((r) => sendInviteEmail(r.email, org.name, organizationId, inviteIdByEmail.get(r.email.toLowerCase()))));
   }
 
   revalidatePath("/dashboard/company");

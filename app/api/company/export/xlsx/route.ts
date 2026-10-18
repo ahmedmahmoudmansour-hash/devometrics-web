@@ -11,7 +11,8 @@ export async function GET() {
   if (!data.isOrgAdmin) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
   const sheetRows = data.rows.map((r) => ({
-    Name: r.name,
+    "Name (English)": r.nameEn ?? r.name,
+    "Name (Arabic)": r.nameAr ?? "",
     Title: r.title ?? "",
     Department: r.department ?? "",
     "Business Unit": r.businessUnit ?? "",
@@ -28,7 +29,7 @@ export async function GET() {
   }));
 
   return buildXlsxResponse(
-    [{ name: "Workforce", rows: sheetRows, colWidths: [22, 20, 18, 18, 20, 16, 16, 28, 18, 16, 8, 16, 16] }],
+    [{ name: "Workforce", rows: sheetRows, colWidths: [22, 22, 20, 18, 18, 20, 16, 16, 28, 18, 16, 8, 16, 16] }],
     `${data.organizationName ?? "devometrics"}-workforce`
   );
 }

@@ -5,6 +5,8 @@ import { MARITAL_STATUSES, EMPLOYMENT_TYPES, DEPENDENT_RELATIONS, type EmployeeF
 // reads back out of organization_invites.file_data when the person joins.
 const COLUMN_FOR_FIELD: Record<keyof EmployeeFileData, string> = {
   legalName: "legal_name",
+  legalNameAr: "legal_name_ar",
+  displayNameAr: "full_name_ar",
   dateOfBirth: "date_of_birth",
   gender: "gender",
   nationality: "nationality",
@@ -19,6 +21,7 @@ const COLUMN_FOR_FIELD: Record<keyof EmployeeFileData, string> = {
   postalCode: "postal_code",
   country: "country",
   emergencyContactName: "emergency_contact_name",
+  emergencyContactNameAr: "emergency_contact_name_ar",
   emergencyContactRelation: "emergency_contact_relation",
   emergencyContactPhone: "emergency_contact_phone",
   hireDate: "hire_date",
@@ -39,7 +42,7 @@ function isRealIsoDate(v: string): boolean {
 // add another dependent to, so an all-empty entry is silently dropped
 // rather than treated as "HR meant to enter a dependent and left it blank."
 function isBlankDependentDraft(d: Partial<InviteDependentDraft>): boolean {
-  return !d.fullName?.trim() && !d.relation?.trim() && !d.dateOfBirth?.trim();
+  return !d.fullName?.trim() && !d.fullNameAr?.trim() && !d.relation?.trim() && !d.dateOfBirth?.trim();
 }
 
 // Returns the cleaned jsonb to store, null when HR entered nothing, or an
@@ -57,6 +60,7 @@ export function sanitizeInviteFileData(
       const value = String(raw).trim();
       if (!value) continue;
       if (value.length > 300) return { error: "One of the employee details is too long." };
+      if ((field === "legalNameAr" || field === "displayNameAr" || field === "emergencyContactNameAr") && value.length > 200) return { error: "An Arabic name can be at most 200 characters." };
       if (DATE_FIELDS.includes(field) && !isRealIsoDate(value)) return { error: "Dates must be real dates in YYYY-MM-DD form." };
       if (field === "maritalStatus" && !(MARITAL_STATUSES as readonly string[]).includes(value)) return { error: "Invalid marital status." };
       if (field === "employmentType" && !(EMPLOYMENT_TYPES as readonly string[]).includes(value)) return { error: "Invalid employment type." };
@@ -65,17 +69,23 @@ export function sanitizeInviteFileData(
     }
   }
 
-  const cleanDependents: { full_name: string; relation: string; date_of_birth?: string }[] = [];
+  const cleanDependents: { full_name: string; full_name_ar?: string; relation: string; date_of_birth?: string }[] = [];
   for (const dep of dependents ?? []) {
     if (isBlankDependentDraft(dep)) continue;
     const fullName = dep.fullName?.trim() ?? "";
+    const fullNameAr = dep.fullNameAr?.trim() ?? "";
     const relation = dep.relation?.trim() ?? "";
     const dateOfBirth = dep.dateOfBirth?.trim() ?? "";
     if (!fullName) return { error: "Enter a name for each dependent, or remove the empty row." };
-    if (fullName.length > 300) return { error: "One of the employee details is too long." };
+    if (fullName.length > 300 || fullNameAr.length > 200) return { error: "One of the employee details is too long." };
     if (!(DEPENDENT_RELATIONS as readonly string[]).includes(relation)) return { error: "Choose a relationship for each dependent." };
     if (dateOfBirth && !isRealIsoDate(dateOfBirth)) return { error: "Dates must be real dates in YYYY-MM-DD form." };
-    cleanDependents.push(dateOfBirth ? { full_name: fullName, relation, date_of_birth: dateOfBirth } : { full_name: fullName, relation });
+    cleanDependents.push({
+      full_name: fullName,
+      ...(fullNameAr ? { full_name_ar: fullNameAr } : {}),
+      relation,
+      ...(dateOfBirth ? { date_of_birth: dateOfBirth } : {}),
+    });
   }
   if (cleanDependents.length) out.dependents = cleanDependents;
 

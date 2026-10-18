@@ -31,6 +31,8 @@ export const REQUIRABLE_DOC_TYPES = ALL_DOC_TYPES.filter((t) => t !== "other");
 
 export type EmployeeFileData = {
   legalName: string;
+  legalNameAr: string;
+  displayNameAr: string;
   dateOfBirth: string;
   gender: string;
   nationality: string;
@@ -45,6 +47,7 @@ export type EmployeeFileData = {
   postalCode: string;
   country: string;
   emergencyContactName: string;
+  emergencyContactNameAr: string;
   emergencyContactRelation: string;
   emergencyContactPhone: string;
   hireDate: string;
@@ -54,6 +57,8 @@ export type EmployeeFileData = {
 
 export const EMPTY_EMPLOYEE_FILE: EmployeeFileData = {
   legalName: "",
+  legalNameAr: "",
+  displayNameAr: "",
   dateOfBirth: "",
   gender: "",
   nationality: "",
@@ -68,6 +73,7 @@ export const EMPTY_EMPLOYEE_FILE: EmployeeFileData = {
   postalCode: "",
   country: "",
   emergencyContactName: "",
+  emergencyContactNameAr: "",
   emergencyContactRelation: "",
   emergencyContactPhone: "",
   hireDate: "",
@@ -75,12 +81,12 @@ export const EMPTY_EMPLOYEE_FILE: EmployeeFileData = {
   probationEndDate: "",
 };
 
-export type EmployeeDependent = { id: string; fullName: string; relation: string; dateOfBirth: string; notes: string };
+export type EmployeeDependent = { id: string; fullName: string; fullNameAr: string; relation: string; dateOfBirth: string; notes: string };
 
 // A dependent captured at invite time (0184) — no id/notes yet, since the
 // row doesn't exist until apply_invite_file_data() creates it.
-export type InviteDependentDraft = { fullName: string; relation: string; dateOfBirth: string };
-export const EMPTY_INVITE_DEPENDENT: InviteDependentDraft = { fullName: "", relation: "", dateOfBirth: "" };
+export type InviteDependentDraft = { fullName: string; fullNameAr: string; relation: string; dateOfBirth: string };
+export const EMPTY_INVITE_DEPENDENT: InviteDependentDraft = { fullName: "", fullNameAr: "", relation: "", dateOfBirth: "" };
 
 // An HR-defined document type (organization_document_types, 0188) beyond
 // the 6 fixed ones -- e.g. "NDA". Its id IS the value stored in

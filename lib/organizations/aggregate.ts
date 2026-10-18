@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { bilingualName, currentNameLocale } from "@/lib/names";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import type {
   AssessmentResult,
@@ -27,7 +28,11 @@ import { computeMobility, type Mobility } from "@/lib/jobArchitecture/mobility";
 export type WorkforceRow = {
   userId: string;
   memberId: string | null;
+  // Display name: English and Arabic together when both are stored (see lib/names.ts).
   name: string;
+  // The two names separately, for exports. Optional so test fixtures stay small.
+  nameEn?: string;
+  nameAr?: string;
   email: string;
   title: string | null;
   department: string | null;
@@ -325,6 +330,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     milestoneStatsByUser.set(userId, stats);
   }
 
+  const nameLocale = await currentNameLocale();
   const rows: WorkforceRow[] = (profiles ?? []).map((p) => {
     const analysis = latestAnalysisByUser.get(p.id);
     const dimensionLevels: Partial<Record<CompetencyDimension, number>> = {};
@@ -335,7 +341,9 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     return {
       userId: p.id,
       memberId: memberIdByUser.get(p.id) ?? null,
-      name: p.full_name ?? "—",
+      name: bilingualName(p.full_name, p.full_name_ar, nameLocale),
+      nameEn: p.full_name ?? "",
+      nameAr: p.full_name_ar ?? "",
       email: p.email ?? "—",
       title: titleByUser.get(p.id) ?? null,
       department: memberByUser.get(p.id)?.department ?? null,
@@ -704,7 +712,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
     profile: profile
       ? {
           id: profile.id,
-          name: profile.full_name ?? "—",
+          name: bilingualName(profile.full_name, profile.full_name_ar, await currentNameLocale()),
           email: profile.email ?? "—",
           avatarUrl: profile.avatar_url,
           title: targetMembership.title,

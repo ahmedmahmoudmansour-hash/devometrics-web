@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { bilingualName, currentNameLocale } from "@/lib/names";
 
 // Employee directory (0175) — deliberately thin. The real access control
 // lives inside the two SECURITY DEFINER functions this calls
@@ -26,6 +27,7 @@ export type DirectoryEntry = {
 type RawDirectoryEntry = {
   user_id: string;
   full_name: string | null;
+  full_name_ar: string | null;
   avatar_url: string | null;
   email: string | null;
   title: string | null;
@@ -44,9 +46,10 @@ export async function listDirectoryEntries(organizationId: string): Promise<Dire
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_directory_entries", { check_org_id: organizationId });
   if (error || !data) return [];
+  const locale = await currentNameLocale();
   return (data as RawDirectoryEntry[]).map((r) => ({
     userId: r.user_id,
-    name: r.full_name ?? "—",
+    name: bilingualName(r.full_name, r.full_name_ar, locale),
     avatarUrl: r.avatar_url,
     email: r.email ?? "—",
     title: r.title,

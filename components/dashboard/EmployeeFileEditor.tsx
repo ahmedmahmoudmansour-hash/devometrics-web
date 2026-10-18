@@ -78,7 +78,7 @@ export default function EmployeeFileEditor({
   const [isPending, startTransition] = useTransition();
   const off = new Set(disabledSections);
 
-  const [data, setData] = useState<EmployeeFileData>(initial.profile ?? EMPTY_EMPLOYEE_FILE);
+  const [data, setData] = useState<EmployeeFileData>({ ...(initial.profile ?? EMPTY_EMPLOYEE_FILE), displayNameAr: initial.displayNameAr });
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +90,7 @@ export default function EmployeeFileEditor({
 
   const [dependents, setDependents] = useState(initial.dependents);
   const [depName, setDepName] = useState("");
+  const [depNameAr, setDepNameAr] = useState("");
   const [depRelation, setDepRelation] = useState("child");
   const [depDob, setDepDob] = useState("");
   const [depError, setDepError] = useState<string | null>(null);
@@ -107,11 +108,18 @@ export default function EmployeeFileEditor({
     setData((prev) => ({ ...prev, [key]: e.target.value }));
   };
 
-  function field(key: keyof EmployeeFileData, label: string, type = "text", readOnly = false) {
+  function field(key: keyof EmployeeFileData, label: string, type = "text", readOnly = false, arabic = false) {
     return (
       <div key={key}>
         <label style={labelStyle}>{label}</label>
-        <input type={type} value={data[key]} onChange={set(key)} readOnly={readOnly} style={{ ...fieldStyle, opacity: readOnly ? 0.7 : 1 }} />
+        <input
+          type={type}
+          value={data[key]}
+          onChange={set(key)}
+          readOnly={readOnly}
+          {...(arabic ? { dir: "rtl", lang: "ar" } : {})}
+          style={{ ...fieldStyle, opacity: readOnly ? 0.7 : 1 }}
+        />
       </div>
     );
   }
@@ -136,10 +144,11 @@ export default function EmployeeFileEditor({
     e.preventDefault();
     setDepError(null);
     startTransition(async () => {
-      const result = await addDependent(organizationId, userId, { fullName: depName, relation: depRelation, dateOfBirth: depDob, notes: "" });
+      const result = await addDependent(organizationId, userId, { fullName: depName, fullNameAr: depNameAr, relation: depRelation, dateOfBirth: depDob, notes: "" });
       if ("error" in result) return setDepError(result.error);
-      setDependents((prev) => [...prev, { id: result.id, fullName: depName.trim(), relation: depRelation, dateOfBirth: depDob, notes: "" }]);
+      setDependents((prev) => [...prev, { id: result.id, fullName: depName.trim(), fullNameAr: depNameAr.trim(), relation: depRelation, dateOfBirth: depDob, notes: "" }]);
       setDepName("");
+      setDepNameAr("");
       setDepDob("");
     });
   }
@@ -289,6 +298,8 @@ export default function EmployeeFileEditor({
         <p style={hintStyle}>{mode === "hr" ? t("personalHintHr") : t("personalHintSelf")}</p>
         <div style={gridStyle}>
           {field("legalName", t("legalName"))}
+          {field("legalNameAr", t("legalNameAr"), "text", false, true)}
+          {field("displayNameAr", t("displayNameAr"), "text", false, true)}
           {field("dateOfBirth", t("dateOfBirth"), "date")}
           {field("gender", t("gender"))}
           {field("nationality", t("nationality"))}
@@ -350,6 +361,7 @@ export default function EmployeeFileEditor({
           <p style={hintStyle}>{t("emergencyHint")}</p>
           <div style={gridStyle}>
             {field("emergencyContactName", t("emergencyName"))}
+            {field("emergencyContactNameAr", t("emergencyNameAr"), "text", false, true)}
             {field("emergencyContactRelation", t("emergencyRelation"))}
             {field("emergencyContactPhone", t("emergencyPhone"), "tel")}
           </div>
@@ -399,7 +411,14 @@ export default function EmployeeFileEditor({
               {dependents.map((d) => (
                 <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "9px 0", borderTop: "1px solid var(--border)", fontSize: 13 }}>
                   <span style={{ color: "var(--text)" }}>
-                    <strong>{d.fullName}</strong> <span style={{ color: "var(--text-muted)" }}>— {t(`relation_${d.relation}`)}{d.dateOfBirth ? ` · ${d.dateOfBirth}` : ""}</span>
+                    <strong>{d.fullName}</strong>
+                    {d.fullNameAr ? (
+                      <>
+                        {" "}
+                        <strong dir="rtl" lang="ar">{d.fullNameAr}</strong>
+                      </>
+                    ) : null}{" "}
+                    <span style={{ color: "var(--text-muted)" }}>— {t(`relation_${d.relation}`)}{d.dateOfBirth ? ` · ${d.dateOfBirth}` : ""}</span>
                   </span>
                   <button type="button" disabled={isPending} onClick={() => handleRemoveDependent(d.id)} style={btnGhost}>
                     {t("remove")}
@@ -413,6 +432,10 @@ export default function EmployeeFileEditor({
               <div>
                 <label style={labelStyle}>{t("depName")}</label>
                 <input value={depName} onChange={(e) => setDepName(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>{t("depNameAr")}</label>
+                <input dir="rtl" lang="ar" value={depNameAr} onChange={(e) => setDepNameAr(e.target.value)} style={fieldStyle} />
               </div>
               <div>
                 <label style={labelStyle}>{t("depRelation")}</label>

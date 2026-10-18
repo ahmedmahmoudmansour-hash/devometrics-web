@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { verifyInviteCode } from "@/lib/auth/inviteGate";
+import { verifyInviteCode, verifySignupInvite } from "@/lib/auth/inviteGate";
+import { isInviteToken } from "@/lib/auth/inviteLink";
 
 // Supabase's AuthError.message is usually a clean string, but errors
 // surfaced from the auth server's own side effects (e.g. its SMTP relay
@@ -54,9 +55,16 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
   const supabase = createClient();
 
   const [fullName, setFullName] = useState("");
+  const [fullNameAr, setFullNameAr] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  // An invitation email links here with ?invite=<id>. A person invited by their
+  // company does not need the platform invite code (0201); if the invitation
+  // does not check out, the code field appears as before.
+  const inviteToken = searchParams.get("invite");
+  const [invitationRejected, setInvitationRejected] = useState(false);
+  const usingInvitation = isInviteToken(inviteToken) && !invitationRejected;
   const [accountType, setAccountType] = useState<"individual" | "company">("individual");
   // Surfaces the reason for the redirect from DashboardLayout's is_disabled
   // check — that check signs the user out and lands them back here with
@@ -91,9 +99,12 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
     setLoading(true);
 
     if (mode === "signup") {
-      const inviteResult = await verifyInviteCode(inviteCode);
+      const inviteResult = usingInvitation
+        ? await verifySignupInvite(inviteToken, email)
+        : await verifyInviteCode(inviteCode);
       if (!inviteResult.ok) {
         setLoading(false);
+        if (usingInvitation) setInvitationRejected(true);
         setError(inviteResult.error ?? "Invalid invite code");
         return;
       }
@@ -102,7 +113,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
         email,
         password,
         options: {
-          data: { full_name: fullName, account_type: accountType },
+          data: { full_name: fullName, full_name_ar: fullNameAr.trim(), account_type: accountType },
           // Without this, the confirmation link falls back to the
           // project's Supabase "Site URL" setting — which drifts from
           // whatever's actually deployed (e.g. still pointing at
@@ -246,7 +257,12 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {mode === "signup" && (
+      {mode === "signup" && usingInvitation && (
+        <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
+          You&apos;ve been invited by your company, so you don&apos;t need an invite code. Sign up with the email address the invitation was sent to.
+        </p>
+      )}
+      {mode === "signup" && !usingInvitation && (
         <div>
           <label style={labelStyle} htmlFor="auth-invite-code">Invite code</label>
           <input
@@ -311,6 +327,22 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
           />
         </div>
       )}
+      {mode === "signup" && (
+        <div>
+          <label style={labelStyle} htmlFor="auth-full-name-ar">Full name in Arabic (optional) · الاسم بالعربية</label>
+          <input
+            id="auth-full-name-ar"
+            type="text"
+            dir="rtl"
+            lang="ar"
+            maxLength={200}
+            value={fullNameAr}
+            onChange={(e) => setFullNameAr(e.target.value)}
+            placeholder="جين دو"
+            style={inputStyle}
+          />
+        </div>
+      )}
       <div>
         <label style={labelStyle} htmlFor="auth-email">Email address</label>
         <input
@@ -318,6 +350,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
           type="email"
           required
           value={email}
+          readOnly={mode === "signup" && usingInvitation}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           style={inputStyle}

@@ -9,6 +9,8 @@ export type BigFiveProfile = {
 export type Profile = {
   id: string;
   full_name: string | null;
+  // Arabic form of the name (0200); may be absent until that migration has run.
+  full_name_ar?: string | null;
   email: string | null;
   avatar_url: string | null;
   location: string | null;

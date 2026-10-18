@@ -98,6 +98,14 @@ const HEADER_MAP: Record<string, Exclude<keyof BulkInviteRow, "isNewHire">> = {
 const FILE_HEADER_MAP: Record<string, keyof EmployeeFileData> = {
   fullname: "legalName",
   legalname: "legalName",
+  fullnamearabic: "legalNameAr",
+  fullnamear: "legalNameAr",
+  legalnamearabic: "legalNameAr",
+  arabicname: "legalNameAr",
+  arabicfullname: "legalNameAr",
+  namearabic: "legalNameAr",
+  emergencycontactnamearabic: "emergencyContactNameAr",
+  emergencycontactnamear: "emergencyContactNameAr",
   dateofbirth: "dateOfBirth",
   dob: "dateOfBirth",
   birthdate: "dateOfBirth",
@@ -177,6 +185,9 @@ async function parseWorkbook(data: ArrayBuffer): Promise<BulkInviteRow[]> {
       if (!field) continue;
       if (text) row[field] = text;
     }
+    if (row.fileData?.legalNameAr && !row.fileData.displayNameAr) {
+      row.fileData = { ...row.fileData, displayNameAr: row.fileData.legalNameAr };
+    }
     return row;
   });
 }
@@ -195,6 +206,7 @@ async function downloadTemplate() {
       Location: "Cairo",
       "New Hire": "Yes",
       "Full Name": "Jane Doe",
+      "Full Name (Arabic)": "جين دو",
       "Date of Birth": "1992-04-18",
       Nationality: "Egyptian",
       "National ID": "29204180100000",
@@ -205,6 +217,7 @@ async function downloadTemplate() {
       City: "Cairo",
       "Postal Code": "11511",
       "Emergency Contact Name": "John Doe",
+      "Emergency Contact Name (Arabic)": "جون دو",
       "Emergency Contact Relation": "Spouse",
       "Emergency Contact Phone": "+20 100 111 1111",
       "Hire Date": "2026-10-01",
@@ -407,6 +420,17 @@ export default function InviteEmployeeForm({
                   <input type="text" value={fileData.legalName} onChange={setFd("legalName")} style={fieldStyle} />
                 </div>
                 <div>
+                  <label style={labelStyle}>{tf("legalNameAr")}</label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    lang="ar"
+                    value={fileData.legalNameAr}
+                    onChange={(e) => setFileData((prev) => ({ ...prev, legalNameAr: e.target.value, displayNameAr: e.target.value }))}
+                    style={fieldStyle}
+                  />
+                </div>
+                <div>
                   <label style={labelStyle}>{tf("dateOfBirth")}</label>
                   <input type="date" value={fileData.dateOfBirth} onChange={setFd("dateOfBirth")} style={fieldStyle} />
                 </div>
@@ -501,6 +525,10 @@ export default function InviteEmployeeForm({
                   <input type="text" value={fileData.emergencyContactName} onChange={setFd("emergencyContactName")} style={fieldStyle} />
                 </div>
                 <div>
+                  <label style={labelStyle}>{tf("emergencyNameAr")}</label>
+                  <input type="text" dir="rtl" lang="ar" value={fileData.emergencyContactNameAr} onChange={setFd("emergencyContactNameAr")} style={fieldStyle} />
+                </div>
+                <div>
                   <label style={labelStyle}>{tf("emergencyRelation")}</label>
                   <input type="text" value={fileData.emergencyContactRelation} onChange={setFd("emergencyContactRelation")} style={fieldStyle} />
                 </div>
@@ -518,6 +546,10 @@ export default function InviteEmployeeForm({
                   <div>
                     <label style={labelStyle}>{tf("depName")}</label>
                     <input type="text" value={dep.fullName} onChange={(e) => setDependentField(i, "fullName", e.target.value)} style={fieldStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{tf("depNameAr")}</label>
+                    <input type="text" dir="rtl" lang="ar" value={dep.fullNameAr} onChange={(e) => setDependentField(i, "fullNameAr", e.target.value)} style={fieldStyle} />
                   </div>
                   <div>
                     <label style={labelStyle}>{tf("depRelation")}</label>

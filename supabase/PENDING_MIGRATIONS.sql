@@ -1,7 +1,6 @@
 -- ============================================================
 -- DEVOMETRICS -- PENDING MIGRATIONS: none
 --
--- Everything through 0199 is applied and verified live (2026-10-11).
--- (0197 hiring same-company integrity, 0198 Knowledge Hub access + SCORM
---  limits, 0199 org chart admin-only + no reporting loops.)
+-- Everything through 0201 is applied and verified live (2026-10-18).
+-- (0200 names in English and Arabic, 0201 sign-up with a company invitation.)
 -- ============================================================

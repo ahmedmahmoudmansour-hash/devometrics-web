@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { buildSignupLink } from "@/lib/auth/inviteLink";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/organizations/slug";
 import { sendEmail } from "@/lib/email/resend";
@@ -298,12 +299,12 @@ export async function createCompanyWorkspace(fields: {
     return { error: "Could not create the company workspace — the database may need migration 0081 run first." };
   }
 
-  const { error: inviteError } = await supabase.from("organization_invites").insert({
+  const { data: adminInvite, error: inviteError } = await supabase.from("organization_invites").insert({
     organization_id: org.id,
     email: adminEmail,
     invited_by: user.id,
     intended_role: "admin",
-  });
+  }).select("id").single<{ id: string }>();
   if (inviteError) {
     console.error("createCompanyWorkspace invite insert failed:", inviteError);
     return { error: "Workspace created, but the founding-admin invite failed — try inviting them again from the company page." };
@@ -322,7 +323,7 @@ export async function createCompanyWorkspace(fields: {
             <strong>${escapeHtml(adminEmail)}</strong> its admin.
           </p>
           <p style="margin:0;">
-            <a href="https://devometrics.com/signup?email=${encodeURIComponent(adminEmail)}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your admin account →</a>
+            <a href="${buildSignupLink(adminEmail, adminInvite?.id)}" style="background:#3f7a67;color:#16161a;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;display:inline-block;font-size:14px;">Create your admin account →</a>
           </p>
           <p style="font-size:13px;color:#8892a4;margin:24px 0 0;">
             Sign up with this email address (${escapeHtml(adminEmail)}) and you'll be attached as

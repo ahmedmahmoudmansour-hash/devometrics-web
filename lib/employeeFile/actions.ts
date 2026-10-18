@@ -47,7 +47,7 @@ async function currentUser(supabase: Client) {
 }
 
 type RawProfile = {
-  legal_name: string | null; date_of_birth: string | null; gender: string | null; nationality: string | null; national_id: string | null;
+  legal_name: string | null; legal_name_ar: string | null; emergency_contact_name_ar: string | null; date_of_birth: string | null; gender: string | null; nationality: string | null; national_id: string | null;
   marital_status: string | null; personal_phone: string | null; personal_email: string | null; address_line1: string | null;
   address_line2: string | null; city: string | null; region: string | null; postal_code: string | null; country: string | null;
   emergency_contact_name: string | null; emergency_contact_relation: string | null; emergency_contact_phone: string | null;
@@ -55,16 +55,16 @@ type RawProfile = {
 };
 
 const PROFILE_COLUMNS =
-  "legal_name, date_of_birth, gender, nationality, national_id, marital_status, personal_phone, personal_email, address_line1, address_line2, city, region, postal_code, country, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, hire_date, employment_type, probation_end_date";
+  "legal_name, legal_name_ar, emergency_contact_name_ar, date_of_birth, gender, nationality, national_id, marital_status, personal_phone, personal_email, address_line1, address_line2, city, region, postal_code, country, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, hire_date, employment_type, probation_end_date";
 
 function mapProfile(r: RawProfile | null): EmployeeFileData | null {
   if (!r) return null;
   return {
-    legalName: r.legal_name ?? "", dateOfBirth: r.date_of_birth ?? "", gender: r.gender ?? "", nationality: r.nationality ?? "",
+    legalName: r.legal_name ?? "", legalNameAr: r.legal_name_ar ?? "", displayNameAr: "", dateOfBirth: r.date_of_birth ?? "", gender: r.gender ?? "", nationality: r.nationality ?? "",
     nationalId: r.national_id ?? "", maritalStatus: r.marital_status ?? "", personalPhone: r.personal_phone ?? "",
     personalEmail: r.personal_email ?? "", addressLine1: r.address_line1 ?? "", addressLine2: r.address_line2 ?? "",
     city: r.city ?? "", region: r.region ?? "", postalCode: r.postal_code ?? "", country: r.country ?? "",
-    emergencyContactName: r.emergency_contact_name ?? "", emergencyContactRelation: r.emergency_contact_relation ?? "",
+    emergencyContactName: r.emergency_contact_name ?? "", emergencyContactNameAr: r.emergency_contact_name_ar ?? "", emergencyContactRelation: r.emergency_contact_relation ?? "",
     emergencyContactPhone: r.emergency_contact_phone ?? "", hireDate: r.hire_date ?? "", employmentType: r.employment_type ?? "",
     probationEndDate: r.probation_end_date ?? "",
   };
@@ -72,6 +72,8 @@ function mapProfile(r: RawProfile | null): EmployeeFileData | null {
 
 export type EmployeeFileBundle = {
   profile: EmployeeFileData | null;
+  // The Arabic form of the name shown in the app (profiles.full_name_ar, 0200).
+  displayNameAr: string;
   dependents: EmployeeDependent[];
   documents: EmployeeDocument[];
 };
@@ -82,19 +84,19 @@ export type EmployeeFileBundle = {
 export async function getEmployeeFile(organizationId: string, userId?: string): Promise<EmployeeFileBundle> {
   const supabase = await createClient();
   const user = await currentUser(supabase);
-  const empty: EmployeeFileBundle = { profile: null, dependents: [], documents: [] };
+  const empty: EmployeeFileBundle = { profile: null, displayNameAr: "", dependents: [], documents: [] };
   if (!user) return empty;
   const targetId = userId ?? user.id;
 
-  const [{ data: profile }, { data: deps }, { data: docs }] = await Promise.all([
+  const [{ data: profile }, { data: deps }, { data: docs }, { data: nameRow }] = await Promise.all([
     supabase.from("employee_profiles").select(PROFILE_COLUMNS).eq("organization_id", organizationId).eq("user_id", targetId).maybeSingle<RawProfile>(),
     supabase
       .from("employee_dependents")
-      .select("id, full_name, relation, date_of_birth, notes")
+      .select("id, full_name, full_name_ar, relation, date_of_birth, notes")
       .eq("organization_id", organizationId)
       .eq("user_id", targetId)
       .order("created_at", { ascending: true })
-      .returns<{ id: string; full_name: string; relation: string; date_of_birth: string | null; notes: string | null }[]>(),
+      .returns<{ id: string; full_name: string; full_name_ar: string | null; relation: string; date_of_birth: string | null; notes: string | null }[]>(),
     supabase
       .from("employee_documents")
       .select("id, doc_type, title, file_name, expires_on, uploaded_by, created_at")
@@ -102,6 +104,7 @@ export async function getEmployeeFile(organizationId: string, userId?: string): 
       .eq("user_id", targetId)
       .order("created_at", { ascending: false })
       .returns<{ id: string; doc_type: string; title: string; file_name: string; expires_on: string | null; uploaded_by: string | null; created_at: string }[]>(),
+    supabase.from("profiles").select("full_name_ar").eq("id", targetId).maybeSingle<{ full_name_ar: string | null }>(),
   ]);
 
   if (targetId !== user.id) {
@@ -125,7 +128,8 @@ export async function getEmployeeFile(organizationId: string, userId?: string): 
 
   return {
     profile: mapProfile(profile),
-    dependents: (deps ?? []).map((d) => ({ id: d.id, fullName: d.full_name, relation: d.relation, dateOfBirth: d.date_of_birth ?? "", notes: d.notes ?? "" })),
+    displayNameAr: nameRow?.full_name_ar ?? "",
+    dependents: (deps ?? []).map((d) => ({ id: d.id, fullName: d.full_name, fullNameAr: d.full_name_ar ?? "", relation: d.relation, dateOfBirth: d.date_of_birth ?? "", notes: d.notes ?? "" })),
     documents: (docs ?? []).map((d) => ({
       id: d.id, docType: d.doc_type, title: d.title, fileName: d.file_name, expiresOn: d.expires_on ?? "",
       uploadedByHr: d.uploaded_by !== targetId, createdAt: d.created_at,
@@ -158,6 +162,16 @@ export async function saveMyEmployeeFile(f: EmployeeFileData): Promise<{ error: 
     console.error("saveMyEmployeeFile failed:", error);
     return { error: "Could not save — the database may need migration 0181 run first." };
   }
+  // The Arabic forms of the name fields (0200) go through their own narrow RPC.
+  const { error: arError } = await supabase.rpc("update_my_employee_file_ar", {
+    p_legal_name_ar: f.legalNameAr, p_emergency_contact_name_ar: f.emergencyContactNameAr,
+  });
+  if (arError) {
+    console.error("saveMyEmployeeFile (Arabic names) failed:", arError);
+    return { error: "Could not save the Arabic names — the database may need migration 0200 run first." };
+  }
+  const nameResult = await saveArabicDisplayName(undefined, f.displayNameAr);
+  if ("error" in nameResult) return nameResult;
   revalidatePath("/dashboard/my-file");
   return { success: true };
 }
@@ -177,10 +191,10 @@ export async function saveEmployeeFileAsAdmin(organizationId: string, userId: st
     .upsert(
       {
         organization_id: organizationId, user_id: userId,
-        legal_name: nz(f.legalName), date_of_birth: nz(f.dateOfBirth), gender: nz(f.gender), nationality: nz(f.nationality),
+        legal_name: nz(f.legalName), legal_name_ar: nz(f.legalNameAr), date_of_birth: nz(f.dateOfBirth), gender: nz(f.gender), nationality: nz(f.nationality),
         national_id: nz(f.nationalId), marital_status: nz(f.maritalStatus), personal_phone: nz(f.personalPhone), personal_email: nz(f.personalEmail),
         address_line1: nz(f.addressLine1), address_line2: nz(f.addressLine2), city: nz(f.city), region: nz(f.region), postal_code: nz(f.postalCode),
-        country: nz(f.country), emergency_contact_name: nz(f.emergencyContactName), emergency_contact_relation: nz(f.emergencyContactRelation),
+        country: nz(f.country), emergency_contact_name: nz(f.emergencyContactName), emergency_contact_name_ar: nz(f.emergencyContactNameAr), emergency_contact_relation: nz(f.emergencyContactRelation),
         emergency_contact_phone: nz(f.emergencyContactPhone), hire_date: nz(f.hireDate), employment_type: nz(f.employmentType),
         probation_end_date: nz(f.probationEndDate), updated_by: user.id, updated_at: new Date().toISOString(),
       },
@@ -192,21 +206,39 @@ export async function saveEmployeeFileAsAdmin(organizationId: string, userId: st
     return { error: "Could not save — the database may need migration 0181 run first." };
   }
   if (!data || data.length === 0) return { error: "Only a company admin can edit another person's file." };
+  const nameResult = await saveArabicDisplayName(userId, f.displayNameAr);
+  if ("error" in nameResult) return nameResult;
   revalidatePath(`/dashboard/company/${userId}/file`);
+  return { success: true };
+}
+
+// Sets the Arabic form of someone's displayed name (profiles.full_name_ar).
+// userId omitted = the caller. The database function allows only the person
+// themselves or an admin of their company; this just reports the result.
+export async function saveArabicDisplayName(userId: string | undefined, name: string): Promise<{ error: string } | { success: true }> {
+  if (name.length > 200) return { error: "The Arabic name is too long" };
+  const supabase = await createClient();
+  const user = await currentUser(supabase);
+  if (!user) return { error: "Not authenticated" };
+  const { error } = await supabase.rpc("set_member_arabic_name", { target_user_id: userId ?? user.id, new_name: name });
+  if (error) {
+    console.error("saveArabicDisplayName failed:", error);
+    return { error: "Could not save the Arabic name — the database may need migration 0200 run first." };
+  }
   return { success: true };
 }
 
 export async function addDependent(
   organizationId: string,
   userId: string,
-  d: { fullName: string; relation: string; dateOfBirth: string; notes: string }
+  d: { fullName: string; fullNameAr?: string; relation: string; dateOfBirth: string; notes: string }
 ): Promise<{ error: string } | { success: true; id: string }> {
   if (!d.fullName.trim()) return { error: "Name is required" };
   if (!(DEPENDENT_RELATIONS as readonly string[]).includes(d.relation)) return { error: "Invalid relation" };
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("employee_dependents")
-    .insert({ organization_id: organizationId, user_id: userId, full_name: d.fullName.trim().slice(0, 200), relation: d.relation, date_of_birth: d.dateOfBirth || null, notes: d.notes.trim().slice(0, 500) || null })
+    .insert({ organization_id: organizationId, user_id: userId, full_name: d.fullName.trim().slice(0, 200), full_name_ar: (d.fullNameAr ?? "").trim().slice(0, 200) || null, relation: d.relation, date_of_birth: d.dateOfBirth || null, notes: d.notes.trim().slice(0, 500) || null })
     .select("id")
     .single<{ id: string }>();
   if (error || !data) {

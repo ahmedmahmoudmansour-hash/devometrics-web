@@ -66,7 +66,7 @@ export async function markCandidateHired(candidateId: string, employeeFields: Hi
     }
   }
 
-  const { error: inviteError } = await supabase.from("organization_invites").insert({
+  const { data: createdInvite, error: inviteError } = await supabase.from("organization_invites").insert({
     organization_id: company.organizationId,
     email: candidate.email,
     invited_by: user.id,
@@ -82,13 +82,13 @@ export async function markCandidateHired(candidateId: string, employeeFields: Hi
     manager_email: employeeFields.managerEmail?.trim().slice(0, 200) || null,
     business_unit: employeeFields.businessUnit?.trim().slice(0, 120) || null,
     location: employeeFields.location?.trim().slice(0, 120) || null,
-  });
+  }).select("id").single<{ id: string }>();
   if (inviteError) {
     console.error("markCandidateHired invite failed:", inviteError);
     return { error: "Could not send an invite — they may already be invited to this workspace." };
   }
 
-  if (org?.name) await sendInviteEmail(candidate.email, org.name, company.organizationId);
+  if (org?.name) await sendInviteEmail(candidate.email, org.name, company.organizationId, createdInvite?.id);
 
   await moveCandidateStage(candidateId, "hired");
 
