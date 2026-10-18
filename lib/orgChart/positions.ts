@@ -14,6 +14,9 @@ export type OrgPositionRow = {
   kind: OrgPositionKind;
   status: OrgPositionStatus;
   title: string;
+  // Who sits in this box, shown on the card (0202). A label only: no account or access.
+  holderName: string | null;
+  holderNameAr: string | null;
   department: string | null;
   businessUnit: string | null;
   country: string | null;
@@ -36,6 +39,8 @@ type PositionSelectRow = {
   kind: string;
   status: string;
   title: string;
+  holder_name: string | null;
+  holder_name_ar: string | null;
   department: string | null;
   business_unit: string | null;
   country: string | null;
@@ -60,6 +65,8 @@ function toRow(
     kind: r.kind as OrgPositionKind,
     status: r.status as OrgPositionStatus,
     title: r.title,
+    holderName: r.holder_name,
+    holderNameAr: r.holder_name_ar,
     department: r.department,
     businessUnit: r.business_unit,
     country: r.country,
@@ -79,7 +86,7 @@ function toRow(
 }
 
 const POSITION_COLUMNS =
-  "id, kind, status, title, department, business_unit, country, location, parent_position_id, parent_member_user_id, linked_posting_id, linked_role_id, headcount, details";
+  "id, kind, status, title, holder_name, holder_name_ar, department, business_unit, country, location, parent_position_id, parent_member_user_id, linked_posting_id, linked_role_id, headcount, details";
 
 // Live chart data only — status='filled' rows are excluded. A filled
 // position's slot in the tree is now represented by the real employee's
@@ -225,6 +232,8 @@ export async function updatePosition(
   id: string,
   patch: {
     title?: string;
+    holderName?: string | null;
+    holderNameAr?: string | null;
     department?: string | null;
     businessUnit?: string | null;
     country?: string | null;
@@ -246,6 +255,8 @@ export async function updatePosition(
     if (!trimmed) return { error: "Give this position a title" };
     update.title = trimmed;
   }
+  if (patch.holderName !== undefined) update.holder_name = patch.holderName?.trim().slice(0, 200) || null;
+  if (patch.holderNameAr !== undefined) update.holder_name_ar = patch.holderNameAr?.trim().slice(0, 200) || null;
   if (patch.department !== undefined) update.department = patch.department;
   if (patch.businessUnit !== undefined) update.business_unit = patch.businessUnit;
   if (patch.country !== undefined) update.country = patch.country;

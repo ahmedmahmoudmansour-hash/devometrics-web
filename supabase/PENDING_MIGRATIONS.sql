@@ -1,6 +1,7 @@
 -- ============================================================
 -- DEVOMETRICS -- PENDING MIGRATIONS: none
 --
--- Everything through 0201 is applied and verified live (2026-10-18).
--- (0200 names in English and Arabic, 0201 sign-up with a company invitation.)
+-- Everything through 0202 is applied and verified live (2026-10-18).
+-- (0200 names in English and Arabic, 0201 sign-up with a company invitation,
+--  0202 person's name on an org chart position.)
 -- ============================================================

@@ -90,6 +90,28 @@ export default function OrgChartPositionPanel({
             style={inputStyle()}
           />
         </Field>
+        {position.kind === "structural" && (
+          <>
+            <Field label={t("holderName")}>
+              <input
+                defaultValue={position.holderName ?? ""}
+                disabled={isPending}
+                onBlur={(e) => e.target.value.trim() !== (position.holderName ?? "") && run(() => updatePosition(position.id, { holderName: e.target.value || null }))}
+                style={inputStyle()}
+              />
+            </Field>
+            <Field label={t("holderNameAr")}>
+              <input
+                dir="rtl"
+                lang="ar"
+                defaultValue={position.holderNameAr ?? ""}
+                disabled={isPending}
+                onBlur={(e) => e.target.value.trim() !== (position.holderNameAr ?? "") && run(() => updatePosition(position.id, { holderNameAr: e.target.value || null }))}
+                style={inputStyle()}
+              />
+            </Field>
+          </>
+        )}
         <Field label={t("department")}>
           <input
             defaultValue={position.department ?? ""}

@@ -2074,6 +2074,8 @@
     "kindVacant": "منصب شاغر",
     "close": "إغلاق",
     "title": "المسمى",
+    "holderName": "اسم الشخص (بالإنجليزية)",
+    "holderNameAr": "اسم الشخص (بالعربية)",
     "department": "القسم",
     "businessUnit": "وحدة الأعمال",
     "country": "الدولة",

@@ -2074,6 +2074,8 @@
     "kindVacant": "Vacant position",
     "close": "Close",
     "title": "Title",
+    "holderName": "Person's name (English)",
+    "holderNameAr": "Person's name (Arabic)",
     "department": "Department",
     "businessUnit": "Business unit",
     "country": "Country",

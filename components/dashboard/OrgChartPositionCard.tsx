@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { bilingualName } from "@/lib/names";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CARD_H, CARD_W } from "@/lib/orgChart/tree";
 import type { OrgChartCardToggles, CardDensity } from "@/lib/orgChart/cardConfig";
@@ -45,6 +46,9 @@ function OrgChartPositionCard({
   onExpandBranch: (id: string) => void;
 }) {
   const t = useTranslations("orgChartPositionCard");
+  const locale = useLocale();
+  const holder = bilingualName(position.holderName, position.holderNameAr, locale === "ar" ? "ar" : "en");
+  const hasHolder = !!(position.holderName?.trim() || position.holderNameAr?.trim());
   const tag = `position:${position.id}`;
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
     id: `drag-${tag}`,
@@ -98,9 +102,18 @@ function OrgChartPositionCard({
         {position.kind === "structural" ? t("kindStructural") : t(`status_${position.status}`)}
       </span>
 
-      <p style={{ fontSize: density === "compact" ? 11.5 : 12.5, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-        {position.title}
-      </p>
+      {hasHolder ? (
+        <>
+          <p style={{ fontSize: density === "compact" ? 11.5 : 12.5, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {holder}
+          </p>
+          <p style={{ fontSize: 10.5, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{position.title}</p>
+        </>
+      ) : (
+        <p style={{ fontSize: density === "compact" ? 11.5 : 12.5, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {position.title}
+        </p>
+      )}
 
       {toggles.showDepartment && position.department && (
         <p style={{ fontSize: 10, color: "var(--text-muted)" }}>{position.department}</p>
