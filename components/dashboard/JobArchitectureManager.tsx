@@ -8,6 +8,7 @@ import {
   deleteJobFamily,
   createJobRole,
   deleteJobRole,
+  updateRoleCompetencies,
   addRoleTransition,
   removeRoleTransition,
   suggestRoleGrading,
@@ -321,6 +322,30 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
   const tDim = useTranslations("competencyDimensions");
   const [isPending, startTransition] = useTransition();
   const sorted = [...requirements].sort((a, b) => b.target_level - a.target_level);
+  const [editing, setEditing] = useState(false);
+  const [levels, setLevels] = useState<Record<string, number>>({});
+  const [editError, setEditError] = useState<string | null>(null);
+
+  function startEditing() {
+    const current: Record<string, number> = {};
+    for (const r of requirements) current[r.dimension] = r.target_level;
+    setLevels(current);
+    setEditError(null);
+    setEditing(true);
+  }
+
+  function saveCompetencies() {
+    setEditError(null);
+    startTransition(async () => {
+      const result = await updateRoleCompetencies(
+        role.id,
+        COMPETENCY_DIMENSIONS.map((dim) => ({ dimension: dim, targetLevel: levels[dim] ?? 0 }))
+      );
+      if (result.error) return setEditError(result.error);
+      setEditing(false);
+      onChanged();
+    });
+  }
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16, background: "rgba(255,255,255,0.02)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -358,6 +383,16 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
           )}
         </div>
         <JDBuilder role={role} />
+        {!editing && (
+          <button
+            type="button"
+            disabled={isPending}
+            style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}
+            onClick={startEditing}
+          >
+            {t("editCompetencies")}
+          </button>
+        )}
         <button
           type="button"
           disabled={isPending}
@@ -373,7 +408,50 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
         </button>
       </div>
 
-      {sorted.length > 0 && (
+      {editing && (
+        <div style={{ marginTop: 12 }}>
+          <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+            {t("requiredCompetencies")}
+          </p>
+          <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10 }}>{t("competencyEditHint")}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
+            {COMPETENCY_DIMENSIONS.map((dim) => (
+              <div key={dim} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ flex: 1, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, dim)}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  style={{ ...input, width: 70 }}
+                  value={levels[dim] ?? 0}
+                  onChange={(e) => setLevels((prev) => ({ ...prev, [dim]: Number(e.target.value) }))}
+                />
+              </div>
+            ))}
+          </div>
+          {editError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{editError}</p>}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={saveCompetencies}
+              style={{ background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: isPending ? 0.6 : 1 }}
+            >
+              {t("saveCompetencies")}
+            </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => setEditing(false)}
+              style={{ background: "none", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: 8, padding: "8px 16px", fontSize: 12.5, cursor: "pointer" }}
+            >
+              {t("cancel")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!editing && sorted.length > 0 && (
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 5 }}>
           <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             {t("requiredCompetencies")}

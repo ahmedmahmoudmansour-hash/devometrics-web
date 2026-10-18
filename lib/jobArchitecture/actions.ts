@@ -119,6 +119,57 @@ export async function createJobRole(input: RoleInput) {
   return { success: true, roleId: role.id };
 }
 
+// Changes the competency levels a role requires. Levels are 0-100; 0 (or blank)
+// means the competency is not required for this role. New and changed levels are
+// written first and the ones no longer required are removed afterwards, so a
+// failed save can never leave a role with its requirements wiped.
+export async function updateRoleCompetencies(roleId: string, requirements: { dimension: string; targetLevel: number }[]) {
+  const { supabase, user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+
+  const { data: role } = await supabase
+    .from("job_roles")
+    .select("id")
+    .eq("id", roleId)
+    .eq("organization_id", organizationId)
+    .maybeSingle<{ id: string }>();
+  if (!role) return { error: "Role not found" };
+
+  const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
+  const wanted = new Map<string, number>();
+  for (const r of requirements) {
+    if (!validDims.has(r.dimension)) continue;
+    const level = Math.min(100, Math.max(0, Math.round(Number(r.targetLevel))));
+    if (Number.isFinite(level) && level > 0) wanted.set(r.dimension, level);
+  }
+
+  if (wanted.size > 0) {
+    const rows = [...wanted].map(([dimension, targetLevel]) => ({
+      organization_id: organizationId,
+      role_id: roleId,
+      dimension,
+      target_level: targetLevel,
+    }));
+    const { error } = await supabase.from("role_competency_requirements").upsert(rows, { onConflict: "role_id,dimension" });
+    if (error) {
+      console.error("updateRoleCompetencies upsert failed:", error);
+      return { error: "Could not save the competencies — try again." };
+    }
+  }
+
+  const removed = COMPETENCY_DIMENSIONS.filter((d) => !wanted.has(d));
+  if (removed.length > 0) {
+    const { error } = await supabase.from("role_competency_requirements").delete().eq("role_id", roleId).in("dimension", removed);
+    if (error) {
+      console.error("updateRoleCompetencies cleanup failed:", error);
+      return { error: "Saved, but could not remove the cleared competencies — try again." };
+    }
+  }
+
+  revalidatePath("/dashboard/company/job-architecture");
+  return { success: true };
+}
+
 export async function deleteJobRole(roleId: string) {
   const { supabase, user } = await requireAdmin();
   if (!user) return { error: "Not authorized" };
