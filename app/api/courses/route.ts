@@ -5,6 +5,7 @@ import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveCallerLocale } from "@/lib/i18n/request";
 import { runGroundedSearchStream } from "@/lib/ai/groundedSearchStream";
+import { COURSE_CACHE_TTL_DAYS, courseCacheKey, isFresh } from "@/lib/aiCost/policy";
 
 // See app/api/trends/route.ts for the full story — same rewrite, same
 // reasoning: this was a two-phase call with web_search_20260209 (code-
@@ -46,14 +47,31 @@ export async function POST(request: Request) {
 
   const formatHint = format ? ` The person prefers ${format.toLowerCase()}-style learning where possible.` : "";
 
+  const locale = await resolveCallerLocale(supabase, user.id);
+
+  // A saved result for the same person, language and topic is served for two
+  // weeks: this search (web search plus about 21,000 input tokens) is the most
+  // expensive single call in the product. It reuses the trends cache table,
+  // keyed per person so nobody else can write what this person sees. A read
+  // error just falls through to the live search.
+  const cacheKey = courseCacheKey(user.id, locale, topic, format);
+  const { data: cached } = await supabase
+    .from("key_trends_cache")
+    .select("summary, generated_at")
+    .eq("job_title_key", cacheKey)
+    .maybeSingle<{ summary: string; generated_at: string }>();
+  if (cached && isFresh(cached.generated_at, COURSE_CACHE_TTL_DAYS)) {
+    return new Response(new TextEncoder().encode(cached.summary), {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "X-Courses-Cached": "true" },
+    });
+  }
+
   const membership = await getMyOrganizationMembership();
   const organizationId = membership?.organization_id ?? null;
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
   if (budgetCheck.error) {
     return NextResponse.json({ error: budgetCheck.error }, { status: 402 });
   }
-
-  const locale = await resolveCallerLocale(supabase, user.id);
 
   const userPrompt = `Search the web for 3-5 real, currently-available courses (or structured learning paths) on "${topic}".${formatHint} For each one, name the actual institution or platform offering it (e.g. Coursera, a specific university, LinkedIn Learning, a bootcamp) and briefly note the format and rough cost if you can find it (free, paid, or a real price). Only include courses you can back with a real source you found — do not invent course names or institutions. Output ONLY a bulleted list, one course per bullet, each ending with the source in parentheses. No preamble, no heading, no closing note.${locale === "ar" ? " Write the entire list in Modern Standard Arabic (Fusha) — the course descriptions and prose, not just a translated label — regardless of what language your search results come back in." : ""}`;
 
@@ -65,7 +83,11 @@ export async function POST(request: Request) {
     // Best-effort — usage tracking must never break the response the user
     // is already reading (runGroundedSearchStream already catches and logs
     // any error this throws).
-    onSuccess: async (_finalText, finalMessage) => {
+    onSuccess: async (finalText, finalMessage) => {
+      // Save the result for next time (best effort).
+      await supabase
+        .from("key_trends_cache")
+        .upsert({ job_title_key: cacheKey, job_title: topic.trim().slice(0, 200), summary: finalText, generated_at: new Date().toISOString() });
       await recordAiUsage(supabase, {
         organizationId,
         userId: user.id,

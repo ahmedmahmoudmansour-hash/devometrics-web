@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCoachSystemPrompt } from "@/lib/coach/systemPrompt";
 import { LOCALE_COOKIE, resolveApiLocale } from "@/lib/i18n/request";
 import { updateGrowMemory } from "@/lib/coach/growMemory";
+import { COACH_HISTORY_MESSAGES, growMemoryUpdatePlan, recentCoachHistory } from "@/lib/aiCost/policy";
 import {
   MAX_COACH_MESSAGE_LENGTH,
   COACH_RATE_LIMIT_WINDOW_MINUTES,
@@ -90,8 +91,11 @@ export async function POST(request: Request) {
       .from("coach_messages")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .limit(40)
+      // The LATEST messages (newest first here, put back in order below). This used
+      // to take the oldest 40 ascending, so after 40 messages the coach never saw
+      // anything recent and every call carried the maximum history.
+      .order("created_at", { ascending: false })
+      .limit(COACH_HISTORY_MESSAGES)
       .returns<CoachMessage[]>(),
     supabase
       .from("gap_analyses")
@@ -193,8 +197,13 @@ export async function POST(request: Request) {
     locale,
   });
 
+  const recentHistory = recentCoachHistory(history);
+  // The GROW memory is refreshed every few messages, covering every exchange
+  // since the last refresh, instead of after each reply.
+  const memoryPlan = growMemoryUpdatePlan(growMemory?.updated_at, recentHistory);
+
   const conversation = [
-    ...(history ?? []).map((m) => ({
+    ...recentHistory.map((m) => ({
       role: m.role,
       content: m.content,
     })),
@@ -273,13 +282,15 @@ export async function POST(request: Request) {
       // this turn, and this is a small fixed-cost follow-up to a turn the
       // user was already allowed to have, not a new user-initiated action.
       try {
+        if (!memoryPlan.update) return;
         const { state: updated, model, inputTokens, outputTokens } = await updateGrowMemory(
           growMemory
             ? { goal: growMemory.goal ?? "", reality: growMemory.reality ?? "", options: growMemory.options ?? "", will: growMemory.will ?? "" }
             : null,
           message,
           reply,
-          locale
+          locale,
+          memoryPlan.transcript
         );
         await supabase.from("coach_grow_memory").upsert({
           user_id: user.id,

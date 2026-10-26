@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyOrganizationMembership } from "@/lib/organizations/actions";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { resolveCallerLocale } from "@/lib/i18n/request";
+import { canReuseInsight } from "@/lib/aiCost/policy";
 import type { GapAnalysis } from "@/lib/supabase/types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -46,6 +47,24 @@ export async function getDailyInsight(): Promise<string | null> {
 
   const [latest, previous] = analyses;
 
+  // The insight is built only from the latest two gap analyses, so it cannot
+  // change until there is a newer one. Reuse the last sentence instead of paying
+  // for a new one every day; refresh it after a week so it does not go stale.
+  const { data: lastInsight } = await supabase
+    .from("career_gps_daily_insights")
+    .select("insight, created_at")
+    .eq("user_id", user.id)
+    .order("insight_date", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ insight: string; created_at: string }>();
+  if (
+    lastInsight &&
+    canReuseInsight({ latestAnalysisCreatedAt: latest.created_at, lastInsightCreatedAt: lastInsight.created_at, now: new Date() })
+  ) {
+    await supabase.from("career_gps_daily_insights").insert({ user_id: user.id, insight_date: today, insight: lastInsight.insight });
+    return lastInsight.insight;
+  }
+
   let context: string;
   if (previous) {
     const movements = latest.competencies
@@ -83,6 +102,12 @@ export async function getDailyInsight(): Promise<string | null> {
   let insight: string;
   try {
     const response = await anthropic.messages.create({
+      // Stays on the stronger model. Tested 26 Oct 2026 against Haiku 4.5 on the same
+      // context in English and Arabic: Haiku invented numbers that were not in the data
+      // ("score of 70", "the role requires 100") and claims such as "the only skill
+      // blocking your promotion". This sentence states facts about a person's own
+      // measured data, so it must stay grounded. The saving comes from reusing the
+      // sentence while the data is unchanged (canReuseInsight), not from the model.
       model: "claude-sonnet-5",
       max_tokens: 150,
       system:

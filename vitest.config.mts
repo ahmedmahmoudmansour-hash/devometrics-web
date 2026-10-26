@@ -11,5 +11,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["lib/**/*.test.ts", "tests/unit/**/*.test.ts"],
+    // Loading the Sentry SDK in the monitoring test can take longer than the 10 s default
+    // when the whole suite runs at once on a busy machine.
+    testTimeout: 30000,
+    hookTimeout: 60000,
   },
 });

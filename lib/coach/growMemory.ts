@@ -49,7 +49,11 @@ export async function updateGrowMemory(
   priorMemory: GrowState | null,
   latestUserMessage: string,
   latestAssistantReply: string,
-  locale: Locale = "en"
+  locale: Locale = "en",
+  // Exchanges since the last refresh that this call has not seen yet. The memory
+  // is refreshed every few messages (lib/aiCost/policy.ts), so it is told about
+  // all of them at once.
+  earlierExchanges = ""
 ): Promise<GrowMemoryResult> {
   const priorContext = priorMemory
     ? `Goal: ${priorMemory.goal || "(none yet)"}\nReality: ${priorMemory.reality || "(none yet)"}\nOptions: ${priorMemory.options || "(none yet)"}\nWill: ${priorMemory.will || "(none yet)"}`
@@ -66,7 +70,7 @@ export async function updateGrowMemory(
     messages: [
       {
         role: "user",
-        content: `PRIOR GROW MEMORY:\n${priorContext}\n\nLATEST EXCHANGE:\nUser: ${latestUserMessage}\nCoach: ${latestAssistantReply}`,
+        content: `PRIOR GROW MEMORY:\n${priorContext}\n\n${earlierExchanges ? `EARLIER EXCHANGES NOT YET IN THE MEMORY:\n${earlierExchanges}\n\n` : ""}LATEST EXCHANGE:\nUser: ${latestUserMessage}\nCoach: ${latestAssistantReply}`,
       },
     ],
   });
