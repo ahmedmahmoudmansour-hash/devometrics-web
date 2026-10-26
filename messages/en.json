@@ -1977,6 +1977,7 @@
     "retiredHint": "Retired competencies stay on the roles that use them but cannot be added to new roles.",
     "companyCompetencies": "Company competencies",
     "standardCompetenciesHeading": "Standard competencies",
+    "notScoredYet": "Company competencies are recorded on the role. They are not scored yet in gap analysis, hiring or reviews.",
     "noCompanyCompetencies": "No company competencies yet. Add them on the Competencies page.",
     "technicalSkillsDescription": "Applies the specialist knowledge, methods and tools needed to do the job well.",
     "technicalSkillsLevel1": "Knows the basic terms and steps; follows instructions to complete simple tasks.",
@@ -2039,7 +2040,8 @@
     "desc4": "Handles complex situations and can guide others.",
     "desc5": "Resolves novel problems, shows deep expertise, and may set standards or coach others.",
     "levelShort": "L{level}",
-    "notRequired": "Not required"
+    "notRequired": "Not required",
+    "notAssessed": "Not assessed"
   },
   "jobArchitectureManager": {
     "trackIc": "Individual contributor",

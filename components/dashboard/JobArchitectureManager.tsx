@@ -536,6 +536,7 @@ function RoleCard({
               <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "14px 0 8px" }}>
                 {tLib("companyCompetencies")}
               </p>
+              <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "-4px 0 8px", lineHeight: 1.5 }}>{tLib("notScoredYet")}</p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
                 {editableCompany.map((c) => (
                   <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>

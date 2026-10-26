@@ -136,9 +136,9 @@ create index if not exists role_requirements_competency_idx
 -- 3. Same-company guard
 -- The role and the competency must both belong to the company named on the row.
 -- This holds even if someone bypasses the application and writes to the table
--- directly. (Not attaching a retired competency to a role is enforced in the
--- application; the database must still allow editing the level of a role that
--- already uses one.)
+-- directly. The same guard stops a retired competency being attached to a role
+-- that does not already use it, while still allowing the level to be edited on a
+-- role that does (including an upsert, which presents as an insert first).
 create or replace function public.enforce_role_requirement_integrity()
 returns trigger
 language plpgsql
@@ -148,6 +148,7 @@ as $$
 declare
   v_role_org uuid;
   v_comp_org uuid;
+  v_comp_active boolean;
 begin
   select organization_id into v_role_org from public.job_roles where id = new.role_id;
   if v_role_org is null or v_role_org <> new.organization_id then
@@ -155,10 +156,22 @@ begin
   end if;
 
   if new.competency_id is not null then
-    select organization_id into v_comp_org
+    select organization_id, is_active into v_comp_org, v_comp_active
     from public.organization_competencies where id = new.competency_id;
     if v_comp_org is null or v_comp_org <> new.organization_id then
       raise exception 'The competency does not belong to this company' using errcode = '23514';
+    end if;
+
+    -- A retired competency cannot be newly attached to a role. A role that
+    -- already requires it keeps it, and its level can still be changed.
+    if v_comp_active = false
+       and (tg_op = 'INSERT' or new.competency_id is distinct from old.competency_id or new.role_id is distinct from old.role_id)
+       and not exists (
+         select 1 from public.role_competency_requirements r
+         where r.role_id = new.role_id and r.competency_id = new.competency_id
+       )
+    then
+      raise exception 'This competency is retired and cannot be added to a role' using errcode = '23514';
     end if;
   end if;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LEVEL_BANDS, PROFICIENCY_LEVELS, levelGap, proficiencyLevel, scoreForLevel } from "./levels";
+import { LEVEL_BANDS, PROFICIENCY_LEVELS, competencyState, levelGap, proficiencyLevel, scoreForLevel } from "./levels";
 
 describe("proficiencyLevel", () => {
   it("maps scores to the five bands", () => {
@@ -53,9 +53,17 @@ describe("levelGap", () => {
     expect(levelGap(60, 60)).toBe(0);
     expect(levelGap(40, 90)).toBe(-3);
   });
-  it("treats no evidence as below every requirement", () => {
-    expect(levelGap(50, 0)).toBe(3);
-    expect(levelGap(50, null)).toBe(3);
+  it("does not read a missing assessment as low proficiency", () => {
+    expect(levelGap(50, 0)).toBeNull();
+    expect(levelGap(50, null)).toBeNull();
+    expect(levelGap(50, undefined)).toBeNull();
+  });
+  it("keeps not required, not assessed and scored apart", () => {
+    expect(competencyState(0, 70)).toBe("not_required");
+    expect(competencyState(null, null)).toBe("not_required");
+    expect(competencyState(60, null)).toBe("not_assessed");
+    expect(competencyState(60, 0)).toBe("not_assessed");
+    expect(competencyState(60, 35)).toBe("scored");
   });
   it("has no gap when the role does not require the competency", () => {
     expect(levelGap(0, 70)).toBeNull();

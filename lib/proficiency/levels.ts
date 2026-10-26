@@ -7,8 +7,10 @@ export type ProficiencyLevel = 1 | 2 | 3 | 4 | 5;
 
 export const PROFICIENCY_LEVELS: ProficiencyLevel[] = [1, 2, 3, 4, 5];
 
-// Inclusive score range of each level. 0 means "not required" (for a role
-// requirement) or "no evidence" (for an assessed score), and has no level.
+// Inclusive score range of each level. On a role requirement, 0 means "not
+// required". It never means "no evidence": a person who has not been assessed has
+// no score at all (null), which is a different state from a low score and from a
+// competency the role does not need. Neither has a level.
 export const LEVEL_BANDS: Record<ProficiencyLevel, { min: number; max: number }> = {
   1: { min: 1, max: 20 },
   2: { min: 21, max: 40 },
@@ -37,10 +39,21 @@ export function scoreForLevel(level: ProficiencyLevel): number {
 }
 
 // How many levels apart an assessed score is from the requirement. Positive
-// means the person is below the level the role needs.
+// means the person is below the level the role needs. Returns null (no gap to
+// report) when the role does not require the competency, and also when the person
+// has not been assessed: missing evidence is never read as low proficiency.
 export function levelGap(required: number | null | undefined, assessed: number | null | undefined): number | null {
   const r = proficiencyLevel(required);
   if (r === null) return null;
-  const a = proficiencyLevel(assessed) ?? 0;
+  const a = proficiencyLevel(assessed);
+  if (a === null) return null;
   return r - a;
+}
+
+export type CompetencyState = "not_required" | "not_assessed" | "scored";
+
+// The three states a competency can be in for one person against one role.
+export function competencyState(required: number | null | undefined, assessed: number | null | undefined): CompetencyState {
+  if (proficiencyLevel(required) === null) return "not_required";
+  return proficiencyLevel(assessed) === null ? "not_assessed" : "scored";
 }
