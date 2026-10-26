@@ -18,6 +18,7 @@ import {
   type RoleGradingSuggestion,
 } from "@/lib/jobArchitecture/actions";
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
+import ProficiencyBadge from "@/components/dashboard/ProficiencyBadge";
 import type { JobFamily, JobRole, RoleCompetencyRequirement, RoleTransition, RoleTrack } from "@/lib/supabase/types";
 
 const card: React.CSSProperties = {
@@ -507,6 +508,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
                   value={levels[dim] ?? 0}
                   onChange={(e) => setLevels((prev) => ({ ...prev, [dim]: Number(e.target.value) }))}
                 />
+                <ProficiencyBadge score={levels[dim]} />
               </div>
             ))}
           </div>
@@ -544,6 +546,9 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
                 <div style={{ width: `${r.target_level}%`, height: "100%", background: "var(--teal)" }} />
               </div>
               <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", width: 28, textAlign: "end" }}>{r.target_level}</span>
+              <span style={{ width: 116, display: "flex", justifyContent: "flex-start" }}>
+                <ProficiencyBadge score={r.target_level} />
+              </span>
             </div>
           ))}
         </div>
