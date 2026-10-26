@@ -19,7 +19,7 @@ import {
 } from "@/lib/jobArchitecture/actions";
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import ProficiencyBadge from "@/components/dashboard/ProficiencyBadge";
-import type { JobFamily, JobRole, RoleCompetencyRequirement, RoleTransition, RoleTrack } from "@/lib/supabase/types";
+import type { JobFamily, JobRole, OrganizationCompetency, RoleCompetencyRequirement, RoleTransition, RoleTrack } from "@/lib/supabase/types";
 
 const card: React.CSSProperties = {
   background: "var(--navy-mid)",
@@ -69,11 +69,13 @@ export default function JobArchitectureManager({
   roles,
   requirements,
   transitions,
+  companyCompetencies = [],
 }: {
   families: JobFamily[];
   roles: JobRole[];
   requirements: RoleCompetencyRequirement[];
   transitions: RoleTransition[];
+  companyCompetencies?: OrganizationCompetency[];
 }) {
   const t = useTranslations("jobArchitectureManager");
   const router = useRouter();
@@ -174,7 +176,7 @@ export default function JobArchitectureManager({
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
               {familyRoles.map((role) => (
-                <RoleCard key={role.id} role={role} requirements={reqsByRole.get(role.id) ?? []} onChanged={refresh} />
+                <RoleCard key={role.id} role={role} requirements={reqsByRole.get(role.id) ?? []} companyCompetencies={companyCompetencies} onChanged={refresh} />
               ))}
             </div>
 
@@ -399,9 +401,26 @@ function JDBuilder({ role }: { role: JobRole }) {
   );
 }
 
-function RoleCard({ role, requirements, onChanged }: { role: JobRole; requirements: RoleCompetencyRequirement[]; onChanged: () => void }) {
+function RoleCard({
+  role,
+  requirements,
+  companyCompetencies,
+  onChanged,
+}: {
+  role: JobRole;
+  requirements: RoleCompetencyRequirement[];
+  companyCompetencies: OrganizationCompetency[];
+  onChanged: () => void;
+}) {
   const t = useTranslations("jobArchitectureManager");
   const tDim = useTranslations("competencyDimensions");
+  const tLib = useTranslations("competencyLibrary");
+  const companyById = new Map(companyCompetencies.map((c) => [c.id, c]));
+  // Levels are keyed by the standard dimension name, or "c:<id>" for a company competency.
+  const keyOf = (r: { dimension: string | null; competency_id?: string | null }) => (r.competency_id ? `c:${r.competency_id}` : (r.dimension ?? ""));
+  const attachedIds = new Set(requirements.map((r) => r.competency_id).filter((id): id is string => !!id));
+  // In the editor: every active company competency, plus retired ones this role already uses.
+  const editableCompany = companyCompetencies.filter((c) => c.is_active !== false || attachedIds.has(c.id));
   const [isPending, startTransition] = useTransition();
   const sorted = [...requirements].sort((a, b) => b.target_level - a.target_level);
   const [editing, setEditing] = useState(false);
@@ -410,7 +429,7 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
 
   function startEditing() {
     const current: Record<string, number> = {};
-    for (const r of requirements) current[r.dimension] = r.target_level;
+    for (const r of requirements) current[keyOf(r)] = r.target_level;
     setLevels(current);
     setEditError(null);
     setEditing(true);
@@ -419,10 +438,10 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
   function saveCompetencies() {
     setEditError(null);
     startTransition(async () => {
-      const result = await updateRoleCompetencies(
-        role.id,
-        COMPETENCY_DIMENSIONS.map((dim) => ({ dimension: dim, targetLevel: levels[dim] ?? 0 }))
-      );
+      const result = await updateRoleCompetencies(role.id, [
+        ...COMPETENCY_DIMENSIONS.map((dim) => ({ dimension: dim, targetLevel: levels[dim] ?? 0 })),
+        ...editableCompany.map((c) => ({ competencyId: c.id, targetLevel: levels[`c:${c.id}`] ?? 0 })),
+      ]);
       if (result.error) return setEditError(result.error);
       setEditing(false);
       onChanged();
@@ -512,6 +531,32 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
               </div>
             ))}
           </div>
+          {editableCompany.length > 0 && (
+            <>
+              <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "14px 0 8px" }}>
+                {tLib("companyCompetencies")}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 8 }}>
+                {editableCompany.map((c) => (
+                  <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ flex: 1, fontSize: 11.5, color: "var(--text-muted)" }}>
+                      {c.name}
+                      {c.is_active === false && <span style={{ marginInlineStart: 6, fontSize: 10, opacity: 0.8 }}>({tLib("retiredBadge")})</span>}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      style={{ ...input, width: 70 }}
+                      value={levels[`c:${c.id}`] ?? 0}
+                      onChange={(e) => setLevels((prev) => ({ ...prev, [`c:${c.id}`]: Number(e.target.value) }))}
+                    />
+                    <ProficiencyBadge score={levels[`c:${c.id}`]} />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           {editError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{editError}</p>}
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button
@@ -541,7 +586,9 @@ function RoleCard({ role, requirements, onChanged }: { role: JobRole; requiremen
           </p>
           {sorted.map((r) => (
             <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>{dimensionLabel(tDim, r.dimension as CompetencyDimension)}</span>
+              <span style={{ width: 150, fontSize: 11.5, color: "var(--text-muted)" }}>
+                {r.competency_id ? (companyById.get(r.competency_id)?.name ?? "—") : dimensionLabel(tDim, r.dimension as CompetencyDimension)}
+              </span>
               <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${r.target_level}%`, height: "100%", background: "var(--teal)" }} />
               </div>

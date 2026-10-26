@@ -1,5 +1,6 @@
 "use server";
 
+import { standardRequirementsOnly } from "@/lib/proficiency/library";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
@@ -1358,8 +1359,8 @@ export async function getAppraisalCompetencyContext(reviewId: string): Promise<A
       .from("role_competency_requirements")
       .select("dimension, target_level")
       .eq("role_id", member.current_role_id)
-      .returns<{ dimension: string; target_level: number }[]>();
-    for (const r of requirements ?? []) roleTargetByDim.set(r.dimension, r.target_level);
+      .returns<{ dimension: string | null; target_level: number }[]>();
+    for (const r of standardRequirementsOnly(requirements)) roleTargetByDim.set(r.dimension as string, r.target_level);
   }
 
   const measuredByDim = new Map<string, number>();

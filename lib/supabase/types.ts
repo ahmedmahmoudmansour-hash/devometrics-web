@@ -70,6 +70,10 @@ export type OrganizationCompetency = {
   description: string | null;
   mapped_dimension: import("../gap-analysis/dimensions").CompetencyDimension | null;
   created_at: string;
+  // Library fields (migration 0203). Optional so screens still render before it has run.
+  category?: "behavioural" | "technical" | "functional";
+  level_indicators?: Record<string, string>;
+  is_active?: boolean;
 };
 
 export type OrganizationMember = {
@@ -414,7 +418,10 @@ export type RoleCompetencyRequirement = {
   id: string;
   organization_id: string;
   role_id: string;
-  dimension: string;
+  // Exactly one of dimension / competency_id is set (0203): a standard
+  // dimension, or a company-defined competency.
+  dimension: string | null;
+  competency_id?: string | null;
   target_level: number;
 };
 

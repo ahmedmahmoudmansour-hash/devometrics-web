@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { standardRequirementsOnly } from "@/lib/proficiency/library";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import type {
   JobPosting,
@@ -65,7 +66,7 @@ export async function buildHiringOverview(): Promise<HiringOverview> {
       .from("role_competency_requirements")
       .select("role_id, dimension, target_level")
       .eq("organization_id", company.organizationId)
-      .returns<{ role_id: string; dimension: string; target_level: number }[]>(),
+      .returns<{ role_id: string; dimension: string | null; target_level: number }[]>(),
   ]);
 
   const countByPosting = new Map<string, { total: number; hired: number }>();
@@ -77,9 +78,11 @@ export async function buildHiringOverview(): Promise<HiringOverview> {
   }
 
   const requirementsByRole = new Map<string, { dimension: string; targetLevel: number }[]>();
-  for (const r of roleRequirements ?? []) {
+  // Hiring scores only understand the eight standard dimensions; a requirement for a
+  // company competency (no dimension) is left out here.
+  for (const r of standardRequirementsOnly(roleRequirements)) {
     const list = requirementsByRole.get(r.role_id) ?? [];
-    list.push({ dimension: r.dimension, targetLevel: r.target_level });
+    list.push({ dimension: r.dimension as string, targetLevel: r.target_level });
     requirementsByRole.set(r.role_id, list);
   }
 

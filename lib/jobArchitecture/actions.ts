@@ -8,6 +8,7 @@ import { callOpenRouterJson } from "@/lib/ai/openrouter";
 import { assertAiBudgetOk, recordAiUsage } from "@/lib/aiUsage/track";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { resolveCallerLocale } from "@/lib/i18n/request";
+import { planRequirementChanges, type RequestedRequirement } from "@/lib/proficiency/library";
 import type { RoleTrack } from "@/lib/supabase/types";
 
 const MAX_NAME = 120;
@@ -119,11 +120,32 @@ export async function createJobRole(input: RoleInput) {
   return { success: true, roleId: role.id };
 }
 
+// A role's requirements as plain names and levels, standard and company competencies
+// together (for the AI prompts). Falls back to the standard ones if the library
+// columns are not there yet.
+async function loadRoleRequirementNames(supabase: Awaited<ReturnType<typeof createClient>>, roleId: string) {
+  type Row = { dimension: string | null; target_level: number; organization_competencies?: { name: string } | null };
+  const { data, error } = await supabase
+    .from("role_competency_requirements")
+    .select("dimension, target_level, organization_competencies(name)")
+    .eq("role_id", roleId)
+    .returns<Row[]>();
+  let rows: Row[] = data ?? [];
+  if (error) {
+    const { data: plain } = await supabase.from("role_competency_requirements").select("dimension, target_level").eq("role_id", roleId).returns<Row[]>();
+    rows = plain ?? [];
+  }
+  return rows
+    .map((r) => ({ name: r.dimension ?? r.organization_competencies?.name ?? "", target_level: r.target_level }))
+    .filter((r) => r.name);
+}
+
 // Changes the competency levels a role requires. Levels are 0-100; 0 (or blank)
-// means the competency is not required for this role. New and changed levels are
+// means the competency is not required for this role. An entry names either a
+// standard dimension or a company competency (by id). New and changed levels are
 // written first and the ones no longer required are removed afterwards, so a
 // failed save can never leave a role with its requirements wiped.
-export async function updateRoleCompetencies(roleId: string, requirements: { dimension: string; targetLevel: number }[]) {
+export async function updateRoleCompetencies(roleId: string, requirements: RequestedRequirement[]) {
   const { supabase, user, organizationId } = await requireAdmin();
   if (!user || !organizationId) return { error: "Not authorized" };
 
@@ -135,16 +157,40 @@ export async function updateRoleCompetencies(roleId: string, requirements: { dim
     .maybeSingle<{ id: string }>();
   if (!role) return { error: "Role not found" };
 
-  const validDims = new Set<string>(COMPETENCY_DIMENSIONS);
-  const wanted = new Map<string, number>();
-  for (const r of requirements) {
-    if (!validDims.has(r.dimension)) continue;
-    const level = Math.min(100, Math.max(0, Math.round(Number(r.targetLevel))));
-    if (Number.isFinite(level) && level > 0) wanted.set(r.dimension, level);
+  // Company competencies: this company's library, and which the role already has.
+  // Both reads tolerate the library migration not being applied yet (no company
+  // competencies are involved in that case).
+  const asksForCompany = requirements.some((r) => r.competencyId);
+  const companyComps = new Map<string, { isActive: boolean }>();
+  let existingCompetencyIds: string[] = [];
+  if (asksForCompany) {
+    const { data: comps, error: compErr } = await supabase
+      .from("organization_competencies")
+      .select("id, is_active")
+      .eq("organization_id", organizationId);
+    if (compErr) {
+      console.error("updateRoleCompetencies library read failed:", compErr);
+      return { error: "Could not read the competency library — the database may need migration 0203 run first." };
+    }
+    for (const c of (comps ?? []) as { id: string; is_active: boolean | null }[]) companyComps.set(c.id, { isActive: c.is_active !== false });
+  }
+  {
+    const { data: existing, error: exErr } = await supabase
+      .from("role_competency_requirements")
+      .select("competency_id")
+      .eq("role_id", roleId)
+      .not("competency_id", "is", null);
+    // Before migration 0203 the column does not exist: there are simply no company rows.
+    if (!exErr) existingCompetencyIds = ((existing ?? []) as { competency_id: string | null }[]).map((r) => r.competency_id).filter((id): id is string => !!id);
   }
 
-  if (wanted.size > 0) {
-    const rows = [...wanted].map(([dimension, targetLevel]) => ({
+  const plan = planRequirementChanges({ requested: requirements, existingCompetencyIds, competencies: companyComps });
+  if (plan.rejected.length > 0) {
+    return { error: "One of the competencies is retired or no longer exists — remove it or pick another." };
+  }
+
+  if (plan.standard.size > 0) {
+    const rows = [...plan.standard].map(([dimension, targetLevel]) => ({
       organization_id: organizationId,
       role_id: roleId,
       dimension,
@@ -157,12 +203,32 @@ export async function updateRoleCompetencies(roleId: string, requirements: { dim
     }
   }
 
-  const removed = COMPETENCY_DIMENSIONS.filter((d) => !wanted.has(d));
-  if (removed.length > 0) {
-    const { error } = await supabase.from("role_competency_requirements").delete().eq("role_id", roleId).in("dimension", removed);
+  if (plan.company.size > 0) {
+    const rows = [...plan.company].map(([competencyId, targetLevel]) => ({
+      organization_id: organizationId,
+      role_id: roleId,
+      competency_id: competencyId,
+      target_level: targetLevel,
+    }));
+    const { error } = await supabase.from("role_competency_requirements").upsert(rows, { onConflict: "role_id,competency_id" });
+    if (error) {
+      console.error("updateRoleCompetencies company upsert failed:", error);
+      return { error: "Could not save the company competencies — try again." };
+    }
+  }
+
+  if (plan.removeDimensions.length > 0) {
+    const { error } = await supabase.from("role_competency_requirements").delete().eq("role_id", roleId).in("dimension", plan.removeDimensions);
     if (error) {
       console.error("updateRoleCompetencies cleanup failed:", error);
       return { error: "Saved, but could not remove the cleared competencies — try again." };
+    }
+  }
+  if (plan.removeCompetencyIds.length > 0) {
+    const { error } = await supabase.from("role_competency_requirements").delete().eq("role_id", roleId).in("competency_id", plan.removeCompetencyIds);
+    if (error) {
+      console.error("updateRoleCompetencies company cleanup failed:", error);
+      return { error: "Saved, but could not remove the cleared company competencies — try again." };
     }
   }
 
@@ -345,15 +411,11 @@ export async function suggestJdQuestions(roleId: string): Promise<{ error: strin
     .maybeSingle<{ title: string; level: string; grade: number; track: RoleTrack; responsibilities: string; job_families: { name: string } }>();
   if (!role) return { error: "Role not found" };
 
-  const { data: requirements } = await supabase
-    .from("role_competency_requirements")
-    .select("dimension, target_level")
-    .eq("role_id", roleId)
-    .returns<{ dimension: string; target_level: number }[]>();
+  const requirements = await loadRoleRequirementNames(supabase, roleId);
   const reqLines =
-    (requirements ?? [])
+    requirements
       .sort((a, b) => b.target_level - a.target_level)
-      .map((r) => `${r.dimension}: ${r.target_level}/100`)
+      .map((r) => `${r.name}: ${r.target_level}/100`)
       .join(", ") || "(none defined)";
 
   const budgetCheck = await assertAiBudgetOk(supabase, { organizationId, userId: user.id });
@@ -496,15 +558,11 @@ export async function generateJobDescription(roleId: string, answers?: JdAnswer[
     .maybeSingle<{ title: string; level: string; grade: number; track: RoleTrack; responsibilities: string; job_families: { name: string } }>();
   if (!role) return { error: "Role not found" };
 
-  const { data: requirements } = await supabase
-    .from("role_competency_requirements")
-    .select("dimension, target_level")
-    .eq("role_id", roleId)
-    .returns<{ dimension: string; target_level: number }[]>();
+  const requirements = await loadRoleRequirementNames(supabase, roleId);
   const reqLines =
-    (requirements ?? [])
+    requirements
       .sort((a, b) => b.target_level - a.target_level)
-      .map((r) => `${r.dimension}: target ${r.target_level}/100`)
+      .map((r) => `${r.name}: target ${r.target_level}/100`)
       .join("\n") || "(none defined)";
 
   // Real, already-mapped growth paths (Job Architecture's own role_transitions

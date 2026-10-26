@@ -9,7 +9,7 @@ import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNot
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
-import type { JobFamily, JobRole, RoleCompetencyRequirement, RoleTransition } from "@/lib/supabase/types";
+import type { JobFamily, JobRole, OrganizationCompetency, RoleCompetencyRequirement, RoleTransition } from "@/lib/supabase/types";
 
 export const metadata = { title: "Job Architecture — Devometrics" };
 
@@ -30,6 +30,28 @@ export default async function JobArchitecturePage() {
     supabase.from("role_competency_requirements").select("*").eq("organization_id", data.organizationId).returns<RoleCompetencyRequirement[]>(),
     supabase.from("role_transitions").select("*").eq("organization_id", data.organizationId).returns<RoleTransition[]>(),
   ]);
+
+  // The company's own competencies (library). Before migration 0203 the extra
+  // columns are missing, so fall back to the plain list, all treated as active.
+  let companyCompetencies: OrganizationCompetency[] = [];
+  {
+    const full = await supabase
+      .from("organization_competencies")
+      .select("id, organization_id, name, description, mapped_dimension, category, level_indicators, is_active, created_at")
+      .eq("organization_id", data.organizationId)
+      .order("name")
+      .returns<OrganizationCompetency[]>();
+    if (!full.error) companyCompetencies = full.data ?? [];
+    else {
+      const plain = await supabase
+        .from("organization_competencies")
+        .select("id, organization_id, name, description, mapped_dimension, created_at")
+        .eq("organization_id", data.organizationId)
+        .order("name")
+        .returns<OrganizationCompetency[]>();
+      companyCompetencies = plain.data ?? [];
+    }
+  }
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -73,6 +95,7 @@ export default async function JobArchitecturePage() {
             roles={roles ?? []}
             requirements={requirements ?? []}
             transitions={transitions ?? []}
+            companyCompetencies={companyCompetencies}
           />
         )}
       </div>

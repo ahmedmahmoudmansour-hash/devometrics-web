@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import OrganizationCompetencyBuilder from "@/components/dashboard/OrganizationCompetencyBuilder";
+import StandardCompetencyLibrary from "@/components/dashboard/StandardCompetencyLibrary";
 import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
@@ -45,11 +46,14 @@ export default async function CompanyCompetenciesPage() {
           <FeatureRestrictedNotice message={t("restrictedNotice")} />
         ) : (
           data.organizationId && (
-            <OrganizationCompetencyBuilder
-              organizationId={data.organizationId}
-              competencies={data.organizationCompetencies}
-              dimensionAverages={data.dimensionAverages}
-            />
+            <>
+              <OrganizationCompetencyBuilder
+                organizationId={data.organizationId}
+                competencies={data.organizationCompetencies}
+                dimensionAverages={data.dimensionAverages}
+              />
+              <StandardCompetencyLibrary />
+            </>
           )
         )}
       </div>

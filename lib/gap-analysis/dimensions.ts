@@ -30,6 +30,11 @@ const DIMENSION_TRANSLATION_KEY: Record<CompetencyDimension, string> = {
   "Financial Literacy": "financialLiteracy",
 };
 
+// The translation key of a standard competency, for its label, description and level indicators.
+export function dimensionTranslationKey(dimension: CompetencyDimension): string {
+  return DIMENSION_TRANSLATION_KEY[dimension];
+}
+
 export function dimensionLabel(t: (key: string) => string, dimension: CompetencyDimension): string {
   return t(DIMENSION_TRANSLATION_KEY[dimension]);
 }

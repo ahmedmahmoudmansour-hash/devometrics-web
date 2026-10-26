@@ -6,8 +6,11 @@ import {
   createOrganizationCompetency,
   updateOrganizationCompetency,
   deleteOrganizationCompetency,
+  setOrganizationCompetencyActive,
   suggestDimensionForCompetency,
 } from "@/lib/organizations/competencies";
+import { COMPETENCY_CATEGORIES, MAX_LEVEL_INDICATOR_LENGTH, type CompetencyCategory } from "@/lib/proficiency/library";
+import { PROFICIENCY_LEVELS } from "@/lib/proficiency/levels";
 import { COMPETENCY_DIMENSIONS, dimensionLabel, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
 import { levelText } from "@/lib/ui/levelColor";
 import type { OrganizationCompetency } from "@/lib/supabase/types";
@@ -23,6 +26,54 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 const labelStyle: React.CSSProperties = { fontSize: 12, color: "var(--text-muted)", display: "block", marginBottom: 6 };
+
+// Type of competency, and what each of the five levels looks like. Used by the add
+// form and the edit form so both behave the same.
+function CategorySelect({ value, onChange }: { value: CompetencyCategory; onChange: (v: CompetencyCategory) => void }) {
+  const tLib = useTranslations("competencyLibrary");
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as CompetencyCategory)}
+      style={{ ...inputStyle, cursor: "pointer" }}
+      aria-label={tLib("categoryLabel")}
+    >
+      {COMPETENCY_CATEGORIES.map((c) => (
+        <option key={c} value={c}>
+          {tLib(`category_${c}`)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function LevelIndicatorsEditor({ value, onChange }: { value: Record<string, string>; onChange: (v: Record<string, string>) => void }) {
+  const tLib = useTranslations("competencyLibrary");
+  const tProf = useTranslations("proficiency");
+  return (
+    <details>
+      <summary style={{ fontSize: 12, color: "var(--teal)", cursor: "pointer" }}>{tLib("indicatorsLabel")}</summary>
+      <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "8px 0", lineHeight: 1.5 }}>{tLib("indicatorsHint")}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {PROFICIENCY_LEVELS.map((level) => (
+          <div key={level}>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>
+              {tProf("levelShort", { level })} · {tProf(`level${level}`)}
+            </label>
+            <textarea
+              value={value[String(level)] ?? ""}
+              onChange={(e) => onChange({ ...value, [String(level)]: e.target.value })}
+              rows={2}
+              maxLength={MAX_LEVEL_INDICATOR_LENGTH}
+              placeholder={tLib("indicatorPlaceholder")}
+              style={{ ...inputStyle, resize: "vertical", fontSize: 13 }}
+            />
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 function CompetencyBar({
   competency,
@@ -84,6 +135,10 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
   const [name, setName] = useState(competency.name);
   const [description, setDescription] = useState(competency.description ?? "");
   const [dimension, setDimension] = useState<CompetencyDimension | typeof UNMAPPED>(competency.mapped_dimension ?? UNMAPPED);
+  const [category, setCategory] = useState<CompetencyCategory>(competency.category ?? "behavioural");
+  const [indicators, setIndicators] = useState<Record<string, string>>(competency.level_indicators ?? {});
+  const tLib = useTranslations("competencyLibrary");
+  const retired = competency.is_active === false;
   const [isPending, startTransition] = useTransition();
   const [isSuggesting, startSuggest] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -102,30 +157,59 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
 
   if (!editing) {
     return (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-        <div>
-          <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{competency.name}</span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", marginInlineStart: 8 }}>
-            ({competency.mapped_dimension ?? t("notMapped")})
-          </span>
+      <div style={{ padding: "8px 0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ opacity: retired ? 0.65 : 1 }}>
+            <span style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>{competency.name}</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", marginInlineStart: 8 }}>
+              ({competency.mapped_dimension ?? t("notMapped")})
+            </span>
+            {competency.category && (
+              <span style={{ fontSize: 11, color: "var(--text-muted)", marginInlineStart: 8 }}>· {tLib(`category_${competency.category}`)}</span>
+            )}
+            {retired && (
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 999, padding: "1px 8px", marginInlineStart: 8 }}>
+                {tLib("retiredBadge")}
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
+            >
+              {t("edit")}
+            </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await setOrganizationCompetencyActive(competency.id, retired);
+                  setError(result?.error ?? null);
+                })
+              }
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
+            >
+              {retired ? tLib("reactivate") : tLib("retire")}
+            </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await deleteOrganizationCompetency(competency.id);
+                  setError(result?.error ?? null);
+                })
+              }
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
+            >
+              {t("delete")}
+            </button>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
-          >
-            {t("edit")}
-          </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => startTransition(() => { deleteOrganizationCompetency(competency.id); })}
-            style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
-          >
-            {t("delete")}
-          </button>
-        </div>
+        {error && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{error}</p>}
       </div>
     );
   }
@@ -163,6 +247,8 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
           {isSuggesting ? t("thinking") : t("suggestWithAi")}
         </button>
       </div>
+      <CategorySelect value={category} onChange={setCategory} />
+      <LevelIndicatorsEditor value={indicators} onChange={setIndicators} />
       {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
       <div style={{ display: "flex", gap: 8 }}>
         <button
@@ -174,6 +260,8 @@ function CompetencyRow({ competency }: { competency: OrganizationCompetency }) {
                 name,
                 description,
                 mappedDimension: dimension === UNMAPPED ? null : dimension,
+                category,
+                levelIndicators: indicators,
               });
               if (result?.error) setError(result.error);
               else {
@@ -212,6 +300,9 @@ export default function OrganizationCompetencyBuilder({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dimension, setDimension] = useState<CompetencyDimension | typeof UNMAPPED>(UNMAPPED);
+  const [category, setCategory] = useState<CompetencyCategory>("behavioural");
+  const [indicators, setIndicators] = useState<Record<string, string>>({});
+  const tLib = useTranslations("competencyLibrary");
   const [isPending, startTransition] = useTransition();
   const [isSuggesting, startSuggest] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -236,6 +327,8 @@ export default function OrganizationCompetencyBuilder({
         name,
         description,
         mappedDimension: dimension === UNMAPPED ? null : dimension,
+        category,
+        levelIndicators: indicators,
       });
       if (result?.error) {
         setError(result.error);
@@ -244,6 +337,8 @@ export default function OrganizationCompetencyBuilder({
       setName("");
       setDescription("");
       setDimension(UNMAPPED);
+      setCategory("behavioural");
+      setIndicators({});
     });
   }
 
@@ -273,6 +368,9 @@ export default function OrganizationCompetencyBuilder({
           <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>
             {t("manageLabel")}
           </p>
+          {competencies.some((c) => c.is_active === false) && (
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 8, lineHeight: 1.5 }}>{tLib("retiredHint")}</p>
+          )}
           {competencies.map((c) => (
             <CompetencyRow key={c.id} competency={c} />
           ))}
@@ -326,6 +424,11 @@ export default function OrganizationCompetencyBuilder({
             </button>
           </div>
         </div>
+        <div>
+          <label style={labelStyle}>{tLib("categoryLabel")}</label>
+          <CategorySelect value={category} onChange={setCategory} />
+        </div>
+        <LevelIndicatorsEditor value={indicators} onChange={setIndicators} />
         {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
         <button
           type="submit"

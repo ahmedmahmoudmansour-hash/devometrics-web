@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { standardRequirementsOnly } from "@/lib/proficiency/library";
 import { createClient } from "@/lib/supabase/server";
 import { bilingualName, currentNameLocale } from "@/lib/names";
 import { COMPETENCY_DIMENSIONS, type CompetencyDimension } from "@/lib/gap-analysis/dimensions";
@@ -704,7 +705,7 @@ export async function buildEmployeeDetail(employeeUserId: string): Promise<Emplo
   }
   const mobility =
     (allRoles ?? []).length > 0
-      ? computeMobility(currentRoleId, mobilityLevels, allRoles ?? [], roleRequirements ?? [], roleTransitions ?? [])
+      ? computeMobility(currentRoleId, mobilityLevels, allRoles ?? [], standardRequirementsOnly(roleRequirements), roleTransitions ?? [])
       : null;
 
   return {
