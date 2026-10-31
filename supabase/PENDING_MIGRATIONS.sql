@@ -1,14 +1,31 @@
--- ============================================================
--- DEVOMETRICS -- PENDING MIGRATIONS: 0203 only (awaiting review)
+-- ============================================================================
+-- DEVOMETRICS: APPLY PACK FOR MIGRATION 0203 (competency library)
 --
--- 0203  Competency library: category, level indicators and retire flag on
---       company competencies; role requirements can point at a company
---       competency; same-company guard.
+-- Paste this whole file into the Supabase SQL Editor and press Run. One paste.
 --
--- Everything through 0202 is already applied and verified live.
--- Safe to run more than once. Nothing existing is changed or removed.
--- ============================================================
+-- What it does, in order:
+--   Step 1  Makes a private copy of the two tables it touches (schema backup_0203,
+--           not reachable through the public API). Safe to run twice: an existing
+--           copy is kept as it is.
+--   Step 2  Applies migration 0203 (adds columns, one function, constraints, an
+--           index and a trigger; changes or deletes no existing row).
+--   Step 3  Shows a check table at the end. Every line should say PASS.
+--
+-- To undo: run supabase/ROLLBACK_0203.sql, then (optionally) drop schema backup_0203 cascade.
+-- ============================================================================
 
+-- ---------------------------------------------------------------------------
+-- Step 1. Backup copy (not exposed through the API)
+create schema if not exists backup_0203;
+revoke all on schema backup_0203 from anon, authenticated;
+
+create table if not exists backup_0203.role_competency_requirements as
+  select * from public.role_competency_requirements;
+create table if not exists backup_0203.organization_competencies as
+  select * from public.organization_competencies;
+
+-- ---------------------------------------------------------------------------
+-- Step 2. Migration 0203
 -- 0203: competency library, and role requirements that can use company competencies.
 --
 -- Where things stood:
@@ -184,3 +201,49 @@ create trigger role_requirement_integrity
   before insert or update of role_id, competency_id, organization_id
   on public.role_competency_requirements
   for each row execute function public.enforce_role_requirement_integrity();
+
+
+-- ---------------------------------------------------------------------------
+-- Step 3. Checks (the last result shown). Every row should say PASS.
+select check_name,
+       case when ok then 'PASS' else 'FAIL' end as result,
+       detail
+from (
+  select 'backup of role requirements holds every row' as check_name,
+         (select count(*) from backup_0203.role_competency_requirements)
+           >= (select count(*) from public.role_competency_requirements where competency_id is null) as ok,
+         (select count(*) from backup_0203.role_competency_requirements)::text || ' rows backed up' as detail
+  union all
+  select 'backup of company competencies holds every row',
+         (select count(*) from backup_0203.organization_competencies)
+           = (select count(*) from public.organization_competencies),
+         (select count(*) from backup_0203.organization_competencies)::text || ' rows backed up'
+  union all
+  select 'company competencies have the new columns',
+         (select count(*) from information_schema.columns
+            where table_schema = 'public' and table_name = 'organization_competencies'
+              and column_name in ('category', 'level_indicators', 'is_active', 'updated_at')) = 4,
+         'category, level_indicators, is_active, updated_at'
+  union all
+  select 'role requirements can point at a company competency',
+         exists (select 1 from information_schema.columns
+                   where table_schema = 'public' and table_name = 'role_competency_requirements'
+                     and column_name = 'competency_id'),
+         'competency_id column'
+  union all
+  select 'every existing requirement still has its standard dimension',
+         not exists (select 1 from public.role_competency_requirements
+                      where competency_id is null and dimension is null),
+         'no row without a dimension or a competency'
+  union all
+  select 'same-company guard trigger is in place',
+         exists (select 1 from pg_trigger
+                   where tgname = 'role_requirement_integrity' and not tgisinternal),
+         'role_requirement_integrity'
+  union all
+  select 'one requirement per role and competency (unique index)',
+         exists (select 1 from pg_indexes
+                   where schemaname = 'public' and indexname = 'role_requirements_role_competency_uidx'),
+         'role_requirements_role_competency_uidx'
+) c
+order by ok, check_name;
