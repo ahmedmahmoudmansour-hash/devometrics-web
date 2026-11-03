@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +22,8 @@ export const metadata = { title: "Compensation — Devometrics" };
 // the build plan's permission matrix: an org admin without a Compensation
 // Admin grant gets zero access here, same as any other employee.
 export default async function CompanyCompensationPage() {
+  // Hidden for now (see lib/organizations/hrModules.ts): the page and its data are untouched, just not reachable.
+  if (hrModulesHidden()) redirect("/dashboard/company");
   const t = await getTranslations("companyCompensationPage");
   const data = await buildCompanyData();
   if (!data.organizationId) redirect("/dashboard");

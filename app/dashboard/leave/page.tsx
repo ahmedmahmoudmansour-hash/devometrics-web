@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +17,8 @@ export const metadata = { title: "Services — Devometrics" };
 // only the visible label/title changed from "Leave" to "Services", not
 // the route, so no bookmarks or nav-highlighting logic break.
 export default async function MyServicesPage() {
+  // Hidden for now (see lib/organizations/hrModules.ts): the page and its data are untouched, just not reachable.
+  if (hrModulesHidden()) redirect("/dashboard");
   const t = await getTranslations("myServicesPage");
   const supabase = await createClient();
   const {

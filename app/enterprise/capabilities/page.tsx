@@ -4,8 +4,8 @@ import { CAPABILITY_ICONS } from "@/lib/enterprise/sampleWorkspace";
 export default async function EnterpriseCapabilitiesPage() {
   const t = await getTranslations("enterprisePage");
 
-  const capabilityTitles = [t("cap1Title"), t("cap2Title"), t("cap3Title"), t("cap4Title"), t("cap5Title"), t("cap6Title"), t("cap7Title"), t("cap8Title"), t("cap9Title"), t("cap10Title"), t("cap11Title"), t("cap12Title"), t("cap13Title"), t("cap14Title"), t("cap15Title")];
-  const capabilityDescriptions = [t("cap1Description"), t("cap2Description"), t("cap3Description"), t("cap4Description"), t("cap5Description"), t("cap6Description"), t("cap7Description"), t("cap8Description"), t("cap9Description"), t("cap10Description"), t("cap11Description"), t("cap12Description"), t("cap13Description"), t("cap14Description"), t("cap15Description")];
+  const capabilityTitles = [t("cap1Title"), t("cap2Title"), t("cap3Title"), t("cap4Title"), t("cap5Title"), t("cap6Title"), t("cap7Title"), t("cap8Title"), t("cap9Title"), t("cap10Title"), t("cap11Title"), t("cap12Title"), t("cap13Title"), t("cap14Title"), t("cap15Title"), t("cap16Title")];
+  const capabilityDescriptions = [t("cap1Description"), t("cap2Description"), t("cap3Description"), t("cap4Description"), t("cap5Description"), t("cap6Description"), t("cap7Description"), t("cap8Description"), t("cap9Description"), t("cap10Description"), t("cap11Description"), t("cap12Description"), t("cap13Description"), t("cap14Description"), t("cap15Description"), t("cap16Description")];
   const capabilities = CAPABILITY_ICONS.map((icon, i) => ({
     title: capabilityTitles[i],
     description: capabilityDescriptions[i],

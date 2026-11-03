@@ -425,7 +425,7 @@
     "capabilitiesLabel": "What's included",
     "capabilitiesHeadline": "Built for the people accountable for the team",
     "cap1Title": "Job architecture & grading",
-    "cap1Description": "Define families, graded roles, and each role's required competency profile — AI proposes a grade and profile from a role's responsibilities, and it powers vertical and horizontal career paths across the org.",
+    "cap1Description": "Define families, graded roles and each role's required competencies, standard or your own, at the level the role needs (five named levels). AI proposes a grade and profile from a role's responsibilities, and it powers vertical and horizontal career paths across the org.",
     "cap2Title": "Org chart builder",
     "cap2Description": "Real reporting lines, not a static diagram — set each person's manager once, and a direct-report manager automatically gets a scoped My Team view for their own people, without full company-admin rights.",
     "cap3Title": "Impact Cycles",
@@ -445,7 +445,7 @@
     "cap10Title": "Manager-assigned tasks",
     "cap10Description": "Assign a task straight onto an employee's development plan from their profile — it shows up flagged as assigned by their manager, not just self-directed.",
     "cap11Title": "Custom competency framework",
-    "cap11Description": "Name competencies in your own company's language and map each onto the dimension that actually drives scoring — or let AI suggest the mapping. Mapping is optional, since some competencies (pure values statements) don't cleanly fit any dimension.",
+    "cap11Description": "Name competencies in your own company's language, describe what each of the five levels looks like, and require them on roles. Retire a competency instead of deleting it. Mapping onto a scored dimension is optional, since some competencies (pure values statements) don't cleanly fit any dimension.",
     "cap12Title": "Anonymous culture & pulse surveys",
     "cap12Description": "AI drafts rating, multiple-choice, and open-ended questions on any theme — review and edit before assigning. Results only ever surface as anonymous aggregates once at least 3 people respond; individual answers are never visible to admins, enforced at the database level.",
     "cap13Title": "Executive assessments",
@@ -454,6 +454,8 @@
     "cap14Description": "Named platform and finance contacts for your workspace, plus your own logo and accent color applied across every employee's dashboard.",
     "cap15Title": "Fully isolated per company",
     "cap15Description": "Every query is scoped through row-level security tied to organization membership — your data never mixes with another company's, even on the same platform.",
+    "cap16Title": "Role-based competency assessment (pilot)",
+    "cap16Description": "Assess the competencies each role requires. AI writes the questions for the role, people answer in writing, and each competency is scored twice against your level descriptions, with the evidence, a confidence rating and a level range. A manager confirms results before any decision. In English and Arabic.",
     "howItWorksLabel": "How it works",
     "howItWorksHeadline": "No sales call to get started",
     "step1Title": "Create your workspace",
@@ -6077,7 +6079,7 @@
     "tile_growth": "Understand where you stand",
     "tile_coaching": "Get better at what matters",
     "tile_work": "Your day to day",
-    "tile_company": "Services, directory and company learning"
+    "tile_company": "Your file, company learning and appraisal"
   },
   "employeeFileSettings": {
     "title": "Employee file",

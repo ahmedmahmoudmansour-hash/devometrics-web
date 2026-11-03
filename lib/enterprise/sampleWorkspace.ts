@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   GitBranch,
   IdCard,
+  FileCheck2,
 } from "lucide-react";
 
 // Shared between the /enterprise/capabilities and /enterprise/live-demo
@@ -38,6 +39,7 @@ export const CAPABILITY_ICONS: React.ComponentType<{ size?: number }>[] = [
   Award,
   Palette,
   ShieldCheck,
+  FileCheck2,
 ];
 
 // Fictional workspace used purely to illustrate the shape of the real

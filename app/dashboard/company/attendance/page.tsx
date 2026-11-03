@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
@@ -18,6 +19,8 @@ function shiftMonth(month: string, delta: number): string {
 // Admin-only overview of a month of attendance, plus the spreadsheet import.
 // RLS is the real gate (attendance_records: admins see the whole company).
 export default async function CompanyAttendancePage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
+  // Hidden for now (see lib/organizations/hrModules.ts): the page and its data are untouched, just not reachable.
+  if (hrModulesHidden()) redirect("/dashboard/company");
   const t = await getTranslations("attendanceAdmin");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");

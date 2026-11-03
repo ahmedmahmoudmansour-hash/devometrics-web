@@ -18,6 +18,7 @@ import {
   Contact,
   IdCard,
 } from "lucide-react";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 
 // One source for the employee-facing tiles, shared by the sidebar sections
 // and the home page's tile hub so the two can never drift apart. Grouped by
@@ -95,7 +96,7 @@ export function buildEmployeeTiles(flags: EmployeeNavFlags): EmployeeTile[] {
       items: [
         // Employee self-service (time off + HR letters), labelled Services
         // since it bundles unrelated requests, not leave alone.
-        { href: "/dashboard/leave", labelKey: "services", icon: CalendarDays },
+        ...(hrModulesHidden() ? [] : [{ href: "/dashboard/leave", labelKey: "services", icon: CalendarDays }]),
         // The private HR record (personal details, family, documents) —
         // employee-editable, visible only to them and company admins.
         { href: "/dashboard/my-file", labelKey: "myFile", icon: IdCard },

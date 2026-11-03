@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
@@ -15,6 +16,8 @@ export const metadata = { title: "Leave — Devometrics" };
 // header for why it uses normal RLS instead of compensation's RPC-only
 // lockdown).
 export default async function CompanyLeavePage() {
+  // Hidden for now (see lib/organizations/hrModules.ts): the page and its data are untouched, just not reachable.
+  if (hrModulesHidden()) redirect("/dashboard/company");
   const t = await getTranslations("companyLeavePage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");

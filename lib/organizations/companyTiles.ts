@@ -4,6 +4,7 @@
 // import this).
 
 import type { RestrictableFeature } from "@/lib/organizations/featureAccessConstants";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 
 export type CompanyFeatureKey =
   | "profile"
@@ -44,7 +45,7 @@ export type CompanyFeature = {
   employeeFeature?: RestrictableFeature;
 };
 
-export const COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[] = [
+const ALL_COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[] = [
   {
     key: "people",
     features: [
@@ -98,7 +99,13 @@ export const COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[
   },
 ];
 
-export const ALL_COMPANY_FEATURES: CompanyFeature[] = COMPANY_TILES.flatMap((t) => t.features);
+// The hidden HR administration area (see lib/organizations/hrModules.ts) is left out of what people see, but its keys stay
+// valid so anything already saved about them keeps working.
+export const COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[] = hrModulesHidden()
+  ? ALL_COMPANY_TILES.filter((tile) => tile.key !== "timePay")
+  : ALL_COMPANY_TILES;
+
+export const ALL_COMPANY_FEATURES: CompanyFeature[] = ALL_COMPANY_TILES.flatMap((t) => t.features);
 export const COMPANY_FEATURE_KEYS = ALL_COMPANY_FEATURES.map((f) => f.key);
 
 export function isCompanyFeatureKey(v: string): v is CompanyFeatureKey {

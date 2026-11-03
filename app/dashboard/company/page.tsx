@@ -14,6 +14,7 @@ import { getJoinByCodeEnabled } from "@/lib/organizations/joinByCode";
 import CompanySetupGuide, { type SetupGuideStep } from "@/components/dashboard/CompanySetupGuide";
 import AutomationSettingsPanel from "@/components/dashboard/AutomationSettingsPanel";
 import { getAutomationSettings } from "@/lib/automations/actions";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 
 // Live counts for the widget grid — each an isolated, defensive count query
 // (head:true, no rows fetched) against a table that may belong to a
@@ -53,12 +54,15 @@ export default async function CompanyProfilePage() {
       countOrNull(supabase, "knowledge_hub_content", data.organizationId),
       countOrNull(supabase, "job_postings", data.organizationId),
       countOrNull(supabase, "exit_interviews", data.organizationId),
-      supabase
-        .from("leave_requests")
-        .select("*", { count: "exact", head: true })
-        .eq("organization_id", data.organizationId)
-        .eq("status", "pending")
-        .then((r) => r.count ?? null),
+      // HR administration modules are hidden for now (lib/organizations/hrModules.ts): no leave query needed.
+      hrModulesHidden()
+        ? Promise.resolve(null)
+        : supabase
+            .from("leave_requests")
+            .select("*", { count: "exact", head: true })
+            .eq("organization_id", data.organizationId)
+            .eq("status", "pending")
+            .then((r) => r.count ?? null),
     ]);
 
     const hipoCount = data.rows.filter((r) => {

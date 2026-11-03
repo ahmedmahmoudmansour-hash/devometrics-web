@@ -6,6 +6,7 @@ import { listMyDirectReportReviews, getPendingProbationAcceptances } from "@/lib
 import { listMyTeamPulse } from "@/lib/organizations/teamPulse";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import { getMyOrganizationId } from "@/lib/organizations/membership";
+import { hrModulesHidden } from "@/lib/organizations/hrModules";
 import { listTeamCompensation, listSalaryBands, listCompensationProposals } from "@/lib/compensation/actions";
 import { listTeamLeaveRequests, listLeaveTypes, listTeamLeaveOverview } from "@/lib/leave/actions";
 import MyTeamReviews from "@/components/dashboard/MyTeamReviews";
@@ -44,7 +45,9 @@ export default async function MyTeamPage() {
   const pendingProbationAcceptances = await getPendingProbationAcceptances();
 
   const organizationId = await getMyOrganizationId(supabase, user.id);
-  const [teamCompensation, salaryBands, myProposals, teamLeaveRequestsRaw, leaveTypes, teamLeaveOverviewRaw] = organizationId
+  // Leave and compensation are hidden for now (lib/organizations/hrModules.ts): not fetched, not shown.
+  const showHr = !hrModulesHidden();
+  const [teamCompensation, salaryBands, myProposals, teamLeaveRequestsRaw, leaveTypes, teamLeaveOverviewRaw] = organizationId && showHr
     ? await Promise.all([
         listTeamCompensation(organizationId),
         listSalaryBands(organizationId),
@@ -141,16 +144,18 @@ export default async function MyTeamPage() {
 
         {organizationId && (
           <>
-            <TeamLeaveSection initialRequests={teamLeaveRequests} leaveTypes={leaveTypes} employeeNames={employeeNames} />
-            <TeamLeaveOverview balances={teamLeaveOverviewRaw} leaveTypes={leaveTypes} employeeNames={employeeNames} />
+            {showHr && <TeamLeaveSection initialRequests={teamLeaveRequests} leaveTypes={leaveTypes} employeeNames={employeeNames} />}
+            {showHr && <TeamLeaveOverview balances={teamLeaveOverviewRaw} leaveTypes={leaveTypes} employeeNames={employeeNames} />}
             <TeamEmploymentHistory eventsByEmployee={employmentHistoryByEmployee} employeeNames={employeeNames} />
-            <MyCompensationProposals initialProposals={myProposals} employeeNames={employeeNames} />
-            <TeamCompensationSection
-              organizationId={organizationId}
-              initialRows={teamCompensation}
-              salaryBands={salaryBands}
-              employeeNames={employeeNames}
-            />
+            {showHr && <MyCompensationProposals initialProposals={myProposals} employeeNames={employeeNames} />}
+            {showHr && (
+              <TeamCompensationSection
+                organizationId={organizationId}
+                initialRows={teamCompensation}
+                salaryBands={salaryBands}
+                employeeNames={employeeNames}
+              />
+            )}
           </>
         )}
 
