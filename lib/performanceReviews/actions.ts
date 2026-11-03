@@ -7,6 +7,17 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import { getMyOrganizationId } from "@/lib/organizations/membership";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { getOrganizationCompetenciesByIds } from "@/lib/organizations/competencies";
+import { resolveCallerLocale } from "@/lib/i18n/request";
+import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
+import { standardDefinitionText } from "@/lib/assessment/definitions";
+import { buildCalibration, type CalibrationReport, type CalibrationRow } from "./calibration";
+import {
+  EMPTY_REFERENCES,
+  cleanLevelDescriptions,
+  latestScoredPerCompetency,
+  type ReferenceBundle,
+  type ResultRow,
+} from "./appraisalReference";
 import type {
   PerformanceReviewCycle,
   PerformanceReview,
@@ -1379,6 +1390,118 @@ export async function getAppraisalCompetencyContext(reviewId: string): Promise<A
     roleTarget: roleTargetByDim.get(dimension) ?? null,
     measuredCurrent: measuredByDim.get(dimension) ?? null,
   }));
+}
+
+// ---------- Appraisal references: latest role assessment and level wording ----------
+
+// What a manager can consult next to a competency rating: the employee's latest scored role assessment for each
+// competency, and what each of the five levels looks like. Read only, and never written into the rating. Reads go
+// through the caller's own row-level security, so a manager sees only what they are already allowed to see.
+export async function getAppraisalReferences(reviewId: string): Promise<ReferenceBundle> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return EMPTY_REFERENCES;
+
+  const { data: review } = await supabase
+    .from("performance_reviews")
+    .select("employee_user_id, organization_id")
+    .eq("id", reviewId)
+    .maybeSingle<{ employee_user_id: string; organization_id: string }>();
+  if (!review) return EMPTY_REFERENCES;
+
+  try {
+    const locale = await resolveCallerLocale(supabase, user.id);
+
+    const [{ data: results }, { data: companyCompetencies }] = await Promise.all([
+      supabase
+        .from("competency_assessment_results")
+        .select("competency_key, status, level, range_low, range_high, confidence, confirmed_at, override_level, scored_at")
+        .eq("organization_id", review.organization_id)
+        .eq("employee_user_id", review.employee_user_id)
+        .eq("status", "scored")
+        .order("scored_at", { ascending: false })
+        .limit(200)
+        .returns<ResultRow[]>(),
+      supabase
+        .from("organization_competencies")
+        .select("id, level_indicators")
+        .eq("organization_id", review.organization_id)
+        .returns<{ id: string; level_indicators: unknown }[]>(),
+    ]);
+
+    const definitions: Record<string, Record<string, string>> = {};
+    for (const dimension of COMPETENCY_DIMENSIONS) {
+      const cleaned = cleanLevelDescriptions(standardDefinitionText(dimension, locale).levels);
+      if (cleaned) definitions[dimension] = cleaned;
+    }
+    for (const c of companyCompetencies ?? []) {
+      const cleaned = cleanLevelDescriptions(c.level_indicators);
+      if (cleaned) definitions[c.id] = cleaned;
+    }
+
+    return { assessments: latestScoredPerCompetency(results ?? []), definitions };
+  } catch (err) {
+    // Reference information is optional. If the assessment tables are not there yet, the rating screen still works.
+    console.error("getAppraisalReferences failed (non-fatal):", err);
+    return EMPTY_REFERENCES;
+  }
+}
+
+// ---------- Rating calibration (company admins) ----------
+
+// How each manager's submitted overall ratings in one cycle compare with the company's. Admin only, and the page that
+// shows it lists no manager with fewer than the minimum number of ratings. Read through the caller's own row-level
+// security ("Admins view manager-assessments in their org"), so it returns nothing for anyone else.
+export async function getCalibrationReport(cycleId: string): Promise<CalibrationReport | null> {
+  const data = await buildCompanyData();
+  if (!data.isOrgAdmin || !data.organizationId) return null;
+  const supabase = await createClient();
+
+  const { data: reviews } = await supabase
+    .from("performance_reviews")
+    .select("id")
+    .eq("organization_id", data.organizationId)
+    .eq("cycle_id", cycleId)
+    .returns<{ id: string }[]>();
+  const reviewIds = (reviews ?? []).map((r) => r.id);
+  if (reviewIds.length === 0) return buildCalibration([]);
+
+  const [{ data: managerRows }, { data: selfRows }] = await Promise.all([
+    supabase
+      .from("performance_review_manager_assessments")
+      .select("review_id, reviewer_user_id, rating, submitted_at")
+      .in("review_id", reviewIds)
+      .not("submitted_at", "is", null)
+      .not("rating", "is", null)
+      .returns<{ review_id: string; reviewer_user_id: string | null; rating: number | null; submitted_at: string | null }[]>(),
+    supabase
+      .from("performance_review_self_assessments")
+      .select("review_id, rating")
+      .in("review_id", reviewIds)
+      .returns<{ review_id: string; rating: number | null }[]>(),
+  ]);
+
+  const reviewerIds = [...new Set((managerRows ?? []).map((m) => m.reviewer_user_id).filter((id): id is string => !!id))];
+  const { data: profiles } = reviewerIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", reviewerIds).returns<{ id: string; full_name: string | null; email: string }[]>()
+    : { data: [] as { id: string; full_name: string | null; email: string }[] };
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]));
+  const selfByReview = new Map((selfRows ?? []).map((r) => [r.review_id, r.rating]));
+
+  const rows: CalibrationRow[] = [];
+  for (const m of managerRows ?? []) {
+    // A rating whose reviewer is unknown (an account that was deleted) cannot be attributed to anyone, so it is left out.
+    if (!m.reviewer_user_id || m.rating === null) continue;
+    rows.push({
+      reviewerUserId: m.reviewer_user_id,
+      reviewerName: nameById.get(m.reviewer_user_id) ?? "Unknown",
+      rating: m.rating,
+      selfRating: selfByReview.get(m.review_id) ?? null,
+    });
+  }
+  return buildCalibration(rows);
 }
 
 // ---------- Generic custom steps ----------

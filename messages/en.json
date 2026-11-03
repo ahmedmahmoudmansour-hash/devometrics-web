@@ -2561,6 +2561,8 @@
     "roleNeeds": "role needs {value}",
     "aiNote": "AI: {note}",
     "employeeSelfRated": "Employee self-rated this {rating}",
+    "levelGuide": "What each level looks like for this competency",
+    "suggestionsCaution": "These are starting points based on the skill analysis and the self-reflection, not on observed performance. Check each one against what you have actually seen before you use it.",
     "conclusionClosed": "Conclusion — closed",
     "closed": "Closed {date}",
     "conclusion": "Conclusion",
@@ -6316,5 +6318,27 @@
     "status_remote": "Remote",
     "status_absent": "Absent",
     "status_holiday": "Holiday"
+  },
+  "ratingCalibration": {
+    "title": "Rating calibration",
+    "intro": "Managers differ in how they rate, and in research on job-performance ratings, who does the rating explains more of a rating than who is being rated. Use this to start a calibration conversation, not to judge a manager. A manager with fewer than {min} submitted ratings is not listed on their own.",
+    "cycleLabel": "Cycle",
+    "show": "Show",
+    "empty": "No submitted manager ratings in this cycle yet.",
+    "company": "All managers: {count} ratings, average {mean}, spread {spread}",
+    "distribution": "How ratings are spread (1 to 5)",
+    "colManager": "Manager",
+    "colRatings": "Ratings",
+    "colAverage": "Average",
+    "colSpread": "Spread",
+    "colHigh": "Rated 4 to 5",
+    "colLow": "Rated 1 to 2",
+    "colSelfGap": "Manager minus self",
+    "colPrompt": "Worth discussing",
+    "flagAbove": "Rates above the company average",
+    "flagBelow": "Rates below the company average",
+    "flagNarrow": "Almost everyone gets the same rating",
+    "hidden": "{managers} managers with fewer than {min} ratings are counted in the totals above but not listed.",
+    "footnote": "A prompt marks a pattern worth discussing, not a finding. Differences can be real: a stronger team can deserve higher ratings. Spread is the standard deviation of the ratings. Do not use this to force ratings into a set shape."
   }
 }

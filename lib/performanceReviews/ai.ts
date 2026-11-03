@@ -12,6 +12,12 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MAX_TEXT = 3000;
 
+// Standards for any text that will be read by the person it is about. They follow the feedback research (Kluger and
+// DeNisi 1996; Hattie and Timperley 2007): feedback aimed at the person, or at nothing observable, tends to hurt;
+// feedback on the task that says where they are heading, how they are doing and what to do next tends to help.
+const FEEDBACK_STANDARDS =
+  " FEEDBACK STANDARDS: Write about the work and observable behaviour, never about the person's character, personality or potential. Do not use labels such as natural, talented, lazy or difficult. Do not compare them with colleagues. Where it fits, make clear where they are heading, how they are doing against it, and the next step. If the evidence given does not support a statement, leave the statement out rather than filling the gap.";
+
 // Every drafting call in this file is read directly by an employee or
 // manager, so it needs the same locale directive Coach/Roleplay already
 // use — without it, drafts came out in English regardless of the caller's
@@ -196,7 +202,8 @@ export async function draftManagerPerspective(reviewId: string): Promise<{ error
       max_tokens: 800,
       system:
         languageDirective(locale) +
-        "You are helping a manager draft their Perspective (rating + feedback + development needs) for someone's Impact Cycle. Ground everything strictly in the measured Gap Analysis data, the person's own self-reflection (if given), and their Focus Area statuses — never invent achievements or shortcomings that aren't evidenced. This is a first draft the manager will personally review and edit before sharing; it should read as genuinely specific, not generic corporate praise. Development needs should read as an opportunity, not a deficiency.",
+        "You are helping a manager draft their Perspective (rating + feedback + development needs) for someone's Impact Cycle. Ground everything strictly in the measured Gap Analysis data, the person's own self-reflection (if given), and their Focus Area statuses — never invent achievements or shortcomings that aren't evidenced. This is a first draft the manager will personally review and edit before sharing; it should read as genuinely specific, not generic corporate praise. Development needs should read as an opportunity, not a deficiency." +
+        FEEDBACK_STANDARDS,
       tools: [MANAGER_PERSPECTIVE_TOOL],
       tool_choice: { type: "tool", name: "record_manager_perspective" },
       messages: [
@@ -305,7 +312,8 @@ export async function suggestCompetencyRatings(
       max_tokens: 1000,
       system:
         languageDirective(locale) +
-        `You are proposing starting-point manager competency ratings (1=Needs Development, 2=Developing, 3=Meets Expectations, 4=Exceeds Expectations, 5=Outstanding) for this Impact Cycle, one per item in this list: ${labels.join(", ")}. Translate the measured Gap Analysis levels (0-100 scale) into this 1-5 scale sensibly for items that match a Gap Analysis dimension, adjusted by their self-reflection where it adds real signal; for any item with no direct Gap Analysis equivalent, use the self-reflection and general judgment instead. These are drafts a manager will individually review and adjust — never invent evidence.`,
+        `You are proposing starting-point manager competency ratings (1=Needs Development, 2=Developing, 3=Meets Expectations, 4=Exceeds Expectations, 5=Outstanding) for this Impact Cycle, one per item in this list: ${labels.join(", ")}. Translate the measured Gap Analysis levels (0-100 scale) into this 1-5 scale sensibly for items that match a Gap Analysis dimension, adjusted by their self-reflection where it adds real signal; for any item with no direct Gap Analysis equivalent, use the self-reflection and general judgment instead. These are drafts a manager will individually review and adjust — never invent evidence. In each note, say what the number rests on. Where the only basis is the skill analysis or the self-reflection, say plainly that it is not observed performance.` +
+        FEEDBACK_STANDARDS,
       tools: [buildCompetencyRatingsTool(labels)],
       tool_choice: { type: "tool", name: "record_competency_ratings" },
       messages: [
@@ -382,7 +390,8 @@ export async function draftConclusion(reviewId: string): Promise<{ error: string
       max_tokens: 500,
       system:
         languageDirective(locale) +
-        "Write a short closing Conclusion (3-5 sentences) for this Impact Cycle, synthesizing the self-reflection, Manager's Perspective, Focus Area outcomes, and competency ratings given. Balanced and specific — name what actually happened, not generic praise. This is a draft the manager will edit before closing the cycle.",
+        "Write a short closing Conclusion (3-5 sentences) for this Impact Cycle, synthesizing the self-reflection, Manager's Perspective, Focus Area outcomes, and competency ratings given. Balanced and specific — name what actually happened, not generic praise. This is a draft the manager will edit before closing the cycle." +
+        FEEDBACK_STANDARDS,
       messages: [{ role: "user", content: parts.join("\n\n") }],
     });
     await recordAiUsage(supabase, {

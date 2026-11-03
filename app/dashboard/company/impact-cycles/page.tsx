@@ -8,6 +8,7 @@ import { listOrganizationCompetencies } from "@/lib/organizations/competencies";
 import { createClient } from "@/lib/supabase/server";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import PerformanceReviewsManager from "@/components/dashboard/PerformanceReviewsManager";
+import RatingCalibration from "@/components/dashboard/RatingCalibration";
 import EscalatedReviewsWidget from "@/components/dashboard/EscalatedReviewsWidget";
 import EscalationLevelsSetting from "@/components/dashboard/EscalationLevelsSetting";
 import PerformanceReviewWorkflowEditor from "@/components/dashboard/PerformanceReviewWorkflowEditor";
@@ -16,12 +17,15 @@ import { listFeatureEmailHistory } from "@/lib/organizations/featureEmails";
 
 export const metadata = { title: "Impact Cycles — Devometrics" };
 
-export default async function ImpactCyclesPage() {
+export default async function ImpactCyclesPage({ searchParams }: { searchParams: Promise<{ calibrationCycle?: string }> }) {
   const t = await getTranslations("companyImpactCyclesPage");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin) redirect("/dashboard");
 
   const { cycles, error } = await listReviewCycles();
+  const { calibrationCycle } = await searchParams;
+  // Default to the newest cycle; ignore a value that is not one of this company's cycles.
+  const selectedCycleId = cycles.find((c) => c.id === calibrationCycle)?.id ?? cycles[0]?.id ?? null;
 
   // Isolated from buildCompanyData's main query — a small, feature-specific
   // field not worth adding to that already-large shared aggregate. Degrades
@@ -74,7 +78,7 @@ export default async function ImpactCyclesPage() {
             </p>
           </div>
         ) : (
-          <WorkflowSection organizationId={data.organizationId!} escalationLevels={escalationLevels} cycles={cycles} />
+          <WorkflowSection organizationId={data.organizationId!} escalationLevels={escalationLevels} cycles={cycles} selectedCycleId={selectedCycleId} />
         )}
       </div>
     </div>
@@ -85,10 +89,12 @@ async function WorkflowSection({
   organizationId,
   escalationLevels,
   cycles,
+  selectedCycleId,
 }: {
   organizationId: string;
   escalationLevels: number;
   cycles: Awaited<ReturnType<typeof listReviewCycles>>["cycles"];
+  selectedCycleId: string | null;
 }) {
   const [templateResult, organizationCompetencies] = await Promise.all([
     getOrCreateDefaultWorkflowTemplate(organizationId),
@@ -110,6 +116,7 @@ async function WorkflowSection({
       <div style={{ marginTop: 20 }}>
         <PerformanceReviewsManager initialCycles={cycles} organizationId={organizationId} />
       </div>
+      {selectedCycleId && <RatingCalibration cycles={cycles} selectedCycleId={selectedCycleId} />}
     </>
   );
 }

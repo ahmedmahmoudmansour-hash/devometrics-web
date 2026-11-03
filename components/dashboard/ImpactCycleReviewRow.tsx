@@ -17,6 +17,7 @@ import {
   getUplineSignoffs,
   submitUplineSignoff,
   getAppraisalCompetencyContext,
+  getAppraisalReferences,
   getMyUserId,
   resolveReviewEscalation,
 } from "@/lib/performanceReviews/actions";
@@ -45,6 +46,7 @@ import {
   type AppraisalCompetencyContext,
 } from "@/lib/performanceReviews/types";
 import type { InstanceStep, CompetencyRatingsStepConfig } from "@/lib/performanceReviews/workflowTypes";
+import { EMPTY_REFERENCES, type ReferenceBundle } from "@/lib/performanceReviews/appraisalReference";
 import CustomStepResponseForm from "./CustomStepResponseForm";
 import RatingScaleLegend from "./RatingScaleLegend";
 
@@ -272,6 +274,42 @@ function FocusAreasEditor({
   );
 }
 
+// Consultation only: the person's latest scored role assessment for this competency, and what each level looks like.
+// Neither is copied into the rating. The manager's rating stays their own judgement.
+function CompetencyReferencePanel({ competencyKey, references }: { competencyKey: string; references: ReferenceBundle }) {
+  const t = useTranslations("impactCycleReviewRow");
+  const tAssess = useTranslations("roleAssessment");
+  const assessed = references.assessments[competencyKey];
+  const levels = references.definitions[competencyKey];
+  if (!assessed && !levels) return null;
+  return (
+    <div style={{ marginTop: 6 }}>
+      {assessed && (
+        <p style={{ fontSize: 10.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+          <strong style={{ color: "var(--text)" }}>{tAssess("title")}:</strong>{" "}
+          {assessed.rangeLow === assessed.rangeHigh ? `${tAssess("levelLabel")} ${assessed.level}` : tAssess("levelRange", { low: assessed.rangeLow, high: assessed.rangeHigh })}
+          {" · "}
+          {assessed.confirmed ? tAssess("confirmedBy") : tAssess("awaitingConfirmation")}
+          {" · "}
+          {tAssess("confidence")}: {tAssess(`confidence_${assessed.confidence}`)}
+        </p>
+      )}
+      {levels && (
+        <details style={{ marginTop: 2 }}>
+          <summary style={{ fontSize: 10.5, color: "var(--teal)", cursor: "pointer" }}>{t("levelGuide")}</summary>
+          <ol style={{ margin: "4px 0 0", paddingInlineStart: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
+            {["1", "2", "3", "4", "5"].filter((n) => levels[n]).map((n) => (
+              <li key={n} style={{ fontSize: 10.5, color: "var(--text-muted)", lineHeight: 1.45 }}>
+                <strong style={{ color: "var(--text)" }}>{tAssess("levelLabel")} {n}:</strong> {levels[n]}
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function CompetencyRatingsEditor({
   reviewId,
   title,
@@ -279,6 +317,7 @@ function CompetencyRatingsEditor({
   ratings,
   organizationCompetencies,
   context,
+  references,
   onChanged,
 }: {
   reviewId: string;
@@ -287,6 +326,7 @@ function CompetencyRatingsEditor({
   ratings: CompetencyRating[];
   organizationCompetencies: OrganizationCompetencyOption[];
   context: AppraisalCompetencyContext[];
+  references: ReferenceBundle;
   onChanged: () => void;
 }) {
   const t = useTranslations("impactCycleReviewRow");
@@ -349,6 +389,9 @@ function CompetencyRatingsEditor({
       {aiError && <p style={{ color: "var(--danger)", fontSize: 11.5, marginBottom: 8 }}>{aiError}</p>}
       <RatingScaleLegend />
       {suggestions && (
+        <p style={{ fontSize: 10.5, color: "var(--amber)", marginBottom: 6, lineHeight: 1.5 }}>{t("suggestionsCaution")}</p>
+      )}
+      {suggestions && (
         <div style={{ marginBottom: 8 }}>
           <button type="button" onClick={applyAll} style={{ background: "rgba(var(--teal-rgb),0.1)", border: "1px solid rgba(var(--teal-rgb),0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "var(--teal)", cursor: "pointer" }}>
             {t("applyAllSuggestions")}
@@ -392,6 +435,7 @@ function CompetencyRatingsEditor({
                 </select>
               </div>
               <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, currentValue)}</p>
+              <CompetencyReferencePanel competencyKey={dim} references={references} />
               {suggestion && !existing && (
                 <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
               )}
@@ -429,6 +473,7 @@ function CompetencyRatingsEditor({
                 </select>
               </div>
               <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>{competencyRatingDescription(tLabels, currentValue)}</p>
+              <CompetencyReferencePanel competencyKey={c.id} references={references} />
               {suggestion && !existing && (
                 <p style={{ fontSize: 11, color: "#a78bfa", marginTop: 4 }}>{t("aiNote", { note: suggestion.note })}</p>
               )}
@@ -750,6 +795,7 @@ export default function ImpactCycleReviewRow({
   const [ratings, setRatings] = useState<CompetencyRating[]>([]);
   const [orgCompetencies, setOrgCompetencies] = useState<OrganizationCompetencyOption[]>([]);
   const [competencyContext, setCompetencyContext] = useState<AppraisalCompetencyContext[]>([]);
+  const [references, setReferences] = useState<ReferenceBundle>(EMPTY_REFERENCES);
   const [uplineChain, setUplineChain] = useState<UplineChainEntry[]>([]);
   const [uplineSignoffs, setUplineSignoffs] = useState<UplineSignoff[]>([]);
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -777,11 +823,12 @@ export default function ImpactCycleReviewRow({
   }
 
   async function loadAll() {
-    const [g, pg, r, ctx, chain, signoffs, uid] = await Promise.all([
+    const [g, pg, r, ctx, refs, chain, signoffs, uid] = await Promise.all([
       getReviewGoals(item.id),
       getPastGoals(item.id),
       getCompetencyRatings(item.id),
       getAppraisalCompetencyContext(item.id),
+      getAppraisalReferences(item.id),
       getUplineChain(item.id),
       getUplineSignoffs(item.id),
       getMyUserId(),
@@ -790,6 +837,7 @@ export default function ImpactCycleReviewRow({
     setPastGoals(pg);
     setRatings(r);
     setCompetencyContext(ctx);
+    setReferences(refs);
     setUplineChain(chain);
     setUplineSignoffs(signoffs);
     setMyUserId(uid);
@@ -931,6 +979,7 @@ export default function ImpactCycleReviewRow({
                     ratings={ratings}
                     organizationCompetencies={orgCompetencies}
                     context={competencyContext}
+                    references={references}
                     onChanged={loadAll}
                   />
                 );
