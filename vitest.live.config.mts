@@ -27,6 +27,10 @@ export default defineConfig(({ mode }) => {
         TEST_ADMIN_PASSWORD: process.env.TEST_ADMIN_PASSWORD ?? "",
         TEST_MEMBER_EMAIL: process.env.TEST_MEMBER_EMAIL ?? "",
         TEST_MEMBER_PASSWORD: process.env.TEST_MEMBER_PASSWORD ?? "",
+        // Only the opt-in AI tests (RUN_AI_TESTS=1) use these; they make real model calls.
+        RUN_AI_TESTS: process.env.RUN_AI_TESTS ?? "",
+        ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY ?? "",
+        OPENROUTER_API_KEY: env.OPENROUTER_API_KEY ?? "",
       },
       testTimeout: 60_000,
       hookTimeout: 60_000,

@@ -29,6 +29,7 @@ function sectionForCareerStage(careerStage: string | null): LevelSection | null 
 
 export default async function AssessmentsPage() {
   const t = await getTranslations("assessmentsPage");
+  const tRole = await getTranslations("roleAssessment");
   const tDim = await getTranslations("competencyDimensions");
   const tCatalog = await getTranslations("assessmentCatalog");
   const tCategories = await getTranslations("assessmentCategories");
@@ -158,6 +159,9 @@ export default async function AssessmentsPage() {
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
             {t("subtitle", { count: ASSESSMENTS.length })}
           </p>
+          <Link href="/dashboard/role-assessment" style={{ display: "inline-block", marginTop: 12, color: "var(--teal)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+            {tRole("title")} →
+          </Link>
         </div>
 
         {pendingAssigned.length > 0 && (

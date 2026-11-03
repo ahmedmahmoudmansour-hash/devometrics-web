@@ -139,13 +139,17 @@ export type RawJudgement = {
   levels: { level: number; shown: number; quote?: string }[];
 };
 
+// A piece of evidence that was found in the person's own answer.
+export type EvidenceQuote = { item: number; level: number; shown: 1 | 2; quote: string };
+
 export type ValidatedJudgements =
-  | { ok: true; items: ItemJudgement[]; quotesChecked: number; quotesRejected: number }
+  | { ok: true; items: ItemJudgement[]; quotes: EvidenceQuote[]; quotesChecked: number; quotesRejected: number }
   | { ok: false; error: string };
 
 export function validateJudgements(raw: unknown, answers: string[]): ValidatedJudgements {
   if (!Array.isArray(raw) || raw.length !== answers.length) return { ok: false, error: "wrong number of items" };
   const items: ItemJudgement[] = [];
+  const quotes: EvidenceQuote[] = [];
   let checked = 0;
   let rejected = 0;
   const seen = new Set<number>();
@@ -164,11 +168,13 @@ export function validateJudgements(raw: unknown, answers: string[]): ValidatedJu
         if (!quoteIsInAnswer(lv.quote ?? "", answers[pos - 1])) {
           rejected += 1;
           s = 0;
+        } else {
+          quotes.push({ item: pos, level: l + 1, shown: s as 1 | 2, quote: (lv.quote ?? "").trim() });
         }
       }
       shown.push(s);
     }
     items[pos - 1] = { shown: shown as ItemJudgement["shown"], insufficient: !!entry.insufficient };
   }
-  return { ok: true, items, quotesChecked: checked, quotesRejected: rejected };
+  return { ok: true, items, quotes, quotesChecked: checked, quotesRejected: rejected };
 }

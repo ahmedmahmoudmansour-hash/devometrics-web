@@ -71,7 +71,9 @@ export type AiUsageFeature =
   | "case_study_scoring"
   | "career_profile_extraction"
   | "discovery_synthesis"
-  | "career_gps_what_if";
+  | "career_gps_what_if"
+  | "assessment_questions"
+  | "assessment_scoring";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 

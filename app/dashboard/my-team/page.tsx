@@ -30,6 +30,7 @@ function formatScoreValue(rawValue: number, scale: "0_100" | "1_5"): string {
 
 export default async function MyTeamPage() {
   const t = await getTranslations("myTeamPage");
+  const tRole = await getTranslations("roleAssessment");
   const tDim = await getTranslations("competencyDimensions");
   const tScoreSource = await getTranslations("scoreEventSources");
   const supabase = await createClient();
@@ -81,6 +82,9 @@ export default async function MyTeamPage() {
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>
             {t("description")}
           </p>
+          <Link href="/dashboard/my-team/role-assessments" style={{ display: "inline-block", marginTop: 12, color: "var(--teal)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+            {tRole("openManage")} →
+          </Link>
         </div>
 
         {pulseMembers.length > 0 && (

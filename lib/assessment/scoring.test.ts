@@ -134,6 +134,7 @@ describe("validating the AI output", () => {
       expect(v.items[0].shown[2]).toBe(2);
       expect(v.quotesChecked).toBe(2);
       expect(v.quotesRejected).toBe(0);
+      expect(v.quotes.map((q) => q.quote)).toEqual(["check the electrical side", "plan a stop"]);
     }
   });
   it("counts a judgement as not shown when its quote is not in the answer, without failing", () => {
@@ -142,6 +143,7 @@ describe("validating the AI output", () => {
     if (v.ok) {
       expect(v.items[0].shown[2]).toBe(0);
       expect(v.quotesRejected).toBe(1);
+      expect(v.quotes.some((q) => q.quote.includes("senior manager"))).toBe(false);
     }
   });
   it("fails on structural problems", () => {

@@ -14,6 +14,7 @@ export type CompanyFeatureKey =
   | "leave"
   | "attendance"
   | "compensation"
+  | "roleAssessments"
   | "highPotential"
   | "succession"
   | "scorecard"
@@ -65,6 +66,7 @@ export const COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[
   {
     key: "talent",
     features: [
+      { key: "roleAssessments", href: "/dashboard/company/role-assessments" },
       { key: "highPotential", href: "/dashboard/company/high-potential" },
       { key: "succession", href: "/dashboard/company/succession" },
       { key: "scorecard", href: "/dashboard/company/scorecard" },
