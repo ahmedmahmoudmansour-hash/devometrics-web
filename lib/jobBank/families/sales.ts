@@ -1,0 +1,76 @@
+import { comp, family, role } from "../build";
+
+export const SALES = family(
+  "sales",
+  "Sales and Business Development",
+  "Finding customers, selling, negotiating and growing accounts and partnerships.",
+  [
+    comp("sales.prospecting", "Prospecting and Lead Generation", "functional", "Finding and qualifying people and companies that could become customers.", [
+      "Follows a lead list and records contact attempts.",
+      "Finds and contacts prospects using a given approach, with guidance.",
+      "Builds a steady pipeline of qualified leads using several channels.",
+      "Develops new markets and channels and coaches others on prospecting.",
+      "Sets the lead-generation strategy and builds partnerships that bring a continuous flow of opportunities.",
+    ]),
+    comp("sales.consultative", "Consultative Selling", "functional", "Understanding a customer's problem and showing how the offer solves it.", [
+      "Describes the products and answers basic questions.",
+      "Asks needs questions and matches a product to the need, with guidance.",
+      "Diagnoses customer needs, presents a tailored solution and handles objections.",
+      "Sells complex solutions to several decision makers and shapes the value case.",
+      "Defines the selling approach, wins strategic accounts and teaches the method to the team.",
+    ]),
+    comp("sales.negotiation", "Negotiation and Closing", "functional", "Agreeing terms that are good for both sides and closing the deal.", [
+      "Knows the price list and the rules for discounts.",
+      "Handles simple price and terms discussions within set limits.",
+      "Negotiates terms within authority, protects margin and closes deals.",
+      "Negotiates complex or high-value deals, trades concessions skilfully and manages risk.",
+      "Negotiates strategic agreements, sets the negotiation policy and coaches others in the hardest deals.",
+    ]),
+    comp("sales.account_management", "Account Management", "functional", "Looking after existing customers to keep and grow the relationship.", [
+      "Keeps contact details and orders up to date.",
+      "Maintains regular contact with a few accounts and resolves simple issues, with guidance.",
+      "Manages a portfolio of accounts, anticipates needs, renews and grows revenue.",
+      "Manages key accounts, builds relationships at senior level and resolves difficult situations.",
+      "Sets the account strategy for the most important customers and develops long-term partnerships.",
+    ]),
+    comp("sales.crm_pipeline", "Pipeline and CRM Discipline", "technical", "Recording and managing the sales pipeline accurately in the customer system.", [
+      "Enters contacts and calls in the customer system.",
+      "Keeps own opportunities up to date in the system, with reminders.",
+      "Keeps the pipeline accurate, follows each stage and forecasts reliably.",
+      "Analyses the pipeline, finds bottlenecks and improves conversion and process.",
+      "Designs the sales process and reporting and uses the data to steer the business.",
+    ]),
+    comp("sales.market_knowledge", "Market and Competitor Knowledge", "functional", "Understanding the market, customers and competitors well enough to position the offer.", [
+      "Knows the main competitors by name.",
+      "Knows the market basics and the main differences from competitors, with guidance.",
+      "Explains how the offer compares with alternatives and uses market insight with customers.",
+      "Analyses competitors and trends and adapts positioning and pricing.",
+      "Shapes the market strategy and anticipates changes before competitors do.",
+    ]),
+    comp("sales.proposals", "Proposals and Tendering", "technical", "Preparing clear, accurate proposals and tender responses that win.", [
+      "Fills in standard quotation forms.",
+      "Prepares simple quotations and proposals from templates, with review.",
+      "Prepares complete proposals and tender responses to deadline and scope.",
+      "Leads large bids, builds the commercial case and reviews others' proposals.",
+      "Sets the bidding approach, decides which bids to pursue and owns bid quality and risk.",
+    ]),
+  ],
+  [
+    role("sales.representative", "Sales Representative", "Entry", 2, "ic",
+      "Finds and contacts prospects, presents products, handles simple deals and keeps the customer records current.",
+      { "sales.prospecting": 3, "sales.consultative": 2, "sales.negotiation": 2, "sales.crm_pipeline": 2, "sales.market_knowledge": 2 }, { Communication: 3, "Critical Thinking": 2 }),
+    role("sales.account_executive", "Account Executive", "Mid", 4, "ic",
+      "Owns the sale from first meeting to signature: needs, solution, proposal, negotiation and handover.",
+      { "sales.consultative": 4, "sales.negotiation": 3, "sales.prospecting": 3, "sales.proposals": 3, "sales.crm_pipeline": 3, "sales.market_knowledge": 3 }, { Communication: 4, "Critical Thinking": 3 }),
+    role("sales.bd_executive", "Business Development Executive", "Mid", 4, "ic",
+      "Opens new markets and partnerships and builds a pipeline of qualified opportunities.",
+      { "sales.prospecting": 4, "sales.market_knowledge": 4, "sales.consultative": 3, "sales.crm_pipeline": 3, "sales.proposals": 3 }, { Communication: 4, "Strategic Thinking": 3, "Critical Thinking": 3 }),
+    role("sales.key_account_manager", "Key Account Manager", "Senior", 6, "ic",
+      "Looks after the most important customers, grows the relationship and protects revenue.",
+      { "sales.account_management": 5, "sales.negotiation": 4, "sales.consultative": 4, "sales.proposals": 3, "sales.market_knowledge": 4 }, { Communication: 4, "Strategic Thinking": 3, "Critical Thinking": 4 }),
+    role("sales.manager", "Sales Manager", "Manager", 7, "management",
+      "Leads the sales team: targets, coaching, pipeline, forecast and results.",
+      { "sales.crm_pipeline": 4, "sales.consultative": 4, "sales.negotiation": 4, "sales.market_knowledge": 4, "sales.account_management": 4 },
+      { Leadership: 4, "People Management": 4, "Strategic Thinking": 3, Communication: 4, "Critical Thinking": 3, "Financial Literacy": 3 }),
+  ]
+);

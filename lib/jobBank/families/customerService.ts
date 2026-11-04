@@ -1,0 +1,70 @@
+import { comp, family, role } from "../build";
+
+export const CUSTOMER_SERVICE = family(
+  "customer_service",
+  "Customer Service",
+  "Helping customers by phone, chat, email and in person, solving problems and keeping them.",
+  [
+    comp("cs.handling", "Customer Handling and Empathy", "behavioural", "Listening, understanding what the customer needs and responding with care and respect.", [
+      "Greets customers politely and listens to their request.",
+      "Understands the customer's need and responds courteously, with guidance on harder conversations.",
+      "Handles most conversations alone, keeps calm under pressure and leaves the customer feeling heard.",
+      "Handles upset or high-value customers confidently and coaches colleagues on tone and approach.",
+      "Sets the standard for customer care and builds a service culture that others copy.",
+    ]),
+    comp("cs.product_knowledge", "Product and Service Knowledge", "functional", "Knowing what the company sells, how it works and what customers commonly ask.", [
+      "Knows the main products and where to find answers.",
+      "Answers common questions correctly and checks the knowledge base for the rest.",
+      "Explains products and services accurately, including options and limits, without help.",
+      "Handles advanced and unusual questions and keeps the knowledge base accurate.",
+      "Is the reference for the whole range, shapes training and feeds customer insight back to product teams.",
+    ]),
+    comp("cs.complaints", "Complaint Resolution and De-escalation", "functional", "Turning problems and complaints into fair solutions and calming difficult situations.", [
+      "Records a complaint accurately and passes it on.",
+      "Resolves simple complaints using the standard procedure, with support on others.",
+      "Resolves most complaints alone, offers fair options within policy and follows up.",
+      "Resolves complex or escalated complaints, spots patterns and fixes causes with other teams.",
+      "Sets the complaint policy, handles the most serious cases and reduces complaints at source.",
+    ]),
+    comp("cs.tools", "Support Tools and Ticketing", "technical", "Using the ticketing, call, chat and customer-record systems accurately and efficiently.", [
+      "Logs requests in the system using the standard form.",
+      "Uses the main support tools and keeps records tidy, with guidance.",
+      "Uses all support tools efficiently, keeps complete notes and manages a personal queue.",
+      "Configures workflows and macros, trains others on the tools and improves how work flows.",
+      "Chooses and shapes the support technology and uses its data to improve the service.",
+    ]),
+    comp("cs.written", "Written Support Communication", "functional", "Writing clear, correct, friendly replies and instructions to customers.", [
+      "Writes short replies using approved templates.",
+      "Writes clear replies with few errors and adapts templates, with review.",
+      "Writes clear, accurate and friendly replies to a wide range of situations without review.",
+      "Writes difficult messages well, improves templates and reviews and coaches others' writing.",
+      "Sets the tone and writing standards for the service and writes help content that customers prefer.",
+    ]),
+    comp("cs.quality_metrics", "Service Quality and Metrics", "functional", "Measuring service quality and using the numbers to improve.", [
+      "Knows the main service measures such as response time and satisfaction.",
+      "Tracks own results against targets, with guidance.",
+      "Meets targets consistently, reviews own quality and acts on customer feedback.",
+      "Analyses team results, runs quality reviews and coaches towards better results.",
+      "Defines the measures and targets, links service quality to retention and reports to leadership.",
+    ]),
+  ],
+  [
+    role("cs.representative", "Customer Service Representative", "Entry", 2, "ic",
+      "Answers customer contacts by phone, chat or email, resolves common issues and records each contact.",
+      { "cs.handling": 3, "cs.product_knowledge": 2, "cs.complaints": 2, "cs.tools": 2, "cs.written": 2, "cs.quality_metrics": 2 }, { Communication: 3, "Critical Thinking": 2 }),
+    role("cs.senior_representative", "Senior Customer Service Representative", "Mid", 3, "ic",
+      "Handles complex and escalated contacts, supports new colleagues and helps keep service quality high.",
+      { "cs.handling": 4, "cs.product_knowledge": 4, "cs.complaints": 3, "cs.tools": 3, "cs.written": 3, "cs.quality_metrics": 3 }, { Communication: 4, "Critical Thinking": 3 }),
+    role("cs.success_specialist", "Customer Success Specialist", "Mid", 4, "ic",
+      "Helps customers get value after the sale: onboarding, adoption, renewals and finding problems early.",
+      { "cs.handling": 4, "cs.product_knowledge": 4, "cs.complaints": 3, "cs.quality_metrics": 3, "cs.written": 3 }, { Communication: 4, "Critical Thinking": 3, "Strategic Thinking": 2 }),
+    role("cs.team_leader", "Customer Service Team Leader", "Lead", 5, "management",
+      "Leads a service team day to day: schedules, coaching, quality checks and handling the hardest contacts.",
+      { "cs.handling": 4, "cs.complaints": 4, "cs.tools": 3, "cs.quality_metrics": 4, "cs.product_knowledge": 4 },
+      { Leadership: 3, "People Management": 3, Communication: 4, "Critical Thinking": 3 }),
+    role("cs.manager", "Customer Service Manager", "Manager", 7, "management",
+      "Leads the service function: strategy, staffing, quality, tools and customer results.",
+      { "cs.quality_metrics": 5, "cs.complaints": 4, "cs.tools": 4, "cs.handling": 4, "cs.product_knowledge": 4 },
+      { Leadership: 4, "People Management": 4, "Strategic Thinking": 3, Communication: 4, "Critical Thinking": 4 }),
+  ]
+);

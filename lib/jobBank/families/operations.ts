@@ -1,0 +1,77 @@
+import { comp, family, role } from "../build";
+
+export const OPERATIONS = family(
+  "operations",
+  "Operations and Supply Chain",
+  "Planning and running the work: processes, inventory, logistics, purchasing, quality and safety.",
+  [
+    comp("ops.process", "Process Management and Improvement", "functional", "Running work through clear processes and making them faster, safer and cheaper.", [
+      "Follows the standard process and reports problems.",
+      "Follows and documents processes accurately and suggests small improvements, with guidance.",
+      "Runs a process reliably, spots waste and delays and improves them alone.",
+      "Leads improvement projects, uses structured methods and measures the result.",
+      "Designs end-to-end operating models and builds a continuous-improvement culture.",
+    ]),
+    comp("ops.planning", "Planning and Scheduling", "functional", "Planning work, resources and deadlines so that demand is met.", [
+      "Carries out a given schedule.",
+      "Updates simple plans and tracks progress against them, with guidance.",
+      "Plans and schedules work and resources alone and adjusts when things change.",
+      "Plans across teams or sites, balances capacity and demand and solves complex scheduling problems.",
+      "Sets the planning approach, forecasts demand and aligns capacity with strategy.",
+    ]),
+    comp("ops.inventory_logistics", "Inventory, Warehouse and Logistics", "technical", "Managing stock, storage and the movement of goods accurately and economically.", [
+      "Handles, counts and records stock using the standard method.",
+      "Maintains stock records and prepares orders and deliveries, with guidance.",
+      "Manages stock levels, storage and deliveries accurately and resolves discrepancies.",
+      "Optimises stock, warehouse layout and transport and leads stock-control improvement.",
+      "Designs the supply and distribution network and balances service, cost and risk.",
+    ]),
+    comp("ops.procurement", "Procurement and Supplier Management", "functional", "Buying what the organisation needs at the right quality, price and time, and managing suppliers.", [
+      "Raises purchase requests using the standard form.",
+      "Obtains quotations and places routine orders, with guidance.",
+      "Runs purchasing alone: compares suppliers, negotiates routine terms and follows orders through.",
+      "Leads sourcing for important categories, negotiates contracts and manages supplier performance and risk.",
+      "Sets the procurement strategy, builds supplier partnerships and controls spend and risk across the organisation.",
+    ]),
+    comp("ops.quality", "Quality Management", "technical", "Making sure products and services meet requirements, and preventing defects.", [
+      "Follows quality checks and reports defects.",
+      "Carries out inspections and records results accurately, with guidance.",
+      "Runs quality checks, investigates defects and applies corrective action.",
+      "Leads root-cause analysis, audits quality systems and trains others.",
+      "Owns the quality system, sets standards and prepares the organisation for external certification.",
+    ]),
+    comp("ops.hse", "Health, Safety and Environment", "functional", "Keeping people safe and protecting the environment in the workplace.", [
+      "Follows safety rules and wears required protection.",
+      "Applies safety procedures and reports hazards and incidents, with guidance.",
+      "Applies safe practice consistently, carries out risk checks and handles minor incidents.",
+      "Leads risk assessments, investigations and safety training and corrects unsafe practice.",
+      "Owns the safety and environmental management system and the culture that supports it.",
+    ]),
+    comp("ops.metrics", "Operations Metrics and Reporting", "technical", "Measuring operations with the right numbers and reporting them clearly.", [
+      "Records activity data accurately.",
+      "Produces standard operations reports from templates.",
+      "Tracks key measures, explains variances and reports clearly to managers.",
+      "Designs dashboards, links measures to cost and service and recommends action.",
+      "Defines the performance measures for operations and uses them to steer the business.",
+    ]),
+  ],
+  [
+    role("ops.coordinator", "Operations Coordinator", "Entry", 2, "ic",
+      "Supports daily operations: orders, schedules, records and communication between teams.",
+      { "ops.process": 2, "ops.planning": 2, "ops.inventory_logistics": 2, "ops.metrics": 2, "ops.hse": 2 }, { Communication: 3, "Critical Thinking": 2 }),
+    role("ops.logistics_coordinator", "Logistics and Supply Chain Coordinator", "Mid", 3, "ic",
+      "Coordinates stock, shipments and deliveries and keeps goods flowing on time and at the right cost.",
+      { "ops.inventory_logistics": 4, "ops.planning": 3, "ops.procurement": 2, "ops.metrics": 3, "ops.hse": 2 }, { Communication: 3, "Critical Thinking": 3 }),
+    role("ops.procurement_specialist", "Procurement Specialist", "Mid", 4, "ic",
+      "Sources and buys goods and services, negotiates with suppliers and tracks supplier performance.",
+      { "ops.procurement": 4, "ops.planning": 3, "ops.quality": 2, "ops.metrics": 3 }, { Communication: 4, "Critical Thinking": 4, "Financial Literacy": 3 }),
+    role("ops.supervisor", "Operations Supervisor", "Lead", 5, "management",
+      "Leads a shift or team: plans the work, coaches staff, enforces safety and quality and meets targets.",
+      { "ops.process": 4, "ops.planning": 4, "ops.quality": 3, "ops.hse": 4, "ops.metrics": 3, "ops.inventory_logistics": 3 },
+      { Leadership: 3, "People Management": 3, Communication: 4, "Critical Thinking": 3 }),
+    role("ops.manager", "Operations Manager", "Manager", 7, "management",
+      "Leads operations: plans, budget, people, quality, safety and improvement.",
+      { "ops.process": 5, "ops.planning": 4, "ops.quality": 4, "ops.hse": 4, "ops.metrics": 4, "ops.procurement": 3, "ops.inventory_logistics": 4 },
+      { Leadership: 4, "People Management": 4, "Strategic Thinking": 3, Communication: 4, "Critical Thinking": 4, "Financial Literacy": 3 }),
+  ]
+);

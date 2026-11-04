@@ -1,0 +1,76 @@
+import { comp, family, role } from "../build";
+
+export const MARKETING = family(
+  "marketing",
+  "Marketing and Communications",
+  "Understanding the market, building the brand, running campaigns and communicating well.",
+  [
+    comp("mkt.research", "Market Research and Insight", "technical", "Finding out what customers want and turning it into insight for decisions.", [
+      "Collects data and survey responses as instructed.",
+      "Runs simple research and summarises results, with guidance.",
+      "Designs and runs research, analyses it and draws clear conclusions.",
+      "Combines several sources into strategic insight and challenges assumptions.",
+      "Sets the research agenda and shapes decisions with deep customer understanding.",
+    ]),
+    comp("mkt.campaigns", "Campaign Planning and Execution", "functional", "Planning campaigns with clear goals and running them to time and budget.", [
+      "Helps with campaign tasks from a checklist.",
+      "Runs parts of a campaign from a plan and tracks results, with guidance.",
+      "Plans and runs campaigns with clear goals, a calendar and a budget, and reports results.",
+      "Leads integrated campaigns across channels and improves them using results.",
+      "Sets the campaign strategy and portfolio and links marketing to business growth.",
+    ]),
+    comp("mkt.digital", "Digital Channels and Analytics", "technical", "Using websites, search, email and social media, and measuring what works.", [
+      "Posts and schedules content using the tools provided.",
+      "Manages a channel day to day and reads basic reports, with guidance.",
+      "Runs digital channels well, uses analytics to improve and tests changes.",
+      "Optimises across channels, builds measurement and attribution and automates routine work.",
+      "Sets the digital strategy and builds the data and tools that guide it.",
+    ]),
+    comp("mkt.content", "Content and Copywriting", "functional", "Creating clear, engaging content that fits the audience and the brand.", [
+      "Writes short text with a template and review.",
+      "Writes clear content for common formats, with editing.",
+      "Writes and edits engaging content for several formats and audiences without help.",
+      "Leads content programmes, develops a distinctive voice and coaches other writers.",
+      "Sets the editorial strategy and standards and produces the most important content.",
+    ]),
+    comp("mkt.brand", "Brand and Positioning", "functional", "Building a clear, consistent identity and place in the customer's mind.", [
+      "Follows the brand guidelines.",
+      "Applies the brand correctly across materials and flags inconsistencies.",
+      "Applies and protects the brand and explains its positioning to others.",
+      "Develops positioning and messaging and keeps the brand consistent across markets.",
+      "Owns the brand strategy and builds lasting brand value.",
+    ]),
+    comp("mkt.communications", "Public Relations and Corporate Communications", "functional", "Managing what the organisation says to the public, media and its own people.", [
+      "Helps distribute announcements and keep contact lists.",
+      "Drafts simple announcements and media lists, with review.",
+      "Writes releases and statements, deals with media enquiries and supports internal communication.",
+      "Leads communication plans, handles sensitive issues and trains spokespeople.",
+      "Shapes the organisation's reputation and leads communication in a crisis.",
+    ]),
+    comp("mkt.budget_roi", "Marketing Budget and Return on Investment", "functional", "Spending marketing money wisely and showing what it returned.", [
+      "Records marketing costs.",
+      "Tracks spend against a budget and reports simple results, with guidance.",
+      "Manages a budget, compares channels by cost and result and reports return.",
+      "Plans and defends budgets, shifts spend to what works and models return.",
+      "Sets the marketing investment strategy and answers for return at leadership level.",
+    ]),
+  ],
+  [
+    role("mkt.coordinator", "Marketing Coordinator", "Entry", 2, "ic",
+      "Supports campaigns and channels with scheduling, content tasks, reporting and administration.",
+      { "mkt.campaigns": 2, "mkt.digital": 2, "mkt.content": 2, "mkt.brand": 2, "mkt.budget_roi": 1 }, { Communication: 3, "Critical Thinking": 2, "AI & Digital Skills": 3 }),
+    role("mkt.digital_specialist", "Digital Marketing Specialist", "Mid", 4, "ic",
+      "Runs search, social and email programmes and uses data to improve results.",
+      { "mkt.digital": 4, "mkt.campaigns": 3, "mkt.content": 3, "mkt.research": 3, "mkt.budget_roi": 3 }, { Communication: 3, "Critical Thinking": 4, "AI & Digital Skills": 4 }),
+    role("mkt.content_specialist", "Content and Communications Specialist", "Mid", 4, "ic",
+      "Writes and manages content and communications for customers, media and employees.",
+      { "mkt.content": 4, "mkt.communications": 3, "mkt.brand": 3, "mkt.digital": 3 }, { Communication: 5, "Critical Thinking": 3 }),
+    role("mkt.executive", "Marketing Executive", "Mid", 3, "ic",
+      "Plans and runs campaigns and activities across channels and reports on results.",
+      { "mkt.campaigns": 3, "mkt.research": 2, "mkt.digital": 3, "mkt.content": 3, "mkt.brand": 3, "mkt.budget_roi": 2 }, { Communication: 3, "Critical Thinking": 3 }),
+    role("mkt.manager", "Marketing Manager", "Manager", 6, "management",
+      "Leads the marketing team and plan: brand, campaigns, channels, budget and results.",
+      { "mkt.campaigns": 4, "mkt.brand": 4, "mkt.research": 4, "mkt.budget_roi": 4, "mkt.digital": 3, "mkt.communications": 3 },
+      { Leadership: 4, "People Management": 3, "Strategic Thinking": 4, Communication: 4, "Critical Thinking": 4, "Financial Literacy": 3 }),
+  ]
+);

@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import JobArchitectureManager from "@/components/dashboard/JobArchitectureManager";
+import JobBankPanel from "@/components/dashboard/JobBankPanel";
+import { JOB_BANK, jobBankStats } from "@/lib/jobBank";
+import { summariseBank } from "@/lib/jobBank/summary";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
@@ -15,6 +19,7 @@ export const metadata = { title: "Job Architecture — Devometrics" };
 
 export default async function JobArchitecturePage() {
   const t = await getTranslations("jobArchitecturePage");
+  const tDim = await getTranslations("competencyDimensions");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
@@ -90,15 +95,33 @@ export default async function JobArchitecturePage() {
             </p>
           </div>
         ) : (
-          <JobArchitectureManager
-            families={families ?? []}
-            roles={roles ?? []}
-            requirements={requirements ?? []}
-            transitions={transitions ?? []}
-            companyCompetencies={companyCompetencies}
-          />
+          <>
+            <JobBankPanel
+              bank={summariseBank(JOB_BANK, (dim) => dimensionLabel(tDim, dim))}
+              existing={bankExisting(families ?? [], roles ?? [])}
+              stats={jobBankStats()}
+            />
+            <JobArchitectureManager
+              families={families ?? []}
+              roles={roles ?? []}
+              requirements={requirements ?? []}
+              transitions={transitions ?? []}
+              companyCompetencies={companyCompetencies}
+            />
+          </>
         )}
       </div>
     </div>
   );
+}
+
+// Which families and roles the company already has, so the Job bank can show them as already added.
+function bankExisting(families: JobFamily[], roles: JobRole[]) {
+  const nameById = new Map(families.map((f) => [f.id, f.name.trim().toLowerCase()]));
+  const rolesByFamily: Record<string, string[]> = {};
+  for (const r of roles) {
+    const fam = nameById.get(r.job_family_id);
+    if (fam) (rolesByFamily[fam] ??= []).push(r.title);
+  }
+  return { familyNames: families.map((f) => f.name), rolesByFamily };
 }

@@ -6340,5 +6340,22 @@
     "flagNarrow": "Almost everyone gets the same rating",
     "hidden": "{managers} managers with fewer than {min} ratings are counted in the totals above but not listed.",
     "footnote": "A prompt marks a pattern worth discussing, not a finding. Differences can be real: a stronger team can deserve higher ratings. Spread is the standard deviation of the ratings. Do not use this to force ratings into a set shape."
+  },
+  "jobBank": {
+    "title": "Job bank",
+    "intro": "Starter job families and roles, with the competencies each one needs written as five levels. Add what fits your company, then edit it freely.",
+    "notice": "Starter content drafted with AI. It has not been reviewed by subject experts, so check each role and competency before you rely on it.",
+    "stats": "{families} families · {roles} roles · {competencies} competencies",
+    "browse": "Browse the job bank",
+    "hide": "Hide the job bank",
+    "familyRoles": "{count} roles",
+    "alreadyAdded": "Already in your company",
+    "seeRequirements": "See what this role requires",
+    "level": "Level {n}",
+    "add": "Add {count, plural, one {# role} other {# roles}} to my company",
+    "adding": "Adding…",
+    "clear": "Clear selection",
+    "noneSelected": "Choose at least one role.",
+    "result": "Added {roles} roles, {competencies} competencies and {families} families. Already there and left unchanged: {existingRoles} roles and {existingCompetencies} competencies."
   }
 }

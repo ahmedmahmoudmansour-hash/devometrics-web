@@ -3,6 +3,7 @@
 // Role-based competency assessments: assign, answer, score, confirm. Database rules (who can see and change what)
 // live in migration 0204 and hold even if these actions are bypassed; the checks here give friendlier errors early.
 
+import { roleContextKey } from "@/lib/assessment/roleContext";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
@@ -117,15 +118,24 @@ async function ensureItems(
   supabase: Supabase,
   input: { organizationId: string; versionId: string; band: number; language: AssessmentLanguage; count: number; definition: DefinitionText; style: ItemStyle; roleTitle: string }
 ): Promise<{ items: { id: string; position: number }[]; usage: Usage | null }> {
-  const read = async () => {
-    const { data } = await supabase
+  // Questions are written once per role (migration 0206) and reused for everyone in that role. Until that migration is
+  // applied the column does not exist: the first read then fails with 42703 and everything falls back to the earlier
+  // behaviour (shared by competency, level and language).
+  const roleContext = roleContextKey(input.roleTitle);
+  let legacy = false;
+  const read = async (): Promise<{ id: string; position: number }[]> => {
+    let query = supabase
       .from("competency_assessment_items")
       .select("id, position")
       .eq("definition_version_id", input.versionId)
       .eq("required_band", input.band)
-      .eq("language", input.language)
-      .order("position", { ascending: true })
-      .returns<{ id: string; position: number }[]>();
+      .eq("language", input.language);
+    if (!legacy) query = query.eq("role_context", roleContext);
+    const { data, error } = await query.order("position", { ascending: true }).returns<{ id: string; position: number }[]>();
+    if (error && !legacy && error.code === "42703") {
+      legacy = true;
+      return read();
+    }
     return data ?? [];
   };
   let existing = await read();
@@ -138,6 +148,7 @@ async function ensureItems(
     definition_version_id: input.versionId,
     required_band: input.band,
     language: input.language,
+    ...(legacy ? {} : { role_context: roleContext }),
     position: existing.length + i + 1,
     style: input.style,
     prompt,

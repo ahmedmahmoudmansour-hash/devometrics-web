@@ -1,0 +1,72 @@
+import { comp, family, role } from "../build";
+
+export const PROJECT_MANAGEMENT = family(
+  "project_management",
+  "Project and Programme Management",
+  "Planning and delivering projects and programmes on time, within budget and to the agreed result.",
+  [
+    comp("pm.planning", "Project Planning and Scheduling", "technical", "Defining the work, the order and the timing so a project can be delivered.", [
+      "Updates a project plan from instructions.",
+      "Builds simple plans and schedules from a template, with review.",
+      "Builds clear plans with tasks, owners, dependencies and milestones alone.",
+      "Plans complex projects, balances resources and finds the critical path.",
+      "Sets planning standards and plans the most complex programmes.",
+    ]),
+    comp("pm.control", "Scope, Cost and Schedule Control", "technical", "Keeping a project within scope, budget and time, and managing change.", [
+      "Records progress and costs as reported.",
+      "Tracks progress against the plan and reports variances, with guidance.",
+      "Controls scope, cost and schedule, manages change requests and keeps forecasts current.",
+      "Recovers troubled projects and manages large budgets and complex change.",
+      "Sets control methods and answers for results across the programme.",
+    ]),
+    comp("pm.risk", "Risk and Issue Management", "functional", "Finding, tracking and dealing with the things that could go wrong or already have.", [
+      "Records risks and issues raised by others.",
+      "Identifies obvious risks and keeps the register, with guidance.",
+      "Identifies, rates and mitigates risks and resolves issues before they grow.",
+      "Leads risk workshops, manages interdependencies and escalates well.",
+      "Sets the risk approach and manages programme-level and strategic risk.",
+    ]),
+    comp("pm.stakeholders", "Stakeholder Management", "behavioural", "Understanding, informing and influencing the people a project affects.", [
+      "Keeps contact lists and distributes updates.",
+      "Communicates with known stakeholders and takes their feedback, with guidance.",
+      "Maps stakeholders, keeps them informed and handles disagreements.",
+      "Influences senior and resistant stakeholders and secures decisions.",
+      "Builds support across the organisation and manages the most complex stakeholder landscapes.",
+    ]),
+    comp("pm.delivery_methods", "Agile and Delivery Methods", "technical", "Using the right delivery method, such as agile or phased, and applying it well.", [
+      "Knows the basic ideas of agile and phased delivery.",
+      "Takes part in agile or phased routines, with guidance.",
+      "Applies the team's method well and runs its routines.",
+      "Chooses and adapts methods to the work and coaches teams.",
+      "Sets delivery standards and builds delivery capability across the organisation.",
+    ]),
+    comp("pm.governance_reporting", "Reporting and Governance", "functional", "Giving decision makers a true, clear picture and following the rules for approval.", [
+      "Collects status information.",
+      "Writes simple status reports from a template, with review.",
+      "Writes clear, honest status reports and follows governance and approval steps.",
+      "Presents to steering groups, supports decisions and improves governance.",
+      "Sets the governance framework and reports portfolio performance to leadership.",
+    ]),
+  ],
+  [
+    role("pm.coordinator", "Project Coordinator", "Entry", 2, "ic",
+      "Supports projects with scheduling, records, meetings, status information and administration.",
+      { "pm.planning": 2, "pm.control": 2, "pm.risk": 1, "pm.stakeholders": 2, "pm.governance_reporting": 2 }, { Communication: 3, "Critical Thinking": 2 }),
+    role("pm.manager", "Project Manager", "Mid", 5, "management",
+      "Delivers projects end to end: plan, team, budget, risks, stakeholders and results.",
+      { "pm.planning": 4, "pm.control": 4, "pm.risk": 3, "pm.stakeholders": 4, "pm.delivery_methods": 3, "pm.governance_reporting": 3 },
+      { Leadership: 3, "People Management": 3, Communication: 4, "Critical Thinking": 4, "Financial Literacy": 3 }),
+    role("pm.senior_manager", "Senior Project Manager", "Senior", 6, "management",
+      "Delivers the largest or most difficult projects and coaches other project managers.",
+      { "pm.planning": 5, "pm.control": 5, "pm.risk": 4, "pm.stakeholders": 5, "pm.delivery_methods": 4, "pm.governance_reporting": 4 },
+      { Leadership: 4, "People Management": 3, "Strategic Thinking": 3, Communication: 5, "Critical Thinking": 4, "Financial Literacy": 3 }),
+    role("pm.programme_manager", "Programme Manager", "Manager", 7, "management",
+      "Leads a group of related projects to deliver a larger business result.",
+      { "pm.control": 5, "pm.risk": 5, "pm.stakeholders": 5, "pm.governance_reporting": 5, "pm.planning": 4 },
+      { Leadership: 4, "People Management": 4, "Strategic Thinking": 4, Communication: 5, "Critical Thinking": 4, "Financial Literacy": 4 }),
+    role("pm.pmo_lead", "PMO Lead", "Manager", 7, "management",
+      "Runs the project office: methods, standards, tools, portfolio reporting and support for project teams.",
+      { "pm.governance_reporting": 5, "pm.delivery_methods": 5, "pm.planning": 4, "pm.control": 4, "pm.risk": 4 },
+      { Leadership: 3, "People Management": 3, "Strategic Thinking": 3, Communication: 4, "Critical Thinking": 4 }),
+  ]
+);

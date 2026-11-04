@@ -1,0 +1,76 @@
+import { comp, family, role } from "../build";
+
+export const IT = family(
+  "it",
+  "Information Technology",
+  "Support, infrastructure, software, data, security and the management of IT services.",
+  [
+    comp("it.support", "IT Support and Troubleshooting", "technical", "Diagnosing and fixing end-user and device problems, and keeping users working.", [
+      "Follows a script to solve common problems and logs each request.",
+      "Solves common hardware, software and account problems and escalates the rest, with guidance.",
+      "Diagnoses and fixes a wide range of user and device problems alone and explains the fix clearly.",
+      "Resolves complex or recurring faults, finds root causes and writes guides for the team.",
+      "Sets the support approach, automates frequent fixes and drives down repeat incidents.",
+    ]),
+    comp("it.infrastructure", "Networks and Infrastructure", "technical", "Running the servers, networks and systems the organisation depends on.", [
+      "Knows the main parts of a network and the systems in use.",
+      "Performs routine checks and changes on servers and networks, with guidance.",
+      "Configures, monitors and maintains servers and networks and restores service after faults.",
+      "Designs and improves infrastructure for reliability and growth and leads major changes.",
+      "Sets the infrastructure strategy, plans capacity and resilience and manages vendors and cost.",
+    ]),
+    comp("it.software", "Software Development", "technical", "Designing, writing, testing and maintaining software that works and can be changed safely.", [
+      "Writes simple code from clear instructions and follows team standards.",
+      "Builds and tests small features, with code review and guidance.",
+      "Designs, builds, tests and maintains features alone with clean, readable, tested code.",
+      "Designs complex systems, reviews others' code, improves quality practices and mentors developers.",
+      "Sets technical direction and architecture, solves novel problems and raises engineering standards across teams.",
+    ]),
+    comp("it.data", "Databases and Data Handling", "technical", "Storing, querying and protecting data, and turning it into reliable information.", [
+      "Knows what a database is and runs prepared queries.",
+      "Writes basic queries and reports and cleans simple data sets, with guidance.",
+      "Designs tables, writes efficient queries, maintains data quality and builds clear reports.",
+      "Designs data models and pipelines, tunes performance and sets quality checks.",
+      "Sets the data architecture and governance and guides how data supports decisions.",
+    ]),
+    comp("it.security", "Information Security", "technical", "Protecting systems and data from misuse, loss and attack.", [
+      "Follows the security rules and reports suspicious activity.",
+      "Applies standard protections such as access control, patching and backups, with guidance.",
+      "Manages access, monitors alerts, responds to common incidents and applies security good practice.",
+      "Assesses vulnerabilities, leads incident response and designs controls for new systems.",
+      "Owns the security strategy, manages risk and compliance and prepares the organisation for serious incidents.",
+    ]),
+    comp("it.cloud_devops", "Cloud and DevOps", "technical", "Building, releasing and running software on cloud platforms with automation.", [
+      "Knows basic cloud concepts and uses the tools the team provides.",
+      "Deploys and monitors applications with templates, under guidance.",
+      "Builds and maintains deployment pipelines, environments and monitoring and fixes release problems.",
+      "Designs resilient, cost-aware cloud architecture and automates the delivery process end to end.",
+      "Sets the platform and delivery strategy, manages cloud cost and risk and drives reliability across the organisation.",
+    ]),
+    comp("it.service_management", "IT Service Management and Requirements", "functional", "Turning business needs into IT services and managing them well.", [
+      "Knows the main IT service processes: incident, request and change.",
+      "Follows the service processes and captures user needs in a template, with guidance.",
+      "Gathers requirements, manages incidents and changes and keeps service targets.",
+      "Improves service processes, negotiates service levels and links IT work to business priorities.",
+      "Sets the IT service strategy, manages the portfolio and budget and aligns technology with the business plan.",
+    ]),
+  ],
+  [
+    role("it.support_technician", "IT Support Technician", "Entry", 2, "ic",
+      "Helps users with devices, accounts and software, logs and resolves requests and escalates what it cannot solve.",
+      { "it.support": 3, "it.infrastructure": 1, "it.security": 1, "it.service_management": 2 }, { Communication: 3, "Critical Thinking": 2, "AI & Digital Skills": 3 }),
+    role("it.sysadmin", "Systems and Network Administrator", "Mid", 4, "ic",
+      "Runs servers, networks and core systems, keeps them secure and available and handles faults.",
+      { "it.infrastructure": 4, "it.support": 3, "it.security": 3, "it.cloud_devops": 3, "it.service_management": 3 }, { Communication: 3, "Critical Thinking": 4, "AI & Digital Skills": 4 }),
+    role("it.developer", "Software Developer", "Mid", 4, "ic",
+      "Designs, builds, tests and maintains software for the organisation or its customers.",
+      { "it.software": 4, "it.data": 3, "it.cloud_devops": 3, "it.security": 3, "it.service_management": 2 }, { Communication: 3, "Critical Thinking": 4, "AI & Digital Skills": 4 }),
+    role("it.security_analyst", "Cybersecurity Analyst", "Senior", 5, "ic",
+      "Monitors for threats, assesses vulnerabilities, responds to incidents and strengthens controls.",
+      { "it.security": 4, "it.infrastructure": 3, "it.cloud_devops": 3, "it.service_management": 3 }, { Communication: 3, "Critical Thinking": 5, "AI & Digital Skills": 4 }),
+    role("it.manager", "IT Manager", "Manager", 7, "management",
+      "Leads the IT team and services: support, infrastructure, security and projects, within budget.",
+      { "it.service_management": 4, "it.infrastructure": 3, "it.security": 4, "it.support": 3, "it.cloud_devops": 3 },
+      { Leadership: 4, "People Management": 4, "Strategic Thinking": 3, Communication: 4, "Critical Thinking": 4, "AI & Digital Skills": 4, "Financial Literacy": 3 }),
+  ]
+);
