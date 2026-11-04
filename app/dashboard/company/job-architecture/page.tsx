@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
@@ -8,6 +8,7 @@ import JobArchitectureManager from "@/components/dashboard/JobArchitectureManage
 import JobBankPanel from "@/components/dashboard/JobBankPanel";
 import { JOB_BANK, jobBankStats } from "@/lib/jobBank";
 import { summariseBank } from "@/lib/jobBank/summary";
+import { localizeBank } from "@/lib/jobBank/localize";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import FeatureRestrictedNotice from "@/components/dashboard/FeatureRestrictedNotice";
 import FeatureEmailComposer from "@/components/dashboard/FeatureEmailComposer";
@@ -20,6 +21,7 @@ export const metadata = { title: "Job Architecture — Devometrics" };
 export default async function JobArchitecturePage() {
   const t = await getTranslations("jobArchitecturePage");
   const tDim = await getTranslations("competencyDimensions");
+  const bankLanguage = (await getLocale()) === "ar" ? "ar" : "en";
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
 
@@ -97,7 +99,8 @@ export default async function JobArchitecturePage() {
         ) : (
           <>
             <JobBankPanel
-              bank={summariseBank(JOB_BANK, (dim) => dimensionLabel(tDim, dim))}
+              bank={summariseBank(localizeBank(JOB_BANK, bankLanguage), (dim) => dimensionLabel(tDim, dim))}
+              initialLanguage={bankLanguage}
               existing={bankExisting(families ?? [], roles ?? [])}
               stats={jobBankStats()}
             />

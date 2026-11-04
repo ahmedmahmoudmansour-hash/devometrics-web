@@ -113,4 +113,6 @@ const PREFIX: Record<string, string> = {
   data: "data",
   product: "prod",
   retail: "ret",
+  manufacturing: "mfg",
+  education: "edu",
 };

@@ -6356,6 +6356,10 @@
     "adding": "Adding…",
     "clear": "Clear selection",
     "noneSelected": "Choose at least one role.",
-    "result": "Added {roles} roles, {competencies} competencies and {families} families. Already there and left unchanged: {existingRoles} roles and {existingCompetencies} competencies."
+    "result": "Added {roles} roles, {competencies} competencies and {families} families. Already there and left unchanged: {existingRoles} roles and {existingCompetencies} competencies.",
+    "language": "Wording language",
+    "languageEn": "English",
+    "languageAr": "العربية (Arabic)",
+    "languageNote": "Choose the language the families, roles and competencies are added in. Use one language per company: adding the other language creates separate entries beside the first. The Arabic wording is also drafted with AI and has not been reviewed by a native-speaking HR professional."
   }
 }

@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/jobArchitecture/actions";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { cleanLevelIndicators } from "@/lib/proficiency/library";
+import enMessages from "@/messages/en.json";
+import arMessages from "@/messages/ar.json";
+import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import { JOB_BANK } from "./index";
+import { isBankLanguage, localizeBank, type BankLanguage } from "./localize";
 import { planImport, requirementRows, type Selection } from "./plan";
+import { summariseBank, type BankSummaryFamily } from "./summary";
 
 export type ImportReport = {
   familiesCreated: number;
@@ -18,12 +23,29 @@ export type ImportReport = {
 
 const MAX_ROLES_PER_IMPORT = 80;
 
+const DIMENSION_LABELS: Record<BankLanguage, Record<string, string>> = {
+  en: (enMessages as unknown as { competencyDimensions: Record<string, string> }).competencyDimensions,
+  ar: (arMessages as unknown as { competencyDimensions: Record<string, string> }).competencyDimensions,
+};
+
+// The bank as the Job bank screen shows it, in the chosen language. Static content, but only company admins can ask for it.
+export async function getBankSummary(language: BankLanguage): Promise<{ error: string } | { bank: BankSummaryFamily[] }> {
+  const { user, organizationId } = await requireAdmin();
+  if (!user || !organizationId) return { error: "Not authorized" };
+  if (!isBankLanguage(language)) return { error: "Unknown language" };
+  const labels = DIMENSION_LABELS[language];
+  return { bank: summariseBank(localizeBank(JOB_BANK, language), (dim) => dimensionLabel((key) => labels[key] ?? key, dim)) };
+}
+
 // Adds starter job families, roles and competencies from the bank to the caller's own company. Runs as the signed-in
 // admin, so every database rule (company isolation, admin-only writes) applies exactly as for a manual add. Safe to
 // run again: anything the company already has is kept as it is and never overwritten.
-export async function importFromJobBank(selection: Selection): Promise<{ error: string } | { success: true; report: ImportReport }> {
+export async function importFromJobBank(selection: Selection, language: BankLanguage = "en"): Promise<{ error: string } | { success: true; report: ImportReport }> {
   const { supabase, user, organizationId } = await requireAdmin();
   if (!user || !organizationId) return { error: "Not authorized" };
+  if (!isBankLanguage(language)) return { error: "Unknown language" };
+  // The words come from the chosen language; the structure (keys, grades, requirements) is the same in both.
+  const bank = localizeBank(JOB_BANK, language);
 
   const restricted = await listMyRestrictedFeatures(supabase, organizationId);
   if (restricted.has("competency_management")) return { error: "Competency Management has been restricted for your account by your company administrator." };
@@ -48,7 +70,7 @@ export async function importFromJobBank(selection: Selection): Promise<{ error: 
     if (fname) (rolesByFamily[fname] ??= []).push(r.title);
   }
 
-  const plan = planImport(JOB_BANK, chosen, {
+  const plan = planImport(bank, chosen, {
     familyNames: (famRows ?? []).map((f) => f.name),
     competencyNames: (compRows ?? []).map((c) => c.name),
     rolesByFamily,
@@ -95,7 +117,7 @@ export async function importFromJobBank(selection: Selection): Promise<{ error: 
   }
 
   // 3. Roles, then their requirements.
-  const familyByKey = new Map(JOB_BANK.map((f) => [f.key, f]));
+  const familyByKey = new Map(bank.map((f) => [f.key, f]));
   let rolesCreated = 0;
   if (plan.rolesToCreate.length > 0) {
     const toInsert = plan.rolesToCreate.map(({ familyKey, role }) => ({

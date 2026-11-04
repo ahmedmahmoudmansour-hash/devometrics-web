@@ -14,14 +14,16 @@ import { MANAGEMENT } from "./families/management";
 import { DATA } from "./families/data";
 import { PRODUCT } from "./families/product";
 import { RETAIL } from "./families/retail";
+import { MANUFACTURING } from "./families/manufacturing";
+import { EDUCATION } from "./families/education";
 import { EXTRA_ROLES } from "./extraRoles";
 
 export type { BankFamily, BankRole, BankCompetency, Level } from "./types";
 
 // Version of the bank's content. Bump when wording changes, so a company can tell which version it imported.
-export const JOB_BANK_VERSION = "starter-2";
+export const JOB_BANK_VERSION = "starter-3";
 
-const BASE: BankFamily[] = [HR, FINANCE, IT, CUSTOMER_SERVICE, ADMINISTRATION, OPERATIONS, ENGINEERING, SALES, MARKETING, LEGAL, PROJECT_MANAGEMENT, MANAGEMENT, DATA, PRODUCT, RETAIL];
+const BASE: BankFamily[] = [HR, FINANCE, IT, CUSTOMER_SERVICE, ADMINISTRATION, OPERATIONS, ENGINEERING, SALES, MARKETING, LEGAL, PROJECT_MANAGEMENT, MANAGEMENT, DATA, PRODUCT, RETAIL, MANUFACTURING, EDUCATION];
 
 // Each family plus the extra roles written for it.
 export const JOB_BANK: BankFamily[] = BASE.map((f) => ({ ...f, roles: [...f.roles, ...(EXTRA_ROLES[f.key] ?? [])] }));

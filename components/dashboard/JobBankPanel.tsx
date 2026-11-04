@@ -3,24 +3,30 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { importFromJobBank, type ImportReport } from "@/lib/jobBank/actions";
+import { getBankSummary, importFromJobBank, type ImportReport } from "@/lib/jobBank/actions";
+import type { BankLanguage } from "@/lib/jobBank/localize";
 import type { BankSummaryFamily } from "@/lib/jobBank/summary";
 
 const card = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, marginBottom: 20 } as const;
 const norm = (s: string) => s.trim().toLowerCase();
 
 export default function JobBankPanel({
-  bank,
+  bank: initialBank,
+  initialLanguage,
   existing,
   stats,
 }: {
   bank: BankSummaryFamily[];
+  initialLanguage: BankLanguage;
   existing: { familyNames: string[]; rolesByFamily: Record<string, string[]> };
   stats: { families: number; roles: number; competencies: number };
 }) {
   const t = useTranslations("jobBank");
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  // The wording the roles are added in. It starts as the language of the screen and can be changed before adding.
+  const [language, setLanguage] = useState<BankLanguage>(initialLanguage);
+  const [bank, setBank] = useState<BankSummaryFamily[]>(initialBank);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +60,22 @@ export default function JobBankPanel({
     });
   }
 
+  function changeLanguage(next: BankLanguage) {
+    if (next === language) return;
+    setError(null);
+    setReport(null);
+    startTransition(async () => {
+      const r = await getBankSummary(next);
+      if ("error" in r) {
+        setError(r.error);
+        return;
+      }
+      setBank(r.bank);
+      setLanguage(next);
+      // The keys are the same in both languages, so what was ticked stays ticked.
+    });
+  }
+
   function submit() {
     setError(null);
     setReport(null);
@@ -63,7 +85,7 @@ export default function JobBankPanel({
       return;
     }
     startTransition(async () => {
-      const r = await importFromJobBank(selection);
+      const r = await importFromJobBank(selection, language);
       if ("error" in r) {
         setError(r.error);
         return;
@@ -92,6 +114,23 @@ export default function JobBankPanel({
 
       {open && (
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <label htmlFor="job-bank-language" style={{ fontSize: 12.5, color: "var(--text)", fontWeight: 600 }}>
+              {t("language")}
+            </label>
+            <select
+              id="job-bank-language"
+              value={language}
+              disabled={pending}
+              onChange={(e) => changeLanguage(e.target.value === "ar" ? "ar" : "en")}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 10px", fontSize: 12.5, color: "var(--text)" }}
+            >
+              <option value="en">{t("languageEn")}</option>
+              <option value="ar">{t("languageAr")}</option>
+            </select>
+            <span style={{ fontSize: 11.5, color: "var(--text-muted)", maxWidth: 560, lineHeight: 1.5 }}>{t("languageNote")}</span>
+          </div>
+          <div dir={language === "ar" ? "rtl" : "ltr"} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {bank.map((f) => {
             const available = f.roles.filter((r) => !roleExists(f.name, r.title));
             const allOn = available.length > 0 && available.every((r) => selected.has(r.key));
@@ -142,6 +181,7 @@ export default function JobBankPanel({
               </details>
             );
           })}
+          </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 6 }}>
             <button
