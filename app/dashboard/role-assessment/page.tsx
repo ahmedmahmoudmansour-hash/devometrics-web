@@ -4,6 +4,7 @@ import { getTranslations, getFormatter } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getAssessmentSettings, listMyRoleAssessments, purgeExpiredRoleAssessmentAnswers } from "@/lib/assessment/actions";
 import StartRoleAssessmentButton from "@/components/assessment/StartRoleAssessmentButton";
+import { listMyKnowledgeChecks } from "@/lib/knowledgeBank/actions";
 
 export const metadata = { title: "Role assessment — Devometrics" };
 // Preparing questions can take a while the first time a competency is used.
@@ -11,6 +12,7 @@ export const maxDuration = 120;
 
 export default async function RoleAssessmentPage() {
   const t = await getTranslations("roleAssessment");
+  const tk = await getTranslations("knowledgeCheck");
   const format = await getFormatter();
   const supabase = await createClient();
   const {
@@ -19,7 +21,7 @@ export default async function RoleAssessmentPage() {
   if (!user) redirect("/login");
 
   await purgeExpiredRoleAssessmentAnswers();
-  const [rows, settings] = await Promise.all([listMyRoleAssessments(), getAssessmentSettings()]);
+  const [rows, settings, knowledgeRows] = await Promise.all([listMyRoleAssessments(), getAssessmentSettings(), listMyKnowledgeChecks()]);
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -57,6 +59,31 @@ export default async function RoleAssessmentPage() {
           )}
           {settings.selfStartAllowed && <StartRoleAssessmentButton />}
         </div>
+
+        {knowledgeRows.length > 0 && (
+          <div style={{ background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 }}>{tk("yourChecks")}</h2>
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+              {knowledgeRows.map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/dashboard/knowledge-check/${r.id}`}
+                  style={{ display: "flex", justifyContent: "space-between", gap: 12, textDecoration: "none", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px" }}
+                >
+                  <span style={{ color: "var(--text)", fontSize: 14, fontWeight: 600 }}>
+                    {r.roleTitle}
+                    <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: 12, marginInlineStart: 8 }}>
+                      {tk("questionCount", { count: r.questionCount })} · {tk("createdOn", { date: format.dateTime(new Date(r.createdAt), { dateStyle: "medium" }) })}
+                    </span>
+                  </span>
+                  <span style={{ color: r.submittedAt ? "var(--teal)" : "var(--amber)", fontSize: 12, fontWeight: 700 }}>
+                    {r.submittedAt ? `${tk("done")} · ${tk("score", { percent: r.percent ?? 0 })}` : tk("waiting")}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

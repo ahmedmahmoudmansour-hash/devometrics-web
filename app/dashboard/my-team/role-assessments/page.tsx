@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import ManageRoleAssessments from "@/components/assessment/ManageRoleAssessments";
 import { listManagedRoleAssessments, purgeExpiredRoleAssessmentAnswers } from "@/lib/assessment/actions";
+import ManageKnowledgeChecks from "@/components/knowledgeCheck/ManageKnowledgeChecks";
+import { listManagedKnowledgeChecks } from "@/lib/knowledgeBank/actions";
 
 export const metadata = { title: "Role assessments — Devometrics" };
 export const maxDuration = 120;
@@ -11,6 +13,7 @@ export const maxDuration = 120;
 // For a line manager: assign a role assessment to a direct report, then review and confirm the results.
 export default async function MyTeamRoleAssessmentsPage() {
   const t = await getTranslations("roleAssessment");
+  const tk = await getTranslations("knowledgeCheck");
   const supabase = await createClient();
   const {
     data: { user },
@@ -19,6 +22,7 @@ export default async function MyTeamRoleAssessmentsPage() {
 
   await purgeExpiredRoleAssessmentAnswers();
   const managed = await listManagedRoleAssessments();
+  const knowledge = await listManagedKnowledgeChecks();
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -34,6 +38,13 @@ export default async function MyTeamRoleAssessmentsPage() {
           <p style={{ color: "var(--danger)", fontSize: 13 }}>{managed.error}</p>
         ) : (
           <ManageRoleAssessments rows={managed.rows} names={managed.names} employees={managed.employees} viewer="manager" settings={managed.settings} />
+        )}
+        {!("error" in knowledge) && knowledge.ready && (
+          <div style={{ marginTop: 32 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{tk("title")}</h2>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6, maxWidth: 680 }}>{tk("intro")}</p>
+            <ManageKnowledgeChecks rows={knowledge.rows} names={knowledge.names} employees={knowledge.employees} ready={knowledge.ready} />
+          </div>
         )}
       </div>
     </div>
