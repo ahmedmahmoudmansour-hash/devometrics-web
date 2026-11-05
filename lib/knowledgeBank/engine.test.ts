@@ -139,4 +139,15 @@ describe("the whole bank", () => {
   it("every question has English wording through questionText", () => {
     for (const k of KNOWLEDGE_BANK) expect(isAvailable(questionId(k.competencyKey, k.level), "en")).toBe(true);
   });
+  it("every question has Arabic wording too, so an Arabic check never falls back to English", () => {
+    for (const k of KNOWLEDGE_BANK) expect(isAvailable(questionId(k.competencyKey, k.level), "ar")).toBe(true);
+    const r = selectQuestions([{ competencyKey: "mfg.production", level: 5 }], (id) => isAvailable(id, "ar"));
+    expect(r.ids).toHaveLength(4);
+  });
+  it("the Arabic wording keeps four options in the same order as English, so the answer key is shared", () => {
+    for (const k of KNOWLEDGE_BANK) {
+      const ar = questionText(questionId(k.competencyKey, k.level), "ar")!;
+      expect(ar.options).toHaveLength(4);
+    }
+  });
 });
