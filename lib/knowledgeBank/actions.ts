@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveCallerLocale } from "@/lib/i18n/request";
 import { proficiencyLevel } from "@/lib/proficiency/levels";
 import { isAssessmentLanguage } from "@/lib/assessment/definitions";
+import { roleTitlesFor } from "@/lib/assessment/employeePicker";
 import { KNOWLEDGE_BANK_VERSION, isAvailable } from "./index";
 import { bankKeyForName, originalIndex, selectQuestions, type KnowledgeLanguage } from "./engine";
 import { buildResultView, buildTakeView, scoreRow, type CheckRow, type ResultView, type TakeView } from "./view";
@@ -169,7 +170,7 @@ export async function listMyKnowledgeChecks(): Promise<KnowledgeCheckListRow[]> 
 
 // For a manager (their reports) or an admin (everyone): row level security decides what comes back.
 export async function listManagedKnowledgeChecks(): Promise<
-  { rows: KnowledgeCheckListRow[]; names: Record<string, string>; employees: { userId: string; name: string }[]; ready: boolean } | { error: string }
+  { rows: KnowledgeCheckListRow[]; names: Record<string, string>; employees: { userId: string; name: string; roleTitle: string | null }[]; ready: boolean } | { error: string }
 > {
   const ctx = await context();
   if ("error" in ctx) return { error: ctx.error };
@@ -184,7 +185,8 @@ export async function listManagedKnowledgeChecks(): Promise<
   const { data: profiles } = ids.length
     ? await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids).returns<{ id: string; full_name: string | null; email: string }[]>()
     : { data: [] as { id: string; full_name: string | null; email: string }[] };
-  const employees = (profiles ?? []).map((p) => ({ userId: p.id, name: p.full_name?.trim() || p.email })).sort((a, b) => a.name.localeCompare(b.name));
+  const roleTitles = await roleTitlesFor(ctx.supabase, ctx.member.organization_id, ids);
+  const employees = (profiles ?? []).map((p) => ({ userId: p.id, name: p.full_name?.trim() || p.email, roleTitle: roleTitles.get(p.id) ?? null })).sort((a, b) => a.name.localeCompare(b.name));
   return { rows: (data ?? []).map(toListRow), names: Object.fromEntries(employees.map((e) => [e.userId, e.name])), employees, ready };
 }
 

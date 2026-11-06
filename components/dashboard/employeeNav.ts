@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Contact,
   IdCard,
+  Award,
 } from "lucide-react";
 import { hrModulesHidden } from "@/lib/organizations/hrModules";
 
@@ -102,6 +103,8 @@ export function buildEmployeeTiles(flags: EmployeeNavFlags): EmployeeTile[] {
         { href: "/dashboard/my-file", labelKey: "myFile", icon: IdCard },
         // Off by default per org (organizations.directory_enabled, 0175).
         ...(hasDirectoryEnabled ? [{ href: "/dashboard/directory", labelKey: "directory", icon: Contact }] : []),
+        // Role assessments and knowledge checks assigned by a manager or admin (also linked from the Assessments page).
+        { href: "/dashboard/role-assessment", labelKey: "roleAssessment", icon: Award },
         { href: "/dashboard/knowledge-hub", labelKey: "knowledgeHub", icon: Library, featureKey: "knowledge_hub" },
         // Shown when there's a real manager to give a Manager's Perspective,
         // OR a review already exists regardless (an admin can assign one to

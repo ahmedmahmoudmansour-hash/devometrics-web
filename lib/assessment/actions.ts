@@ -4,6 +4,7 @@
 // live in migration 0204 and hold even if these actions are bypassed; the checks here give friendlier errors early.
 
 import { roleContextKey } from "@/lib/assessment/roleContext";
+import { availableOn, roleTitlesFor } from "@/lib/assessment/employeePicker";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
@@ -360,9 +361,32 @@ export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessme
   const { data: profiles } = ids.length
     ? await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids).returns<{ id: string; full_name: string | null; email: string }[]>()
     : { data: [] as { id: string; full_name: string | null; email: string }[] };
-  const employees = (profiles ?? []).map((p) => ({ userId: p.id, name: p.full_name?.trim() || p.email, email: p.email })).sort((a, b) => a.name.localeCompare(b.name));
+  const settings = await getAssessmentSettings(ctx.member.organization_id);
+
+  // Show up front who cannot be assessed (no role yet) or not yet again (retake interval), instead of failing after Assign.
+  const roleTitles = await roleTitlesFor(ctx.supabase, ctx.member.organization_id, ids);
+  const lastByEmployee = new Map<string, string>();
+  if (settings.retakeIntervalDays > 0 && ids.length > 0) {
+    const { data: last } = await ctx.supabase
+      .from("competency_assessments")
+      .select("employee_user_id, created_at")
+      .in("employee_user_id", ids)
+      .order("created_at", { ascending: false })
+      .limit(1000)
+      .returns<{ employee_user_id: string; created_at: string }[]>();
+    for (const l of last ?? []) if (!lastByEmployee.has(l.employee_user_id)) lastByEmployee.set(l.employee_user_id, l.created_at);
+  }
+  const employees = (profiles ?? [])
+    .map((p) => ({
+      userId: p.id,
+      name: p.full_name?.trim() || p.email,
+      email: p.email,
+      roleTitle: roleTitles.get(p.id) ?? null,
+      availableOn: availableOn(lastByEmployee.get(p.id), settings.retakeIntervalDays),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const names = Object.fromEntries(employees.map((e) => [e.userId, e.name]));
-  return { rows, names, employees, viewer: isAdmin ? "admin" : "manager", settings: await getAssessmentSettings(ctx.member.organization_id) };
+  return { rows, names, employees, viewer: isAdmin ? "admin" : "manager", settings };
 }
 
 async function listRows(supabase: Supabase, only: { only?: string; except?: string }): Promise<RoleAssessmentRow[]> {

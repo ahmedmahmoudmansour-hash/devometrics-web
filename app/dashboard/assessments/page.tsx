@@ -9,6 +9,8 @@ import { COGNITIVE_ABILITY_SLUG, cognitiveBandFromScore } from "@/lib/assessment
 import { rankByImpact, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import { assessmentDisplayName, assessmentDisplayDescription, assessmentCategoryLabel } from "@/lib/assessments/catalog";
 import AssessmentPlanGenerator from "@/components/dashboard/AssessmentPlanGenerator";
+import { listMyRoleAssessments } from "@/lib/assessment/actions";
+import { listMyKnowledgeChecks } from "@/lib/knowledgeBank/actions";
 import type { AssessmentResult, CaseStudyExerciseAttempt, GapAnalysis, Profile } from "@/lib/supabase/types";
 
 const SECTION_ICON: Record<LevelSection, string> = {
@@ -30,6 +32,7 @@ function sectionForCareerStage(careerStage: string | null): LevelSection | null 
 export default async function AssessmentsPage() {
   const t = await getTranslations("assessmentsPage");
   const tRole = await getTranslations("roleAssessment");
+  const tKnowledge = await getTranslations("knowledgeCheck");
   const tDim = await getTranslations("competencyDimensions");
   const tCatalog = await getTranslations("assessmentCatalog");
   const tCategories = await getTranslations("assessmentCategories");
@@ -100,6 +103,12 @@ export default async function AssessmentsPage() {
   // not assessment_results) and their own route
   // (/dashboard/assessments/exercise/[slug], not /dashboard/assessments/[slug])
   // — kind carries which one so the link below routes to the right place.
+  // Role assessments and knowledge checks assigned to this person that are not finished yet. Both helpers return an
+  // empty list for someone outside a company, and for knowledge checks until their migration (0207) is applied.
+  const [myRoleAssessments, myKnowledgeChecks] = await Promise.all([listMyRoleAssessments(), listMyKnowledgeChecks()]);
+  const openRoleAssessments = myRoleAssessments.filter((r) => r.status === "assigned" || r.status === "in_progress").length;
+  const openKnowledgeChecks = myKnowledgeChecks.filter((r) => !r.submittedAt).length;
+
   const pendingAssigned = (assignedRows ?? [])
     .map((r) => {
       if (r.assessment_slug === ENGLISH_PROFICIENCY_SLUG) {
@@ -164,12 +173,25 @@ export default async function AssessmentsPage() {
           </Link>
         </div>
 
-        {pendingAssigned.length > 0 && (
+        {pendingAssigned.length + openRoleAssessments + openKnowledgeChecks > 0 && (
           <div style={{ background: "rgba(var(--amber-rgb),0.06)", border: "1px solid rgba(var(--amber-rgb),0.25)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: "var(--amber)", marginBottom: 10 }}>
-              {t("assignedToYou", { count: pendingAssigned.length })}
+              {t("assignedToYou", { count: pendingAssigned.length + openRoleAssessments + openKnowledgeChecks })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {/* Assigned from the person's role: they live on their own page, so say so here instead of leaving them unseen. */}
+              {openRoleAssessments > 0 && (
+                <Link href="/dashboard/role-assessment" style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}>
+                  <span style={{ color: "var(--text)" }}>{tRole("assignedToYouRole", { count: openRoleAssessments })}</span>
+                  <span style={{ color: "var(--amber)", fontWeight: 600 }}>{t("start")}</span>
+                </Link>
+              )}
+              {openKnowledgeChecks > 0 && (
+                <Link href="/dashboard/role-assessment" style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, textDecoration: "none" }}>
+                  <span style={{ color: "var(--text)" }}>{tKnowledge("assignedToYouCheck", { count: openKnowledgeChecks })}</span>
+                  <span style={{ color: "var(--amber)", fontWeight: 600 }}>{t("start")}</span>
+                </Link>
+              )}
               {pendingAssigned.map((a) => (
                 <Link
                   key={a.slug}

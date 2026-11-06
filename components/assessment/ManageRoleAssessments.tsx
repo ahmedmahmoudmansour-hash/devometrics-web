@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { assignRoleAssessment, updateAssessmentSettings } from "@/lib/assessment/actions";
 import type { AssessmentSettings, AssignableEmployee, RoleAssessmentRow } from "@/lib/assessment/types";
 
@@ -26,7 +26,9 @@ export default function ManageRoleAssessments({
   settings: AssessmentSettings;
 }) {
   const t = useTranslations("roleAssessment");
+  const format = useFormatter();
   const router = useRouter();
+  const noRole = employees.filter((e) => !e.roleTitle).length;
   const [who, setWho] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +76,12 @@ export default function ManageRoleAssessments({
           <select value={who} onChange={(e) => setWho(e.target.value)} style={{ ...input, minWidth: 240 }} aria-label={t("chooseEmployee")}>
             <option value="">{t("chooseEmployee")}</option>
             {employees.map((e) => (
-              <option key={e.userId} value={e.userId}>
-                {e.name}
+              <option key={e.userId} value={e.userId} disabled={!e.roleTitle || !!e.availableOn}>
+                {!e.roleTitle
+                  ? `${e.name} — ${t("optionNoRole")}`
+                  : e.availableOn
+                    ? `${e.name} — ${t("optionAvailableOn", { date: format.dateTime(new Date(e.availableOn), { dateStyle: "medium" }) })}`
+                    : `${e.name} — ${e.roleTitle}`}
               </option>
             ))}
           </select>
@@ -83,6 +89,16 @@ export default function ManageRoleAssessments({
             {t("assign")}
           </button>
         </div>
+        {noRole > 0 && (
+          <p style={{ ...muted, marginTop: 8 }}>
+            {t("noRoleNote", { count: noRole })}{" "}
+            {viewer === "admin" && (
+              <Link href="/dashboard/company/employees" style={{ color: "var(--teal)", fontWeight: 700, textDecoration: "none" }}>
+                {t("setRolesLink")}
+              </Link>
+            )}
+          </p>
+        )}
         {message && <p style={{ ...muted, marginTop: 8, color: "var(--teal)" }}>{message}</p>}
         {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{error}</p>}
       </div>

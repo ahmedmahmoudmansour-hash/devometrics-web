@@ -19,7 +19,7 @@ export default function ManageKnowledgeChecks({
 }: {
   rows: KnowledgeCheckListRow[];
   names: Record<string, string>;
-  employees: { userId: string; name: string }[];
+  employees: { userId: string; name: string; roleTitle: string | null }[];
   ready: boolean;
 }) {
   const t = useTranslations("knowledgeCheck");
@@ -29,6 +29,8 @@ export default function ManageKnowledgeChecks({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const noRole = employees.filter((e) => !e.roleTitle).length;
+  const openFor = new Set(rows.filter((r) => !r.submittedAt).map((r) => r.employeeUserId));
 
   function assign() {
     setError(null);
@@ -57,16 +59,21 @@ export default function ManageKnowledgeChecks({
         <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           <select value={who} onChange={(e) => setWho(e.target.value)} style={{ ...input, minWidth: 240 }} aria-label={t("chooseEmployee")} disabled={!ready}>
             <option value="">{t("chooseEmployee")}</option>
-            {employees.map((e) => (
-              <option key={e.userId} value={e.userId}>
-                {e.name}
-              </option>
-            ))}
+            {employees.map((e) => {
+              // One open check per person: assigning a second is refused, so say so before anyone clicks.
+              const hasOpen = openFor.has(e.userId);
+              return (
+                <option key={e.userId} value={e.userId} disabled={!e.roleTitle || hasOpen}>
+                  {!e.roleTitle ? `${e.name} — ${t("optionNoRole")}` : hasOpen ? `${e.name} — ${t("optionOpenCheck")}` : `${e.name} — ${e.roleTitle}`}
+                </option>
+              );
+            })}
           </select>
           <button type="button" style={{ ...primaryBtn, opacity: !who || pending || !ready ? 0.6 : 1 }} disabled={!who || pending || !ready} onClick={assign}>
             {t("assign")}
           </button>
         </div>
+        {noRole > 0 && <p style={{ ...muted, marginTop: 8 }}>{t("noRoleNote", { count: noRole })}</p>}
         {message && (
           <p role="status" style={{ ...muted, marginTop: 8, color: "var(--teal)" }}>
             {message}
