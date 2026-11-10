@@ -72,6 +72,7 @@ export default function ManageRoleAssessments({
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={card}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 }}>{t("assignTitle")}</h2>
+        <p style={{ ...muted, marginTop: 6, maxWidth: 680 }}>{t("chooseGuide")}</p>
         <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           <select value={who} onChange={(e) => setWho(e.target.value)} style={{ ...input, minWidth: 240 }} aria-label={t("chooseEmployee")}>
             <option value="">{t("chooseEmployee")}</option>

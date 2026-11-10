@@ -48,6 +48,26 @@ export default function ManageKnowledgeChecks({
     });
   }
 
+  // Everyone who has a role and no open check can be given one in a single step. Free: a check is marked in the app, no AI.
+  const eligible = employees.filter((e) => e.roleTitle && !openFor.has(e.userId));
+  function assignAll() {
+    if (!window.confirm(t("assignAllConfirm", { count: eligible.length }))) return;
+    setError(null);
+    setMessage(t("assigningAll"));
+    startTransition(async () => {
+      let ok = 0;
+      const failed: string[] = [];
+      for (const e of eligible) {
+        const r = await assignKnowledgeCheck(e.userId);
+        if ("error" in r) failed.push(`${e.name}: ${r.error}`);
+        else ok += 1;
+      }
+      setMessage(t("assignAllDone", { ok, failed: failed.length }));
+      if (failed.length > 0) setError(failed.slice(0, 5).join(" · ") + (failed.length > 5 ? " …" : ""));
+      router.refresh();
+    });
+  }
+
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 18 }} aria-labelledby="knowledge-checks-title">
       <div style={card}>
@@ -73,6 +93,11 @@ export default function ManageKnowledgeChecks({
             {t("assign")}
           </button>
         </div>
+        {eligible.length > 1 && (
+          <button type="button" style={{ ...primaryBtn, background: "transparent", color: "var(--teal)", border: "1px solid var(--teal)", marginTop: 10, opacity: pending || !ready ? 0.6 : 1 }} disabled={pending || !ready} onClick={assignAll}>
+            {t("assignAll", { count: eligible.length })}
+          </button>
+        )}
         {noRole > 0 && <p style={{ ...muted, marginTop: 8 }}>{t("noRoleNote", { count: noRole })}</p>}
         {message && (
           <p role="status" style={{ ...muted, marginTop: 8, color: "var(--teal)" }}>
