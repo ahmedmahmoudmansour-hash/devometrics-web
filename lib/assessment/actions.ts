@@ -4,7 +4,7 @@
 // live in migration 0204 and hold even if these actions are bypassed; the checks here give friendlier errors early.
 
 import { roleContextKey } from "@/lib/assessment/roleContext";
-import { availableOn, roleTitlesFor } from "@/lib/assessment/employeePicker";
+import { availableOn, pickerInfo, type PickerRole } from "@/lib/assessment/employeePicker";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
@@ -349,7 +349,7 @@ export async function listMyRoleAssessments(): Promise<RoleAssessmentRow[]> {
 }
 
 // For a manager (their reports) or an admin (everyone): row level security decides what comes back.
-export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessmentRow[]; names: Record<string, string>; employees: AssignableEmployee[]; viewer: "admin" | "manager"; settings: AssessmentSettings } | { error: string }> {
+export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessmentRow[]; names: Record<string, string>; employees: AssignableEmployee[]; roles: PickerRole[]; viewer: "admin" | "manager"; settings: AssessmentSettings } | { error: string }> {
   const ctx = await context();
   if ("error" in ctx) return { error: ctx.error };
   const isAdmin = ctx.member.role === "admin";
@@ -364,7 +364,8 @@ export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessme
   const settings = await getAssessmentSettings(ctx.member.organization_id);
 
   // Show up front who cannot be assessed (no role yet) or not yet again (retake interval), instead of failing after Assign.
-  const roleTitles = await roleTitlesFor(ctx.supabase, ctx.member.organization_id, ids);
+  const picker = await pickerInfo(ctx.supabase, ctx.member.organization_id, ids);
+  const roleTitles = picker.roleTitles;
   const lastByEmployee = new Map<string, string>();
   if (settings.retakeIntervalDays > 0 && ids.length > 0) {
     const { data: last } = await ctx.supabase
@@ -381,12 +382,13 @@ export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessme
       userId: p.id,
       name: p.full_name?.trim() || p.email,
       email: p.email,
+      memberId: picker.memberIds.get(p.id) ?? null,
       roleTitle: roleTitles.get(p.id) ?? null,
       availableOn: availableOn(lastByEmployee.get(p.id), settings.retakeIntervalDays),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const names = Object.fromEntries(employees.map((e) => [e.userId, e.name]));
-  return { rows, names, employees, viewer: isAdmin ? "admin" : "manager", settings };
+  return { rows, names, employees, roles: picker.roles, viewer: isAdmin ? "admin" : "manager", settings };
 }
 
 async function listRows(supabase: Supabase, only: { only?: string; except?: string }): Promise<RoleAssessmentRow[]> {

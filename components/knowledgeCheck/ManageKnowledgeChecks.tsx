@@ -5,6 +5,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { assignKnowledgeCheck, type KnowledgeCheckListRow } from "@/lib/knowledgeBank/actions";
+import type { PickerRole } from "@/lib/assessment/employeePicker";
+import GiveRoleInline from "@/components/assessment/GiveRoleInline";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 const muted: React.CSSProperties = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 };
@@ -15,11 +17,15 @@ export default function ManageKnowledgeChecks({
   rows,
   names,
   employees,
+  roles,
+  isAdmin,
   ready,
 }: {
   rows: KnowledgeCheckListRow[];
   names: Record<string, string>;
-  employees: { userId: string; name: string; roleTitle: string | null }[];
+  employees: { userId: string; name: string; memberId: string | null; roleTitle: string | null }[];
+  roles: PickerRole[];
+  isAdmin: boolean;
   ready: boolean;
 }) {
   const t = useTranslations("knowledgeCheck");
@@ -30,6 +36,8 @@ export default function ManageKnowledgeChecks({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const noRole = employees.filter((e) => !e.roleTitle).length;
+  const selected = employees.find((e) => e.userId === who);
+  const needsRole = !!selected && !selected.roleTitle;
   const openFor = new Set(rows.filter((r) => !r.submittedAt).map((r) => r.employeeUserId));
 
   function assign() {
@@ -83,13 +91,13 @@ export default function ManageKnowledgeChecks({
               // One open check per person: assigning a second is refused, so say so before anyone clicks.
               const hasOpen = openFor.has(e.userId);
               return (
-                <option key={e.userId} value={e.userId} disabled={!e.roleTitle || hasOpen}>
+                <option key={e.userId} value={e.userId} disabled={hasOpen}>
                   {!e.roleTitle ? `${e.name} — ${t("optionNoRole")}` : hasOpen ? `${e.name} — ${t("optionOpenCheck")}` : `${e.name} — ${e.roleTitle}`}
                 </option>
               );
             })}
           </select>
-          <button type="button" style={{ ...primaryBtn, opacity: !who || pending || !ready ? 0.6 : 1 }} disabled={!who || pending || !ready} onClick={assign}>
+          <button type="button" style={{ ...primaryBtn, opacity: !who || needsRole || pending || !ready ? 0.6 : 1 }} disabled={!who || needsRole || pending || !ready} onClick={assign}>
             {t("assign")}
           </button>
         </div>
@@ -98,7 +106,8 @@ export default function ManageKnowledgeChecks({
             {t("assignAll", { count: eligible.length })}
           </button>
         )}
-        {noRole > 0 && <p style={{ ...muted, marginTop: 8 }}>{t("noRoleNote", { count: noRole })}</p>}
+        {needsRole && selected && <GiveRoleInline name={selected.name} memberId={selected.memberId} roles={roles} isAdmin={isAdmin} />}
+        {noRole > 0 && !needsRole && <p style={{ ...muted, marginTop: 8 }}>{t("noRoleNote", { count: noRole })}</p>}
         {message && (
           <p role="status" style={{ ...muted, marginTop: 8, color: "var(--teal)" }}>
             {message}

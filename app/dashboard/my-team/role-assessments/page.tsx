@@ -37,13 +37,13 @@ export default async function MyTeamRoleAssessmentsPage() {
         {"error" in managed ? (
           <p style={{ color: "var(--danger)", fontSize: 13 }}>{managed.error}</p>
         ) : (
-          <ManageRoleAssessments rows={managed.rows} names={managed.names} employees={managed.employees} viewer="manager" settings={managed.settings} />
+          <ManageRoleAssessments rows={managed.rows} names={managed.names} employees={managed.employees} roles={managed.roles} viewer="manager" settings={managed.settings} />
         )}
         {!("error" in knowledge) && knowledge.ready && (
           <div style={{ marginTop: 32 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{tk("title")}</h2>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6, maxWidth: 680 }}>{tk("intro")}</p>
-            <ManageKnowledgeChecks rows={knowledge.rows} names={knowledge.names} employees={knowledge.employees} ready={knowledge.ready} />
+            <ManageKnowledgeChecks rows={knowledge.rows} names={knowledge.names} employees={knowledge.employees} roles={knowledge.roles} isAdmin={knowledge.isAdmin} ready={knowledge.ready} />
           </div>
         )}
       </div>

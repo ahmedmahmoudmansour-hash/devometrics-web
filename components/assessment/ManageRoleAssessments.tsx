@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { assignRoleAssessment, updateAssessmentSettings } from "@/lib/assessment/actions";
 import type { AssessmentSettings, AssignableEmployee, RoleAssessmentRow } from "@/lib/assessment/types";
+import type { PickerRole } from "@/lib/assessment/employeePicker";
+import GiveRoleInline from "@/components/assessment/GiveRoleInline";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 const muted: React.CSSProperties = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 };
@@ -16,12 +18,14 @@ export default function ManageRoleAssessments({
   rows,
   names,
   employees,
+  roles,
   viewer,
   settings,
 }: {
   rows: RoleAssessmentRow[];
   names: Record<string, string>;
   employees: AssignableEmployee[];
+  roles: PickerRole[];
   viewer: "admin" | "manager";
   settings: AssessmentSettings;
 }) {
@@ -30,6 +34,8 @@ export default function ManageRoleAssessments({
   const router = useRouter();
   const noRole = employees.filter((e) => !e.roleTitle).length;
   const [who, setWho] = useState("");
+  const selected = employees.find((e) => e.userId === who);
+  const needsRole = !!selected && !selected.roleTitle;
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -77,7 +83,7 @@ export default function ManageRoleAssessments({
           <select value={who} onChange={(e) => setWho(e.target.value)} style={{ ...input, minWidth: 240 }} aria-label={t("chooseEmployee")}>
             <option value="">{t("chooseEmployee")}</option>
             {employees.map((e) => (
-              <option key={e.userId} value={e.userId} disabled={!e.roleTitle || !!e.availableOn}>
+              <option key={e.userId} value={e.userId} disabled={!!e.availableOn}>
                 {!e.roleTitle
                   ? `${e.name} — ${t("optionNoRole")}`
                   : e.availableOn
@@ -86,11 +92,12 @@ export default function ManageRoleAssessments({
               </option>
             ))}
           </select>
-          <button type="button" style={{ ...primaryBtn, opacity: !who || isPending ? 0.6 : 1 }} disabled={!who || isPending} onClick={assign}>
+          <button type="button" style={{ ...primaryBtn, opacity: !who || needsRole || isPending ? 0.6 : 1 }} disabled={!who || needsRole || isPending} onClick={assign}>
             {t("assign")}
           </button>
         </div>
-        {noRole > 0 && (
+        {needsRole && selected && <GiveRoleInline name={selected.name} memberId={selected.memberId} roles={roles} isAdmin={viewer === "admin"} />}
+        {noRole > 0 && !needsRole && (
           <p style={{ ...muted, marginTop: 8 }}>
             {t("noRoleNote", { count: noRole })}{" "}
             {viewer === "admin" && (

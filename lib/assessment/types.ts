@@ -98,4 +98,5 @@ export type RoleAssessmentView = {
 
 // roleTitle: null when the person has no role in Job Architecture yet (they cannot be assessed).
 // availableOn: when the retake interval next allows an assessment (ISO date), or null if one can be assigned now.
-export type AssignableEmployee = { userId: string; name: string; email: string; roleTitle: string | null; availableOn: string | null };
+// memberId: the person's membership row, used to give them a role from the assessment page.
+export type AssignableEmployee = { userId: string; name: string; email: string; memberId: string | null; roleTitle: string | null; availableOn: string | null };
