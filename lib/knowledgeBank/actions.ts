@@ -11,10 +11,12 @@ import { resolveCallerLocale } from "@/lib/i18n/request";
 import { proficiencyLevel } from "@/lib/proficiency/levels";
 import { isAssessmentLanguage } from "@/lib/assessment/definitions";
 import { pickerInfo, type PickerRole } from "@/lib/assessment/employeePicker";
-import { isLate, limitSeconds, readMeta, withMeta } from "./timer";
+import { isLate, limitSeconds, readMeta, timingOf, withMeta } from "./timer";
+import { aggregateTeam, type TeamCompetency, type TeamPerson, type TeamResults } from "./team";
+import { sendAssessmentAssignedEmail } from "@/lib/assessment/assignedEmail";
 import { KNOWLEDGE_BANK_VERSION, isAvailable } from "./index";
 import { bankKeyForName, originalIndex, selectQuestions, type KnowledgeLanguage } from "./engine";
-import { buildResultView, buildTakeView, scoreRow, type CheckRow, type ResultView, type TakeView } from "./view";
+import { buildResultView, buildTakeView, competencyName, scoreRow, type CheckRow, type ResultView, type TakeView } from "./view";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 type Member = { organization_id: string; role: "admin" | "member"; current_role_id: string | null; manager_user_id: string | null };
@@ -52,7 +54,7 @@ function revalidate() {
 // ---------------------------------------------------------------------------------------------------------------
 // Assigning
 
-export async function assignKnowledgeCheck(employeeUserId: string): Promise<{ error: string } | { success: true; checkId: string; questions: number; leftOut: number; inEnglish: boolean }> {
+export async function assignKnowledgeCheck(employeeUserId: string): Promise<{ error: string } | { success: true; checkId: string; questions: number; leftOut: number; inEnglish: boolean; emailed: boolean | null }> {
   const ctx = await context();
   if ("error" in ctx) return { error: ctx.error };
   const { supabase, member, userId } = ctx;
@@ -133,7 +135,16 @@ export async function assignKnowledgeCheck(employeeUserId: string): Promise<{ er
     return { error: tableMissing(error) ? MIGRATION_MESSAGE : "Could not create the knowledge check. Try again." };
   }
   revalidate();
-  return { success: true, checkId: created.id, questions: picked.ids.length, leftOut: picked.leftOut.length, inEnglish: wanted !== language };
+  // Tell the person, with the details. Best effort: a failed email never undoes the assignment.
+  const emailed = await sendAssessmentAssignedEmail(supabase, {
+    organizationId: orgId,
+    employeeUserId,
+    assignerUserId: userId,
+    roleTitle: role.title,
+    language,
+    detail: { kind: "check", questionCount: picked.ids.length, minutes: Math.max(1, Math.round(limitSeconds(picked.ids.length) / 60)), checkId: created.id },
+  });
+  return { success: true, checkId: created.id, questions: picked.ids.length, leftOut: picked.leftOut.length, inEnglish: wanted !== language, emailed };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -194,6 +205,40 @@ export async function listManagedKnowledgeChecks(): Promise<
     .map((p) => ({ userId: p.id, name: p.full_name?.trim() || p.email, memberId: picker.memberIds.get(p.id) ?? null, roleTitle: picker.roleTitles.get(p.id) ?? null }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return { rows: (data ?? []).map(toListRow), names: Object.fromEntries(employees.map((e) => [e.userId, e.name])), employees, roles: picker.roles, isAdmin, ready };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Team results: where a team is strong or weak. An admin sees everyone; a manager sees their own reports (row level security
+// decides what comes back). Each person counts once, through their most recent finished check.
+export type TeamResultsView = Omit<TeamResults, "competencies"> & { competencies: (TeamCompetency & { name: string })[] };
+
+export async function getTeamKnowledgeResults(): Promise<TeamResultsView | null> {
+  const ctx = await context();
+  if ("error" in ctx) return null;
+  const isAdmin = ctx.member.role === "admin";
+  const { data, error } = await ctx.supabase.from("knowledge_checks").select(COLUMNS).not("submitted_at", "is", null).order("submitted_at", { ascending: false }).limit(500).returns<CheckRow[]>();
+  if (error || !data) return null;
+  const rows = data.filter((r) => isAdmin || r.employee_user_id !== ctx.userId);
+  if (rows.length === 0) return aggregateWithNames([], {}, "en");
+  const ids = [...new Set(rows.map((r) => r.employee_user_id))];
+  const { data: profiles } = await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids).returns<{ id: string; full_name: string | null; email: string }[]>();
+  const names = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]));
+  const language = (await resolveCallerLocale(ctx.supabase, ctx.userId)) === "ar" ? "ar" : "en";
+  const input = rows.map((r) => ({
+    checkId: r.id,
+    userId: r.employee_user_id,
+    name: names[r.employee_user_id] ?? "—",
+    roleTitle: r.role_title,
+    submittedAt: r.submitted_at as string,
+    result: scoreRow(r),
+    timing: timingOf(r.answers, r.question_ids.length, new Date(r.submitted_at as string).getTime()),
+  }));
+  return aggregateWithNames(input, names, language);
+}
+
+function aggregateWithNames(input: Parameters<typeof aggregateTeam>[0], _names: Record<string, string>, language: "en" | "ar"): TeamResultsView {
+  const t = aggregateTeam(input);
+  return { ...t, competencies: t.competencies.map((c) => ({ ...c, name: competencyName(c.competencyKey, language) })) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

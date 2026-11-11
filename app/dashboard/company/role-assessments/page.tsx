@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import AssessmentsManager from "@/components/assessment/AssessmentsManager";
+import TeamResults from "@/components/knowledgeCheck/TeamResults";
+import { getTeamKnowledgeResults } from "@/lib/knowledgeBank/actions";
 import { listManagedRoleAssessments, purgeExpiredRoleAssessmentAnswers } from "@/lib/assessment/actions";
 import { listManagedKnowledgeChecks } from "@/lib/knowledgeBank/actions";
 
@@ -18,6 +20,7 @@ export default async function CompanyRoleAssessmentsPage() {
   await purgeExpiredRoleAssessmentAnswers();
   const managed = await listManagedRoleAssessments();
   const knowledge = await listManagedKnowledgeChecks();
+  const team = await getTeamKnowledgeResults();
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -43,6 +46,11 @@ export default async function CompanyRoleAssessmentsPage() {
             viewer={managed.viewer}
             settings={managed.settings}
           />
+        )}
+        {team && team.people.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <TeamResults data={team} isAdmin={true} />
+          </div>
         )}
       </div>
     </div>

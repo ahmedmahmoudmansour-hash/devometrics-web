@@ -1969,6 +1969,31 @@
     "takenOn": "Taken {date}",
     "roleReportLine": "Role assessment report · {level} · {date}"
   },
+  "teamResults": {
+    "title": "Team results",
+    "basis": "{count, plural, one {Based on the most recent knowledge check of 1 person.} other {Based on the most recent knowledge check of # people.}}",
+    "average": "Average score",
+    "percent": "{percent}%",
+    "band_strong": "Strong (80% and above)",
+    "band_adequate": "Adequate (60 to 79%)",
+    "band_gaps": "Gaps to close (below 60%)",
+    "fewPeople": "Only a few people have finished, so these figures mostly show individuals. Look for a pattern once more people have taken it.",
+    "byCompetency": "Where the team is weakest",
+    "byCompetencyHint": "Weakest first. Each bar is the share of questions the team answered correctly.",
+    "peopleCount": "{count, plural, one {1 person} other {# people}}",
+    "barLabel": "{name}: {percent}% correct",
+    "assignLearning": "Assign learning from the Knowledge Hub →",
+    "byPerson": "By person",
+    "colPerson": "Person",
+    "colRole": "Role",
+    "colScore": "Score",
+    "colTaken": "Taken",
+    "colTime": "Time used",
+    "late": "late",
+    "leftPage": "{count, plural, one {left the page once} other {left the page # times}}",
+    "open": "Open",
+    "caution": "Indicative only. A few questions per competency cannot settle anyone's level, so use this to start conversations, not to decide hiring or promotion."
+  },
   "assessmentsManager": {
     "title": "Assign an assessment",
     "whoLabel": "Person",
@@ -1984,6 +2009,8 @@
     "colType": "Type",
     "typeCheck": "Knowledge check",
     "typeRole": "Role assessment",
+    "emailSent": "We emailed them the details.",
+    "emailNotSent": "We could not email them, so please let them know yourself.",
     "settingsToggle": "Assessment settings"
   },
   "roleAssessment": {

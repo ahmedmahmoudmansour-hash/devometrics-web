@@ -71,6 +71,9 @@ export default function AssessmentsManager({
   const noRole = employees.filter((e) => !e.roleTitle).length;
   const eligibleForCheck = employees.filter((e) => e.roleTitle && !e.isSelf && !openFor.has(e.userId));
 
+  // Did the person get the email with the details? (null: none was meant, e.g. assigned to yourself)
+  const emailNote = (sent: boolean | null | undefined) => (sent === true ? t("emailSent") : sent === false ? t("emailNotSent") : "");
+
   function assign() {
     setError(null);
     setMessage(kind === "check" ? tk("assigning") : tr("assigning"));
@@ -82,7 +85,7 @@ export default function AssessmentsManager({
           setError(r.error);
           return;
         }
-        setMessage([tk("assignedOk", { count: r.questions }), r.leftOut > 0 ? tk("leftOut", { count: r.leftOut }) : "", r.inEnglish ? tk("inEnglish") : ""].filter(Boolean).join(" "));
+        setMessage([tk("assignedOk", { count: r.questions }), r.leftOut > 0 ? tk("leftOut", { count: r.leftOut }) : "", r.inEnglish ? tk("inEnglish") : "", emailNote(r.emailed)].filter(Boolean).join(" "));
       } else {
         const r = await assignRoleAssessment(who);
         if ("error" in r && r.error) {
@@ -90,7 +93,7 @@ export default function AssessmentsManager({
           setError(r.error);
           return;
         }
-        setMessage(tr("assignedOk") + ("leftOut" in r && r.leftOut ? " " + tr("leftOut", { count: r.leftOut, max: s.maxCompetencies }) : ""));
+        setMessage(tr("assignedOk") + ("leftOut" in r && r.leftOut ? " " + tr("leftOut", { count: r.leftOut, max: s.maxCompetencies }) : "") + (" " + emailNote("emailed" in r ? r.emailed : null)).trimEnd());
       }
       setWho("");
       router.refresh();

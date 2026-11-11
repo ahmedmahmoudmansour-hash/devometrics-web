@@ -5,6 +5,7 @@
 
 import { roleContextKey } from "@/lib/assessment/roleContext";
 import { availableOn, pickerInfo, type PickerRole } from "@/lib/assessment/employeePicker";
+import { sendAssessmentAssignedEmail } from "@/lib/assessment/assignedEmail";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETENCY_DIMENSIONS } from "@/lib/gap-analysis/dimensions";
@@ -324,7 +325,19 @@ async function createAssessment(ctx: { supabase: Supabase; userId: string; membe
     return { error: "Could not create the assessment's questions. Try again." };
   }
   revalidate();
-  return { success: true as const, assessmentId: assessment.id, leftOut };
+  // Tell the person, with the details, when someone else assigned it. Best effort: a failed email never undoes the assignment.
+  const emailed =
+    route === "assigned"
+      ? await sendAssessmentAssignedEmail(supabase, {
+          organizationId: orgId,
+          employeeUserId,
+          assignerUserId: ctx.userId,
+          roleTitle: role.title,
+          language,
+          detail: { kind: "role", competencyCount: built.length, questionsPerCompetency: settings.itemsPerCompetency, retentionMonths: settings.retentionMonths, assessmentId: assessment.id },
+        })
+      : null;
+  return { success: true as const, assessmentId: assessment.id, leftOut, emailed };
 }
 
 export async function assignRoleAssessment(employeeUserId: string) {
