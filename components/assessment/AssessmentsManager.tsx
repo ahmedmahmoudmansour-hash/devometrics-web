@@ -69,7 +69,7 @@ export default function AssessmentsManager({
           : null
       : null;
   const noRole = employees.filter((e) => !e.roleTitle).length;
-  const eligibleForCheck = employees.filter((e) => e.roleTitle && !openFor.has(e.userId));
+  const eligibleForCheck = employees.filter((e) => e.roleTitle && !e.isSelf && !openFor.has(e.userId));
 
   function assign() {
     setError(null);
@@ -196,7 +196,7 @@ export default function AssessmentsManager({
           <option value="">{tr("chooseEmployee")}</option>
           {employees.map((e) => (
             <option key={e.userId} value={e.userId}>
-              {e.name} — {e.roleTitle ?? tr("optionNoRole")}
+              {e.name}{e.isSelf ? ` ${tr("youSuffix")}` : ""} — {e.roleTitle ?? tr("optionNoRole")}
             </option>
           ))}
         </select>

@@ -2045,6 +2045,7 @@
     "chooseGuide": "Which one? A role assessment is written answers, scored by AI against the role's levels. It gives a detailed picture but takes longer. A knowledge check (below) is right-or-wrong questions marked at once with no AI cost, good for a quick read.",
     "assignTitle": "Assign a role assessment",
     "chooseEmployee": "Choose a person",
+    "youSuffix": "(you)",
     "optionNoRole": "no role yet",
     "optionAvailableOn": "available again {date}",
     "noRoleNote": "{count, plural, one {# person has} other {# people have}} no role in Job Architecture yet, so they cannot be assessed. Give them a role first.",

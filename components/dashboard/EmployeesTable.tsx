@@ -15,6 +15,10 @@ const cellStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
   color: "var(--text)",
 };
+// The row actions (including Edit) stay in view at the end edge while the table scrolls sideways, so they are never hidden
+// off-screen on a narrow window.
+const stickyEnd: React.CSSProperties = { position: "sticky", insetInlineEnd: 0, background: "var(--navy-mid)", boxShadow: "-8px 0 8px -8px rgba(0,0,0,0.25)" };
+
 const headStyle: React.CSSProperties = {
   ...cellStyle,
   color: "var(--text-muted)",
@@ -275,7 +279,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
                 <th style={{ ...headStyle, textAlign: "end" }}>{t("tableAssessments")}</th>
                 <th style={{ ...headStyle, textAlign: "end" }}>{t("tablePlans")}</th>
                 <th style={{ ...headStyle, textAlign: "end" }}>{t("tableMilestones")}</th>
-                <th style={{ ...headStyle, textAlign: "end" }} aria-label={t("tableActionsAria")} />
+                <th style={{ ...headStyle, textAlign: "end", ...stickyEnd }} aria-label={t("tableActionsAria")} />
               </tr>
             </thead>
             <tbody>
@@ -335,7 +339,7 @@ export default function EmployeesTable({ rows, currentUserId }: { rows: Workforc
                   <td style={{ ...cellStyle, textAlign: "end" }}>
                     {r.milestonesDone}/{r.milestonesTotal}
                   </td>
-                  <td style={{ ...cellStyle, textAlign: "end", whiteSpace: "nowrap" }}>
+                  <td style={{ ...cellStyle, textAlign: "end", whiteSpace: "nowrap", ...stickyEnd }}>
                     <Link
                       href={`/dashboard/company/${r.userId}#assign-task`}
                       style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", textDecoration: "none", marginInlineEnd: 14 }}

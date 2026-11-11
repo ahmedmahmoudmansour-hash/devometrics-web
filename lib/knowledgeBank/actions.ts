@@ -57,7 +57,9 @@ export async function assignKnowledgeCheck(employeeUserId: string): Promise<{ er
   if ("error" in ctx) return { error: ctx.error };
   const { supabase, member, userId } = ctx;
   const orgId = member.organization_id;
-  if (typeof employeeUserId !== "string" || employeeUserId === userId) return { error: "Choose a person other than yourself" };
+  if (typeof employeeUserId !== "string") return { error: "Choose a person" };
+  // A company admin who is also an employee may give themselves a check (migration 0209); nobody else may.
+  if (employeeUserId === userId && member.role !== "admin") return { error: "Choose a person other than yourself" };
 
   const { data: employee } = await supabase
     .from("organization_members")
@@ -127,6 +129,7 @@ export async function assignKnowledgeCheck(employeeUserId: string): Promise<{ er
     .single<{ id: string }>();
   if (error || !created) {
     console.error("assignKnowledgeCheck failed:", error);
+    if (error?.code === "42501" && employeeUserId === userId) return { error: "Giving yourself a knowledge check needs the 0209 database update first." };
     return { error: tableMissing(error) ? MIGRATION_MESSAGE : "Could not create the knowledge check. Try again." };
   }
   revalidate();
@@ -182,7 +185,7 @@ export async function listManagedKnowledgeChecks(): Promise<
 
   const memberQuery = ctx.supabase.from("organization_members").select("user_id").eq("organization_id", ctx.member.organization_id);
   const { data: members } = await (isAdmin ? memberQuery : memberQuery.eq("manager_user_id", ctx.userId)).returns<{ user_id: string }[]>();
-  const ids = (members ?? []).map((m) => m.user_id).filter((id) => id !== ctx.userId);
+  const ids = (members ?? []).map((m) => m.user_id).filter((id) => isAdmin || id !== ctx.userId);
   const { data: profiles } = ids.length
     ? await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids).returns<{ id: string; full_name: string | null; email: string }[]>()
     : { data: [] as { id: string; full_name: string | null; email: string }[] };

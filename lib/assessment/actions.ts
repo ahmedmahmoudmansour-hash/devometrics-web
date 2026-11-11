@@ -357,7 +357,8 @@ export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessme
 
   const memberQuery = ctx.supabase.from("organization_members").select("user_id").eq("organization_id", ctx.member.organization_id);
   const { data: members } = await (isAdmin ? memberQuery : memberQuery.eq("manager_user_id", ctx.userId)).returns<{ user_id: string }[]>();
-  const ids = (members ?? []).map((m) => m.user_id).filter((id) => id !== ctx.userId);
+  // An admin who is also an employee is listed too, so she can be assessed like anyone else.
+  const ids = (members ?? []).map((m) => m.user_id).filter((id) => isAdmin || id !== ctx.userId);
   const { data: profiles } = ids.length
     ? await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids).returns<{ id: string; full_name: string | null; email: string }[]>()
     : { data: [] as { id: string; full_name: string | null; email: string }[] };
@@ -382,6 +383,7 @@ export async function listManagedRoleAssessments(): Promise<{ rows: RoleAssessme
       userId: p.id,
       name: p.full_name?.trim() || p.email,
       email: p.email,
+      isSelf: p.id === ctx.userId,
       memberId: picker.memberIds.get(p.id) ?? null,
       roleTitle: roleTitles.get(p.id) ?? null,
       availableOn: availableOn(lastByEmployee.get(p.id), settings.retakeIntervalDays),
