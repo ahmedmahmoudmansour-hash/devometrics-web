@@ -1963,6 +1963,23 @@
     "migrationNotEnabled": "Job Architecture isn't enabled on this database yet — the <code>0067_job_architecture.sql</code> migration needs to be run in the Supabase SQL Editor first.",
     "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
+  "assessmentsManager": {
+    "title": "Assign an assessment",
+    "whoLabel": "Person",
+    "kindLabel": "Kind of assessment",
+    "kindCheckTitle": "Knowledge check",
+    "kindCheckBody": "Right-or-wrong questions, marked at once. Free, takes a few minutes. Best for a quick read.",
+    "kindCheckUnavailable": "Not available yet.",
+    "kindRoleTitle": "Role assessment",
+    "kindRoleBody": "Written answers, scored by AI against the role's levels. More detail, takes longer.",
+    "assignButton": "Assign",
+    "listTitle": "Assigned",
+    "empty": "Nothing assigned yet. Choose a person above to start.",
+    "colType": "Type",
+    "typeCheck": "Knowledge check",
+    "typeRole": "Role assessment",
+    "settingsToggle": "Assessment settings"
+  },
   "roleAssessment": {
     "title": "Role assessment",
     "intro": "Written questions on the competencies your role requires. Your answers are scored against the level descriptions. The result is an estimate of what you demonstrated, not a final verdict.",
@@ -2023,7 +2040,7 @@
     "adjustedTo": "Adjusted by a manager to level {level}: {reason}",
     "awaitingConfirmation": "Not yet confirmed by a manager",
     "manageTitle": "Role assessments",
-    "manageIntro": "Assign a written assessment of the competencies a person's role requires, then review and confirm the results.",
+    "manageIntro": "Give someone an assessment built from the competencies their role requires, then review the results.",
     "chooseGuide": "Which one? A role assessment is written answers, scored by AI against the role's levels. It gives a detailed picture but takes longer. A knowledge check (below) is right-or-wrong questions marked at once with no AI cost, good for a quick read.",
     "assignTitle": "Assign a role assessment",
     "chooseEmployee": "Choose a person",
