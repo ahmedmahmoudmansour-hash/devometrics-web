@@ -1963,6 +1963,12 @@
     "migrationNotEnabled": "الهيكل الوظيفي غير مفعّل على قاعدة البيانات هذه بعد — يجب تشغيل ترحيل <code>0067_job_architecture.sql</code> في محرر SQL الخاص بـ Supabase أولاً.",
     "restrictedNotice": "تم تقييد هذه الميزة لحسابك من قبل مسؤول شركتك."
   },
+  "assessmentReport": {
+    "print": "طباعة أو حفظ بصيغة PDF",
+    "printHint": "في نافذة الطباعة اختر «حفظ بصيغة PDF» كوجهة.",
+    "takenOn": "أُجري في {date}",
+    "roleReportLine": "تقرير تقييم الدور · {level} · {date}"
+  },
   "assessmentsManager": {
     "title": "تكليف بتقييم",
     "whoLabel": "الشخص",

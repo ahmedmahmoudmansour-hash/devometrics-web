@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
+import PrintReportBar from "@/components/assessment/PrintReportBar";
 import { confirmRoleResult, saveRoleAssessmentAnswers, scoreRoleAssessmentCompetency, submitRoleAssessment } from "@/lib/assessment/actions";
 import { gapAgainstRange } from "@/lib/assessment/scoring";
 import type { CompetencyEntry, RoleAssessmentView } from "@/lib/assessment/types";
@@ -36,6 +37,8 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pasteBlocked, setPasteBlocked] = useState(false);
+  const format = useFormatter();
+  const tReport = useTranslations("assessmentReport");
   const [isPending, startTransition] = useTransition();
 
   const allItems = view.entries.flatMap((e) => e.items);
@@ -97,18 +100,23 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
 
   const failed = view.entries.filter((e) => e.result?.status === "scoring_failed");
 
+  const hasResults = canScore && view.entries.some((e) => e.result);
+  const reportDate = view.scoredAt ?? view.submittedAt;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+    <div className="print-plan" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {hasResults && <PrintReportBar />}
       <div style={card}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", margin: 0 }}>{view.roleTitle}</h1>
         {!isEmployee && view.employeeName && <p style={{ ...muted, marginTop: 4 }}>{t("forEmployee", { name: view.employeeName })}</p>}
+        {hasResults && reportDate && <p style={{ ...muted, marginTop: 4 }}>{tReport("roleReportLine", { date: format.dateTime(new Date(reportDate), { dateStyle: "long" }), level: view.roleLevel })}</p>}
         <p style={{ ...muted, marginTop: 8 }}>{t("intro")}</p>
         <p style={{ ...muted, marginTop: 6, color: "var(--teal)" }}>{t("pilotNote")}</p>
       </div>
 
       {/* ---- answering */}
       {open && isEmployee && (
-        <>
+        <div className="no-print" style={{ display: "contents" }}>
           <p style={muted}>{t("answerHint")}</p>
           {pasteBlocked && <p role="status" style={{ ...muted, color: "var(--amber)" }}>{t("noPaste")}</p>}
           {view.entries.map((e) => (
@@ -148,20 +156,20 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
             <button type="button" style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }} disabled={isPending} onClick={submit}>{isPending ? t("submitting") : t("submit")}</button>
             {message && <span style={muted}>{message}</span>}
           </div>
-        </>
+        </div>
       )}
 
       {open && !isEmployee && <p style={muted}>{t("notSubmittedYet")}</p>}
 
       {/* ---- scoring */}
       {canScore && progress && (
-        <div style={card}>
+        <div className="no-print" style={card}>
           <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 }}>{t("scoringProgress", progress)}</p>
           <p style={{ ...muted, marginTop: 4 }}>{t("scoringWait")}</p>
         </div>
       )}
       {canScore && !progress && toScore.length > 0 && (
-        <div style={{ ...card, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="no-print" style={{ ...card, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <p style={{ ...muted, margin: 0 }}>{failed.length > 0 ? t("scoringFailedHint") : t("pendingScoring")}</p>
           <button type="button" style={primaryBtn} onClick={() => void runScoring(toScore)}>{failed.length > 0 ? t("retryFailed") : t("scoreNow")}</button>
         </div>
@@ -202,7 +210,7 @@ function ResultCard({ entry, view }: { entry: CompetencyEntry; view: RoleAssessm
   }
 
   return (
-    <div style={card}>
+    <div className="print-avoid-break" style={card}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 }}>{entry.name}</h2>
         {entry.requiredLevel && (
@@ -270,7 +278,7 @@ function ResultCard({ entry, view }: { entry: CompetencyEntry; view: RoleAssessm
             <p style={{ ...muted, margin: 0 }}>{t("awaitingConfirmation")}</p>
           )}
           {canConfirm && !r.confirmedAt && (
-            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="no-print" style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 <button type="button" style={primaryBtn} disabled={pending} onClick={() => confirm(false)}>{t("confirm")}</button>
                 <span style={muted}>{t("changeLevel")}:</span>
@@ -289,7 +297,7 @@ function ResultCard({ entry, view }: { entry: CompetencyEntry; view: RoleAssessm
 
       {canConfirm && entry.items.length > 0 && (
         <div style={{ marginTop: 10 }}>
-          <button type="button" style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer", padding: 0 }} onClick={() => setShowAnswers((v) => !v)}>
+          <button type="button" className="no-print" style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 12, cursor: "pointer", padding: 0 }} onClick={() => setShowAnswers((v) => !v)}>
             {showAnswers ? t("hideAnswers") : t("showAnswers")}
           </button>
           {showAnswers && (

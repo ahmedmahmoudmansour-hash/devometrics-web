@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
+import PrintReportBar from "@/components/assessment/PrintReportBar";
 import type { ResultView } from "@/lib/knowledgeBank/view";
 import { formatClock } from "@/lib/knowledgeBank/timer";
 
@@ -8,13 +9,18 @@ const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px 
 
 export default function KnowledgeCheckResult({ view, employeeName }: { view: ResultView; employeeName: string | null }) {
   const t = useTranslations("knowledgeCheck");
+  const tReport = useTranslations("assessmentReport");
+  const format = useFormatter();
   const tone = view.reading === "strong" ? "var(--teal)" : view.reading === "adequate" ? "var(--amber)" : "var(--danger)";
 
   return (
-    <div dir={view.language === "ar" ? "rtl" : "ltr"} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div dir={view.language === "ar" ? "rtl" : "ltr"} className="print-plan" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <PrintReportBar />
       <div>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", margin: 0 }}>{employeeName ? t("resultTitleFor", { name: employeeName }) : t("resultTitle")}</h1>
-        <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6 }}>{view.roleTitle}</p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6 }}>
+          {view.roleTitle} · {tReport("takenOn", { date: format.dateTime(new Date(view.submittedAt), { dateStyle: "long" }) })}
+        </p>
       </div>
 
       <div style={{ ...card, display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>

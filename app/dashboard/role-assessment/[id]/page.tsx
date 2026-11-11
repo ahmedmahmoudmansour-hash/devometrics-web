@@ -25,7 +25,7 @@ export default async function RoleAssessmentDetailPage({ params }: { params: Pro
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ maxWidth: 820, margin: "0 auto" }}>
-        <Link href={back} style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
+        <Link href={back} className="no-print" style={{ color: "var(--teal)", fontSize: 14, textDecoration: "none" }}>
           {t("back")}
         </Link>
         <div style={{ marginTop: 12 }}>

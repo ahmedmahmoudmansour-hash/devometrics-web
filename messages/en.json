@@ -1963,6 +1963,12 @@
     "migrationNotEnabled": "Job Architecture isn't enabled on this database yet — the <code>0067_job_architecture.sql</code> migration needs to be run in the Supabase SQL Editor first.",
     "restrictedNotice": "This feature has been restricted for your account by your company administrator."
   },
+  "assessmentReport": {
+    "print": "Print or save as PDF",
+    "printHint": "In the print window, choose Save as PDF as the destination.",
+    "takenOn": "Taken {date}",
+    "roleReportLine": "Role assessment report · {level} · {date}"
+  },
   "assessmentsManager": {
     "title": "Assign an assessment",
     "whoLabel": "Person",
