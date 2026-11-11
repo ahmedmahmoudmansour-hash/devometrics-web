@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { ResultView } from "@/lib/knowledgeBank/view";
+import { formatClock } from "@/lib/knowledgeBank/timer";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 
@@ -24,6 +25,12 @@ export default function KnowledgeCheckResult({ view, employeeName }: { view: Res
         </div>
       </div>
 
+      {view.timing && (
+        <p style={{ fontSize: 12, color: view.timing.late ? "var(--amber)" : "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
+          {t("timingResult", { used: formatClock(view.timing.usedSeconds), limit: formatClock(view.timing.limitSeconds) })} · {t("leftPageResult", { count: view.timing.leftPage })}
+          {view.timing.late ? ` · ${t("submittedLate")}` : ""}
+        </p>
+      )}
       <p style={{ fontSize: 12, color: "var(--amber)", lineHeight: 1.6, margin: 0 }}>{t("caution")}</p>
 
       <div style={card}>

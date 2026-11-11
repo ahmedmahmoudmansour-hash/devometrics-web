@@ -35,6 +35,7 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
   const [answers, setAnswers] = useState<Record<string, string>>(() => Object.fromEntries(view.entries.flatMap((e) => e.items.map((i) => [i.itemId, i.answer ?? ""]))));
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pasteBlocked, setPasteBlocked] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const allItems = view.entries.flatMap((e) => e.items);
@@ -109,6 +110,7 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
       {open && isEmployee && (
         <>
           <p style={muted}>{t("answerHint")}</p>
+          {pasteBlocked && <p role="status" style={{ ...muted, color: "var(--amber)" }}>{t("noPaste")}</p>}
           {view.entries.map((e) => (
             <div key={e.versionId} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -124,6 +126,11 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
                     <textarea
                       value={answers[i.itemId] ?? ""}
                       onChange={(ev) => setAnswers((p) => ({ ...p, [i.itemId]: ev.target.value }))}
+                      onPaste={(ev) => {
+                        ev.preventDefault();
+                        setPasteBlocked(true);
+                      }}
+                      onDrop={(ev) => ev.preventDefault()}
                       rows={5}
                       maxLength={6000}
                       placeholder={t("answerPlaceholder")}

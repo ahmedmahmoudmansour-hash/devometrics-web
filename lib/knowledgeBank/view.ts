@@ -5,6 +5,7 @@ import { JOB_BANK } from "@/lib/jobBank";
 import { AR_BANK } from "@/lib/jobBank/ar";
 import { optionOrder, presentQuestion, readPercent, scoreCheck, type CheckResult, type PresentedQuestion, type Reading } from "./engine";
 import { getQuestion, questionText } from "./index";
+import { limitSeconds, readMeta, timingOf, type Timing } from "./timer";
 
 export type CheckRow = {
   id: string;
@@ -37,9 +38,12 @@ export type TakeView = {
   questions: (PresentedQuestion & { competencyName: string })[];
   // What was saved so far, as the option position the person saw (0 to 3).
   draft: Record<string, number>;
+  // The clock. startedAt is the server's start time (null if it could not be recorded); serverNow lets the page correct for a
+  // wrong clock on the person's device. leftPage is how many times they have already left the page.
+  timer: { startedAt: number | null; limitSeconds: number; serverNow: number; leftPage: number };
 };
 
-export function buildTakeView(row: CheckRow): TakeView {
+export function buildTakeView(row: CheckRow, now: number = Date.now()): TakeView {
   const questions: TakeView["questions"] = [];
   const draft: Record<string, number> = {};
   for (const id of row.question_ids) {
@@ -53,7 +57,15 @@ export function buildTakeView(row: CheckRow): TakeView {
       if (shown >= 0) draft[id] = shown;
     }
   }
-  return { id: row.id, roleTitle: row.role_title, language: row.language, questions, draft };
+  const meta = readMeta(row.answers);
+  return {
+    id: row.id,
+    roleTitle: row.role_title,
+    language: row.language,
+    questions,
+    draft,
+    timer: { startedAt: meta.startedAt ?? null, limitSeconds: limitSeconds(row.question_ids.length), serverNow: now, leftPage: meta.leftPage ?? 0 },
+  };
 }
 
 export type ReviewQuestion = {
@@ -79,6 +91,8 @@ export type ResultView = {
   correct: number;
   perCompetency: (CheckResult["perCompetency"][number] & { competencyName: string })[];
   review: ReviewQuestion[];
+  // Time used, times the page was left, late or not. Null for a check taken before the timer existed.
+  timing: Timing | null;
 };
 
 const keyOf = (id: string) => {
@@ -123,5 +137,6 @@ export function buildResultView(row: CheckRow): ResultView | null {
     correct: result.correct,
     perCompetency: result.perCompetency.map((p) => ({ ...p, competencyName: competencyName(p.competencyKey, row.language) })),
     review,
+    timing: timingOf(row.answers, row.question_ids.length, new Date(row.submitted_at).getTime()),
   };
 }

@@ -11,6 +11,7 @@ import { resolveCallerLocale } from "@/lib/i18n/request";
 import { proficiencyLevel } from "@/lib/proficiency/levels";
 import { isAssessmentLanguage } from "@/lib/assessment/definitions";
 import { pickerInfo, type PickerRole } from "@/lib/assessment/employeePicker";
+import { isLate, limitSeconds, readMeta, withMeta } from "./timer";
 import { KNOWLEDGE_BANK_VERSION, isAvailable } from "./index";
 import { bankKeyForName, originalIndex, selectQuestions, type KnowledgeLanguage } from "./engine";
 import { buildResultView, buildTakeView, scoreRow, type CheckRow, type ResultView, type TakeView } from "./view";
@@ -195,6 +196,28 @@ export async function listManagedKnowledgeChecks(): Promise<
 // ---------------------------------------------------------------------------------------------------------------
 // Taking and reading
 
+// The clock starts the first time the person opens their check, and the server (not their device) says when. If it cannot be
+// recorded the check still opens and the page falls back to its own clock.
+async function ensureStarted(supabase: Awaited<ReturnType<typeof createClient>>, row: CheckRow): Promise<CheckRow> {
+  if (readMeta(row.answers).startedAt !== undefined) return row;
+  const next = withMeta(((row.answers ?? {}) as Record<string, number>), { ...readMeta(row.answers), startedAt: Date.now() });
+  const { data, error } = await supabase.from("knowledge_checks").update({ answers: next }).eq("id", row.id).eq("employee_user_id", row.employee_user_id).is("submitted_at", null).select("id");
+  if (error || !data || data.length === 0) return row;
+  return { ...row, answers: next as CheckRow["answers"] };
+}
+
+// Called by the page each time the person comes back after leaving it (another tab or window). Shown to the manager.
+export async function noteKnowledgeCheckLeftPage(checkId: string): Promise<{ success: true } | { error: string }> {
+  const ctx = await context();
+  if ("error" in ctx) return { error: ctx.error };
+  const { data: row } = await ctx.supabase.from("knowledge_checks").select(COLUMNS).eq("id", checkId).eq("employee_user_id", ctx.userId).maybeSingle<CheckRow>();
+  if (!row || row.submitted_at) return { error: "Not an open check" };
+  const meta = readMeta(row.answers);
+  const next = withMeta(((row.answers ?? {}) as Record<string, number>), { ...meta, leftPage: (meta.leftPage ?? 0) + 1 });
+  const { error } = await ctx.supabase.from("knowledge_checks").update({ answers: next }).eq("id", checkId).eq("employee_user_id", ctx.userId).is("submitted_at", null);
+  return error ? { error: "Could not record this" } : { success: true };
+}
+
 export type KnowledgeCheckPage =
   | { kind: "take"; view: TakeView }
   | { kind: "result"; view: ResultView; ownCheck: boolean; employeeName: string | null }
@@ -214,7 +237,8 @@ export async function getKnowledgeCheck(checkId: string): Promise<KnowledgeCheck
     const { data: p } = await ctx.supabase.from("profiles").select("full_name, email").eq("id", row.employee_user_id).maybeSingle<{ full_name: string | null; email: string }>();
     employeeName = p ? p.full_name?.trim() || p.email : null;
   }
-  if (!row.submitted_at) return own ? { kind: "take", view: buildTakeView(row) } : { kind: "pending", roleTitle: row.role_title, employeeName };
+  if (!row.submitted_at && own) return { kind: "take", view: buildTakeView(await ensureStarted(ctx.supabase, row)) };
+  if (!row.submitted_at) return { kind: "pending", roleTitle: row.role_title, employeeName };
   const view = buildResultView(row);
   if (!view) return { error: "Could not read this knowledge check" };
   return { kind: "result", view, ownCheck: own, employeeName };
@@ -245,9 +269,12 @@ async function writeAnswers(checkId: string, input: AnswerInput[], submit: boole
   if (row.submitted_at) return { error: "This knowledge check has already been submitted" };
   const stored = toStored(row, input);
   if (!stored.ok) return { error: stored.error };
+  const meta = readMeta(row.answers);
+  if (submit && meta.startedAt !== undefined) meta.late = isLate(meta.startedAt, limitSeconds(row.question_ids.length), Date.now());
+  const toWrite = withMeta(stored.answers, meta);
   const { data: updated, error: updateError } = await ctx.supabase
     .from("knowledge_checks")
-    .update(submit ? { answers: stored.answers, submitted_at: new Date().toISOString() } : { answers: stored.answers })
+    .update(submit ? { answers: toWrite, submitted_at: new Date().toISOString() } : { answers: toWrite })
     .eq("id", checkId)
     .eq("employee_user_id", ctx.userId)
     .is("submitted_at", null)
