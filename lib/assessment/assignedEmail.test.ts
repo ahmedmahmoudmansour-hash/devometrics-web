@@ -111,10 +111,10 @@ describe("sending", () => {
     const ok = await sendAssessmentAssignedEmail(db({ employee: { full_name: "Hend", email: "hend@example.com" }, assigner: { full_name: "A", email: "a@example.com" }, org: { name: "Acme" } }), base, { enabled: true });
     expect(ok).toBe(false);
   });
-  it("sends nothing while the master switch is off (the default until the wording is approved)", async () => {
-    expect(ASSESSMENT_EMAILS_ENABLED).toBe(false);
-    const ok = await sendAssessmentAssignedEmail(db({ employee: { full_name: "Hend", email: "hend@example.com" }, assigner: { full_name: "A", email: "a@example.com" }, org: { name: "Acme" } }), base);
-    expect(ok).toBeNull();
+  it("is switched on by default, and sends nothing when switched off", async () => {
+    expect(ASSESSMENT_EMAILS_ENABLED).toBe(true);
+    const off = await sendAssessmentAssignedEmail(db({ employee: { full_name: "Hend", email: "hend@example.com" }, assigner: { full_name: "A", email: "a@example.com" }, org: { name: "Acme" } }), base, { enabled: false });
+    expect(off).toBeNull();
     expect(sendEmail).not.toHaveBeenCalled();
   });
 });

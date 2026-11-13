@@ -139,9 +139,9 @@ export function buildAssessmentAssignedEmail(i: AssignedEmailInput): { subject: 
   return { subject, preheader: e(preheader), footerNote, html: renderEmail({ preheader: e(preheader), bodyHtml: wrapped, footerNote }) };
 }
 
-// Master switch for the assignment email. OFF until the wording has been approved; while off, nothing is sent and the screen says
-// nothing about email. To turn on: set to true and deploy.
-export const ASSESSMENT_EMAILS_ENABLED = false;
+// Master switch for the assignment email. ON since the wording was approved (13 Nov 2026). Set to false and deploy to stop all
+// assignment emails; while off, nothing is sent and the screen says nothing about email.
+export const ASSESSMENT_EMAILS_ENABLED = true;
 
 // Looks up who and what the email needs and sends it. Best effort: returns false (after logging) instead of throwing, so a
 // problem with email never undoes the assignment the person just made. true = sent, false = could not send, null = no email
