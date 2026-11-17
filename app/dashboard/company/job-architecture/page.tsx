@@ -6,6 +6,9 @@ import { buildCompanyData } from "@/lib/organizations/aggregate";
 import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import JobArchitectureManager from "@/components/dashboard/JobArchitectureManager";
 import JobBankPanel from "@/components/dashboard/JobBankPanel";
+import RolesImportSection from "@/components/dashboard/RolesImportSection";
+import CareerLadderChart from "@/components/dashboard/CareerLadderChart";
+import { buildLadder } from "@/lib/jobArchitecture/ladder";
 import { JOB_BANK, jobBankStats } from "@/lib/jobBank";
 import { summariseBank } from "@/lib/jobBank/summary";
 import { localizeBank } from "@/lib/jobBank/localize";
@@ -37,6 +40,22 @@ export default async function JobArchitecturePage() {
     supabase.from("role_competency_requirements").select("*").eq("organization_id", data.organizationId).returns<RoleCompetencyRequirement[]>(),
     supabase.from("role_transitions").select("*").eq("organization_id", data.organizationId).returns<RoleTransition[]>(),
   ]);
+
+  // How many current members hold each role, for the career ladder chart (people who left the company are not counted).
+  const { data: memberRoleRows } = await supabase
+    .from("organization_members")
+    .select("current_role_id, archived")
+    .eq("organization_id", data.organizationId)
+    .returns<{ current_role_id: string | null; archived: boolean | null }[]>();
+  const activeMembers = (memberRoleRows ?? []).filter((m) => !m.archived);
+  const peopleByRole: Record<string, number> = {};
+  for (const m of activeMembers) if (m.current_role_id) peopleByRole[m.current_role_id] = (peopleByRole[m.current_role_id] ?? 0) + 1;
+  const ladder = buildLadder(
+    (families ?? []).map((f) => ({ id: f.id, name: f.name })),
+    (roles ?? []).map((r) => ({ id: r.id, familyId: r.job_family_id, title: r.title, level: r.level, grade: r.grade, track: r.track })),
+    peopleByRole,
+    activeMembers.length
+  );
 
   // The company's own competencies (library). Before migration 0203 the extra
   // columns are missing, so fall back to the plain list, all treated as active.
@@ -104,6 +123,8 @@ export default async function JobArchitecturePage() {
               existing={bankExisting(families ?? [], roles ?? [])}
               stats={jobBankStats()}
             />
+            <CareerLadderChart ladder={ladder} />
+            <RolesImportSection />
             <JobArchitectureManager
               families={families ?? []}
               roles={roles ?? []}

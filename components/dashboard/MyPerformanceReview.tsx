@@ -352,6 +352,14 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
               : !selfReflection.trim()
                 ? t("completionMissingReflection")
                 : t("completionMissingCompetencies", { count: unratedCompetencyCount })}
+            {hasCompetenciesToRate && unratedCompetencyCount > 0 && (
+              <>
+                {" "}
+                <a href="#self-competency-ratings" style={{ color: "var(--teal)", fontWeight: 700, textDecoration: "none" }}>
+                  {t("jumpToCompetencies")}
+                </a>
+              </>
+            )}
           </p>
         )}
         <button
@@ -412,12 +420,14 @@ export default function MyPerformanceReview({ detail }: { detail: ReviewDetail }
       {(() => {
         if (!competencyStep && competencyRatings.length === 0) return null;
         return (
-          <SelfCompetencyRatingsEditor
-            reviewId={review.id}
-            fixedDimensions={fixedDimensions}
-            organizationCompetencies={detail.competencyOrgOptions}
-            ratings={competencyRatings}
-          />
+          <div id="self-competency-ratings" style={{ scrollMarginTop: 16 }}>
+            <SelfCompetencyRatingsEditor
+              reviewId={review.id}
+              fixedDimensions={fixedDimensions}
+              organizationCompetencies={detail.competencyOrgOptions}
+              ratings={competencyRatings}
+            />
+          </div>
         );
       })()}
 

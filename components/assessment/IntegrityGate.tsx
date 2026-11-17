@@ -45,9 +45,9 @@ export default function IntegrityGate({
   const [state, setState] = useState<IntegrityState>(initial);
   const [promised, setPromised] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [offset] = useState(() => initial.serverNow - Date.now());
+  const [offset, setOffset] = useState(() => initial.serverNow - Date.now());
   const [remaining, setRemaining] = useState<number | null>(null);
-  const typingRef = useRef(newTypingState());
+  const [typingState] = useState(newTypingState);
   const expired = useRef(false);
 
   const row = state.row;
@@ -74,15 +74,16 @@ export default function IntegrityGate({
 
   const { count: leftCount } = useLeaveTracking(!!row && !row.finishedAt, kind, subjectKey, initial.row?.leftPage ?? 0);
 
-  const trackChange = useCallback((id: string, prev: number, next: number) => registerChange(typingRef.current, id, prev, next), []);
-  const typing = useCallback(() => typingSummary(typingRef.current), []);
+  const trackChange = useCallback((id: string, prev: number, next: number) => registerChange(typingState, id, prev, next), [typingState]);
+  const typing = useCallback(() => typingSummary(typingState), [typingState]);
   const finish = useCallback(async () => {
-    if (state.available) await finishIntegrity(kind, subjectKey, typingSummary(typingRef.current));
-  }, [state.available, kind, subjectKey]);
+    if (state.available) await finishIntegrity(kind, subjectKey, typingSummary(typingState));
+  }, [state.available, kind, subjectKey, typingState]);
 
   async function start() {
     setStarting(true);
     const next = await beginIntegrity(kind, subjectKey, timeLimitSeconds);
+    setOffset(next.serverNow - Date.now());
     setState(next);
     setStarting(false);
   }

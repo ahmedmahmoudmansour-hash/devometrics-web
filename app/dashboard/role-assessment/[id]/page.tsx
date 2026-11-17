@@ -23,7 +23,7 @@ export default async function RoleAssessmentDetailPage({ params }: { params: Pro
   if ("error" in view) notFound();
   const open = view.status === "assigned" || view.status === "in_progress";
   // The person answering gets the clock and the promise screen; anyone allowed to see the result sees how it was taken.
-  const integrity = view.viewer === "employee" && open ? await getIntegrity("role", id) : { available: false, row: null, serverNow: Date.now() };
+  const integrity = view.viewer === "employee" && open ? await getIntegrity("role", id) : { available: false, row: null, serverNow: 0 };
   const integrityRow = await getIntegrityFor("role", id, view.employeeUserId);
   const back = view.viewer === "employee" ? "/dashboard/role-assessment" : view.viewer === "admin" ? "/dashboard/company/role-assessments" : "/dashboard/my-team/role-assessments";
 

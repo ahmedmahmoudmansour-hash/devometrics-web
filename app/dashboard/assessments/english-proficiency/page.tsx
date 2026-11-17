@@ -34,7 +34,7 @@ export default async function EnglishProficiencyPage() {
           </p>
         </div>
         {inCompany ? (
-          <SittingGate kind="english" slug={ENGLISH_PROFICIENCY_SLUG} questionCount={ENGLISH_PROFICIENCY_QUESTIONS.length} serverNow={Date.now()}>
+          <SittingGate kind="english" slug={ENGLISH_PROFICIENCY_SLUG} questionCount={ENGLISH_PROFICIENCY_QUESTIONS.length} serverNow={0}>
             {(onComplete) => <EnglishProficiencyForm onComplete={onComplete} />}
           </SittingGate>
         ) : (

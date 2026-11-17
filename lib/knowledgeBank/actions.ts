@@ -12,7 +12,7 @@ import { proficiencyLevel } from "@/lib/proficiency/levels";
 import { isAssessmentLanguage } from "@/lib/assessment/definitions";
 import { pickerInfo, type PickerRole } from "@/lib/assessment/employeePicker";
 import { isLate, limitSeconds, readMeta, timingOf, withMeta } from "./timer";
-import { aggregateTeam, type TeamCompetency, type TeamPerson, type TeamResults } from "./team";
+import { aggregateTeam, type TeamCompetency, type TeamResults } from "./team";
 import { sendAssessmentAssignedEmail } from "@/lib/assessment/assignedEmail";
 import { KNOWLEDGE_BANK_VERSION, isAvailable } from "./index";
 import { bankKeyForName, originalIndex, selectQuestions, type KnowledgeLanguage } from "./engine";

@@ -34,7 +34,7 @@ export default async function CognitiveAbilityPage() {
           </p>
         </div>
         {inCompany ? (
-          <SittingGate kind="cognitive" slug={COGNITIVE_ABILITY_SLUG} questionCount={COGNITIVE_QUESTIONS.length} serverNow={Date.now()}>
+          <SittingGate kind="cognitive" slug={COGNITIVE_ABILITY_SLUG} questionCount={COGNITIVE_QUESTIONS.length} serverNow={0}>
             {(onComplete) => <CognitiveAbilityForm onComplete={onComplete} />}
           </SittingGate>
         ) : (
