@@ -9,7 +9,7 @@ import { getTeamKnowledgeResults } from "@/lib/knowledgeBank/actions";
 import { listManagedRoleAssessments, purgeExpiredRoleAssessmentAnswers } from "@/lib/assessment/actions";
 import { listManagedKnowledgeChecks } from "@/lib/knowledgeBank/actions";
 
-export const metadata = { title: "Role assessments — Devometrics" };
+export const metadata = { title: "Assessments — Devometrics" };
 export const maxDuration = 120;
 
 export default async function CompanyRoleAssessmentsPage({ searchParams }: { searchParams: Promise<{ person?: string }> }) {

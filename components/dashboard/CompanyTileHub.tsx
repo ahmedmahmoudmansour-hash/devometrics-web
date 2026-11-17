@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Users, Wallet, TrendingUp, Briefcase, ClipboardCheck, Settings, ChevronRight } from "lucide-react";
+import { Users, Wallet, TrendingUp, Briefcase, ClipboardCheck, Settings, Sprout, ChevronRight } from "lucide-react";
 import { COMPANY_TILES, type CompanyFeatureKey, type CompanyTileKey } from "@/lib/organizations/companyTiles";
 
 const TILE_ICONS: Record<CompanyTileKey, React.ComponentType<{ size?: number }>> = {
   people: Users,
-  timePay: Wallet,
-  talent: TrendingUp,
-  hiringGrowth: Briefcase,
-  performance: ClipboardCheck,
+  assess: ClipboardCheck,
+  develop: Sprout,
+  decisions: TrendingUp,
   settings: Settings,
+  more: Briefcase,
+  timePay: Wallet,
 };
 
 // Six large tiles instead of an 18-link wall: each is an area of the

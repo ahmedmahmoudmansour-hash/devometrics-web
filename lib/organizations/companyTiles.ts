@@ -29,7 +29,11 @@ export type CompanyFeatureKey =
   | "permissions"
   | "features";
 
-export type CompanyTileKey = "people" | "timePay" | "talent" | "hiringGrowth" | "performance" | "settings";
+// The groups follow what Devometrics is for: Assess (understand capability against role requirements), Develop (close the gaps) and
+// Decide (promotion, succession and other talent decisions), with People and Settings around them and the rarely used modules under
+// "More". Time & Pay is the hidden HR area (lib/organizations/hrModules.ts). Switch keys are the FEATURE keys, unchanged, so
+// anything an admin already switched off stays switched off.
+export type CompanyTileKey = "people" | "assess" | "develop" | "decisions" | "settings" | "more" | "timePay";
 
 export type CompanyFeature = {
   key: CompanyFeatureKey;
@@ -49,11 +53,48 @@ const ALL_COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[] =
   {
     key: "people",
     features: [
+      // The company home (the hub); listed first so People is where "Company" lands.
       { key: "profile", href: "/dashboard/company", locked: true, hubHidden: true },
       { key: "employees", href: "/dashboard/company/employees", locked: true },
       { key: "orgChart", href: "/dashboard/company/org-chart" },
+    ],
+  },
+  {
+    key: "assess",
+    features: [
       { key: "jobArchitecture", href: "/dashboard/company/job-architecture", employeeFeature: "job_architecture" },
+      { key: "roleAssessments", href: "/dashboard/company/role-assessments" },
+      { key: "scorecard", href: "/dashboard/company/scorecard" },
+    ],
+  },
+  {
+    key: "develop",
+    features: [{ key: "knowledgeHub", href: "/dashboard/company/knowledge-hub", employeeFeature: "knowledge_hub" }],
+  },
+  {
+    key: "decisions",
+    features: [
+      { key: "analytics", href: "/dashboard/company/analytics" },
+      { key: "performanceReviews", href: "/dashboard/company/impact-cycles", employeeFeature: "performance_review" },
+      { key: "highPotential", href: "/dashboard/company/high-potential" },
+      { key: "succession", href: "/dashboard/company/succession" },
+    ],
+  },
+  {
+    key: "settings",
+    features: [
+      { key: "settings", href: "/dashboard/company/settings", locked: true },
       { key: "competencies", href: "/dashboard/company/competencies", employeeFeature: "competency_management" },
+      { key: "permissions", href: "/dashboard/company/permissions", locked: true },
+      { key: "features", href: "/dashboard/company/features", locked: true },
+    ],
+  },
+  {
+    key: "more",
+    features: [
+      { key: "hiring", href: "/dashboard/company/hiring" },
+      { key: "surveys", href: "/dashboard/company/surveys" },
+      { key: "exitInterviews", href: "/dashboard/company/exit-interviews" },
     ],
   },
   {
@@ -62,39 +103,6 @@ const ALL_COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[] =
       { key: "leave", href: "/dashboard/company/leave" },
       { key: "attendance", href: "/dashboard/company/attendance" },
       { key: "compensation", href: "/dashboard/company/compensation" },
-    ],
-  },
-  {
-    key: "talent",
-    features: [
-      { key: "roleAssessments", href: "/dashboard/company/role-assessments" },
-      { key: "highPotential", href: "/dashboard/company/high-potential" },
-      { key: "succession", href: "/dashboard/company/succession" },
-      { key: "scorecard", href: "/dashboard/company/scorecard" },
-      { key: "analytics", href: "/dashboard/company/analytics" },
-    ],
-  },
-  {
-    key: "hiringGrowth",
-    features: [
-      { key: "hiring", href: "/dashboard/company/hiring" },
-      { key: "knowledgeHub", href: "/dashboard/company/knowledge-hub", employeeFeature: "knowledge_hub" },
-    ],
-  },
-  {
-    key: "performance",
-    features: [
-      { key: "performanceReviews", href: "/dashboard/company/impact-cycles", employeeFeature: "performance_review" },
-      { key: "surveys", href: "/dashboard/company/surveys" },
-      { key: "exitInterviews", href: "/dashboard/company/exit-interviews" },
-    ],
-  },
-  {
-    key: "settings",
-    features: [
-      { key: "settings", href: "/dashboard/company/settings", locked: true },
-      { key: "permissions", href: "/dashboard/company/permissions", locked: true },
-      { key: "features", href: "/dashboard/company/features", locked: true },
     ],
   },
 ];
