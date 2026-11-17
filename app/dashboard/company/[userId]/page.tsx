@@ -5,6 +5,8 @@ import { buildEmployeeDetail } from "@/lib/organizations/aggregate";
 import { COMPETENCY_DIMENSIONS, dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import AssignTaskForm from "@/components/dashboard/AssignTaskForm";
 import AssignAssessmentForm from "@/components/dashboard/AssignAssessmentForm";
+import EmployeeAssessmentsCard from "@/components/assessment/EmployeeAssessmentsCard";
+import { getEmployeeAssessments } from "@/lib/assessment/employeeHistory";
 import StartProbationReviewButton from "@/components/dashboard/StartProbationReviewButton";
 import EmployeeReportExportBar from "@/components/dashboard/EmployeeReportExportBar";
 import GenerateAssessmentSummaryButton from "@/components/dashboard/GenerateAssessmentSummaryButton";
@@ -50,6 +52,7 @@ export default async function EmployeeDetailPage({
   const dateLocale = locale === "ar" ? "ar-u-nu-latn" : "en-US";
   const [data, flightRisk] = await Promise.all([buildEmployeeDetail(userId), getLatestFlightRiskScore(userId)]);
   if (!data.isAuthorized || !data.profile) redirect("/dashboard/company");
+  const employeeAssessments = await getEmployeeAssessments(userId);
 
   const {
     profile,
@@ -485,6 +488,7 @@ export default async function EmployeeDetailPage({
             pendingAssignments={assignedAssessments.filter((a) => !a.completed).map((a) => resolveAssignableDisplayName(tCatalog, tExercise, a.slug))}
           />
           <AssignTaskForm employeeUserId={userId} plans={plans.map((p) => ({ id: p.id, title: p.title }))} />
+          <EmployeeAssessmentsCard userId={userId} name={profile.name} items={employeeAssessments} />
           <AssignAssessmentForm employeeUserId={userId} assigned={assignedAssessments} />
           <StartProbationReviewButton employeeUserId={userId} />
           <ManagerNotesSection employeeUserId={userId} notes={managerNotes} employeeName={profile.name} />

@@ -29,6 +29,7 @@ export default function AssessmentsManager({
   roles,
   viewer,
   settings,
+  initialPerson,
 }: {
   roleRows: RoleAssessmentRow[];
   checkRows: KnowledgeCheckListRow[];
@@ -38,13 +39,15 @@ export default function AssessmentsManager({
   roles: PickerRole[];
   viewer: "admin" | "manager";
   settings: AssessmentSettings;
+  // From a link on a person's page: that person is already chosen.
+  initialPerson?: string;
 }) {
   const t = useTranslations("assessmentsManager");
   const tr = useTranslations("roleAssessment");
   const tk = useTranslations("knowledgeCheck");
   const format = useFormatter();
   const router = useRouter();
-  const [who, setWho] = useState("");
+  const [who, setWho] = useState(() => (initialPerson && employees.some((e) => e.userId === initialPerson) ? initialPerson : ""));
   const [kind, setKind] = useState<Kind>(checksReady ? "check" : "role");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

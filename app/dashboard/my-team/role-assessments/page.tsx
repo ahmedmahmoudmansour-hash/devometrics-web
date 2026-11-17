@@ -12,7 +12,8 @@ export const metadata = { title: "Role assessments — Devometrics" };
 export const maxDuration = 120;
 
 // For a line manager: assign a role assessment to a direct report, then review and confirm the results.
-export default async function MyTeamRoleAssessmentsPage() {
+export default async function MyTeamRoleAssessmentsPage({ searchParams }: { searchParams: Promise<{ person?: string }> }) {
+  const { person } = await searchParams;
   const t = await getTranslations("roleAssessment");
   const supabase = await createClient();
   const {
@@ -47,6 +48,7 @@ export default async function MyTeamRoleAssessmentsPage() {
             roles={managed.roles}
             viewer="manager"
             settings={managed.settings}
+            initialPerson={typeof person === "string" ? person : undefined}
           />
         )}
         {team && team.people.length > 0 && (

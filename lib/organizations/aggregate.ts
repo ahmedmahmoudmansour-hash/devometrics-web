@@ -312,6 +312,17 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
     assessmentCountByUser.set(r.user_id, set);
   }
 
+  // Finished role assessments and knowledge checks count too, so the number matches what the person has actually done. Each query
+  // fails quietly (and counts as none) where its table is not there yet.
+  const [{ data: scoredRoleRows }, { data: finishedCheckRows }] = await Promise.all([
+    supabase.from("competency_assessments").select("employee_user_id").in("employee_user_id", memberIds).eq("status", "scored").returns<{ employee_user_id: string }[]>(),
+    supabase.from("knowledge_checks").select("employee_user_id").in("employee_user_id", memberIds).not("submitted_at", "is", null).returns<{ employee_user_id: string }[]>(),
+  ]);
+  const newAssessmentCountByUser = new Map<string, number>();
+  for (const r of [...(scoredRoleRows ?? []), ...(finishedCheckRows ?? [])]) {
+    newAssessmentCountByUser.set(r.employee_user_id, (newAssessmentCountByUser.get(r.employee_user_id) ?? 0) + 1);
+  }
+
   const planCountByUser = new Map<string, number>();
   const planUserById = new Map<string, string>();
   for (const p of plans ?? []) {
@@ -357,7 +368,7 @@ async function buildCompanyDataUncached(): Promise<CompanyData> {
       avatarUrl: p.avatar_url ?? null,
       careerHealthScore: analysis?.career_health_score ?? null,
       dimensionLevels,
-      assessmentsCompleted: assessmentCountByUser.get(p.id)?.size ?? 0,
+      assessmentsCompleted: (assessmentCountByUser.get(p.id)?.size ?? 0) + (newAssessmentCountByUser.get(p.id) ?? 0),
       plans: planCountByUser.get(p.id) ?? 0,
       milestonesDone: stats.done,
       milestonesTotal: stats.total,

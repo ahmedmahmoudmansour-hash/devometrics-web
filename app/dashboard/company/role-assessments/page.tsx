@@ -12,7 +12,8 @@ import { listManagedKnowledgeChecks } from "@/lib/knowledgeBank/actions";
 export const metadata = { title: "Role assessments — Devometrics" };
 export const maxDuration = 120;
 
-export default async function CompanyRoleAssessmentsPage() {
+export default async function CompanyRoleAssessmentsPage({ searchParams }: { searchParams: Promise<{ person?: string }> }) {
+  const { person } = await searchParams;
   const t = await getTranslations("roleAssessment");
   const data = await buildCompanyData();
   if (!data.isOrgAdmin || !data.organizationId) redirect("/dashboard");
@@ -45,6 +46,7 @@ export default async function CompanyRoleAssessmentsPage() {
             roles={managed.roles}
             viewer={managed.viewer}
             settings={managed.settings}
+            initialPerson={typeof person === "string" ? person : undefined}
           />
         )}
         {team && team.people.length > 0 && (

@@ -1994,6 +1994,14 @@
     "open": "Open",
     "caution": "Indicative only. A few questions per competency cannot settle anyone's level, so use this to start conversations, not to decide hiring or promotion."
   },
+  "employeeAssessments": {
+    "title": "Assessments",
+    "assign": "Assign an assessment",
+    "intro": "Every knowledge check and role assessment {name} has been given, and the result when it is finished.",
+    "empty": "None yet. Use the button to give them a knowledge check or a role assessment.",
+    "typeCheck": "Knowledge check",
+    "typeRole": "Role assessment"
+  },
   "assessmentsManager": {
     "title": "Assign an assessment",
     "whoLabel": "Person",
