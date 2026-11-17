@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import EmployeeSectionTabs from "@/components/dashboard/EmployeeSectionTabs";
 import SidebarNav from "@/components/dashboard/SidebarNav";
 import { DashboardNavProvider } from "@/components/dashboard/DashboardNavContext";
 import CommandPalette from "@/components/dashboard/CommandPalette";
@@ -128,6 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <DashboardNavProvider
             value={{ hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled, restrictedFeatures, isFreeTier }}
           >
+            <EmployeeSectionTabs />
             {children}
           </DashboardNavProvider>
         </div>

@@ -12,12 +12,13 @@ import {
   Lock,
   Search,
   ArrowLeftRight,
+  ChevronDown,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LocaleToggle from "@/components/LocaleToggle";
 import { signOut } from "@/app/dashboard/actions";
 import { OPEN_PALETTE_EVENT } from "@/components/dashboard/CommandPalette";
-import { buildEmployeeTiles } from "@/components/dashboard/employeeNav";
+import { buildEmployeeMenu, isMainItemActive, sectionForPath, type EmployeeMainItem } from "@/components/dashboard/employeeNav";
 
 export default function SidebarNav({
   savedTheme,
@@ -48,15 +49,12 @@ export default function SidebarNav({
   const t = useTranslations("sidebarNav");
   const tHome = useTranslations("dashboardHome");
   const pathname = usePathname();
-  // Progress on its own, then the same tiles the home page shows — one
-  // shared config (employeeNav.ts), so sidebar and home never drift apart.
-  const sections: { labelKey: string | null; items: ReturnType<typeof buildEmployeeTiles>[number]["items"] }[] = [
-    { labelKey: null, items: [{ href: "/dashboard", labelKey: "progress", icon: LayoutDashboard }] },
-    ...buildEmployeeTiles({ hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled, restrictedFeatures }).map((tile) => ({
-      labelKey: `tile_${tile.key}`,
-      items: tile.items,
-    })),
-  ];
+  // A short main menu built around what the person does, then a collapsed "More" for the tools used less often. One shared
+  // config (employeeNav.ts) drives this menu, the section tabs, the home page's "All tools" and the test that walks the map.
+  const menu = buildEmployeeMenu({ hasDirectReports, canSeeImpactCycle, hasOrgMembership, hasDirectoryEnabled, restrictedFeatures });
+  const homeItem = { href: "/dashboard", labelKey: "progress", icon: LayoutDashboard };
+  // "More" opens by itself when the person is on one of its pages, so they never lose their place.
+  const onMorePage = menu.more.some((i) => pathname === i.href || pathname?.startsWith(`${i.href}/`)) && !sectionForPath(pathname ?? "");
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -188,34 +186,45 @@ export default function SidebarNav({
       )}
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-        {sections.map((section, i) => (
-          <div key={section.labelKey ?? `section-${i}`} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {section.labelKey && (
-              <p
-                className="dashboard-sidebar-label"
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.09em",
-                  textTransform: "uppercase",
-                  color: "var(--text)",
-                  padding: "12px 14px 2px",
-                }}
-              >
-                {t(section.labelKey)}
-              </p>
-            )}
-            {section.items.map((item) => (
-              <Link key={item.href} href={item.href} title={t(item.labelKey)} style={itemStyle(isActive(item.href))}>
-                <item.icon size={16} />
-                <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{t(item.labelKey)}</span>
-                {item.premium && isFreeTier && (
-                  <Lock size={12} className="dashboard-sidebar-label" style={{ color: "var(--amber)", flexShrink: 0 }} />
-                )}
-              </Link>
-            ))}
-          </div>
+        {[homeItem, ...menu.main].map((item) => (
+          <Link key={`${item.labelKey}-${item.href}`} href={item.href} title={t(item.labelKey)} style={itemStyle(isMainItemActive(item as EmployeeMainItem, pathname ?? ""))}>
+            <item.icon size={16} />
+            <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{t(item.labelKey)}</span>
+          </Link>
         ))}
+
+        {menu.more.length > 0 && (
+          <details open={onMorePage} style={{ marginTop: 6 }}>
+            <summary
+              className="dashboard-sidebar-label"
+              style={{
+                listStyle: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                padding: "12px 14px 6px",
+              }}
+            >
+              <ChevronDown size={13} />
+              {t("more")}
+            </summary>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {menu.more.map((item) => (
+                <Link key={item.href} href={item.href} title={t(item.labelKey)} style={itemStyle(isActive(item.href))}>
+                  <item.icon size={16} />
+                  <span className="dashboard-sidebar-label" style={{ flex: 1 }}>{t(item.labelKey)}</span>
+                  {item.premium && isFreeTier && <Lock size={12} className="dashboard-sidebar-label" style={{ color: "var(--amber)", flexShrink: 0 }} />}
+                </Link>
+              ))}
+            </div>
+          </details>
+        )}
 
         <p
           className="dashboard-sidebar-label"
@@ -230,10 +239,12 @@ export default function SidebarNav({
         >
           {t("accountSection")}
         </p>
-        <Link href="/dashboard/profile" style={itemStyle(isActive("/dashboard/profile"))}>
-          <UserCircle size={16} />
-          <span className="dashboard-sidebar-label">{t("profile")}</span>
-        </Link>
+        {hasOrgMembership && (
+          <Link href="/dashboard/profile" style={itemStyle(isActive("/dashboard/profile"))}>
+            <UserCircle size={16} />
+            <span className="dashboard-sidebar-label">{t("accountSettings")}</span>
+          </Link>
+        )}
         {isCompanyAdmin && (
           <>
             <Link href="/dashboard/company" style={itemStyle(isActive("/dashboard/company"), "amber")}>

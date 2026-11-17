@@ -484,7 +484,7 @@
     "search": "بحث",
     "searchTooltip": "بحث (Ctrl+K)",
     "continueSetup": "أكمل الإعداد",
-    "progress": "التقدم",
+    "progress": "الرئيسية",
     "tile_growth": "نموّي",
     "discovery": "الاكتشاف",
     "gapAnalysis": "تحليل الفجوة",
@@ -516,7 +516,25 @@
     "logOut": "تسجيل الخروج",
     "services": "الخدمات",
     "directory": "الدليل",
-    "myFile": "ملفي"
+    "myFile": "ملفي",
+    "myAssessments": "تقييماتي",
+    "myProfile": "ملفي الشخصي",
+    "accountSettings": "إعدادات الحساب",
+    "more": "المزيد",
+    "tabAssessments": "التقييمات",
+    "tabRoleKnowledge": "الدور والمعرفة",
+    "tabScorecard": "بطاقة الأداء",
+    "tabPlans": "الخطط",
+    "tabGapAnalysis": "تحليل الفجوة",
+    "tabCareerPaths": "المسارات المهنية",
+    "tabJourney": "رحلتي",
+    "tabLearning": "التعلّم",
+    "tabJobApplications": "طلبات التوظيف",
+    "tabCoach": "المدرّب",
+    "tabPractice": "مواقف تدريبية",
+    "tabMyFile": "ملفي",
+    "tabCertifications": "الشهادات",
+    "tabAccount": "الحساب"
   },
   "dashboardHome": {
     "heading": "تقدّمك",
@@ -545,7 +563,12 @@
     "statCurrentStreak": "السلسلة الحالية",
     "statTasksToday": "مهام اليوم",
     "statNextDeadline": "الموعد النهائي القادم",
-    "noneSet": "لا يوجد"
+    "noneSet": "لا يوجد",
+    "sectionNext": "ما التالي",
+    "sectionProgress": "كيف تتقدّم",
+    "sectionFocus": "تركيزك",
+    "sectionAllTools": "كل الأدوات",
+    "sectionAchievements": "الإنجازات"
   },
   "onboardingChecklist": {
     "title": "ابدأ مع ديفومتركس",
@@ -558,7 +581,9 @@
     "hint": "كل ما هو مُسند إليك عبر المهام والتقييمات ومركز المعرفة وتقييمات الأداء وخطط التطوير — قائمة واحدة بدلاً من أربع.",
     "count": "{count, plural, one {# عنصر} other {# عناصر}}",
     "overdue": "متأخر",
-    "seeAll": "عرض الكل ({count}) ←"
+    "seeAll": "عرض الكل ({count}) ←",
+    "action_role_assessment": "أكمل تقييم الدور: {role}",
+    "action_knowledge_check": "أجرِ اختبار المعرفة: {role}"
   },
   "pendingSurveysCard": {
     "titleOne": "لديك استبيان",

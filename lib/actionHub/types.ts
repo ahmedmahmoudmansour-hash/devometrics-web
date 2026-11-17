@@ -1,4 +1,4 @@
-export type PendingActionType = "task" | "assessment" | "knowledge_hub" | "performance_review" | "milestone";
+export type PendingActionType = "task" | "assessment" | "role_assessment" | "knowledge_check" | "knowledge_hub" | "performance_review" | "milestone";
 
 export type PendingAction = {
   id: string;

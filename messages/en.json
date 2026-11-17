@@ -484,7 +484,7 @@
     "search": "Search",
     "searchTooltip": "Search (Ctrl+K)",
     "continueSetup": "Continue setup",
-    "progress": "Progress",
+    "progress": "Home",
     "tile_growth": "My Growth",
     "discovery": "Discovery",
     "gapAnalysis": "Gap Analysis",
@@ -516,7 +516,25 @@
     "logOut": "Log out",
     "services": "Services",
     "directory": "Directory",
-    "myFile": "My file"
+    "myFile": "My file",
+    "myAssessments": "My Assessments",
+    "myProfile": "My Profile",
+    "accountSettings": "Account settings",
+    "more": "More",
+    "tabAssessments": "Assessments",
+    "tabRoleKnowledge": "Role and knowledge",
+    "tabScorecard": "Scorecard",
+    "tabPlans": "Plans",
+    "tabGapAnalysis": "Gap analysis",
+    "tabCareerPaths": "Career paths",
+    "tabJourney": "Journey",
+    "tabLearning": "Learning",
+    "tabJobApplications": "Job applications",
+    "tabCoach": "Coach",
+    "tabPractice": "Practice scenarios",
+    "tabMyFile": "My file",
+    "tabCertifications": "Certifications",
+    "tabAccount": "Account"
   },
   "dashboardHome": {
     "heading": "Your progress",
@@ -545,7 +563,12 @@
     "statCurrentStreak": "Current streak",
     "statTasksToday": "Tasks today",
     "statNextDeadline": "Next deadline",
-    "noneSet": "None set"
+    "noneSet": "None set",
+    "sectionNext": "What to do next",
+    "sectionProgress": "How you are progressing",
+    "sectionFocus": "Your focus",
+    "sectionAllTools": "All tools",
+    "sectionAchievements": "Achievements"
   },
   "onboardingChecklist": {
     "title": "Get started with Devometrics",
@@ -558,7 +581,9 @@
     "hint": "Everything assigned to you across tasks, assessments, Knowledge Hub, performance reviews, and development plans — one list instead of four.",
     "count": "{count, plural, one {# item} other {# items}}",
     "overdue": "Overdue",
-    "seeAll": "See all {count} →"
+    "seeAll": "See all {count} →",
+    "action_role_assessment": "Complete your role assessment: {role}",
+    "action_knowledge_check": "Take your knowledge check: {role}"
   },
   "pendingSurveysCard": {
     "titleOne": "You have a survey",

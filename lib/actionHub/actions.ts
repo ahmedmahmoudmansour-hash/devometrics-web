@@ -88,6 +88,15 @@ export async function listMyPendingActions(): Promise<PendingAction[]> {
     }
   }
 
+  // Role assessments and knowledge checks a manager or admin has assigned and the person has not finished. Each query fails quietly
+  // (and adds nothing) where its table is not there yet. The panel words the title from the kind, so only the role title is stored.
+  const [{ data: openRole }, { data: openChecks }] = await Promise.all([
+    supabase.from("competency_assessments").select("id, role_title").eq("employee_user_id", user.id).in("status", ["assigned", "in_progress"]).returns<{ id: string; role_title: string }[]>(),
+    supabase.from("knowledge_checks").select("id, role_title").eq("employee_user_id", user.id).is("submitted_at", null).returns<{ id: string; role_title: string }[]>(),
+  ]);
+  for (const r of openRole ?? []) actions.push({ id: `role-${r.id}`, type: "role_assessment", title: r.role_title, subtitle: null, href: `/dashboard/role-assessment/${r.id}`, overdue: false });
+  for (const c of openChecks ?? []) actions.push({ id: `check-${c.id}`, type: "knowledge_check", title: c.role_title, subtitle: null, href: `/dashboard/knowledge-check/${c.id}`, overdue: false });
+
   if (kbRows.data && kbRows.data.length > 0) {
     const contentIds = kbRows.data.map((r) => r.content_id);
     const { data: completions } = await supabase

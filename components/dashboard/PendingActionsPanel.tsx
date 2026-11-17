@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ListChecks, ClipboardList, Library, ClipboardCheck, Milestone as MilestoneIcon } from "lucide-react";
+import { ListChecks, ClipboardList, Library, ClipboardCheck, Award, Milestone as MilestoneIcon } from "lucide-react";
 import type { PendingAction, PendingActionType } from "@/lib/actionHub/types";
 
 const TYPE_ICON: Record<PendingActionType, React.ComponentType<{ size?: number }>> = {
   task: ListChecks,
   assessment: ClipboardList,
+  role_assessment: Award,
+  knowledge_check: ClipboardList,
   knowledge_hub: Library,
   performance_review: ClipboardCheck,
   milestone: MilestoneIcon,
@@ -55,7 +57,7 @@ export default async function PendingActionsPanel({ actions, compact = false }: 
             >
               <Icon size={15} />
               <span style={{ flex: 1, fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {action.title}
+                {action.type === "role_assessment" || action.type === "knowledge_check" ? t(`action_${action.type}`, { role: action.title }) : action.title}
               </span>
               {action.subtitle && (
                 <span style={{ fontSize: 11.5, color: "var(--text-muted)", flexShrink: 0 }}>{action.subtitle}</span>

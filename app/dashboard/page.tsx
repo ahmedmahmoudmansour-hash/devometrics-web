@@ -208,8 +208,6 @@ export default async function DashboardPage() {
         <div className="dashboard-main" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)" }}>{t("heading")}</h1>
 
-          {dailyInsight && <DailyInsightBanner insight={dailyInsight} />}
-          {careerGps && <CareerGpsCard snapshot={careerGps} />}
 
           {/* "Where do I start" comes before any exploratory tool — this
               used to sit below CareerGpsCard's "you are here" and the What
@@ -217,7 +215,7 @@ export default async function DashboardPage() {
               Analysis exists, so a brand-new employee (the majority of
               first-time users, per 2026-08-13 feedback) landed on an
               advanced projection tool with zero orientation above it. */}
-          <DashboardSection label={t("sectionToday")}>
+          <DashboardSection label={t("sectionNext")}>
             <OnboardingChecklist steps={onboardingSteps} />
             {/* One consolidated "needs your attention" list — tasks,
                 Knowledge Hub, assigned assessments, an open performance
@@ -235,7 +233,26 @@ export default async function DashboardPage() {
               config. Sits right under Today so "what do I do now" comes
               first and "where is everything" second; the longer sections
               below start collapsed. */}
-          <DashboardSection label={t("sectionGoTo")}>
+          {/* How am I progressing: where I stand, and the trend. Was hidden in a collapsed section lower down. */}
+          <DashboardSection label={t("sectionProgress")}>
+            {careerGps && <CareerGpsCard snapshot={careerGps} />}
+            <CareerHealthOverview
+              gapAnalysisScore={latestAnalysis?.career_health_score ?? null}
+              assessmentAverage={assessmentAverage}
+              resumeScore={latestResume?.overall_score ?? null}
+            />
+            <CareerMomentumCard momentum={momentum} />
+          </DashboardSection>
+
+          {/* What should I focus on next: today's insight, when there is one. */}
+          {dailyInsight && (
+            <DashboardSection label={t("sectionFocus")}>
+              <DailyInsightBanner insight={dailyInsight} />
+            </DashboardSection>
+          )}
+
+          {/* Everything else, one click away and out of the way. The same menu as the sidebar, from the same config. */}
+          <DashboardSection label={t("sectionAllTools")} collapsible defaultOpen={false}>
             <EmployeeTileHub />
           </DashboardSection>
 
@@ -257,13 +274,7 @@ export default async function DashboardPage() {
               section above already covers the changes-every-visit content.
               Nothing here is hidden or removed, just not forced into the
               first scroll every single time. */}
-          <DashboardSection label={t("sectionCareerHealth")} collapsible defaultOpen={false}>
-            <CareerHealthOverview
-              gapAnalysisScore={latestAnalysis?.career_health_score ?? null}
-              assessmentAverage={assessmentAverage}
-              resumeScore={latestResume?.overall_score ?? null}
-            />
-            <CareerMomentumCard momentum={momentum} />
+          <DashboardSection label={t("sectionAchievements")} collapsible defaultOpen={false}>
             <AchievementsCard earnedKeys={earnedAchievements} badgesEnabled={profile?.badges_enabled ?? true} />
           </DashboardSection>
 
