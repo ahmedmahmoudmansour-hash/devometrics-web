@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getKnowledgeCheck } from "@/lib/knowledgeBank/actions";
 import KnowledgeCheckForm from "@/components/knowledgeCheck/KnowledgeCheckForm";
+import { getIntegrityFor } from "@/lib/integrity/actions";
 import KnowledgeCheckResult from "@/components/knowledgeCheck/KnowledgeCheckResult";
 
 export const metadata = { title: "Knowledge check — Devometrics" };
@@ -18,6 +19,13 @@ export default async function KnowledgeCheckPage({ params }: { params: Promise<{
   if (!user) redirect("/login");
 
   const page = await getKnowledgeCheck(id);
+  // Whether the person made the promise to answer without AI tools (for the form: skip asking twice; for the result: show it).
+  const promise =
+    "kind" in page && page.kind === "take"
+      ? await getIntegrityFor("knowledge_check", id, user.id)
+      : "kind" in page && page.kind === "result"
+        ? await getIntegrityFor("knowledge_check", id, page.view.employeeUserId)
+        : null;
   const back = "kind" in page && page.kind === "result" && !page.ownCheck ? "/dashboard/my-team/role-assessments" : "/dashboard/role-assessment";
 
   return (
@@ -32,9 +40,9 @@ export default async function KnowledgeCheckPage({ params }: { params: Promise<{
               {page.error}
             </p>
           ) : page.kind === "take" ? (
-            <KnowledgeCheckForm view={page.view} />
+            <KnowledgeCheckForm view={page.view} alreadyPromised={!!promise?.attestedAt} />
           ) : page.kind === "result" ? (
-            <KnowledgeCheckResult view={page.view} employeeName={page.employeeName} />
+            <KnowledgeCheckResult view={page.view} employeeName={page.employeeName} promised={promise ? !!promise.attestedAt : null} />
           ) : (
             <div>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", margin: 0 }}>{page.roleTitle}</h1>

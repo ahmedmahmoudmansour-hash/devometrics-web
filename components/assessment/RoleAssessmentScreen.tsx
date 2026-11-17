@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import PrintReportBar from "@/components/assessment/PrintReportBar";
+import IntegrityGate, { type GateApi } from "@/components/assessment/IntegrityGate";
+import IntegrityNote from "@/components/assessment/IntegrityNote";
+import { roleTimeLimit, type IntegrityRow, type IntegrityState } from "@/lib/integrity/core";
 import { confirmRoleResult, saveRoleAssessmentAnswers, scoreRoleAssessmentCompetency, submitRoleAssessment } from "@/lib/assessment/actions";
 import { gapAgainstRange } from "@/lib/assessment/scoring";
 import type { CompetencyEntry, RoleAssessmentView } from "@/lib/assessment/types";
@@ -26,7 +29,7 @@ function LevelPill({ level }: { level: number }) {
   );
 }
 
-export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentView }) {
+export default function RoleAssessmentScreen({ view, integrity, integrityRow }: { view: RoleAssessmentView; integrity: IntegrityState; integrityRow: IntegrityRow | null }) {
   const t = useTranslations("roleAssessment");
   const router = useRouter();
   const words = useWords();
@@ -53,12 +56,16 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
       setMessage(t("draftSaved"));
     });
   }
-  function submit() {
-    if (!window.confirm(t("submitConfirm"))) return;
+  // The gate (promise, clock, leave counting) hands its tools to this ref when it renders the answer boxes.
+  const gateApi = useRef<GateApi | null>(null);
+  // auto: the time ran out, so what exists is submitted without asking.
+  function submit(auto = false) {
+    if (!auto && !window.confirm(t("submitConfirm"))) return;
     setError(null);
     startTransition(async () => {
       const r = await submitRoleAssessment(view.id, payload());
       if ("error" in r && r.error) { setError(r.error); return; }
+      await gateApi.current?.finish();
       router.refresh();
     });
   }
@@ -117,6 +124,11 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
       {/* ---- answering */}
       {open && isEmployee && (
         <div className="no-print" style={{ display: "contents" }}>
+         <IntegrityGate kind="role" subjectKey={view.id} timeLimitSeconds={roleTimeLimit(view.entries.length)} initial={integrity} hardExpiry onExpire={() => submit(true)}>
+          {(api) => {
+            gateApi.current = api;
+            return (
+        <div style={{ display: "contents" }}>
           <p style={muted}>{t("answerHint")}</p>
           {pasteBlocked && <p role="status" style={{ ...muted, color: "var(--amber)" }}>{t("noPaste")}</p>}
           {view.entries.map((e) => (
@@ -133,7 +145,10 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
                     <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, margin: "0 0 8px" }}>{i.prompt}</p>
                     <textarea
                       value={answers[i.itemId] ?? ""}
-                      onChange={(ev) => setAnswers((p) => ({ ...p, [i.itemId]: ev.target.value }))}
+                      onChange={(ev) => {
+                        api.trackChange(i.itemId, (answers[i.itemId] ?? "").length, ev.target.value.length);
+                        setAnswers((p) => ({ ...p, [i.itemId]: ev.target.value }));
+                      }}
                       onPaste={(ev) => {
                         ev.preventDefault();
                         setPasteBlocked(true);
@@ -153,13 +168,19 @@ export default function RoleAssessmentScreen({ view }: { view: RoleAssessmentVie
           {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <button type="button" style={ghostBtn} disabled={isPending} onClick={saveDraft}>{t("saveDraft")}</button>
-            <button type="button" style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }} disabled={isPending} onClick={submit}>{isPending ? t("submitting") : t("submit")}</button>
+            <button type="button" style={{ ...primaryBtn, opacity: isPending ? 0.6 : 1 }} disabled={isPending} onClick={() => submit()}>{isPending ? t("submitting") : t("submit")}</button>
             {message && <span style={muted}>{message}</span>}
           </div>
+        </div>
+            );
+          }}
+         </IntegrityGate>
         </div>
       )}
 
       {open && !isEmployee && <p style={muted}>{t("notSubmittedYet")}</p>}
+
+      {canScore && <IntegrityNote row={integrityRow} />}
 
       {/* ---- scoring */}
       {canScore && progress && (

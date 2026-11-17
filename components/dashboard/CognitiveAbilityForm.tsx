@@ -16,7 +16,7 @@ import {
   type CognitiveDomain,
 } from "@/lib/assessments/cognitiveAbility";
 
-export default function CognitiveAbilityForm() {
+export default function CognitiveAbilityForm({ onComplete }: { onComplete?: () => void } = {}) {
   const t = useTranslations("cognitiveAbilityForm");
   const tQuestions = useTranslations("cognitiveQuestions");
   const tDomains = useTranslations("cognitiveDomains");
@@ -39,6 +39,7 @@ export default function CognitiveAbilityForm() {
         return;
       }
       setResult({ score: outcome.score, answers: outcome.answers });
+      onComplete?.();
     });
   }
 

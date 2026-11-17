@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import EnglishProficiencyForm from "@/components/dashboard/EnglishProficiencyForm";
+import SittingGate from "@/components/assessment/SittingGate";
+import { hasOrganizationMembership } from "@/lib/organizations/membership";
+import { ENGLISH_PROFICIENCY_SLUG, ENGLISH_PROFICIENCY_QUESTIONS } from "@/lib/assessments/englishProficiency";
 
 export const metadata = { title: "English Proficiency — Devometrics" };
 
@@ -13,6 +16,8 @@ export default async function EnglishProficiencyPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  // Only people in a company are recorded: that is who a manager can see. Individual accounts take the test as before.
+  const inCompany = await hasOrganizationMembership(supabase, user.id);
 
   return (
     <div style={{ minHeight: "100vh", padding: "48px 24px" }}>
@@ -28,7 +33,13 @@ export default async function EnglishProficiencyPage() {
             {t("subtitle")}
           </p>
         </div>
-        <EnglishProficiencyForm />
+        {inCompany ? (
+          <SittingGate kind="english" slug={ENGLISH_PROFICIENCY_SLUG} questionCount={ENGLISH_PROFICIENCY_QUESTIONS.length} serverNow={Date.now()}>
+            {(onComplete) => <EnglishProficiencyForm onComplete={onComplete} />}
+          </SittingGate>
+        ) : (
+          <EnglishProficiencyForm />
+        )}
       </div>
     </div>
   );

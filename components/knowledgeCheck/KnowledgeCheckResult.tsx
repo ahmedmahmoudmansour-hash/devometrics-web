@@ -7,9 +7,10 @@ import { formatClock } from "@/lib/knowledgeBank/timer";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 
-export default function KnowledgeCheckResult({ view, employeeName }: { view: ResultView; employeeName: string | null }) {
+export default function KnowledgeCheckResult({ view, employeeName, promised = null }: { view: ResultView; employeeName: string | null; promised?: boolean | null }) {
   const t = useTranslations("knowledgeCheck");
   const tReport = useTranslations("assessmentReport");
+  const tIntegrity = useTranslations("integrity");
   const format = useFormatter();
   const tone = view.reading === "strong" ? "var(--teal)" : view.reading === "adequate" ? "var(--amber)" : "var(--danger)";
 
@@ -36,6 +37,9 @@ export default function KnowledgeCheckResult({ view, employeeName }: { view: Res
           {t("timingResult", { used: formatClock(view.timing.usedSeconds), limit: formatClock(view.timing.limitSeconds) })} · {t("leftPageResult", { count: view.timing.leftPage })}
           {view.timing.late ? ` · ${t("submittedLate")}` : ""}
         </p>
+      )}
+      {promised !== null && (
+        <p style={{ fontSize: 12, color: promised ? "var(--text-muted)" : "var(--amber)", lineHeight: 1.6, margin: 0 }}>{tIntegrity(promised ? "notePromise" : "noPromise")}</p>
       )}
       <p style={{ fontSize: 12, color: "var(--amber)", lineHeight: 1.6, margin: 0 }}>{t("caution")}</p>
 

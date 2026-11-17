@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getRoleAssessment } from "@/lib/assessment/actions";
+import { getIntegrity, getIntegrityFor } from "@/lib/integrity/actions";
 import RoleAssessmentScreen from "@/components/assessment/RoleAssessmentScreen";
 
 export const metadata = { title: "Role assessment — Devometrics" };
@@ -20,6 +21,10 @@ export default async function RoleAssessmentDetailPage({ params }: { params: Pro
 
   const view = await getRoleAssessment(id);
   if ("error" in view) notFound();
+  const open = view.status === "assigned" || view.status === "in_progress";
+  // The person answering gets the clock and the promise screen; anyone allowed to see the result sees how it was taken.
+  const integrity = view.viewer === "employee" && open ? await getIntegrity("role", id) : { available: false, row: null, serverNow: Date.now() };
+  const integrityRow = await getIntegrityFor("role", id, view.employeeUserId);
   const back = view.viewer === "employee" ? "/dashboard/role-assessment" : view.viewer === "admin" ? "/dashboard/company/role-assessments" : "/dashboard/my-team/role-assessments";
 
   return (
@@ -29,7 +34,7 @@ export default async function RoleAssessmentDetailPage({ params }: { params: Pro
           {t("back")}
         </Link>
         <div style={{ marginTop: 12 }}>
-          <RoleAssessmentScreen view={view} />
+          <RoleAssessmentScreen view={view} integrity={integrity} integrityRow={integrityRow} />
         </div>
       </div>
     </div>

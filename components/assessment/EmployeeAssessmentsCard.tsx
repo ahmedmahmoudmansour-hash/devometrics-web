@@ -3,15 +3,19 @@
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import type { EmployeeAssessmentItem } from "@/lib/assessment/employeeHistory";
+import type { IntegrityListItem } from "@/lib/integrity/actions";
+import { hasSignals, summarize } from "@/lib/integrity/core";
+import { integrityParts } from "@/components/assessment/IntegrityNote";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 
 // One place on a person's page showing every knowledge check and role assessment they have, with a single button to give them
 // another (it opens the assign screen with this person already chosen).
-export default function EmployeeAssessmentsCard({ userId, name, items }: { userId: string; name: string; items: EmployeeAssessmentItem[] }) {
+export default function EmployeeAssessmentsCard({ userId, name, items, sittings = [] }: { userId: string; name: string; items: EmployeeAssessmentItem[]; sittings?: IntegrityListItem[] }) {
   const t = useTranslations("employeeAssessments");
   const tr = useTranslations("roleAssessment");
   const tk = useTranslations("knowledgeCheck");
+  const ti = useTranslations("integrity");
   const format = useFormatter();
 
   return (
@@ -50,6 +54,25 @@ export default function EmployeeAssessmentsCard({ userId, name, items }: { userI
             </li>
           ))}
         </ul>
+      )}
+
+      {sittings.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: 0 }}>{ti("listTitle")}</h4>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.5 }}>{ti("listIntro")}</p>
+          <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
+            {sittings.map((x) => {
+              const s = summarize(x.row);
+              return (
+                <li key={x.id} style={{ borderTop: "1px solid var(--border)", padding: "8px 0", fontSize: 12 }}>
+                  <span style={{ color: "var(--text)", fontWeight: 600 }}>{ti(x.kind === "cognitive" ? "kindCognitive" : x.kind === "english" ? "kindEnglish" : "kindCaseStudy")}</span>
+                  <span style={{ color: "var(--text-muted)", marginInlineStart: 8 }}>{format.dateTime(new Date(x.row.startedAt), { dateStyle: "medium" })}</span>
+                  <div style={{ color: hasSignals(s) ? "var(--amber)" : "var(--text-muted)", marginTop: 2, lineHeight: 1.5 }}>{integrityParts(ti, s).join(" · ")}</div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );

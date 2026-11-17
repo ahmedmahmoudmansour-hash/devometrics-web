@@ -80,6 +80,7 @@ export type ReviewQuestion = {
 
 export type ResultView = {
   id: string;
+  employeeUserId: string;
   roleTitle: string;
   language: "en" | "ar";
   submittedAt: string;
@@ -126,6 +127,7 @@ export function buildResultView(row: CheckRow): ResultView | null {
   }
   return {
     id: row.id,
+    employeeUserId: row.employee_user_id,
     roleTitle: row.role_title,
     language: row.language,
     submittedAt: row.submitted_at,

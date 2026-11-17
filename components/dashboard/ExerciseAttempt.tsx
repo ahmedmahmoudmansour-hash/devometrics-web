@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { startExerciseAttempt, submitExerciseAttempt } from "@/app/dashboard/assessments/exerciseActions";
+import { beginIntegrity, finishIntegrity } from "@/lib/integrity/actions";
+import { newTypingState, registerChange, typingSummary } from "@/lib/integrity/core";
+import { useLeaveTracking } from "@/components/assessment/useLeaveTracking";
 import { dimensionLabel } from "@/lib/gap-analysis/dimensions";
 import type { CaseStudyExercise } from "@/lib/assessments/caseStudyExercises";
 import type { ExerciseReport } from "@/lib/assessments/scoreCaseStudyExercise";
@@ -120,6 +123,13 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
   const [submitting, setSubmitting] = useState(false);
   const [report, setReport] = useState<ExerciseReport | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tIntegrity = useTranslations("integrity");
+  // The promise comes first; then each leave of the page is counted and large insertions of text are noticed. Recorded through
+  // migration 0210 (a person with no company, or no table yet, simply runs without it).
+  const [promised, setPromised] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const typing = useRef(newTypingState());
+  useLeaveTracking(phase === "active" && recording, "case_study", attemptId, 0);
 
   useEffect(() => {
     if (phase !== "active") return;
@@ -139,6 +149,10 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
       return;
     }
     setAttemptId(result.attemptId ?? null);
+    if (result.attemptId) {
+      const state = await beginIntegrity("case_study", result.attemptId, totalSeconds);
+      setRecording(state.available);
+    }
     setPhase("active");
   }
 
@@ -152,6 +166,7 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
       setError(result.error ?? t("genericError"));
       return;
     }
+    if (recording && attemptId) await finishIntegrity("case_study", attemptId, typingSummary(typing.current));
     setReport(result.report);
     setPhase("done");
   }
@@ -191,10 +206,17 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
           </span>
         </div>
         {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 16 }}>{error}</p>}
+        <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 10 }}>{tIntegrity("promiseRules")}</p>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 18, fontSize: 14, color: "var(--text)", lineHeight: 1.5, cursor: "pointer" }}>
+          <input type="checkbox" checked={promised} onChange={(e) => setPromised(e.target.checked)} style={{ marginTop: 4 }} />
+          <span>{tIntegrity("promiseCheckbox")}</span>
+        </label>
         <button
           type="button"
           onClick={handleStart}
+          disabled={!promised}
           style={{
+            opacity: promised ? 1 : 0.5,
             background: "var(--teal)",
             color: "#0A0F1E",
             border: "none",
@@ -240,7 +262,12 @@ export default function ExerciseAttempt({ exercise, levelLabel }: { exercise: Ca
 
       <textarea
         value={response}
-        onChange={(e) => setResponse(e.target.value)}
+        onChange={(e) => {
+          registerChange(typing.current, "response", response.length, e.target.value.length);
+          setResponse(e.target.value);
+        }}
+        onPaste={(e) => e.preventDefault()}
+        onDrop={(e) => e.preventDefault()}
         placeholder={t("responsePlaceholder")}
         rows={10}
         style={{

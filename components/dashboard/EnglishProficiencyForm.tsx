@@ -13,7 +13,7 @@ import {
   type CEFRLevel,
 } from "@/lib/assessments/englishProficiency";
 
-export default function EnglishProficiencyForm() {
+export default function EnglishProficiencyForm({ onComplete }: { onComplete?: () => void } = {}) {
   const t = useTranslations("englishProficiencyForm");
   const SKILL_LABEL: Record<string, string> = {
     grammar: t("skillGrammar"),
@@ -36,6 +36,7 @@ export default function EnglishProficiencyForm() {
         return;
       }
       setResult({ score: outcome.score, answers: outcome.answers });
+      onComplete?.();
     });
   }
 

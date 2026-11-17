@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { noteKnowledgeCheckLeftPage, saveKnowledgeCheckAnswers, submitKnowledgeCheck } from "@/lib/knowledgeBank/actions";
+import { beginIntegrity } from "@/lib/integrity/actions";
 import { formatClock, remainingSeconds } from "@/lib/knowledgeBank/timer";
 import type { TakeView } from "@/lib/knowledgeBank/view";
 
@@ -11,8 +12,10 @@ const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px 
 const primaryBtn: React.CSSProperties = { background: "var(--teal)", color: "#0A0F1E", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { background: "rgba(255,255,255,0.05)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" };
 
-export default function KnowledgeCheckForm({ view }: { view: TakeView }) {
+export default function KnowledgeCheckForm({ view, alreadyPromised = false }: { view: TakeView; alreadyPromised?: boolean }) {
   const t = useTranslations("knowledgeCheck");
+  const tIntegrity = useTranslations("integrity");
+  const [promised, setPromised] = useState(alreadyPromised);
   const router = useRouter();
   const [choices, setChoices] = useState<Record<string, number | null>>(() => Object.fromEntries(view.questions.map((q) => [q.id, view.draft[q.id] ?? null])));
   const [message, setMessage] = useState<string | null>(null);
@@ -164,8 +167,22 @@ export default function KnowledgeCheckForm({ view }: { view: TakeView }) {
         </fieldset>
       ))}
 
+      {!alreadyPromised && (
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, color: "var(--text)", lineHeight: 1.5, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={promised}
+            onChange={(e) => {
+              setPromised(e.target.checked);
+              if (e.target.checked) void beginIntegrity("knowledge_check", view.id, view.timer.limitSeconds);
+            }}
+            style={{ marginTop: 4 }}
+          />
+          <span>{tIntegrity("promiseCheckbox")}</span>
+        </label>
+      )}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <button type="button" style={{ ...primaryBtn, opacity: pending ? 0.6 : 1 }} disabled={pending} onClick={() => submit()}>
+        <button type="button" style={{ ...primaryBtn, opacity: pending || !promised ? 0.6 : 1 }} disabled={pending || !promised} onClick={() => submit()}>
           {pending ? t("submitting") : t("submit")}
         </button>
         <button type="button" style={{ ...ghostBtn, opacity: pending ? 0.6 : 1 }} disabled={pending} onClick={save}>
