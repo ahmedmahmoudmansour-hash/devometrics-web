@@ -7,6 +7,7 @@ import CompanyNavTabs from "@/components/dashboard/CompanyNavTabs";
 import JobArchitectureManager from "@/components/dashboard/JobArchitectureManager";
 import JobBankPanel from "@/components/dashboard/JobBankPanel";
 import RolesImportSection from "@/components/dashboard/RolesImportSection";
+import PlacementImportSection from "@/components/dashboard/PlacementImportSection";
 import CareerLadderChart from "@/components/dashboard/CareerLadderChart";
 import { buildLadder } from "@/lib/jobArchitecture/ladder";
 import { JOB_BANK, jobBankStats } from "@/lib/jobBank";
@@ -125,6 +126,7 @@ export default async function JobArchitecturePage() {
             />
             <CareerLadderChart ladder={ladder} />
             <RolesImportSection />
+            <PlacementImportSection />
             <JobArchitectureManager
               families={families ?? []}
               roles={roles ?? []}
