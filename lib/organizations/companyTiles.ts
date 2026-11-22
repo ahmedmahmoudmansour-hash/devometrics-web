@@ -15,6 +15,7 @@ export type CompanyFeatureKey =
   | "leave"
   | "attendance"
   | "compensation"
+  | "readiness"
   | "roleAssessments"
   | "highPotential"
   | "succession"
@@ -62,6 +63,8 @@ const ALL_COMPANY_TILES: { key: CompanyTileKey; features: CompanyFeature[] }[] =
   {
     key: "assess",
     features: [
+      // The flagship view: are people ready for their jobs, where are the gaps, what next.
+      { key: "readiness", href: "/dashboard/company/readiness" },
       { key: "jobArchitecture", href: "/dashboard/company/job-architecture", employeeFeature: "job_architecture" },
       { key: "roleAssessments", href: "/dashboard/company/role-assessments" },
       { key: "scorecard", href: "/dashboard/company/scorecard" },

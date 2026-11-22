@@ -73,7 +73,10 @@ export async function commitPlacements(rows: PlaceRow[]): Promise<PlaceResult> {
         return !error && !!data && data.length > 0;
       })
     );
-    for (const ok of done) ok ? placed++ : failed++;
+    for (const ok of done) {
+      if (ok) placed++;
+      else failed++;
+    }
   }
   revalidatePath("/dashboard/company/job-architecture");
   revalidatePath("/dashboard/company/employees");

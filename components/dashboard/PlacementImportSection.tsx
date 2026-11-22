@@ -105,7 +105,7 @@ export default function PlacementImportSection() {
 
   if (!open) {
     return (
-      <div style={card}>
+      <div id="place-people" style={card}>
         <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
           <div>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 }}>{t("title")}</h2>
@@ -120,7 +120,7 @@ export default function PlacementImportSection() {
 
   const colour = (s: string) => (s === "ok" ? "var(--teal)" : s === "unchanged" ? "var(--text-muted)" : "var(--danger)");
   return (
-    <div style={card}>
+    <div id="place-people" style={card}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 }}>{t("title")}</h2>
         <button type="button" onClick={() => { reset(); setOpen(false); }} style={ghost}>{t("close")}</button>
