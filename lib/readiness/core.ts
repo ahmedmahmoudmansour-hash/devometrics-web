@@ -47,7 +47,8 @@ export type RoleReadiness = {
 
 export type StepKey = "roles" | "placed" | "assessed" | "gaps" | "development";
 export type Step = { key: StepKey; done: boolean; current: number; total: number };
-export type NextAction = { key: StepKey | "done"; href: string };
+export type NextAction = { key: StepKey | "done"; href: string | null }; // href is null when the next step is not the viewer's to take
+export type Audience = "admin" | "manager";
 
 export type Readiness = {
   steps: Step[];
@@ -62,6 +63,7 @@ export type Readiness = {
   };
   roles: RoleReadiness[];
   peopleWithGaps: number;
+  unplaced: string[]; // names of people who are not in a job yet
 };
 
 const demonstrated = (r: ReadinessResult): number | null => (r.status === "scored" ? r.overrideLevel ?? r.level : null);
@@ -83,7 +85,9 @@ export function personState(cells: CompetencyCell[]): PersonState {
 
 const rank: Record<PersonState, number> = { gap: 0, close: 1, notAssessed: 2, ready: 3 };
 
-export function computeReadiness(input: ReadinessInput): Readiness {
+// "manager" is the same picture for one manager's direct reports: no company-wide job setup, no development step (a manager cannot see other
+// people's development plans), and next steps that are a manager's to take.
+export function computeReadiness(input: ReadinessInput, audience: Audience = "admin"): Readiness {
   const roleById = new Map(input.roles.map((r) => [r.id, r]));
   const placed = input.members.filter((m) => m.roleId && roleById.has(m.roleId));
 
@@ -167,7 +171,7 @@ export function computeReadiness(input: ReadinessInput): Readiness {
   // Development counts against the people who have a gap to close, not against everyone.
   const gapsWithPlan = roles.flatMap((r) => r.persons).filter((p) => (p.state === "gap" || p.state === "close") && (input.plansByUser[p.userId] ?? 0) > 0).length;
 
-  const steps: Step[] = [
+  const allSteps: Step[] = [
     { key: "roles", done: input.roles.length > 0, current: input.roles.length, total: input.roles.length },
     { key: "placed", done: input.members.length > 0 && placed.length === input.members.length, current: placed.length, total: input.members.length },
     { key: "assessed", done: placed.length > 0 && assessedPeople === placed.length, current: assessedPeople, total: placed.length },
@@ -175,12 +179,24 @@ export function computeReadiness(input: ReadinessInput): Readiness {
     { key: "development", done: assessedPeople > 0 && gapsWithPlan >= peopleWithGaps, current: gapsWithPlan, total: peopleWithGaps },
   ];
 
-  const base = "/dashboard/company";
-  let next: NextAction = { key: "done", href: `${base}/employees` };
-  if (!steps[0].done) next = { key: "roles", href: `${base}/job-architecture` };
-  else if (placed.length === 0 || !steps[1].done) next = { key: "placed", href: `${base}/job-architecture#place-people` };
-  else if (!steps[2].done) next = { key: "assessed", href: `${base}/role-assessments` };
-  else if (peopleWithGaps > 0 && !steps[4].done) next = { key: "development", href: `${base}/employees` };
+  const steps = audience === "manager" ? allSteps.filter((x) => x.key !== "roles" && x.key !== "development") : allSteps;
+  const step = (key: StepKey) => allSteps.find((x) => x.key === key) as Step;
+
+  let next: NextAction;
+  if (audience === "manager") {
+    const base = "/dashboard/my-team";
+    next = { key: "done", href: base };
+    if (placed.length < input.members.length || placed.length === 0) next = { key: "placed", href: null };
+    else if (!step("assessed").done) next = { key: "assessed", href: `${base}/role-assessments` };
+    else if (peopleWithGaps > 0) next = { key: "development", href: base };
+  } else {
+    const base = "/dashboard/company";
+    next = { key: "done", href: `${base}/employees` };
+    if (!step("roles").done) next = { key: "roles", href: `${base}/job-architecture` };
+    else if (placed.length === 0 || !step("placed").done) next = { key: "placed", href: `${base}/job-architecture#place-people` };
+    else if (!step("assessed").done) next = { key: "assessed", href: `${base}/role-assessments` };
+    else if (peopleWithGaps > 0 && !step("development").done) next = { key: "development", href: `${base}/employees` };
+  }
 
   return {
     steps,
@@ -195,12 +211,13 @@ export function computeReadiness(input: ReadinessInput): Readiness {
     },
     roles,
     peopleWithGaps,
+    unplaced: input.members.filter((m) => !(m.roleId && roleById.has(m.roleId))).map((m) => m.name).sort((a, b) => a.localeCompare(b)),
   };
 }
 
 // A realistic set of made-up people and results, so the page can be shown to a prospective client (and to a new admin) before any real data
 // exists. Always labelled as sample data on screen.
-export function sampleReadiness(): Readiness {
+export function sampleReadiness(audience: Audience = "admin"): Readiness {
   const roles: ReadinessRole[] = [
     { id: "r1", title: "Customer Service Manager", family: "Customer Service", grade: 6 },
     { id: "r2", title: "Senior Customer Service Agent", family: "Customer Service", grade: 4 },
@@ -235,5 +252,11 @@ export function sampleReadiness(): Readiness {
   });
   assessments.push({ id: "w1", userId: "u5", roleId: "r2", status: "assigned", createdAt: "2026-11-12", snapshot: [], results: [] });
   assessments.push({ id: "w2", userId: "u11", roleId: "r4", status: "in_progress", createdAt: "2026-11-13", snapshot: [], results: [] });
+  if (audience === "manager") {
+    // One manager's team: five agents and an analyst, and one person not in a job yet.
+    const team = new Set(["u2", "u3", "u4", "u5", "u12", "u6"]);
+    const teamMembers = [...members.filter((m) => team.has(m.userId)), { userId: "u99", name: "Ziad", roleId: null }];
+    return computeReadiness({ roles, members: teamMembers, assessments: assessments.filter((a) => team.has(a.userId)), competencyNames: names2, plansByUser: {} }, "manager");
+  }
   return computeReadiness({ roles, members, assessments, competencyNames: names2, plansByUser: { u0: 1, u3: 1, u4: 1, u2: 1 } });
 }

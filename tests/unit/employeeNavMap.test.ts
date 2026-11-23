@@ -119,6 +119,7 @@ describe("sections and tabs", () => {
     expect(active("/dashboard/career-paths")).toEqual(["myDevelopment"]);
     expect(active("/dashboard/tasks")).toEqual(["tasksCalendar"]);
     expect(active("/dashboard/my-team/role-assessments")).toEqual(["myTeam"]);
+    expect(active("/dashboard/my-team/readiness")).toEqual(["myTeam"]);
     expect(active("/dashboard/notes")).toEqual([]); // a More page: the menu does not pretend otherwise
   });
   it("shows a company member their personal file, and anyone else their account page, behind My Profile", () => {

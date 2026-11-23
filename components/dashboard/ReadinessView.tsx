@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import PrintReportBar from "@/components/assessment/PrintReportBar";
-import type { CellState, PersonState, Readiness, StepKey } from "@/lib/readiness/core";
+import type { Audience, CellState, PersonState, Readiness, StepKey } from "@/lib/readiness/core";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 const muted: React.CSSProperties = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 };
@@ -20,9 +20,13 @@ const STEP_ORDER: StepKey[] = ["roles", "placed", "assessed", "gaps", "developme
 
 // Talent readiness: where the company stands on the chain from job requirements to assessment to gaps to development, what to do next, and
 // per job who is ready, close or short. Printable. With sample=true it shows made-up data for demonstrations.
-export default function ReadinessView({ readiness, sample }: { readiness: Readiness; sample: boolean }) {
+export default function ReadinessView({ readiness, sample, audience = "admin" }: { readiness: Readiness; sample: boolean; audience?: Audience }) {
   const t = useTranslations("readiness");
-  const { steps, kpis, roles, next } = readiness;
+  const { steps, kpis, roles, next, unplaced } = readiness;
+  const manager = audience === "manager";
+  // A manager has their own wording for the same steps (it is their team, and some steps belong to the company admin).
+  const word = (key: string) => (manager ? t(`mgr_${key}`) : t(key));
+  const home = manager ? "/dashboard/my-team/readiness" : "/dashboard/company/readiness";
   const firstOpen = steps.findIndex((s) => !s.done);
 
   return (
@@ -30,19 +34,19 @@ export default function ReadinessView({ readiness, sample }: { readiness: Readin
       {sample && (
         <div role="status" className="no-print" style={{ ...card, borderColor: "var(--amber)", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <span style={{ fontSize: 13, color: "var(--amber)", fontWeight: 700 }}>{t("sampleBanner")}</span>
-          <Link href="/dashboard/company/readiness" style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>{t("exitSample")}</Link>
+          <Link href={home} style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>{t("exitSample")}</Link>
         </div>
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <p style={{ ...muted, maxWidth: 680, margin: 0 }}>{t("intro")}</p>
+        <p style={{ ...muted, maxWidth: 680, margin: 0 }}>{word("intro")}</p>
         <PrintReportBar />
       </div>
 
       {/* the chain, and where the company is on it */}
       <section style={card} aria-label={t("stepsTitle")}>
         <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-          {STEP_ORDER.map((key, i) => {
+          {STEP_ORDER.filter((k) => steps.some((x) => x.key === k)).map((key, i) => {
             const s = steps.find((x) => x.key === key)!;
             const state = s.done ? "done" : i === firstOpen ? "current" : "todo";
             return (
@@ -62,14 +66,23 @@ export default function ReadinessView({ readiness, sample }: { readiness: Readin
           <div className="no-print" style={{ marginTop: 16, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 320px" }}>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--teal)" }}>{t("nextTitle")}</div>
-              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5, marginTop: 2 }}>{t(`next_${next.key}`)}</div>
+              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.5, marginTop: 2 }}>{word(`next_${next.key}`)}</div>
             </div>
-            <Link href={next.href} style={{ background: "var(--teal)", color: "#0A0F1E", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-              {t(`button_${next.key}`)}
-            </Link>
+            {next.href && (
+              <Link href={next.href} style={{ background: "var(--teal)", color: "#0A0F1E", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                {word(`button_${next.key}`)}
+              </Link>
+            )}
           </div>
         )}
       </section>
+
+      {manager && unplaced.length > 0 && (
+        <p className="print-avoid-break" style={{ ...card, ...muted, margin: 0 }}>
+          <strong style={{ color: "var(--text)" }}>{t("mgr_unplacedTitle")}</strong> <bdi style={{ color: "var(--text)" }}>{unplaced.join(", ")}</bdi>
+          <span style={{ display: "block", marginTop: 4 }}>{t("mgr_unplacedHint")}</span>
+        </p>
+      )}
 
       {/* four numbers */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
@@ -90,7 +103,7 @@ export default function ReadinessView({ readiness, sample }: { readiness: Readin
             ))}
           </p>
         </div>
-        {roles.length === 0 && <p style={{ ...card, ...muted }}>{t("empty")}</p>}
+        {roles.length === 0 && <p style={{ ...card, ...muted }}>{word("empty")}</p>}
         {roles.map((r, idx) => (
           <details key={r.roleId} open={idx === 0} className="print-avoid-break" style={card}>
             <summary style={{ cursor: "pointer", listStyle: "none" }}>
@@ -101,7 +114,7 @@ export default function ReadinessView({ readiness, sample }: { readiness: Readin
                 </span>
                 <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   {t("people", { count: r.people })} · {t("assessedCount", { assessed: r.assessed })}
-                  {r.readyPercent !== null && <strong style={{ marginInlineStart: 8, color: "var(--text)" }}>{t("readyPercent", { percent: r.readyPercent })}</strong>}
+                  {r.readyPercent !== null && <> · <bdi><strong style={{ color: "var(--text)" }}>{t("readyPercent", { percent: r.readyPercent })}</strong></bdi></>}
                 </span>
               </div>
               <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginTop: 10, background: "rgba(128,128,128,0.18)" }} role="img" aria-label={t("barLabel", { ready: r.ready, close: r.close, gap: r.gap, none: r.people - r.assessed })}>
@@ -174,7 +187,7 @@ export default function ReadinessView({ readiness, sample }: { readiness: Readin
       <p style={{ ...muted, margin: 0 }}>{t("caution")}</p>
       {!sample && kpis.assessedPeople === 0 && (
         <p className="no-print" style={{ ...muted, margin: 0 }}>
-          <Link href="/dashboard/company/readiness?sample=1" style={{ color: "var(--teal)", fontWeight: 700, textDecoration: "none" }}>{t("trySample")}</Link>
+          <Link href={`${home}?sample=1`} style={{ color: "var(--teal)", fontWeight: 700, textDecoration: "none" }}>{t("trySample")}</Link>
         </p>
       )}
     </div>

@@ -5,16 +5,27 @@ import type { ReadinessAssessment, ReadinessInput } from "./core";
 
 type Snapshot = { definition_version_id: string; required_level: number | null }[];
 
-export async function loadReadinessInput(organizationId: string): Promise<ReadinessInput> {
+// With `onlyUserIds` (a manager's direct reports) it reads only those people and their assessments. Development plans are private to the
+// person and their admins, so a manager's view leaves them out.
+export async function loadReadinessInput(organizationId: string, onlyUserIds?: string[]): Promise<ReadinessInput> {
+  const scoped = onlyUserIds !== undefined;
+  if (scoped && onlyUserIds.length === 0) return { roles: [], members: [], assessments: [], competencyNames: {}, plansByUser: {} };
   const supabase = await createClient();
+
+  let memberQuery = supabase.from("organization_members").select("user_id, current_role_id, archived").eq("organization_id", organizationId);
+  let assessmentQuery = supabase
+    .from("competency_assessments")
+    .select("id, employee_user_id, role_id, status, created_at, required_snapshot")
+    .eq("organization_id", organizationId);
+  if (scoped) {
+    memberQuery = memberQuery.in("user_id", onlyUserIds);
+    assessmentQuery = assessmentQuery.in("employee_user_id", onlyUserIds);
+  }
   const [{ data: famRows }, { data: roleRows }, { data: memberRows }, { data: assessmentRows }] = await Promise.all([
     supabase.from("job_families").select("id, name").eq("organization_id", organizationId).returns<{ id: string; name: string }[]>(),
     supabase.from("job_roles").select("id, title, grade, job_family_id").eq("organization_id", organizationId).returns<{ id: string; title: string; grade: number; job_family_id: string }[]>(),
-    supabase.from("organization_members").select("user_id, current_role_id, archived").eq("organization_id", organizationId).returns<{ user_id: string; current_role_id: string | null; archived: boolean | null }[]>(),
-    supabase
-      .from("competency_assessments")
-      .select("id, employee_user_id, role_id, status, created_at, required_snapshot")
-      .eq("organization_id", organizationId)
+    memberQuery.returns<{ user_id: string; current_role_id: string | null; archived: boolean | null }[]>(),
+    assessmentQuery
       .order("created_at", { ascending: false })
       .limit(2000)
       .returns<{ id: string; employee_user_id: string; role_id: string | null; status: string; created_at: string; required_snapshot: Snapshot | null }[]>(),
@@ -44,7 +55,7 @@ export async function loadReadinessInput(organizationId: string): Promise<Readin
   }
 
   const plansByUser: Record<string, number> = {};
-  if (userIds.length) {
+  if (userIds.length && !scoped) {
     const { data: plans } = await supabase.from("development_plans").select("user_id").in("user_id", userIds).returns<{ user_id: string }[]>();
     for (const p of plans ?? []) plansByUser[p.user_id] = (plansByUser[p.user_id] ?? 0) + 1;
   }

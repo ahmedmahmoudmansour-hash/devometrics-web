@@ -15,6 +15,7 @@ export const maxDuration = 120;
 export default async function MyTeamRoleAssessmentsPage({ searchParams }: { searchParams: Promise<{ person?: string }> }) {
   const { person } = await searchParams;
   const t = await getTranslations("roleAssessment");
+  const tReadiness = await getTranslations("readiness");
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,6 +36,9 @@ export default async function MyTeamRoleAssessmentsPage({ searchParams }: { sear
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginTop: 4 }}>{t("manageTitle")}</h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 680 }}>{t("manageIntro")}</p>
+          <Link href="/dashboard/my-team/readiness" style={{ display: "inline-block", marginTop: 10, color: "var(--teal)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+            {tReadiness("mgr_link")} →
+          </Link>
         </div>
         {"error" in managed ? (
           <p style={{ color: "var(--danger)", fontSize: 13 }}>{managed.error}</p>

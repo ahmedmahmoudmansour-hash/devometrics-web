@@ -32,6 +32,7 @@ function formatScoreValue(rawValue: number, scale: "0_100" | "1_5"): string {
 export default async function MyTeamPage() {
   const t = await getTranslations("myTeamPage");
   const tRole = await getTranslations("roleAssessment");
+  const tReadiness = await getTranslations("readiness");
   const tDim = await getTranslations("competencyDimensions");
   const tScoreSource = await getTranslations("scoreEventSources");
   const supabase = await createClient();
@@ -85,9 +86,14 @@ export default async function MyTeamPage() {
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>
             {t("description")}
           </p>
-          <Link href="/dashboard/my-team/role-assessments" style={{ display: "inline-block", marginTop: 12, color: "var(--teal)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-            {tRole("openManage")} →
-          </Link>
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 12 }}>
+            <Link href="/dashboard/my-team/readiness" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+              {tReadiness("mgr_link")} →
+            </Link>
+            <Link href="/dashboard/my-team/role-assessments" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+              {tRole("openManage")} →
+            </Link>
+          </div>
         </div>
 
         {pulseMembers.length > 0 && (

@@ -2185,7 +2185,20 @@
     "state_close": "Close",
     "state_gap": "Gap",
     "state_notAssessed": "Not assessed",
-    "caution": "Based on role assessments and the levels each job needs. A signal for a conversation, not a verdict on a person."
+    "caution": "Based on role assessments and the levels each job needs. A signal for a conversation, not a verdict on a person.",
+    "mgr_title": "Team readiness",
+    "mgr_link": "Team readiness",
+    "mgr_intro": "Is your team ready for the jobs they hold? Where are the gaps, and what should happen next. Built from role assessments and what each job needs, with no AI involved.",
+    "mgr_next_placed": "Some of your people are not in a job yet. Ask your company admin to put them in their jobs, so each person can be assessed against what their job needs.",
+    "mgr_next_assessed": "Assess your people in their jobs: give them a knowledge check or a role assessment.",
+    "mgr_next_development": "Talk through the gaps with each person, and agree what to develop.",
+    "mgr_next_done": "Everyone on your team has been assessed and meets their job. Assess again when jobs or people change, to keep this current.",
+    "mgr_button_assessed": "Assign assessments",
+    "mgr_button_development": "Open My Team",
+    "mgr_button_done": "Open My Team",
+    "mgr_empty": "None of your people are in a job yet, so there is nothing to show. Ask your company admin to put them in their jobs.",
+    "mgr_unplacedTitle": "Not in a job yet:",
+    "mgr_unplacedHint": "Your company admin can place them. They appear here once they are in a job."
   },
   "assessmentsManager": {
     "title": "Assign an assessment",

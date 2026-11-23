@@ -126,6 +126,9 @@ describe("readiness of a company", () => {
     expect(none.steps.find((s) => s.key === "development")).toMatchObject({ current: 0, total: 0, done: true });
     expect(none.next.key).toBe("done");
   });
+  it("lists the people who are not in a job yet, by name", () => {
+    expect(computeReadiness(base()).unplaced).toEqual(["Cy"]);
+  });
   it("ignores jobs nobody holds", () => {
     const r = computeReadiness({ ...base(), roles: [...base().roles, { id: "r2", title: "Empty", family: "X", grade: 1 }] });
     expect(r.roles.map((x) => x.title)).toEqual(["CSM"]);
@@ -145,5 +148,49 @@ describe("sample data", () => {
   it("has people in every state, so every colour shows", () => {
     const states = new Set(s.roles.flatMap((r) => r.persons.map((p) => p.state)));
     for (const st of ["ready", "close", "gap", "notAssessed"]) expect(states.has(st as never), st).toBe(true);
+  });
+});
+
+describe("the manager's view of their own team", () => {
+  const team = (): ReadinessInput => ({ ...base(), plansByUser: { a: 1 } });
+  it("has no company job-setup step and no development step", () => {
+    const r = computeReadiness(team(), "manager");
+    expect(r.steps.map((s) => s.key)).toEqual(["placed", "assessed", "gaps"]);
+  });
+  it("tells the manager to ask the admin while someone is not in a job, with no button", () => {
+    const r = computeReadiness(team(), "manager");
+    expect(r.next).toEqual({ key: "placed", href: null });
+    expect(r.unplaced).toEqual(["Cy"]);
+  });
+  it("then points to assigning assessments, inside My Team", () => {
+    const r = computeReadiness({ ...team(), members: team().members.slice(0, 2) }, "manager");
+    expect(r.next).toEqual({ key: "assessed", href: "/dashboard/my-team/role-assessments" });
+  });
+  it("then to the conversation about the gaps, and never to company pages", () => {
+    const assessments = [scored("a", [4, 3]), scored("b", [2, 3])];
+    const r = computeReadiness({ ...team(), members: team().members.slice(0, 2), assessments }, "manager");
+    expect(r.next).toEqual({ key: "development", href: "/dashboard/my-team" });
+    for (const href of [r.next.href]) expect(href?.startsWith("/dashboard/company")).toBe(false);
+  });
+  it("is done once everyone is assessed and nobody has a gap", () => {
+    const assessments = [scored("a", [4, 3]), scored("b", [4, 3])];
+    expect(computeReadiness({ ...team(), members: team().members.slice(0, 2), assessments }, "manager").next.key).toBe("done");
+  });
+  it("shows an empty team as nothing in a job, never as done", () => {
+    const r = computeReadiness({ roles: [], members: [], assessments: [], competencyNames: {}, plansByUser: {} }, "manager");
+    expect(r.next).toEqual({ key: "placed", href: null });
+    expect(r.roles).toEqual([]);
+  });
+  it("keeps the admin's company steps and links unchanged", () => {
+    const r = computeReadiness(team());
+    expect(r.steps.map((s) => s.key)).toEqual(["roles", "placed", "assessed", "gaps", "development"]);
+    expect(r.next.href?.startsWith("/dashboard/company")).toBe(true);
+  });
+  it("has a sample team for demonstrations: a small team, one person not in a job, no development step", () => {
+    const r = sampleReadiness("manager");
+    expect(r.steps.map((s) => s.key)).toEqual(["placed", "assessed", "gaps"]);
+    expect(r.unplaced).toEqual(["Ziad"]);
+    expect(r.kpis.totalPeople).toBe(7);
+    expect(r.kpis.assessedPeople).toBeGreaterThan(0);
   });
 });
