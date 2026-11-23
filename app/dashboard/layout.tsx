@@ -7,6 +7,7 @@ import CommandPalette from "@/components/dashboard/CommandPalette";
 import { effectiveSubscriptionTier } from "@/lib/billing/subscriptionTier";
 import { listMyRestrictedFeatures } from "@/lib/organizations/featureAccess";
 import { getNextOnboardingStep } from "@/lib/dashboard/onboardingStatus";
+import { isSubscriptionLapsed } from "@/lib/organizations/subscription";
 
 // Single place where an enterprise workspace's accent color reaches every
 // dashboard page — every page already renders with var(--teal), so
@@ -70,6 +71,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (profile?.is_disabled || membership?.organizations?.is_disabled) {
     await supabase.auth.signOut();
     redirect("/login?disabled=1");
+  }
+
+  // A company whose trial or paid period has ended (0213). Its own separate query, never part of the membership read above: on a database
+  // where 0213 is not applied yet the columns do not exist, the read fails, and that must mean "carry on", never "lock everyone out".
+  // Platform admins (Devometrics staff) are never sent away, so they can still get in to help. Nobody is signed out and no data changes;
+  // renewing puts everyone straight back.
+  if (membership?.organization_id && !profile?.is_admin) {
+    const { data: sub, error: subError } = await supabase
+      .from("organizations")
+      .select("subscription_status, subscription_ends_at")
+      .eq("id", membership.organization_id)
+      .maybeSingle<{ subscription_status: string | null; subscription_ends_at: string | null }>();
+    if (!subError && isSubscriptionLapsed(sub ? { status: sub.subscription_status, endsAt: sub.subscription_ends_at } : null)) {
+      redirect(membership.role === "admin" ? "/subscription-ended?admin=1" : "/subscription-ended");
+    }
   }
 
   const hasDirectReports = (directReportCount ?? 0) > 0;
