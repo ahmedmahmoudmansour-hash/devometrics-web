@@ -29,20 +29,23 @@ async function load(rawRows: unknown) {
   if (!user || !organizationId) return { ok: false, error: "Not authorized" } as const;
 
   const [{ data: memberRows, error: memErr }, { data: roleRows, error: roleErr }, { data: famRows, error: famErr }] = await Promise.all([
-    supabase.from("organization_members").select("id, user_id, current_role_id").eq("organization_id", organizationId).returns<{ id: string; user_id: string; current_role_id: string | null }[]>(),
+    supabase.from("organization_members").select("id, user_id, current_role_id, archived").eq("organization_id", organizationId).returns<{ id: string; user_id: string; current_role_id: string | null; archived: boolean | null }[]>(),
     supabase.from("job_roles").select("id, title, job_family_id").eq("organization_id", organizationId).returns<{ id: string; title: string; job_family_id: string }[]>(),
     supabase.from("job_families").select("id, name").eq("organization_id", organizationId).returns<{ id: string; name: string }[]>(),
   ]);
   if (memErr || roleErr || famErr) return { ok: false, error: "Could not read your people or your Job Architecture. The database may need migration 0067 run first." } as const;
 
   const ids = (memberRows ?? []).map((m) => m.user_id);
-  const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, email").in("id", ids).returns<{ id: string; email: string | null }[]>() : { data: [] as { id: string; email: string | null }[] };
-  const emailById = new Map((profiles ?? []).map((p) => [p.id, p.email ?? ""]));
+  const emailById = new Map<string, string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data: profiles } = await supabase.from("profiles").select("id, email").in("id", ids.slice(i, i + 200)).returns<{ id: string; email: string | null }[]>();
+    for (const p of profiles ?? []) emailById.set(p.id, p.email ?? "");
+  }
   const famName = new Map((famRows ?? []).map((f) => [f.id, f.name]));
 
   const validation = validatePlacements(
     rows,
-    (memberRows ?? []).filter((m) => emailById.get(m.user_id)).map((m) => ({ memberId: m.id, email: emailById.get(m.user_id) as string, currentRoleId: m.current_role_id })),
+    (memberRows ?? []).filter((m) => emailById.get(m.user_id)).map((m) => ({ memberId: m.id, email: emailById.get(m.user_id) as string, currentRoleId: m.current_role_id, archived: !!m.archived })),
     (roleRows ?? []).map((r) => ({ id: r.id, title: r.title, family: famName.get(r.job_family_id) ?? "" }))
   );
   return { ok: true, supabase, organizationId, validation } as const;

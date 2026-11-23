@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import PrintReportBar from "@/components/assessment/PrintReportBar";
-import type { Audience, CellState, PersonState, Readiness, StepKey } from "@/lib/readiness/core";
+import { MIN_PEOPLE_FOR_PERCENT, type Audience, type CellState, type PersonState, type Readiness, type StepKey } from "@/lib/readiness/core";
 
 const card: React.CSSProperties = { background: "var(--navy-mid)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 };
 const muted: React.CSSProperties = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 };
@@ -15,7 +15,13 @@ const TONE: Record<CellState, { color: string; symbol: string }> = {
   gap: { color: "var(--danger)", symbol: "✕" },
   notAssessed: { color: "var(--text-muted)", symbol: "–" },
 };
-const STATE_OF_PERSON: Record<PersonState, CellState> = { ready: "met", close: "close", gap: "gap", notAssessed: "notAssessed" };
+const PERSON_TONE: Record<PersonState, { color: string; symbol: string }> = {
+  ready: TONE.met,
+  close: TONE.close,
+  gap: TONE.gap,
+  partial: { color: "var(--text-muted)", symbol: "◐" },
+  notAssessed: TONE.notAssessed,
+};
 const STEP_ORDER: StepKey[] = ["roles", "placed", "assessed", "gaps", "development"];
 
 // Talent readiness: where the company stands on the chain from job requirements to assessment to gaps to development, what to do next, and
@@ -87,7 +93,12 @@ export default function ReadinessView({ readiness, sample, audience = "admin" }:
       {/* four numbers */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
         <Kpi label={t("kpi_assessed")} value={String(kpis.assessedPeople)} note={t("kpi_assessedOf", { assessed: kpis.assessedPeople, placed: kpis.placedPeople })} />
-        <Kpi label={t("kpi_ready")} value={kpis.readyPercent === null ? "—" : `${kpis.readyPercent}%`} note={t("kpi_readyNote")} tone={kpis.readyPercent === null ? undefined : kpis.readyPercent >= 70 ? "met" : kpis.readyPercent >= 40 ? "close" : "gap"} />
+        {kpis.assessedPeople > 0 && kpis.assessedPeople < MIN_PEOPLE_FOR_PERCENT ? (
+          // Too few people for a percentage to mean anything: show the count, with no colour verdict.
+          <Kpi label={t("kpi_ready")} value={t("readyCount", { ready: kpis.readyPeople, assessed: kpis.assessedPeople })} note={t("kpi_readyCountNote", { min: MIN_PEOPLE_FOR_PERCENT })} />
+        ) : (
+          <Kpi label={t("kpi_ready")} value={kpis.readyPercent === null ? "—" : `${kpis.readyPercent}%`} note={t("kpi_readyNote")} tone={kpis.readyPercent === null ? undefined : kpis.readyPercent >= 70 ? "met" : kpis.readyPercent >= 40 ? "close" : "gap"} />
+        )}
         <Kpi label={t("kpi_gap")} value={kpis.biggestGap ? kpis.biggestGap.name : "—"} note={kpis.biggestGap ? t("kpi_gapNote", { shortfall: kpis.biggestGap.shortfall }) : t("kpi_none")} small />
         <Kpi label={t("kpi_waiting")} value={String(kpis.waiting)} note={t("kpi_waitingNote")} />
       </div>
@@ -114,15 +125,18 @@ export default function ReadinessView({ readiness, sample, audience = "admin" }:
                 </span>
                 <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   {t("people", { count: r.people })} · {t("assessedCount", { assessed: r.assessed })}
-                  {r.readyPercent !== null && <> · <bdi><strong style={{ color: "var(--text)" }}>{t("readyPercent", { percent: r.readyPercent })}</strong></bdi></>}
+                  {r.readyPercent !== null && (
+                    <> · <bdi><strong style={{ color: "var(--text)" }}>{r.assessed < MIN_PEOPLE_FOR_PERCENT ? t("readyCount", { ready: r.ready, assessed: r.assessed }) : t("readyPercent", { percent: r.readyPercent })}</strong></bdi></>
+                  )}
                 </span>
               </div>
-              <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginTop: 10, background: "rgba(128,128,128,0.18)" }} role="img" aria-label={t("barLabel", { ready: r.ready, close: r.close, gap: r.gap, none: r.people - r.assessed })}>
+              <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginTop: 10, background: "rgba(128,128,128,0.18)" }} role="img" aria-label={t("barLabel", { ready: r.ready, close: r.close, gap: r.gap, partial: r.partial, none: r.people - r.assessed })}>
                 {[
                   [r.ready, "met"],
                   [r.close, "close"],
                   [r.gap, "gap"],
-                ].map(([n, k]) => (n as number) > 0 && <span key={k as string} style={{ width: `${((n as number) / r.people) * 100}%`, background: TONE[k as CellState].color }} />)}
+                  [r.partial, "partial"],
+                ].map(([n, k]) => (n as number) > 0 && <span key={k as string} style={{ width: `${((n as number) / r.people) * 100}%`, background: k === "partial" ? "rgba(128,128,128,0.45)" : TONE[k as CellState].color }} />)}
               </div>
             </summary>
 
@@ -163,7 +177,7 @@ export default function ReadinessView({ readiness, sample, audience = "admin" }:
                       <li key={p.userId} style={{ borderTop: "1px solid var(--border)", padding: "7px 0" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13 }}>
                           <span style={{ color: "var(--text)" }}><bdi>{p.name}</bdi></span>
-                          <span style={{ color: TONE[STATE_OF_PERSON[p.state]].color, fontWeight: 700, fontSize: 12 }}>{TONE[STATE_OF_PERSON[p.state]].symbol} {t(`state_${p.state}`)}</span>
+                          <span style={{ color: PERSON_TONE[p.state].color, fontWeight: 700, fontSize: 12 }}>{PERSON_TONE[p.state].symbol} {t(`state_${p.state}`)}</span>
                         </div>
                         {p.competencies.length > 0 && (
                           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>

@@ -24,7 +24,12 @@ export type ReadinessInput = {
 };
 
 export type CellState = "met" | "close" | "gap" | "notAssessed";
-export type PersonState = "ready" | "close" | "gap" | "notAssessed";
+// "partial": some of the job's competencies were scored and all of those are met, but others were not scored. Never shown as ready, because
+// ready on part of the evidence would overstate the person.
+export type PersonState = "ready" | "close" | "gap" | "partial" | "notAssessed";
+
+// Below this many assessed people a percentage swings between 0% and 100% on one person, so the page shows counts instead.
+export const MIN_PEOPLE_FOR_PERCENT = 5;
 
 export type CompetencyCell = { name: string; required: number | null; demonstrated: number | null; state: CellState };
 export type PersonReadiness = { userId: string; name: string; state: PersonState; competencies: CompetencyCell[] };
@@ -40,6 +45,7 @@ export type RoleReadiness = {
   ready: number;
   close: number;
   gap: number;
+  partial: number;
   readyPercent: number | null; // of the people assessed
   competencies: RoleCompetency[]; // biggest shortfall first
   persons: PersonReadiness[]; // gaps first
@@ -57,6 +63,7 @@ export type Readiness = {
     assessedPeople: number;
     placedPeople: number;
     totalPeople: number;
+    readyPeople: number;
     readyPercent: number | null;
     biggestGap: { name: string; shortfall: number } | null;
     waiting: number;
@@ -74,16 +81,18 @@ export function cellState(required: number | null, got: number | null): CellStat
   return required - got === 1 ? "close" : "gap";
 }
 
-// The person's overall state from their competencies: ready when every one is met, gap when any is two or more levels short, close otherwise.
+// The person's overall state from their competencies: gap when any is two or more levels short, close when any is one short, partial when
+// everything scored is met but something the job needs was not scored, and ready only when every competency the job needs was scored and met.
 export function personState(cells: CompetencyCell[]): PersonState {
   const assessed = cells.filter((c) => c.state !== "notAssessed");
   if (assessed.length === 0) return "notAssessed";
   if (assessed.some((c) => c.state === "gap")) return "gap";
   if (assessed.some((c) => c.state === "close")) return "close";
+  if (assessed.length < cells.length) return "partial";
   return "ready";
 }
 
-const rank: Record<PersonState, number> = { gap: 0, close: 1, notAssessed: 2, ready: 3 };
+const rank: Record<PersonState, number> = { gap: 0, close: 1, partial: 2, notAssessed: 3, ready: 4 };
 
 // "manager" is the same picture for one manager's direct reports: no company-wide job setup, no development step (a manager cannot see other
 // people's development plans), and next steps that are a manager's to take.
@@ -147,6 +156,7 @@ export function computeReadiness(input: ReadinessInput, audience: Audience = "ad
       ready,
       close: persons.filter((p) => p.state === "close").length,
       gap: persons.filter((p) => p.state === "gap").length,
+      partial: persons.filter((p) => p.state === "partial").length,
       readyPercent: assessed ? Math.round((ready / assessed) * 100) : null,
       competencies,
       persons,
@@ -157,6 +167,8 @@ export function computeReadiness(input: ReadinessInput, audience: Audience = "ad
   const assessedPeople = roles.reduce((n, r) => n + r.assessed, 0);
   const readyPeople = roles.reduce((n, r) => n + r.ready, 0);
   const peopleWithGaps = roles.reduce((n, r) => n + r.close + r.gap, 0);
+  // Fully assessed: every competency the job needs was scored. A partly scored person still needs assessing (or re-scoring) to finish.
+  const fullyAssessed = assessedPeople - roles.reduce((n, r) => n + r.partial, 0);
 
   // The competency the people are furthest short on, across every job.
   const overall = new Map<string, { sum: number; n: number }>();
@@ -174,7 +186,7 @@ export function computeReadiness(input: ReadinessInput, audience: Audience = "ad
   const allSteps: Step[] = [
     { key: "roles", done: input.roles.length > 0, current: input.roles.length, total: input.roles.length },
     { key: "placed", done: input.members.length > 0 && placed.length === input.members.length, current: placed.length, total: input.members.length },
-    { key: "assessed", done: placed.length > 0 && assessedPeople === placed.length, current: assessedPeople, total: placed.length },
+    { key: "assessed", done: placed.length > 0 && fullyAssessed === placed.length, current: fullyAssessed, total: placed.length },
     { key: "gaps", done: assessedPeople > 0, current: peopleWithGaps, total: assessedPeople },
     { key: "development", done: assessedPeople > 0 && gapsWithPlan >= peopleWithGaps, current: gapsWithPlan, total: peopleWithGaps },
   ];
@@ -205,6 +217,7 @@ export function computeReadiness(input: ReadinessInput, audience: Audience = "ad
       assessedPeople,
       placedPeople: placed.length,
       totalPeople: input.members.length,
+      readyPeople,
       readyPercent: assessedPeople ? Math.round((readyPeople / assessedPeople) * 100) : null,
       biggestGap,
       waiting,

@@ -15,6 +15,12 @@ const roles: PlaceRole[] = [
 const row = (over: Partial<PlaceRow> = {}): PlaceRow => ({ email: "hend@acme.com", title: "Customer Service Manager", family: "", ...over });
 
 describe("placing people in jobs from a file", () => {
+  it("never places someone who has left the company, and says why", () => {
+    const v = validatePlacements([row({ email: "gone@acme.com" })], [...members, { memberId: "m9", email: "gone@acme.com", currentRoleId: null, archived: true }], roles);
+    expect(v).toMatchObject({ ok: 0, errors: 1 });
+    expect(v.results[0].message).toContain("archived");
+    expect(v.changes[0]).toBeNull();
+  });
   it("places a person in a job", () => {
     const v = validatePlacements([row()], members, roles);
     expect(v).toMatchObject({ ok: 1, unchanged: 0, errors: 0 });

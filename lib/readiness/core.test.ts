@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellState, computeReadiness, personState, sampleReadiness, type CompetencyCell, type ReadinessAssessment, type ReadinessInput } from "./core";
+import { MIN_PEOPLE_FOR_PERCENT, cellState, computeReadiness, personState, sampleReadiness, type CompetencyCell, type ReadinessAssessment, type ReadinessInput } from "./core";
 
 const cell = (state: CompetencyCell["state"]): CompetencyCell => ({ name: "x", required: 3, demonstrated: 3, state });
 
@@ -26,6 +26,14 @@ describe("one person", () => {
   });
   it("has a gap when anything is two or more levels short", () => {
     expect(personState([cell("close"), cell("gap"), cell("met")])).toBe("gap");
+  });
+  it("is only partly assessed, never ready, when something the job needs was not scored", () => {
+    expect(personState([cell("met"), cell("notAssessed")])).toBe("partial");
+    expect(personState([cell("met"), cell("notAssessed"), cell("notAssessed")])).toBe("partial");
+  });
+  it("still shows a gap or a near miss found on part of the evidence", () => {
+    expect(personState([cell("gap"), cell("notAssessed")])).toBe("gap");
+    expect(personState([cell("close"), cell("notAssessed")])).toBe("close");
   });
   it("is not assessed without any assessed competency", () => {
     expect(personState([])).toBe("notAssessed");
@@ -89,11 +97,22 @@ describe("readiness of a company", () => {
     const r = computeReadiness({ ...base(), assessments: [a] });
     expect(r.roles[0].persons.find((p) => p.userId === "a")?.state).toBe("ready");
   });
-  it("treats a competency that could not be assessed as not assessed, not as a gap", () => {
+  it("treats a competency that could not be assessed as not assessed, not as a gap, and the person as partly assessed", () => {
     const r = computeReadiness({ ...base(), assessments: [scored("a", [4, null])] });
     const ann = r.roles[0].persons.find((p) => p.userId === "a")!;
-    expect(ann.state).toBe("ready");
+    expect(ann.state).toBe("partial");
     expect(ann.competencies[1].state).toBe("notAssessed");
+    expect(r.roles[0].partial).toBe(1);
+    expect(r.roles[0].ready).toBe(0);
+    expect(r.kpis.readyPeople).toBe(0);
+  });
+  it("does not count a partly assessed person as done with assessment", () => {
+    const r = computeReadiness({ ...base(), members: base().members.slice(0, 2), assessments: [scored("a", [4, null]), scored("b", [4, 3])] });
+    const assessed = r.steps.find((s) => s.key === "assessed")!;
+    expect(r.kpis.assessedPeople).toBe(2);
+    expect(assessed.current).toBe(1);
+    expect(assessed.done).toBe(false);
+    expect(r.next.key).toBe("assessed");
   });
   it("only counts an assessment for the job the person holds now, and the latest one", () => {
     const old = scored("a", [1, 1], { id: "old", createdAt: "2026-10-01" });
@@ -192,5 +211,14 @@ describe("the manager's view of their own team", () => {
     expect(r.unplaced).toEqual(["Ziad"]);
     expect(r.kpis.totalPeople).toBe(7);
     expect(r.kpis.assessedPeople).toBeGreaterThan(0);
+  });
+});
+
+describe("small numbers", () => {
+  it("shows counts, not percentages, below five assessed people", () => {
+    expect(MIN_PEOPLE_FOR_PERCENT).toBe(5);
+    const r = computeReadiness({ ...base(), assessments: [scored("a", [4, 3])] });
+    expect(r.kpis.readyPeople).toBe(1);
+    expect(r.kpis.assessedPeople).toBe(1);
   });
 });

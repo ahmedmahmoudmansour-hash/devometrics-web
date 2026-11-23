@@ -2141,7 +2141,7 @@
     "step_placed": "People in jobs",
     "step_assessed": "People assessed",
     "step_gaps": "People with gaps",
-    "step_development": "Development started",
+    "step_development": "Has a development plan",
     "stepProgress": "{current} of {total}",
     "nextTitle": "Your next step",
     "next_roles": "Define your jobs: add them from the job bank or upload your own list.",
@@ -2173,7 +2173,7 @@
     "people": "{count, plural, one {1 person} other {# people}}",
     "assessedCount": "{assessed} assessed",
     "readyPercent": "{percent}% ready",
-    "barLabel": "{ready} ready, {close} close, {gap} with a gap, {none} not assessed",
+    "barLabel": "{ready} ready, {close} close, {gap} with a gap, {partial} partly assessed, {none} not assessed",
     "notAssessedYet": "Nobody in this job has been assessed yet.",
     "competencies": "What this job needs",
     "colCompetency": "Competency",
@@ -2198,7 +2198,10 @@
     "mgr_button_done": "Open My Team",
     "mgr_empty": "None of your people are in a job yet, so there is nothing to show. Ask your company admin to put them in their jobs.",
     "mgr_unplacedTitle": "Not in a job yet:",
-    "mgr_unplacedHint": "Your company admin can place them. They appear here once they are in a job."
+    "mgr_unplacedHint": "Your company admin can place them. They appear here once they are in a job.",
+    "state_partial": "Partly assessed",
+    "readyCount": "{ready} of {assessed} ready",
+    "kpi_readyCountNote": "Shown as a count until at least {min} people are assessed"
   },
   "assessmentsManager": {
     "title": "Assign an assessment",
@@ -6704,5 +6707,13 @@
     "pendingFor": "{name} has not taken this check yet.",
     "version": "Question bank version: {version}",
     "notFound": "This knowledge check was not found."
+  },
+  "subscriptionEnded": {
+    "title": "Your company's subscription has ended",
+    "bodyAdmin": "Your company's Devometrics trial or subscription period has ended, so your team cannot use the platform for now. To continue, contact us to renew.",
+    "bodyMember": "Your company's Devometrics subscription has ended, so the platform is not available for now. Your company admin can renew it.",
+    "dataSafe": "Nothing has been deleted. Once the subscription is renewed, everyone can sign in and carry on where they left off.",
+    "contact": "Contact us to renew →",
+    "home": "Back to the home page"
   }
 }
