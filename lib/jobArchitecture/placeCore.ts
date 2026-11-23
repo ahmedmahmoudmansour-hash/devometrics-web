@@ -6,8 +6,8 @@ export type PlaceRowResult = { status: "ok" | "unchanged" | "error"; message?: s
 
 export const MAX_ROWS = 500;
 
-// `archived`: the person has left the company. They are matched (so the reason is clear) but never placed.
-export type PlaceMember = { memberId: string; email: string; currentRoleId: string | null; archived?: boolean };
+// `left`: the person has left the company (archived, resigned or terminated). They are matched (so the reason is clear) but never placed.
+export type PlaceMember = { memberId: string; email: string; currentRoleId: string | null; left?: boolean };
 export type PlaceRole = { id: string; title: string; family: string };
 
 export type PlaceValidation = {
@@ -44,7 +44,7 @@ export function validatePlacements(rows: PlaceRow[], members: PlaceMember[], rol
     if (!title) { fail("Job title is missing"); continue; }
     const member = byEmail.get(email);
     if (!member) { fail("No one with this email is in your company"); continue; }
-    if (member.archived) { fail("This person is archived (has left your company), so they are not placed"); continue; }
+    if (member.left) { fail("This person has left your company (archived, resigned or terminated), so they are not placed"); continue; }
 
     const candidates = rolesByTitle.get(title) ?? [];
     if (candidates.length === 0) { fail("No job with this title in your Job Architecture"); continue; }

@@ -6,6 +6,7 @@ import { getMyOrganizationId } from "@/lib/organizations/membership";
 import ReadinessView from "@/components/dashboard/ReadinessView";
 import { computeReadiness, sampleReadiness } from "@/lib/readiness/core";
 import { loadReadinessInput } from "@/lib/readiness/load";
+import { hasLeft } from "@/lib/organizations/leaver";
 
 export const metadata = { title: "Team readiness — Devometrics" };
 
@@ -23,9 +24,10 @@ export default async function MyTeamReadinessPage({ searchParams }: { searchPara
 
   const organizationId = await getMyOrganizationId(supabase, user.id);
   const { data: reports } = organizationId
-    ? await supabase.from("organization_members").select("user_id").eq("organization_id", organizationId).eq("manager_user_id", user.id).returns<{ user_id: string }[]>()
+    ? await supabase.from("organization_members").select("user_id, archived, employment_status").eq("organization_id", organizationId).eq("manager_user_id", user.id).returns<{ user_id: string; archived: boolean | null; employment_status: string | null }[]>()
     : { data: null };
-  const reportIds = (reports ?? []).map((r) => r.user_id).filter((id) => id !== user.id);
+  // People who have left (archived, resigned or terminated) are not part of the team any more.
+  const reportIds = (reports ?? []).filter((r) => !hasLeft(r)).map((r) => r.user_id).filter((id) => id !== user.id);
   // Someone with nobody reporting to them has no team to show.
   if (reportIds.length === 0 && sample !== "1") redirect("/dashboard/my-team");
 

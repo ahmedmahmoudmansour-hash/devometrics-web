@@ -1,6 +1,7 @@
 // Reads what the readiness page needs from the signed-in admin's company. Runs as that admin, so every database rule applies. Each query that
 // fails (a table that is not there yet, for example) counts as "nothing yet" rather than breaking the page.
 import { createClient } from "@/lib/supabase/server";
+import { hasLeft } from "@/lib/organizations/leaver";
 import type { ReadinessAssessment, ReadinessInput } from "./core";
 
 // Every row a query matches, a page at a time. The API returns at most a fixed number of rows per request (1,000 by default on Supabase), and
@@ -26,9 +27,9 @@ export async function loadReadinessInput(organizationId: string, onlyUserIds?: s
   const supabase = await createClient();
 
   const memberPage = (from: number, to: number) => {
-    let q = supabase.from("organization_members").select("user_id, current_role_id, archived").eq("organization_id", organizationId);
+    let q = supabase.from("organization_members").select("user_id, current_role_id, archived, employment_status").eq("organization_id", organizationId);
     if (scoped) q = q.in("user_id", onlyUserIds);
-    return q.order("user_id").range(from, to).returns<{ user_id: string; current_role_id: string | null; archived: boolean | null }[]>();
+    return q.order("user_id").range(from, to).returns<{ user_id: string; current_role_id: string | null; archived: boolean | null; employment_status: string | null }[]>();
   };
   const assessmentPage = (from: number, to: number) => {
     let q = supabase
@@ -42,7 +43,7 @@ export async function loadReadinessInput(organizationId: string, onlyUserIds?: s
       .range(from, to)
       .returns<{ id: string; employee_user_id: string; role_id: string | null; status: string; created_at: string; required_snapshot: Snapshot | null }[]>();
   };
-  const [{ data: famRows }, roleRows, memberRows, assessmentRows] = await Promise.all([
+  const [{ data: famRows }, roleRows, memberRows, allAssessmentRows] = await Promise.all([
     supabase.from("job_families").select("id, name").eq("organization_id", organizationId).returns<{ id: string; name: string }[]>(),
     allRows((from, to) =>
       supabase.from("job_roles").select("id, title, grade, job_family_id").eq("organization_id", organizationId).order("id").range(from, to).returns<{ id: string; title: string; grade: number; job_family_id: string }[]>(),
@@ -51,8 +52,11 @@ export async function loadReadinessInput(organizationId: string, onlyUserIds?: s
     allRows(assessmentPage),
   ]);
 
-  const active = memberRows.filter((m) => !m.archived);
+  // Someone who has left (archived, resigned or terminated) is not a person to be ready for a job, and their open assessments are not waiting on anyone.
+  const active = memberRows.filter((m) => !hasLeft(m));
   const userIds = active.map((m) => m.user_id);
+  const activeIds = new Set(userIds);
+  const assessmentRows = allAssessmentRows.filter((a) => activeIds.has(a.employee_user_id));
   const nameById = new Map<string, string>();
   for (let i = 0; i < userIds.length; i += 200) {
     const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", userIds.slice(i, i + 200)).returns<{ id: string; full_name: string | null; email: string | null }[]>();

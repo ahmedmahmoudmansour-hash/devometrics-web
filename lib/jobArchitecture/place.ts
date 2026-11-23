@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/jobArchitecture/actions";
+import { hasLeft } from "@/lib/organizations/leaver";
 import { MAX_ROWS, validatePlacements, type PlaceRow, type PlaceValidation } from "./placeCore";
 
 export type PlacePreview = { error: string } | Pick<PlaceValidation, "results" | "ok" | "unchanged" | "errors">;
@@ -29,7 +30,7 @@ async function load(rawRows: unknown) {
   if (!user || !organizationId) return { ok: false, error: "Not authorized" } as const;
 
   const [{ data: memberRows, error: memErr }, { data: roleRows, error: roleErr }, { data: famRows, error: famErr }] = await Promise.all([
-    supabase.from("organization_members").select("id, user_id, current_role_id, archived").eq("organization_id", organizationId).returns<{ id: string; user_id: string; current_role_id: string | null; archived: boolean | null }[]>(),
+    supabase.from("organization_members").select("id, user_id, current_role_id, archived, employment_status").eq("organization_id", organizationId).returns<{ id: string; user_id: string; current_role_id: string | null; archived: boolean | null; employment_status: string | null }[]>(),
     supabase.from("job_roles").select("id, title, job_family_id").eq("organization_id", organizationId).returns<{ id: string; title: string; job_family_id: string }[]>(),
     supabase.from("job_families").select("id, name").eq("organization_id", organizationId).returns<{ id: string; name: string }[]>(),
   ]);
@@ -45,7 +46,7 @@ async function load(rawRows: unknown) {
 
   const validation = validatePlacements(
     rows,
-    (memberRows ?? []).filter((m) => emailById.get(m.user_id)).map((m) => ({ memberId: m.id, email: emailById.get(m.user_id) as string, currentRoleId: m.current_role_id, archived: !!m.archived })),
+    (memberRows ?? []).filter((m) => emailById.get(m.user_id)).map((m) => ({ memberId: m.id, email: emailById.get(m.user_id) as string, currentRoleId: m.current_role_id, left: hasLeft(m) })),
     (roleRows ?? []).map((r) => ({ id: r.id, title: r.title, family: famName.get(r.job_family_id) ?? "" }))
   );
   return { ok: true, supabase, organizationId, validation } as const;
